@@ -8,4 +8,4 @@ outputs/*
 R/SpaDES/cache/*
 R/SpaDES/inputs/*
 R/SpaDES/outputs/*
-R/SpaDES/*/data/*
+R/SpaDES/m/*/data/*
