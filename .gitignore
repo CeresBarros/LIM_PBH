@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+data/*
+figs/*
+outputs/*
+R/SpaDES/cache/*
+R/SpaDES/inputs/*
+R/SpaDES/outputs/*
+R/SpaDES/*/data/*
