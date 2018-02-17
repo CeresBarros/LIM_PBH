@@ -5,6 +5,7 @@
 ## ------------------------------------------
 
 ## CALCULATE FIRE SPREAD RASTER ------------------------
+## NOT BEING USED (Feb 2018)
 ## pixels is the number of pixels where fires will start 
 ## fMask is a raster of burnable areas (mask format)
 ## fROS is a raster of Rats Of Spread 

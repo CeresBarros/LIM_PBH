@@ -95,17 +95,22 @@ do.Fire <- function(sim) {
   
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
-  if(G(sim)$.useCache){
-    sim$spreadRas[[time(sim) - 1]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath,
-                                                          FUN = makeFireSpreadRas,
-                                                          fMask = sim$burnable_areas, pixels = P(sim)$noStartPix, 
-                                                          fROS = sim$ROS_map, fSize = P(sim)$fireSize)
-  } else {
-    sim$spreadRas[[time(sim) - 1]] <- makeFireSpreadRas(fMask = sim$burnable_areas, pixels = P(sim)$noStartPix, 
-                                                        fROS = sim$ROS_map, fSize = P(sim)$fireSize)
-  }
   
-  return(invisible(sim))
+  startPix <- sample(which(!is.na(sim$burnable_areas[])), P(sim)$noStartPix)
+  
+  ## calculate spread - potentially iterate spread2 to allow updating parameters (instead of runnin interactions for fixed argument values)
+  # sim$spreadRas[[time(sim) - 1]] <- spread2(landscape = sim$burnable_areas, spreadProbRel = sim$ROS_map,
+  #                                           start = startPix, maxSize =  P(sim)$fireSize, plot.it = FALSE)
+  
+  ## Favier's model:
+  sim$spreadRas[[time(sim) - 1]] <- spread2(landscape = sim$burnable_areas, spreadProb = 0.5, 
+                                            start = startPix, maxSize =  P(sim)$fireSize, plot.it = FALSE)
+
+  
+  ## remove fires outside burnable areas
+  sim$spreadRas[[time(sim) - 1]][is.na(sim$burnable_areas)] <- NA
+  
+  return(invisible(sim))  
 }
 
 ### Change vegetation states (present year) in function of fire
