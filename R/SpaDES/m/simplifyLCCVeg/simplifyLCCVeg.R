@@ -21,7 +21,7 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "Polygon of study area", sourceURL = NA),
     expectsInput(objectName = "vegetationRas", objectClass = "RasterLayer",
-                 desc = "2010 land classification map in study area, default is canada national land classification in 2010",
+                 desc = "Land classification map in study area, default is LCC2010",
                  sourceURL = "http://www.cec.org/sites/default/files/Atlas/Files/Land_Cover_2010/Land_Cover_2010_TIFF.zip")
   ),
   outputObjects = bind_rows(
@@ -93,5 +93,29 @@ fireInit <- function(sim) {
   ## clean workspace
   rm(non_burn, grass, shrubs, decid_forst, mixed_forst, conif_forst, reclass_mat, vegetation_prefire)
   
+  return(invisible(sim))
+}
+
+
+
+## Inputs
+.inputObjects <- function(sim) {
+  if(is.null(sim$vegetationRas)){
+    checksums1 <- downloadData("simplifyLCCVeg", modulePath(sim), overwrite = FALSE)
+    result1 <- checksums1[checksums1$expectedFile == "NA_LandCover_2010_25haMMU.tif",]$result
+
+    if (result1 != "OK" | is.na(result1)) {
+      file.name <- grep("NA_LandCover_2010_25haMMU.tif$",
+                        unzip(file.path(modulePath(sim), "simplifyLCCVeg", "data", "Land_Cover_2010_TIFF.zip"), list = TRUE)$Name,
+                        value = TRUE)
+
+      unzip(zipfile = file.path(modulePath(sim), "simplifyLCCVeg", "data", "Land_Cover_2010_TIFF.zip"),
+            files = file.name,
+            exdir = file.path(modulePath(sim), "simplifyLCCVeg", "data"), junkpaths = TRUE)
+    }
+
+    file.name <- list.files(file.path(modulePath(sim), "simplifyLCCVeg", "data"), pattern = "NA_LandCover_2010_25haMMU.tif", full.names = TRUE)
+    sim$vegetationRas <- raster::raster(file.name)
+  }
   return(invisible(sim))
 }
