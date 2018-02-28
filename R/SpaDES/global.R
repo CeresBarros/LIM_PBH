@@ -6,7 +6,7 @@
 ## ------------------------------------------------------
 
 ## clean workspace
-rm(list=ls())
+rm(list=ls()); gc(reset = TRUE)
 
 ## requires
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")    ## Feb2018
