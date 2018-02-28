@@ -27,20 +27,21 @@ foothills <- raster::shapefile(file.path(getPaths()$inputPath, "Alberta_study_ar
 foothillsSMALL <- rgeos::gBuffer(foothills, width = -0.3)
 
 ## simulation parameters
-modules <- list("simplifyLCCVeg", "fireSpread", "fireSeverity", "simpleLCCSuccession")
+# modules <- list("simplifyLCCVeg", "fireSpread", "fireSeverity", "simpleLCCSuccession")
+modules <- list("LBMRDataPrep", "LBMR")
 
-times <- list(start = 1.0, end = 5, timeunit = "year")
+times <- list(start = 1.0, end = 30, timeunit = "year")
 
-parameters <- list(
-  .globals = list(.useCache = TRUE),
-  fireSpread = list(fireSize = 1000, noStartPix = 100),
-  fireSeverity = list(.plotMaps = TRUE),
-  fireStats = list(.plotStats = TRUE)
-)
+# parameters <- list(
+#   .globals = list(.useCache = TRUE),
+#   fireSpread = list(fireSize = 1000, noStartPix = 100),
+#   fireSeverity = list(.plotMaps = TRUE),
+#   fireStats = list(.plotStats = TRUE)
+# )
 
 objects <- list("studyArea" = foothillsSMALL)
 
-mySim <- simInit(times = times, params = parameters, modules = modules,
+mySim <- simInit(times = times, modules = modules,
                  objects = objects)
 # moduleDiagram(mySim)
 # objectDiagram(mySim)

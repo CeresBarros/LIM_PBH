@@ -24,7 +24,10 @@ defineModule(sim, list(
     expectsInput(objectName = "vegetation", objectClass = "list",
                  desc = "List of vegetation states rasters, with simplified classes"),
     expectsInput(objectName = "spreadProb_mat", objectClass = "matrix",
-                 desc = "Two-columns matrix of baseline spread probs. per vegetation class. 
+                 desc = "Two-column matrix of baseline spread probs. per vegetation class. 
+                 1st column should contain vegetation class codes, with corresponding probs. in the 2nd column"),
+    expectsInput(objectName = "persistProb_mat", objectClass = "matrix",
+                 desc = "Two-column matrix of baseline persistence probs. per vegetation class. 
                  1st column should contain vegetation class codes, with corresponding probs. in the 2nd column")
   ),
   outputObjects = bind_rows(
@@ -78,9 +81,13 @@ do.Fire <- function(sim) {
   sim$burnable_areas <- sim$vegetation[[time(sim) - 1]]   ## using previous year vegetation map
   sim$burnable_areas[sim$vegetation[[time(sim) - 1]][] == 0] <- NA
   
-  ## MAKE RATE OF SPREAD RASTER -------------------------------
+  ## MAKE RASTER OF SPREAD PROABILITIES -------------------------------
   sim$spreadProb_map <- sim$vegetation[[time(sim) - 1]]
   sim$spreadProb_map <- reclassify(sim$spreadProb_map, rcl = sim$spreadProb_mat)
+  
+  ## MAKE RASTER OF PERSISTENCE PROABILITIES -------------------------------
+  sim$persistProb_map <- sim$vegetation[[time(sim) - 1]]
+  sim$persistProb_map <- reclassify(sim$persistProb_map, rcl = sim$persistProb_mat)
   
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
@@ -89,19 +96,12 @@ do.Fire <- function(sim) {
   
   ## Favier's model:
   sim$spreadRas[[time(sim) - 1]] <-  spread2(landscape = sim$burnable_areas, spreadProb = sim$spreadProb_map,
-                                            persistProb = 0,
+                                            persistProb = sim$persistProb_map,
                                             start = startPix, 
                                             maxSize =  P(sim)$fireSize,
                                             plot.it = FALSE)
-    
-    landscape = sim$burnable_areas
-    spreadProb = sim$spreadProb_map
-    start = startPix
-    dput(landscape, file = "~/landscape")
-    dput(spreadProb, file = "~/spreadProb")
-    dput(start, file = "~/start")
   
-    ## remove fires outside burnable areas
+  ## remove fires outside burnable areas
   sim$spreadRas[[time(sim) - 1]][is.na(sim$burnable_areas)] <- NA
   
   return(invisible(sim))  
@@ -115,6 +115,13 @@ do.Fire <- function(sim) {
                            dimnames = list(paste0("hab", as.character(0:5)), c("hab", "spreadProb")))
     
   }
+  
+  if(is.null(sim$persistProb_mat)){
+    sim$persistProb_mat <- matrix(c(0:5, 0, 0.2, 0.4, 0.9, 0.8, 0.7), byrow = FALSE, nrow = 6, ncol = 2,
+                                 dimnames = list(paste0("hab", as.character(0:5)), c("hab", "persistProb")))
+    
+  }
+  
   return(invisible(sim))
 }
 

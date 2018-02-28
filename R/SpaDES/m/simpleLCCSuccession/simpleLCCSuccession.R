@@ -83,12 +83,13 @@ do.VegetationTransit <- function(sim) {
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
   if(is.null(sim$transitionMatrix)){
-  sim$transitionMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
-                                    rep(c(0, 1, 0, 0, 0, 0), 2),
-                                    rep(c(0, 0, 0, 1, 0, 0), 2),
-                                    c(0, 0, 0, 0, 1, 0)),
-                                  nrow = 6, ncol = 6, byrow = TRUE,
-                                  dimnames = list(paste0("hab", as.character(0:5)), paste0("hab", as.character(0:5))))
+    sim$transitionMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
+                                     rep(c(0, 1, 0, 0, 0, 0), 2),
+                                     c(0, 0, 0, 1, 0, 0),
+                                     c(0, 0, 1, 0, 0, 0),
+                                     c(0, 0, 0, 0, 1, 0)),
+                                     nrow = 6, ncol = 6, byrow = TRUE,
+                                     dimnames = list(paste0("hab", as.character(0:5)), paste0("hab", as.character(0:5))))
   }
   return(invisible(sim))
 }
