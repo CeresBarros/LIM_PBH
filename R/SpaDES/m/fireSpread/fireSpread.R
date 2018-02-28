@@ -67,7 +67,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 ### module initialization
 fireInit <- function(sim) {
   ## make raster storage lists 
-  sim$spreadRas = list()
+  sim$spreadRas <- list()
   
   return(invisible(sim))
 }
@@ -88,14 +88,20 @@ do.Fire <- function(sim) {
   startPix <- sample(which(!is.na(sim$burnable_areas[])), P(sim)$noStartPix)
   
   ## Favier's model:
-  browser()
-  sim$spreadRas[[time(sim) - 1]] <- spread2(landscape = sim$burnable_areas, spreadProb = sim$spreadProb_map,
-                                            persistProb = 0, start = startPix, 
-                                            # maxSize =  P(sim)$fireSize, 
+  sim$spreadRas[[time(sim) - 1]] <-  spread2(landscape = sim$burnable_areas, spreadProb = sim$spreadProb_map,
+                                            persistProb = 0,
+                                            start = startPix, 
+                                            maxSize =  P(sim)$fireSize,
                                             plot.it = FALSE)
-
+    
+    landscape = sim$burnable_areas
+    spreadProb = sim$spreadProb_map
+    start = startPix
+    dput(landscape, file = "~/landscape")
+    dput(spreadProb, file = "~/spreadProb")
+    dput(start, file = "~/start")
   
-  ## remove fires outside burnable areas
+    ## remove fires outside burnable areas
   sim$spreadRas[[time(sim) - 1]][is.na(sim$burnable_areas)] <- NA
   
   return(invisible(sim))  

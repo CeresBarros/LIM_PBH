@@ -9,8 +9,10 @@
 rm(list=ls()); gc(reset = TRUE)
 
 ## requires
-# devtools::install_github("PredictiveEcology/SpaDES.core@development")    ## Feb2018 
-# devtools::install_github("PredictiveEcology/reproducible@development")   ## Feb2018 
+# devtools::install_github("PredictiveEcology/SpaDES.core@development")    ## Feb2018
+# devtools::install_github("PredictiveEcology/reproducible@development")   ## Feb2018
+# devtools::install_github("PredictiveEcology/SpaDES.tools@development")    ## Feb2018
+
 library(SpaDES)
 
 ## define paths
@@ -25,24 +27,24 @@ foothills <- raster::shapefile(file.path(getPaths()$inputPath, "Alberta_study_ar
 foothillsSMALL <- rgeos::gBuffer(foothills, width = -0.3)
 
 ## simulation parameters
-modules <- list("simplifyLCCVeg", "fire_spreadSTSM", "fireSeverity")
+modules <- list("simplifyLCCVeg", "fireSpread", "fireSeverity", "simpleLCCSuccession")
 
 times <- list(start = 1.0, end = 5, timeunit = "year")
 
 parameters <- list(
   .globals = list(.useCache = TRUE),
-  fire_spreadSTSM = list(fireSize = 1000, noStartPix = 100),
+  fireSpread = list(fireSize = 1000, noStartPix = 100),
   fireSeverity = list(.plotMaps = TRUE),
   fireStats = list(.plotStats = TRUE)
 )
 
 objects <- list("studyArea" = foothillsSMALL)
 
-sets <- options(spades.moduleCodeChecks = FALSE)   ## Feb 23rd 2018, checking was breaking at .inputObjects() in simplifyLCCVeg
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects)
-moduleDiagram(mySim)
-objectDiagram(mySim)
+# moduleDiagram(mySim)
+# objectDiagram(mySim)
+# events(mySim)
 
 dev()
 clearPlot()

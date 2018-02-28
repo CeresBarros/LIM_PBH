@@ -68,6 +68,8 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
+  sim$severity_ras <- list()
+  
   return(invisible(sim))
 }
 

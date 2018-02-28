@@ -24,7 +24,7 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "vegetation", objectClass = "list",
                  desc = "List of vegetation states rasters, with simplified classes"),
-    expectsInput(objectName = "fire_transitprobs", objectClass = "matrix",
+    expectsInput(objectName = "transitionMatrix", objectClass = "matrix",
                  desc = "Habitat X habitat matrix of transition probabilities (rows = initial, cols = final)", sourceURL = NA),
     expectsInput(objectName = "spreadRas", objectClass = "list",
                  desc = "List of rasters of fire spread")
@@ -70,7 +70,9 @@ do.VegetationTransit <- function(sim) {
                                                        x = stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
                                                        fun = vegTransition)
   } else {
-    sim$vegetation[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]), fun = vegTransition)
+    ## note: transitionMatrix is being used by vegTransition 
+    sim$vegetation[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
+                                        fun = vegTransition)
   }
   
   return(invisible(sim))
@@ -80,8 +82,8 @@ do.VegetationTransit <- function(sim) {
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-  if(is.null(sim$fire_transitprobs)){
-  sim$fire_transitprobs <- matrix(c(c(1, 0, 0, 0, 0, 0),
+  if(is.null(sim$transitionMatrix)){
+  sim$transitionMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
                                     rep(c(0, 1, 0, 0, 0, 0), 2),
                                     rep(c(0, 0, 0, 1, 0, 0), 2),
                                     c(0, 0, 0, 0, 1, 0)),

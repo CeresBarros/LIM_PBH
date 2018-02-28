@@ -49,15 +49,15 @@ doEvent.simplifyLCCVeg = function(sim, eventTime, eventType, debug = FALSE) {
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
   ## make raster storage lists 
-  sim$vegetation = sim$severity_ras = sim$spreadRas = list()
+  sim$vegetation <- sim$severity_ras <- sim$spreadRas <- list()
   
   ## PRE-FIRE VEGETATION ---------------------------------------
   ## get first vegetation state from original LCC raster
   if(G(sim)$.useCache) {
     vegetation_prefire <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, makePrefireVegetation,
-                                              area = studyArea, vegRas = vegetationRas)
+                                              area = sim$studyArea, vegRas = vegetationRas)
   } else {
-    vegetation_prefire <- makePrefireVegetation(area = studyArea, vegRas = vegetationRas)
+    vegetation_prefire <- makePrefireVegetation(area = sim$studyArea, vegRas = vegetationRas)
   }
   
   ## VEGETATION CLASSES ----------------------------------------
@@ -117,5 +117,11 @@ fireInit <- function(sim) {
     file.name <- list.files(file.path(modulePath(sim), "simplifyLCCVeg", "data"), pattern = "NA_LandCover_2010_25haMMU.tif", full.names = TRUE)
     sim$vegetationRas <- raster::raster(file.name)
   }
+  
+   if(is.null(studyArea)) {
+     sim$studyArea <- randomPolygon(SpatialPoints(cbind(-110, 59)), 1e4)
+     sim$studyArea <- sp::spTransform(x = studyArea, CRSobj = crs(sim$vegetationRas))
+   }
+  
   return(invisible(sim))
 }
