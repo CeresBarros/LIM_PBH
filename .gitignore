@@ -9,3 +9,4 @@ R/SpaDES/cache/*
 R/SpaDES/inputs/*
 R/SpaDES/outputs/*
 R/SpaDES/m/*/data/*
+analyses/FireEvents/*

@@ -19,7 +19,9 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "Polygon of study area", sourceURL = NA),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", 
+                 desc = "Shapefile of study area. Default is a random polygon somewhere in the landcover map", 
+                 sourceURL = NA),
     expectsInput(objectName = "vegetationRas", objectClass = "RasterLayer",
                  desc = "Land cover map in study area, default is LCC2010",
                  sourceURL = "http://www.cec.org/sites/default/files/Atlas/Files/Land_Cover_2010/Land_Cover_2010_TIFF.zip")

@@ -148,6 +148,12 @@ LANDISDisp <- function(sim, dtSrc, dtRcv, pixelGroupMap,
                        maxPotentialsLength=1e3, 
                        verbose=FALSE,
                        useParallel, ...) {
+  lowDTthreads <- data.table::getDTthreads() == 1
+  if (lowDTthreads) {
+    a <- data.table::setDTthreads(data.table::getDTthreads() == 1)
+    on.exit(data.table::setDTthreads(a))
+  }
+  
   cellSize=unique(res(pixelGroupMap))
   seedsReceived <- raster(pixelGroupMap) 
   seedsReceived[] <- 0L
@@ -450,7 +456,7 @@ LANDISDisp <- function(sim, dtSrc, dtRcv, pixelGroupMap,
       rbindlist()
     #seedsArrived <- rbindlist(allSeedsArrived)
   } else {
-    stop("Please specify the useParallel arguement correctly. Currently, it takes either logical or cluster object")
+    stop("Please specify the useParallel argument correctly. Currently, it takes either logical or cluster object")
   }
   # potentialsOrig <- copy(potentials)
   # potentials <- copy(potentialsOrig)
