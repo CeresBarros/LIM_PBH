@@ -63,21 +63,8 @@ names(albertafires2_postfire)[grep("FIRE_CODE", names(albertafires2_postfire))] 
 #                    cacheRepo = getPaths()$cachePath, userTags = "fireData")
 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
-AB1_fireEvents <- Cache(defineFireEvents,
-                          sf.obj = albertafires1_postfire, fireID = "FIRE_NAME", buff.dist = 200L, 
-                          PLOT = FALSE, SAVE = TRUE, outputDIR = "analyses/FireEvents", 
-                          fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
-                          cacheRepo = getPaths()$cachePath, userTags = "fireData_events")
-
-
-defineFireEvents(sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME", buff.dist = 200L, 
-                 PLOT = FALSE, SAVE = TRUE, outputDIR = "analyses/FireEvents", 
-                 fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE)
-
-
-unique(albertafires1_postfire$SURVIVAL)
-matrix(c("100%", 0,
-         ), byrow = TRUE,
-       ncol =2, nrow = nlevels(albertafires1_postfire$SURVIVAL))
-
-
+AB1_fireEvents <- Cache(defineFireEvents, 
+                    sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME", buff.dist = 200L, 
+                    PLOT = FALSE, SAVE = FALSE, outputDIR = "analyses/FireEvents", 
+                    fileNAME = "Andison_AB1_fireEvents", overwrite = FALSE,
+                    cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")

@@ -145,10 +145,9 @@ outerBuffer <- function(x) {
 ## fireNAMES should be a column/attribute with fire ID/names
 ## crsProj is a string of the projection to use. If NULL (default) will use the same projection as sf.obj, otherwise sf.obj will be reprojected
 ## buff.dist if the buffer distance to define fire events
-## PLOT, SAVE and overwrite determine if plotting, saving and overwriting will be done
-## outputDIR and fileNAME define the directory and filename to save the fire events shapefile (".shp" will be added to the name string),
+## PLOT, SAVE and overwrite determine if plotting, saving and overwriting should be done
+## outputDIR and fileNAME define the directory and fileNAME to save the fire events shapefile (".shp" will be added to the name string),
 ## outputDIR will be created if non-existent
-
 
 defineFireEvents <- function(sf.obj, fireNAMES = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
@@ -170,51 +169,80 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, crsProj = NULL, buff.dist
   }
   
   fire.ls <- unique(eval(parse(text = paste0("sf.obj$", fireNAMES))))
-
-  browser()
+  
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
     firePolys <- eval(parse(text = paste0("sf.obj$", fireNAMES))) == fire
-    
     sf.fire <- sf.obj[firePolys, ]
     
     ## CALCULATE FIRE AND EVENT PERIMETERS
     firePerim <- st_union(sf.fire$geometry)
     outerBuff <- st_buffer(firePerim, dist = buff.dist)
+    eventPerim <- st_buffer(outerBuff, dist = -buff.dist)
     
-    ## remove donut holes created by buffer
-    ## note that we need to recurse into the first list element, which contains
-    ## a list of all polygons (from which only the first element is extracted)  
-    if(class(outerBuff)[1] == "sfc_MULTIPOLYGON") {
-      ## in complex fires, buffering produces sfc_MULTIPOLYGON, which must be recursed into differently
-      outerBuff2 <- st_sfc(st_multipolygon(lapply(outerBuff[1], function(x) x[[1]])), crs = crsProj) 
+    ## REMOVE INNER MATRIX HOLES FROM EVENT AND ORIGINAL FIRE PERIMETER
+    ## (i.e. unburnt patches surrounded by fire)
+    if(class(eventPerim)[1] == "sfc_MULTIPOLYGON") {
+      noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[[1]], function(x) x[1])), crs = crsProj)
+      noHolesEventPerim <- st_union(noHolesEventPerim)  ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
     } else {
-      outerBuff2 <- st_sfc(st_multipolygon(lapply(outerBuff[1], function(x) x[1])), crs = crsProj) ## remove donut holes created by buffer - note that we need to recurse into the first list element, which contains a list of all polygons (from which only the first element is extracted)
+      noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = crsProj)
+      noHolesEventPerim <- st_union(noHolesEventPerim) ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
     }
     
-    eventPerim <- st_buffer(outerBuff2, dist = -buff.dist) 
+    if(class(firePerim)[1] == "sfc_MULTIPOLYGON") {
+      noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = crsProj)
+      noHolesFirePerim <- st_union(noHolesFirePerim)  
+    } else {
+      noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = crsProj)
+      noHolesFirePerim <- st_union(noHolesFirePerim)
+    }
     
-    ## EXTRACT MATRIX AND ISLAND REMNANTS
-    matrixRemn <- st_difference(eventPerim, firePerim)   ## matrix remnants are the different between the event and fire perimeters
-    islandRemn <- st_difference(firePerim,  st_union(sf.fire$geometry[sf.fire$SURVIVAL == "0-5%"]))  ## "original" islands
-    islandRemn2 <- st_difference(outerBuff2,  outerBuff)  ## islands created by buffers
+    ## EXTRACT INNER MATRIX HOLES PRODUCED BY BUFFERING - these will determine what the inner matrix remnants are
+    bufferedHoles <- st_difference(noHolesEventPerim, eventPerim)
     
-    if(length(islandRemn2) > 0) {
-      if(class(islandRemn)[1] != class(islandRemn2)[1]) {
-        ## if the class is not the same, convert both sfc object before creating the multipoligon object with st_geometry
-        islandRemn <-  st_sfc(do.call(st_multipolygon, c(islandRemn, islandRemn2)), crs = crsProj)
+    ## EXTRACT ALL REMNANTS PRODUCED BY BUFFERING (except holes)
+    allRemnants <- st_difference(eventPerim, firePerim)
+    
+    ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND REMNANTS
+    if(length(bufferedHoles) > 0) {
+      if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
+        remnHoleInters  <- sapply(allRemnants[[1]], FUN = function(sfgpoly) {
+          sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
+        })
       } else {
-        islandRemn <- c(islandRemn, islandRemn2)    # rbind() is for sf, c() for sfg/sfc
+        remnHoleInters  <- sapply(allRemnants[1], FUN = function(sfgpoly) {
+          sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
+        })
+      }
+    } else {
+      remnHoleInters <- if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
+        rep(FALSE, length(allRemnants[[1]]))
+        } else {
+        rep(FALSE, length(allRemnants[1]))
       }
     }
     
-    ## REMOVE ISLAND REMNANTS FROM MATRIX REMNANTS
+    ## DEFINE INNER MATRIX REMNANTS
+    if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
+      inMatrixRemn <- lapply(allRemnants[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+      inMatrixRemn <- st_union(inMatrixRemn)
+    } else {
+      inMatrixRemn <- lapply(allRemnants[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)  
+      inMatrixRemn <- st_union(inMatrixRemn)
+    }
     
+    ## DEFINE OUTER MATRIX REMNANTS
+    outMatrixRemn <- st_difference(allRemnants, inMatrixRemn)
     
+    ## MERGE HOLES AND INNER MATRIX
+    inMatrixRemn2 <- c(bufferedHoles, inMatrixRemn)
     
     ## CONVERT TO MULTIPOLYGONS AND SIMPLE FEATURE COLLECTION, ADDING FIRE NAME
     firePerim <- st_sfc(firePerim) 
     firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
-    firePerim$PatchType <- "firePerim"
+    firePerim$PatchType <- "disturbedPatch"
     eval(parse(text = paste0("firePerim$", fireNAMES, "<- fire")))
     firePerim$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
     firePerim$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
@@ -226,23 +254,22 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, crsProj = NULL, buff.dist
     eventPerim$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
     eventPerim$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
     
-    matrixRemn <- st_sfc(matrixRemn)
-    matrixRemn <- st_sf(geometry = matrixRemn) 
-    matrixRemn$PatchType <- "matrixRemn"
-    eval(parse(text = paste0("matrixRemn$", fireNAMES, "<- fire")))
-    matrixRemn$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
-    matrixRemn$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
+    outMatrixRemn <- st_sfc(outMatrixRemn)
+    outMatrixRemn <- st_sf(geometry = outMatrixRemn) 
+    outMatrixRemn$PatchType <- "outMatrixRemn"
+    eval(parse(text = paste0("outMatrixRemn$", fireNAMES, "<- fire")))
+    outMatrixRemn$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
+    outMatrixRemn$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
     
-    print(as.character(fire))
-    islandRemn <- st_sfc(islandRemn)
-    islandRemn <- st_sf(geometry = islandRemn) 
-    islandRemn$PatchType <- "islandRemn"
-    eval(parse(text = paste0("islandRemn$", fireNAMES, "<- fire")))
-    islandRemn$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
-    islandRemn$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
+    inMatrixRemn2 <- st_sfc(inMatrixRemn2)
+    inMatrixRemn2 <- st_sf(geometry = inMatrixRemn2) 
+    inMatrixRemn2$PatchType <- "inMatrixRemn"
+    eval(parse(text = paste0("inMatrixRemn2$", fireNAMES, "<- fire")))
+    inMatrixRemn2$FIRE_YEAR <- eval(parse(text = paste0("unique(sf.fire$", grep("YEAR", names(sf.fire), value = TRUE), ")")))
+    inMatrixRemn2$FIRE_ID <- eval(parse(text = paste0("unique(sf.fire$", grep("ID|CODE|NUM", names(sf.fire), value = TRUE), ")")))
     
     ## COMBINE INTO ONE OBJECT
-    fireEvent <- rbind(firePerim, eventPerim, matrixRemn, islandRemn)
+    fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
     
     return(fireEvent)
   })
