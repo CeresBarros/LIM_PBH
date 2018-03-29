@@ -1,14 +1,12 @@
 ## ---------------------------------
 ## DAVID ANDISON FIRE DATA
 ##
-## Exploratory analysis
+## Dataprep for Exploratory analysis
 ## ---------------------------------
 
-## clean workspace
-rm(list=ls()); gc(reset = TRUE)
 
 ## requires
-library(SpaDES)
+library(SpaDES); library(sf); library(ggplot2)
 source("R/R_tools/Useful_functions.R")
 
 ## define paths
@@ -19,12 +17,14 @@ setPaths(cachePath = file.path("R/SpaDES/cache"),
 
 
 ## LOAD DATA ---------------------------------------
+
+## POST FIRE DATA
 files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire")
 folder = "data/fires_Dave/Projected_renamed"
 
 for(x in files) {
   eval(parse(text = paste0(
-    x, " <- sf::st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
+    x, " <- st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
     )))
 }
 
@@ -57,6 +57,29 @@ names(albertafires2_postfire)[grep("FIRE_CODE", names(albertafires2_postfire))] 
   grep("FIRE_ID", names(saskatchewanfires_postfire), value = TRUE)
 
 
+## PRE FIRE DATA
+files = c("albertafires1_prefire", "albertafires2_prefire", "saskatchewanfires_prefire")
+folder = "data/fires_Dave/Projected_renamed"
+
+for(x in files) {
+  eval(parse(text = paste0(
+    x, " <- st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
+  )))
+}
+
+## WATER DATA
+files = c("water-abta", "water-sask")
+folder = "data/fires_Dave/Projected_renamed"
+
+for(x in files) {
+  eval(parse(text = paste0(
+    sub("-", "_", x), " <- st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
+  )))
+}
+
+
+## DEFINE FIRE EVENTS ----------------------------------------
+
 # firesABSK <- Cache(loadBindSpatialObjs, 
 #                    files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire"),
 #                    folder = "data/fires_Dave/Projected_renamed", 
@@ -65,6 +88,35 @@ names(albertafires2_postfire)[grep("FIRE_CODE", names(albertafires2_postfire))] 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
 AB1_fireEvents <- Cache(defineFireEvents, 
                     sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME", buff.dist = 200L, 
-                    PLOT = FALSE, SAVE = FALSE, outputDIR = "analyses/FireEvents", 
-                    fileNAME = "Andison_AB1_fireEvents", overwrite = FALSE,
+                    PLOT = FALSE, SAVE = TRUE, outputDIR = "analyses/FireEvents", 
+                    fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")
+
+## JOIN WATER, VEGETATION AND FIRE EVENTS --------------------
+
+AB1_vegFireEvents <- Cache(st_intersection, 
+                           x = albertafires1_prefire, y = AB1_fireEvents,
+                           userTags = "dataTreat_fireEvents_wVeg")
+
+## not sure what to do about water yet... 
+## perhaps just remove these areas with st difference before intersecting with veg?
+# AB1_watVegFireInters <- Cache(st_intersection,
+#                               x = AB1_vegFireEvents, y = water_abta[, "FEATURE_TY"],
+#                               userTags = "dataTreat_fireEvents_wVeg_water")
+
+# names(AB1_watVegFireEvents)[which(names(AB1_watVegFireEvents) == "FEATURE_TY")] <- "WATER_TY"
+
+## extract dataframe only
+AB1_VegFireEvents.df <- AB1_vegFireEvents
+st_geometry(AB1_VegFireEvents.df) <- NULL
+
+## remove columns with NAs only
+NAcols <- sapply(AB1_VegFireEvents.df, FUN = function(x) {
+  return(any(sum(is.na(x)) == length(x)))
+})
+
+AB1_VegFireEvents.df <- AB1_VegFireEvents.df[, !NAcols]
+
+
+
+

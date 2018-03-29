@@ -1,0 +1,114 @@
+---
+title: "Dave Andison's fire data preliminary analyses"
+author: "Ceres Barros"
+date: "March 28, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+## source dataprep:
+source("R/DAfires_expAnalyses_dataPrep.R")
+
+## variables of interest:
+vars <- which(names(AB1_VegFireEvents.df) %in% 
+                c(grep("MOIS|DENS|HEIG|TPR|ORIG|NFL|NAT_N|STRUC", 
+                       names(AB1_VegFireEvents.df), value = TRUE),
+                  grep("^SP", names(AB1_VegFireEvents.df), value = TRUE),
+                  grep("^USP", names(AB1_VegFireEvents.df), value = TRUE),
+                  names(AB1_fireEvents), "WATER_TY"))
+AB1_VegFireEvents.df <- AB1_VegFireEvents.df[, vars]
+
+```
+
+## NOTES
+I believe some of the outer matrix patches overlap with the disturbed patches in terms of vegetation polygons, because they often have similar distributions of vegetation attributes, whose frequencies are not being added up in the event perimeter frequencies.
+
+## Pre-fire conditions in fire event patches
+
+### Dominant species
+Disturbed patches and outer matrix remnants are v. similar, both mostly dominated by Lodgepole pine (Pl). Inner matrix patches never have Lodgepole pine as a dominant species, usually being dominated by Trembling aspen (Aw) or White spruce (Sw)
+
+```{r histogram1, echo = FALSE}
+# dev()
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$SP1),], aes(x = SP1)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+
+```
+
+### Sub-dominant species
+Disturbed patches and outer matrix remnants are v. similar, with their secondary dominant species being most often White spruce (Sw). Inner matrix patches seem to be a sub sample of the others.
+
+```{r histogram2, echo = FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$SP2),], aes(x = SP2)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+
+```
+
+
+### Moisture regime
+No noticeable diferences in either the canopy or understory moisture (UMOIS) regimes
+
+```{r histogram3, echo = FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$MOIST),], aes(x = MOIST)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$UMOIS),], aes(x = UMOIS)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+### Crown closure class
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of crown closure classes. Inner matrix remnants seem to have lower crown closure.
+
+```{r pressure, echo=FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$DENSI),], aes(x = DENSI)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+### Timber productivity rating
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of timber porductivity classes. Inner matrix remnants seem to be a subsample of the other two.
+```{r pressure, echo=FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$TPR),], aes(x = TPR)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+### Non forest vegetated land
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of non forested land classes. Inner matrix remnants seem to be a subsample of the other two.
+
+```{r pressure, echo=FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$NFL),], aes(x = NFL)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+### Natural-non vegetated land
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of class frequencies, with quite a few flooded areas (NWF) and rivers (NWR). Inner matix remnants also have several river patches, but no flooded areas. They also seem to have a higher relative proportion of sandy soil (NMS)
+
+```{r pressure, echo=FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$NAT_N),], aes(x = NAT_N)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+### Forest age - Origin
+Disturbed patches and outer matrix remnants have identical age distributions (which are not being added up at all). Inner matrix patches seem to be a very biased subsample.
+
+```{r pressure, echo=FALSE}
+ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$ORIGI),], aes(x = ORIGI)) +
+  geom_histogram(stat = "count") +
+  facet_wrap(~ PatchType)
+```
+
+
+
+## Pre-fire conditions in fire severity classes
+```{r setup, include=FALSE}
+## intersect with severity patches
+AB1_vegSevFireEvents <- st_intersection(AB1_vegFireEvents[AB1_vegFireEvents$PatchType == "disturbedPatch",], albertafires1_postfire[, "SURVIVAL"])
+
+```
