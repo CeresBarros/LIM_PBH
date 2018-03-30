@@ -177,6 +177,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
     print(fire)
     browser()
+    fire = "Wolf Creek"
     firePolys <- eval(parse(text = paste0("sf.obj$", fireNAMES))) == fire
     sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
     
@@ -252,7 +253,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     ## add fire details
     firePerim <- st_intersection(firePerim, sf.fire)
     
-    eventPerim <- st_sfc(eventPerim)
+    eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
     eventPerim <- st_sf(geometry = eventPerim)  
     eventPerim$PatchType <- "eventPerim"
     ## add fire details
