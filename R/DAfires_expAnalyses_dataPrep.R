@@ -56,6 +56,9 @@ names(albertafires2_postfire)[grep("FIRE_CODE", names(albertafires2_postfire))] 
   names(albertafires1_postfire)[grep("FIRE_NUM", names(albertafires1_postfire))] = 
   grep("FIRE_ID", names(saskatchewanfires_postfire), value = TRUE)
 
+names(albertafires2_postfire)[grep("ELEMENT", names(albertafires2_postfire))] = 
+  names(albertafires1_postfire)[grep("SURVIVAL", names(albertafires1_postfire))] = 
+  names(saskatchewanfires_postfire)[grep("CLASS", names(saskatchewanfires_postfire))] = "SEV_CLAS"
 
 ## PRE FIRE DATA
 files = c("albertafires1_prefire", "albertafires2_prefire", "saskatchewanfires_prefire")
@@ -87,7 +90,8 @@ for(x in files) {
 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
 AB1_fireEvents <- Cache(defineFireEvents, 
-                    sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME", buff.dist = 200L, 
+                    sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME",
+                    fireVARS = c("FIRE_ID", "FIRE_YEAR", "SEV_CLAS"), buff.dist = 200L, 
                     PLOT = FALSE, SAVE = TRUE, outputDIR = "analyses/FireEvents", 
                     fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")
@@ -103,12 +107,10 @@ AB1_vegFireEvents <- Cache(st_intersection,
 # AB1_watVegFireInters <- Cache(st_intersection,
 #                               x = AB1_vegFireEvents, y = water_abta[, "FEATURE_TY"],
 #                               userTags = "dataTreat_fireEvents_wVeg_water")
-
 # names(AB1_watVegFireEvents)[which(names(AB1_watVegFireEvents) == "FEATURE_TY")] <- "WATER_TY"
 
 ## extract dataframe only
-AB1_VegFireEvents.df <- AB1_vegFireEvents
-st_geometry(AB1_VegFireEvents.df) <- NULL
+AB1_VegFireEvents.df <- AB1_vegFireEvents[,, drop = TRUE]   ## drops geometries
 
 ## remove columns with NAs only
 NAcols <- sapply(AB1_VegFireEvents.df, FUN = function(x) {
