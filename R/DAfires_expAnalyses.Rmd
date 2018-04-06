@@ -29,7 +29,7 @@ I believe some of the outer matrix patches overlap with the disturbed patches in
 Disturbed patches and outer matrix remnants are v. similar, both mostly dominated by Lodgepole pine (Pl). Inner matrix patches never have Lodgepole pine as a dominant species, usually being dominated by Trembling aspen (Aw) or White spruce (Sw)
 
 ```{r histogram1, echo = FALSE}
-# dev()
+dev()
 ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$SP1),], aes(x = SP1)) +
   geom_histogram(stat = "count") +
   facet_wrap(~ PatchType)

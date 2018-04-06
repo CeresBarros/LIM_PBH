@@ -71,14 +71,14 @@ for(x in files) {
 }
 
 ## WATER DATA
-files = c("water-abta", "water-sask")
-folder = "data/fires_Dave/Projected_renamed"
-
-for(x in files) {
-  eval(parse(text = paste0(
-    sub("-", "_", x), " <- st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
-  )))
-}
+# files = c("water-abta", "water-sask")
+# folder = "data/fires_Dave/Projected_renamed"
+# 
+# for(x in files) {
+#   eval(parse(text = paste0(
+#     sub("-", "_", x), " <- st_read(file.path(folder", ", paste0('", x,"', '.shp')))"
+#   )))
+# }
 
 
 ## DEFINE FIRE EVENTS ----------------------------------------
@@ -89,10 +89,12 @@ for(x in files) {
 #                    cacheRepo = getPaths()$cachePath, userTags = "fireData")
 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
+rm(albertafires2_postfire, albertafires2_prefire, saskatchewanfires_postfire, saskatchewanfires_prefire)
+gc(reset = TRUE)
 AB1_fireEvents <- Cache(defineFireEvents, 
                     sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME",
                     fireVARS = c("FIRE_ID", "FIRE_YEAR", "SEV_CLAS"), buff.dist = 200L, 
-                    PLOT = FALSE, SAVE = TRUE, outputDIR = "analyses/FireEvents", 
+                    PLOT = FALSE, SAVE = FALSE, outputDIR = "analyses/FireEvents", 
                     fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")
 

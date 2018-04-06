@@ -175,9 +175,8 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
   cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
   
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
-    print(fire)
-    browser()
-    fire = "Wolf Creek"
+    print(as.character(fire))
+    
     firePolys <- eval(parse(text = paste0("sf.obj$", fireNAMES))) == fire
     sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
     
@@ -250,23 +249,24 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     firePerim <- st_sfc(firePerim) 
     firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
     firePerim$PatchType <- "disturbedPatch"
-    ## add fire details
-    firePerim <- st_intersection(firePerim, sf.fire)
+    ## add fire details - intersection because firePerim is entirely within sf.fire
+    firePerim <- st_join(firePerim, sf.fire, left = FALSE)
     
     eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
     eventPerim <- st_sf(geometry = eventPerim)  
     eventPerim$PatchType <- "eventPerim"
     ## add fire details
-    eventPerim <- st_intersection(eventPerim, sf.fire)
+    eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
     
     outMatrixRemn <- st_sfc(outMatrixRemn)
     outMatrixRemn <- st_sf(geometry = outMatrixRemn) 
     outMatrixRemn$PatchType <- "outMatrixRemn"
-    
+
     inMatrixRemn2 <- st_sfc(inMatrixRemn2)
     inMatrixRemn2 <- st_sf(geometry = inMatrixRemn2) 
     inMatrixRemn2$PatchType <- "inMatrixRemn"
-    
+
+    # add fire details
     temp.df <- firePerim[, !names(firePerim) %in% names(outMatrixRemn), drop = TRUE]
     temp.df$SEV_CLAS <- NA
     temp.df <- temp.df[!duplicated(temp.df),]
@@ -285,8 +285,14 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
   if(PLOT) plot(fireEvent.all, key.pos = 1)
   
   ## SAVE AS SHAPEFILE
-  if(!dir.exists(outputDIR)) dir.create(outputDIR, recursive = TRUE)
-  if(SAVE) st_write(fireEvent.all, file.path(outputDIR, paste0(fileNAME, ".shp")), delete_layer = overwrite)
+  if(SAVE) {
+    ## clean ws before saving
+    rm(fireEvent.ls, sf.obj); gc(reset = TRUE)
+    
+    if(!dir.exists(outputDIR)) dir.create(outputDIR, recursive = TRUE)
+    
+    st_write(fireEvent.all, file.path(outputDIR, paste0(fileNAME, ".shp")), delete_layer = overwrite)
+  }
   
   return(fireEvent.all)
 }
