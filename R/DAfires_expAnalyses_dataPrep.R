@@ -93,10 +93,14 @@ rm(albertafires2_postfire, albertafires2_prefire, saskatchewanfires_postfire, sa
 gc(reset = TRUE)
 AB1_fireEvents <- Cache(defineFireEvents, 
                     sf.obj = albertafires1_postfire, fireNAMES = "FIRE_NAME",
-                    fireVARS = c("FIRE_ID", "FIRE_YEAR", "SEV_CLAS"), buff.dist = 200L, 
+                    # fireVARS = c("FIRE_ID", "FIRE_YEAR", "SEV_CLAS"),
+                    buff.dist = 200L, 
                     PLOT = FALSE, SAVE = FALSE, outputDIR = "analyses/FireEvents", 
                     fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")
+
+AB1_fireEvents <- st_join(AB1_fireEvents, albertafires1_postfire, left = FALSE) 
+
 
 ## JOIN WATER, VEGETATION AND FIRE EVENTS --------------------
 

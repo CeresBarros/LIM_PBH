@@ -143,13 +143,14 @@ outerBuffer <- function(x) {
 
 ## sf.obj is a Simple Features object from sf package
 ## fireNAMES should be a column/attribute with fire ID/names
+## fireVARS can be NULL, or a vector of variable names/indices to retain
 ## crsProj is a string of the projection to use. If NULL (default) will use the same projection as sf.obj, otherwise sf.obj will be reprojected
 ## buff.dist if the buffer distance to define fire events
 ## PLOT, SAVE and overwrite determine if plotting, saving and overwriting should be done
 ## outputDIR and fileNAME define the directory and fileNAME to save the fire events shapefile (".shp" will be added to the name string),
 ## outputDIR will be created if non-existent
 
-defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
+defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
   require(sf); require(dplyr)
   
@@ -157,7 +158,6 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
   if(any(class(sf.obj) != c("sf", "data.frame"))) stop ("sf.obj must be an sf object")
   if(is.null(buff.dist)) stop("Define a buffer distance")
   if(is.null(fireNAMES)) stop("Provide the name of the fire ID variable")
-  if(is.null(fireVARS)) stop("Provide a vector of fire variables of interest (indices or variable names)")
   if(SAVE & is.null(outputDIR)) stop("SAVE is TRUE, but output folder is not defined")
   if(SAVE & is.null(fileNAME)) stop("SAVE is TRUE, but file name prefix is not defined")
   
@@ -169,16 +169,23 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     sf.obj <- st_transform(sf.obj, crs = crsProj)
   }
   
+  ## Get vector of fire names
   fire.ls <- unique(eval(parse(text = paste0("sf.obj$", fireNAMES))))
+  
   ## CHECK FIRE VARIABLES
   if(is.numeric(fireVARS)) fireVARS <- names(sf.obj)[fireVARS]
-  cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
   
+  if(!is.null(fireVARS)) cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
+  
+  ## CALCULATE FIRE EVENTS
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
     print(as.character(fire))
     
     firePolys <- eval(parse(text = paste0("sf.obj$", fireNAMES))) == fire
-    sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
+
+    if(is.null(fireVARS)) {
+      sf.fire <- sf.obj[firePolys, c(fireNAMES)]
+    } else sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
     
     ## CALCULATE FIRE AND EVENT PERIMETERS
     firePerim <- st_union(sf.fire$geometry)
@@ -225,7 +232,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     } else {
       remnHoleInters <- if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
         rep(FALSE, length(allRemnants[[1]]))
-        } else {
+      } else {
         rep(FALSE, length(allRemnants[1]))
       }
     }
@@ -249,33 +256,41 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     firePerim <- st_sfc(firePerim) 
     firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
     firePerim$PatchType <- "disturbedPatch"
-    ## add fire details - intersection because firePerim is entirely within sf.fire
-    firePerim <- st_join(firePerim, sf.fire, left = FALSE)
     
     eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
     eventPerim <- st_sf(geometry = eventPerim)  
     eventPerim$PatchType <- "eventPerim"
-    ## add fire details
-    eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
     
     outMatrixRemn <- st_sfc(outMatrixRemn)
     outMatrixRemn <- st_sf(geometry = outMatrixRemn) 
     outMatrixRemn$PatchType <- "outMatrixRemn"
-
+    
     inMatrixRemn2 <- st_sfc(inMatrixRemn2)
     inMatrixRemn2 <- st_sf(geometry = inMatrixRemn2) 
     inMatrixRemn2$PatchType <- "inMatrixRemn"
-
-    # add fire details
-    temp.df <- firePerim[, !names(firePerim) %in% names(outMatrixRemn), drop = TRUE]
-    temp.df$SEV_CLAS <- NA
-    temp.df <- temp.df[!duplicated(temp.df),]
     
-    outMatrixRemn <- merge(outMatrixRemn, temp.df)
-    inMatrixRemn2 <- merge(inMatrixRemn2, temp.df)
-    
-    ## COMBINE INTO ONE OBJECT
-    fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
+    ## add fire details
+    if(!is.null(fireVARS)) {
+      firePerim <- st_join(firePerim, sf.fire, left = FALSE)     ## intersection because firePerim is entirely within sf.fire
+      eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
+      temp.df <- firePerim[, !names(firePerim) %in% names(outMatrixRemn), drop = TRUE]
+      
+      if("SEV_CLASS" %in% fireVARS) temp.df$SEV_CLAS <- NA
+      
+      temp.df <- temp.df[!duplicated(temp.df),]
+      
+      outMatrixRemn <- merge(outMatrixRemn, temp.df)
+      inMatrixRemn2 <- merge(inMatrixRemn2, temp.df)
+      
+      ## COMBINE INTO ONE OBJECT
+      fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
+    } else {
+      ## COMBINE INTO ONE OBJECT
+      fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
+      
+      ## ADD FIRE NAME
+      eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire"))) 
+    }
     
     return(fireEvent)
   })
@@ -290,7 +305,6 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL,crsProj =
     rm(fireEvent.ls, sf.obj); gc(reset = TRUE)
     
     if(!dir.exists(outputDIR)) dir.create(outputDIR, recursive = TRUE)
-    
     st_write(fireEvent.all, file.path(outputDIR, paste0(fileNAME, ".shp")), delete_layer = overwrite)
   }
   
