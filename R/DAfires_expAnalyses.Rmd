@@ -31,7 +31,7 @@ Disturbed patches and outer matrix remnants are v. similar, both mostly dominate
 ```{r histogram1, echo = FALSE}
 dev()
 ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$SP1),], aes(x = SP1)) +
-  geom_histogram(stat = "count") +
+  geom_histogram(aes(y =  ..count../sum(..count..)), stat = "count") +
   facet_wrap(~ PatchType)
 
 ```
@@ -41,7 +41,7 @@ Disturbed patches and outer matrix remnants are v. similar, with their secondary
 
 ```{r histogram2, echo = FALSE}
 ggplot(AB1_VegFireEvents.df[!is.na(AB1_VegFireEvents.df$SP2),], aes(x = SP2)) +
-  geom_histogram(stat = "count") +
+  geom_histogram(aes(y =  ..count../sum(..count..)), stat = "count") +
   facet_wrap(~ PatchType)
 
 ```

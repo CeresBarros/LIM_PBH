@@ -99,13 +99,25 @@ AB1_fireEvents <- Cache(defineFireEvents,
                     fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents")
 
-AB1_fireEventsSev <- Cache(st_join(AB1_fireEvents, albertafires1_postfire[, "SEV_CLAS"]))
-
+## add severity (doing it in defineFireEvents seems to produce an overly large polygon)
+AB1_distPatchSev <- Cache(st_intersection, 
+                          x = AB1_fireEvents[AB1_fireEvents$PatchType == "disturbedPatch",], 
+                          y = albertafires1_postfire[, "SEV_CLAS"], userTags = "dataTreat_fireEvents")
+AB1_fireEvents[, setdiff(names(AB1_distPatchSev), names(AB1_fireEvents))] <- NA
+AB1_fireEventsSev <- rbind(AB1_fireEvents[AB1_fireEvents$PatchType != "disturbedPatch",], AB1_distPatchSev)
 
 ## JOIN WATER, VEGETATION AND FIRE EVENTS --------------------
 AB1_vegFireEvents <- Cache(st_intersection, 
-                           x = albertafires1_prefire, y = AB1_fireEvents,
+                           x = albertafires1_prefire, y = AB1_fireEventsSev,
                            userTags = "dataTreat_fireEvents_wVeg")
+
+## save - not working, R thinks this is sfc instead of sf.
+st_write(st_as_sf(AB1_vegFireEvents), 
+         dsn = "analyses/FireEvents/Andison_AB1_fireEventsVegetation.shp",
+         delete_layer = TRUE)  ##  not working
+raster::shapefile(as_Spatial(st_as_sf(AB1_vegFireEvents)), 
+                  filename = "analyses/FireEvents/Andison_AB1_fireEventsVegetation.shp", 
+                  overwrite = TRUE)
 
 ## not sure what to do about water yet... 
 ## perhaps just remove these areas with st difference before intersecting with veg?
@@ -115,7 +127,7 @@ AB1_vegFireEvents <- Cache(st_intersection,
 # names(AB1_watVegFireEvents)[which(names(AB1_watVegFireEvents) == "FEATURE_TY")] <- "WATER_TY"
 
 ## extract dataframe only
-AB1_VegFireEvents.df <- AB1_vegFireEvents[,, drop = TRUE]   ## drops geometries
+AB1_VegFireEvents.df <- as.data.table(AB1_vegFireEvents[,, drop = TRUE])   ## drops geometries
 
 ## remove columns with NAs only
 NAcols <- sapply(AB1_VegFireEvents.df, FUN = function(x) {
@@ -123,6 +135,11 @@ NAcols <- sapply(AB1_VegFireEvents.df, FUN = function(x) {
 })
 
 AB1_VegFireEvents.df <- AB1_VegFireEvents.df[, !NAcols]
+
+
+## CALCULATE RELATIVE OCCURRENCES OF VEGETATION ATTRIBUTES PER PATCH/FIRE EVENT
+### HERE
+
 
 
 
