@@ -141,7 +141,7 @@ fireInit <- function(sim) {
     sim$vegetationRas <- raster::raster(file.name)
   }
   
-   if(is.null(studyArea)) {
+   if(is.null(sim$studyArea)) {
      sim$studyArea <- randomPolygon(SpatialPoints(cbind(-110, 59)), 1e4)
      sim$studyArea <- sp::spTransform(x = studyArea, CRSobj = crs(sim$vegetationRas))
    }

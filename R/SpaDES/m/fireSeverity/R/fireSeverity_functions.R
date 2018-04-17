@@ -11,13 +11,13 @@ calculateSeverity <- function(x) {
   sev <- NA
   
   if(!all(is.na(x))) {
-    ## throw error if vegetation changes without burning - this should not happen for now
-    if(x[1] != x[2] & is.na(x[3])) {
-      stop("Vegetation changes wihtout fire occurrence")
-    }
+    ## throw error if vegetation changes without burning - this now happens with vegetation succession
+    # if(x[1] != x[2] & is.na(x[3])) {
+    #   stop("Vegetation changes without fire occurrence")
+    # }
     
-    ## fire severity is > 0 if there was change
-    if(x[1] != x[2]) {
+    ## fire severity is > 0 if there was change in burnt pixels
+    if(x[1] != x[2] & !is.na(x[3])) {
       if(grepl("3|4|5", x[1])){
         ## highest severity when forests burn
         sev <- 3
@@ -39,3 +39,4 @@ calculateSeverity <- function(x) {
   
   return(sev)
 }
+

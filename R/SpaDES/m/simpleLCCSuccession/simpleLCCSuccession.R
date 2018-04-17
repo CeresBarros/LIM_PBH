@@ -40,6 +40,8 @@ doEvent.simpleLCCSuccession = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
+      ## initialise
+      sim <- successionInit(sim)
       # schedule future event(s)
       sim <- scheduleEvent(sim, start(sim) + 1, "simpleLCCSuccession", "succession", eventPriority = 2)
     },
@@ -58,6 +60,25 @@ doEvent.simpleLCCSuccession = function(sim, eventTime, eventType) {
 
 ## Initialisation
 successionInit <- function(sim) {
+  ## make climate raster
+  if(is.null(sim$climate)) {
+    ## make a raster template from vegetation - to change later
+    if(G(sim)$.useCache) {
+      sim$climate <- sim$vegetation[[start(sim)]]
+      sim$climate <- Cache(SpaDES.tools::gaussMap, x = sim$climate)
+      
+      ## rescale 0 to 1
+      sim$climate[] <- (sim$climate[] - min(sim$climate[], na.rm = TRUE)) / (max(sim$climate[], na.rm = TRUE) - min(sim$climate[], na.rm = TRUE))
+      
+    } else {
+      sim$climate <- sim$vegetation[[start(sim)]]
+      sim$climate <- SpaDES.tools::gaussMap(x = sim$climate)
+      
+      ## rescale 0 to 1
+      sim$climate[] <- (sim$climate[] - min(sim$climate[], na.rm = TRUE)) / (max(sim$climate[], na.rm = TRUE) - min(sim$climate[], na.rm = TRUE))
+    }
+  }
+    
   return(invisible(sim))
 }
 
@@ -65,14 +86,20 @@ successionInit <- function(sim) {
 ## to really useCache, I will need to cache the fire rasters - these have a random component now.
 do.VegetationTransit <- function(sim) {
   if(G(sim)$.useCache) {
-    sim$vegetation[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, 
-                                                       FUN = calc, 
-                                                       x = stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
-                                                       fun = vegTransition)
+    # sim$vegetation[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, 
+    #                                                    FUN = calc, 
+    #                                                    x = stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
+    #                                                    fun = vegTransition)
+    sim$vegetation[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath,
+                                                       FUN = calc,
+                                                       x = stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]], sim$climate),
+                                                       fun = vegTransition2)
   } else {
     ## note: transitionMatrix is being used by vegTransition 
-    sim$vegetation[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
-                                        fun = vegTransition)
+    # sim$vegetation[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
+                                        # fun = vegTransition)
+    sim$vegetation[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]], sim$climate),
+                                        fun = vegTransition2)
   }
   
   return(invisible(sim))
@@ -82,14 +109,25 @@ do.VegetationTransit <- function(sim) {
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-  if(is.null(sim$transitionMatrix)){
-    sim$transitionMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
+  if(is.null(sim$fireTransitMatrix)){
+    sim$fireTransitMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
                                      rep(c(0, 1, 0, 0, 0, 0), 2),
                                      c(0, 0, 0, 1, 0, 0),
                                      c(0, 0, 1, 0, 0, 0),
                                      c(0, 0, 0, 0, 1, 0)),
                                      nrow = 6, ncol = 6, byrow = TRUE,
                                      dimnames = list(paste0("hab", as.character(0:5)), paste0("hab", as.character(0:5))))
+  }
+  
+  if(is.null(sim$vegTransitMatrix)){
+    sim$vegTransitMatrix <- matrix(c(c(1, 0, 0, 0, 0, 0),
+                                     c(0, 0, 1, 0, 0, 0),
+                                     c(0, 0, 0, 0, 1, 0),
+                                     c(0, 0, 0, 1, 0, 0),
+                                     c(0, 0, 0, 1, 0, 0),
+                                     c(0, 0, 0, 0, 0, 1)),
+                                   nrow = 6, ncol = 6, byrow = TRUE,
+                                   dimnames = list(paste0("hab", as.character(0:5)), paste0("hab", as.character(0:5))))
   }
   return(invisible(sim))
 }

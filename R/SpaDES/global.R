@@ -140,7 +140,7 @@ events(LBMR_testSim)
 
 dev()
 clearPlot()
-LBMR_testSim <- Cache(spades, LBMR_testSim, cache = FALSE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSim <- Cache(spades, LBMR_testSim, cache = FALSE, debug = FALSE)   ## debug = TRUE activates automatic browsing when errors occur
 events(LBMR_testSim)
 
 

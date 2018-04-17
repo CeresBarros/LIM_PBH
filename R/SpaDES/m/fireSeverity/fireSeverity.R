@@ -22,7 +22,9 @@ defineModule(sim, list(
     expectsInput(objectName = "vegetation", objectClass = "list",
                  desc = "List of vegetation states rasters, with simplified classes"),
     expectsInput(objectName = "spreadRas", objectClass = "list",
-                 desc = "List of rasters of fire spread")
+                 desc = "List of rasters of fire spread"),
+    expectsInput(objectName = "climate", objectClass = "RasterLayes",
+                 desc = "Climate raster; defaults to a random gaussian map")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "severity_ras", objectClass = "RasterLayer",
@@ -85,7 +87,9 @@ do.Severity <- function(sim){
                                                          x = stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask),
                                                          fun = calculateSeverity)
   } else {
-    sim$severity_ras[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask), fun = calculateSeverity)
+    sim$severity_ras[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask), 
+                                          fun = calculateSeverity)
+    
   }
   
   return(invisible(sim))
@@ -105,5 +109,3 @@ fire_STSMPlot <- function(sim) {
   
   return(invisible(sim))
 }
-
-

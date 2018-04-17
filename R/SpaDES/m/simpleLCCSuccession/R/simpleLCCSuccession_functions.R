@@ -16,10 +16,36 @@
 
 vegTransition <- function(x) {
   temp <- x[1]
+  ## if both have values, then its a burnt veg. pixel
+  ## climate (x[3]) increases the probability of burning the vegetation
   if(!is.na(x[1]) & !is.na(x[2])) {
-    temp <- names(which(transitionMatrix[paste0("hab", temp), ] > runif(1)))
+    temp <- names(which(fireTransitMatrix[paste0("hab", temp), ] > runif(1)))
     ## convert to numeric
     temp <- as.numeric(sub("hab", "", temp))
   }
+  
+  return(temp)
+}
+
+vegTransition2 <- function(x) {
+  temp <- x[1]
+  
+  ## if both have values, then its a burnt veg. pixel
+  ## climate (x[3]) increases the probability of burning the vegetation
+  if(!is.na(x[1]) & !is.na(x[2])) {
+    temp <- names(which(fireTransitMatrix[paste0("hab", temp), ] * x[3] > runif(1)))
+    if(length(temp) > 0) {
+      ## convert to numeric
+      temp <- as.numeric(sub("hab", "", temp))
+    } else {
+      temp <- x[1]
+    }
+  } else if(!is.na(x[1])) {
+    ## no fire - vegetation succession procedes
+      temp <- names(which(vegTransitMatrix[paste0("hab", temp), ] > runif(1)))
+      ## convert to numeric
+      temp <- as.numeric(sub("hab", "", temp))
+    }
+  
   return(temp)
 }
