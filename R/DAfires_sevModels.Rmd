@@ -1,0 +1,34 @@
+---
+title: "Dave Andison's fire data severity models"
+author: "Ceres Barros"
+date: "March 28, 2018"
+output: html_document
+---
+
+```{r, include = FALSE}
+knitr::opts_knit$set(root.dir = getwd())
+library(reshape2)
+```
+
+
+```{r setup, echo=FALSE}
+## source dataprep:
+source("R/DAfires_expAnalyses_dataPrep.R")
+
+## subset variables of interest:
+vars <- which(names(AB1_vegFireEvents.mdt) %in% 
+                c(grep("MOIS|DENS|HEIG|TPR|ORIG|NFL|NAT_N|STRUC", 
+                       names(AB1_vegFireEvents.mdt), value = TRUE),
+                  grep("^SP", names(AB1_vegFireEvents.mdt), value = TRUE),
+                  grep("^USP", names(AB1_vegFireEvents.mdt), value = TRUE),
+                  names(AB1_fireEvents), "SEV_CONT",
+                  "WATER_TY"))
+AB1_vegFireEvents.mdt <- AB1_vegFireEvents.mdt[, vars, with = FALSE]
+```
+
+## Logit regression - vegetation only
+```{r setup, echo=FALSE}
+
+
+
+```

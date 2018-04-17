@@ -4,6 +4,9 @@
 ## Dataprep for Exploratory analysis
 ## ---------------------------------
 
+## this script should be sourced
+
+rm(list = ls()); gc(reset = TRUE)
 
 ## requires
 library(SpaDES); library(sf); library(ggplot2); library(data.table); library(dplyr)
@@ -18,9 +21,20 @@ setPaths(cachePath = file.path("R/SpaDES/cache"),
 
 ## LOAD DATA ---------------------------------------
 
-## POST FIRE DATA
+## GET FIRE DATA
+## THIS IS NOT WORKING:
+# dataDIR <- "data/fires_Dave" 
+# DA_fires <- prepInputs(targetFile = file.path(dataDIR, "albertafires1_postfire.shp"),
+#                        url = "https://drive.google.com/file/d/1wGCqI_X1t-PDM5eO6JWQW9hpNv_8zlum/view?usp=sharing",
+#                        archive = "Projected_renamed.zip",
+#                        alsoExtract = file.path(dataDIR, c("albertafires1_postfire.", "albertafires2_postfire.", 
+#                                                           "albertafires1_pretfire.", "albertafires2_prefire.",
+#                                                           "saskatchewanfires_postfire.","saskatchewanfires_prefire.")),
+#                        fun = "st_read", pkg = "sf",
+#                        destinationPath = dataDIR)
+
 files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire")
-folder = "data/fires_Dave/Projected_renamed"
+folder = "~/../OneDrive/Documents/LandscapesInMotion/data/fires_Dave/Projected_renamed"
 
 for(x in files) {
   eval(parse(text = paste0(
@@ -62,7 +76,7 @@ names(albertafires2_postfire)[grep("ELEMENT", names(albertafires2_postfire))] =
 
 ## PRE FIRE DATA
 files = c("albertafires1_prefire", "albertafires2_prefire", "saskatchewanfires_prefire")
-folder = "data/fires_Dave/Projected_renamed"
+folder = "~/../OneDrive/Documents/LandscapesInMotion/data/fires_Dave/Projected_renamed"
 
 for(x in files) {
   eval(parse(text = paste0(
@@ -100,11 +114,14 @@ AB1_fireEvents <- Cache(defineFireEvents,
                     cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents",
                     omitArgs = c("PLOT", "SAVE", "outputDIR", "fileNAME", "overwrite"))
 
-## add severity (doing it in defineFireEvents seems to produce an overly large polygon)
+## ADD SEVERITY
+## (doing it in defineFireEvents seems to produce an overly large polygon)
 AB1_distPatchSev <- Cache(st_intersection, 
                           x = AB1_fireEvents[AB1_fireEvents$PatchType == "disturbedPatch",], 
                           y = albertafires1_postfire[, "SEV_CLAS"], userTags = "dataTreat_fireEvents")
-AB1_fireEvents[, setdiff(names(AB1_distPatchSev), names(AB1_fireEvents))] <- NA ## make NA columns for binding
+
+## make NA columns for binding
+AB1_fireEvents[, setdiff(names(AB1_distPatchSev), names(AB1_fireEvents))] <- NA
 AB1_fireEventsSev <- rbind(AB1_fireEvents[AB1_fireEvents$PatchType != "disturbedPatch",], AB1_distPatchSev)
 
 ## JOIN WATER, VEGETATION AND FIRE EVENTS --------------------
@@ -127,25 +144,102 @@ AB1_vegFireEvents <- Cache(st_intersection,
 #                               userTags = "dataTreat_fireEvents_wVeg_water")
 # names(AB1_watVegFireEvents)[which(names(AB1_watVegFireEvents) == "FEATURE_TY")] <- "WATER_TY"
 
-## extract dataframe only
-AB1_VegFireEvents.dt <- as.data.table(AB1_vegFireEvents[,, drop = TRUE])   ## drops geometries
+## MAKE DATATABLE ----
+## extract DATATABLE only
+AB1_vegFireEvents.dt <- as.data.table(st_set_geometry(AB1_vegFireEvents, NULL))
 
 ## remove columns with NAs only
-NAcols <- sapply(AB1_VegFireEvents.dt, FUN = function(x) {
+NAcols <- sapply(AB1_vegFireEvents.dt, FUN = function(x) {
   return(any(sum(is.na(x)) == length(x)))
 })
 
-AB1_VegFireEvents.dt <- AB1_VegFireEvents.dt[, !NAcols, with = FALSE]
+## remove duplicates
+AB1_vegFireEvents.dt <- AB1_vegFireEvents.dt[!duplicated(AB1_vegFireEvents.dt),]
+
+## MAKE SEVERITY CONTINUOUS --------------
+AB1_vegFireEvents.dt[SEV_CLAS == "0-5%", SEV_CONT:= median(c(0,5))]
+AB1_vegFireEvents.dt[SEV_CLAS == "6-24%", SEV_CONT:= median(c(6,24))]
+AB1_vegFireEvents.dt[SEV_CLAS == "25-49%", SEV_CONT:= median(c(25,49))]
+AB1_vegFireEvents.dt[SEV_CLAS == "50-74%", SEV_CONT:= median(c(50,74))]
+AB1_vegFireEvents.dt[SEV_CLAS == "75-99%", SEV_CONT:= median(c(75,99))]
+AB1_vegFireEvents.dt[SEV_CLAS == "100%", SEV_CONT:= 100]
+
+## MELT DATA -------
+id.vars <- grep("SP", names(AB1_vegFireEvents.dt), value = TRUE, invert = TRUE)
+
+dt.ls <- lapply(grep("SP.$", names(AB1_vegFireEvents.dt), value = TRUE), FUN = function(x) {
+  measure.vars <- grep(paste0("^", x), names(AB1_vegFireEvents.dt), value = TRUE)
+  temp <- cbind(AB1_vegFireEvents.dt[, id.vars, with = FALSE], AB1_vegFireEvents.dt[, measure.vars, with = FALSE])
+  temp <- temp[!duplicated(temp),]
+  temp <- temp[!is.na(get(x))]
+  
+  if(dim(temp)[1] != 0) {
+    form <- paste("... ~", measure.vars[1])
+    temp2 <- dcast(temp, formula = as.formula(form), value.var = measure.vars[2], fill = 0)
+    old.names =  setdiff(names(temp2), names(temp))
+    new.names = paste0(measure.vars[1], "_", setdiff(names(temp2), names(temp)))
+    names(temp2)[names(temp2) %in% old.names] <- new.names
+    return(temp2)
+  }
+})
+
+## remove null elements
+dt.ls <- dt.ls[!sapply(dt.ls, is.null)]
+## merge data.tables with Reduce 
+AB1_vegFireEvents.mdt <- as.data.table(Reduce(f = function(x,y) merge(x, y, by = id.vars, all = TRUE), dt.ls))
+
+## Replace NAs in spp percentages by 0s (true NAs are not present anymore form subsetting above)
+SP.vars <- grep("SP", names(AB1_vegFireEvents.mdt), value = TRUE)
+for (j in SP.vars) {
+  AB1_vegFireEvents.mdt[is.na(get(j)), (j):=0]
+}
 
 
-## CALCULATE RELATIVE OCCURRENCES OF VEGETATION ATTRIBUTES PER PATCH/FIRE EVENT
-sums <- AB1_VegFireEvents.dt %>% group_by(FIRE_NAME, PatchType, SP1) %>%
-summarise(Count = n())
-totals <- AB1_VegFireEvents.dt %>% group_by(FIRE_NAME, PatchType) %>%
-  summarise(Count = n())
+## SUM SPP COVER ACROSS DOMINANCE STATUS -------
+## cover classes were divieded by 10 so that 100% is = 1 (not 10)
 
-lapply(unique(sums$PatchType))
+## Canopy
+SP.vars <- grep("^SP", names(AB1_vegFireEvents.mdt), value = TRUE)
+SP.names <- unique(sub(".*_", "", SP.vars))
 
+SP.cover <- do.call(cbind, lapply(SP.names, FUN = function(x) {
+  cols <-  grep(x, SP.vars, value = TRUE)
+  temp <- data.table(x = rowSums(AB1_vegFireEvents.mdt[, cols, with = FALSE])/10)
+  names(temp) = paste0("SP_", x)
+  return(temp)
+}))
 
+#Understory
+USP.vars <- grep("USP", names(AB1_vegFireEvents.mdt), value = TRUE)
+USP.names <- unique(sub(".*_", "", USP.vars))
 
+USP.cover <- do.call(cbind, lapply(USP.names, FUN = function(x) {
+  cols <-  grep(x, USP.vars, value = TRUE)
+  temp <- data.table(x = rowSums(AB1_vegFireEvents.mdt[, cols, with = FALSE])/10)
+  names(temp) = paste0("USP_", x)
+  return(temp)
+}))
+
+## Merge and add remaining variables
+AB1_vegFireEvents.mdt <- cbind(AB1_vegFireEvents.mdt[, id.vars, with = FALSE], cbind(SP.cover, USP.cover))
+
+## CLEAN WS 
+rm(dt.ls, id.vars, j, NAcols, SP.vars, SP.names,
+   USP.vars, USP.names, SP.cover, USP.cover)
+
+## CALCULATE RELATIVE OCCURRENCES OF VEGETATION ATTRIBUTES PER PATCH/FIRE EVENT -----------
+# lapply(grep("SP", names(AB1_vegFireEvents.dt), value = TRUE), FUN = function(x) {
+#   browser()
+#   temp.dt <- AB1_vegFireEvents.dt %>%
+#     group_by_at(c("FIRE_NAME", "PatchType", x)) %>% 
+#     summarise(Count = n()) %>%
+#     group_by(., FIRE_NAME, PatchType) %>%
+#     mutate(.data = ., totalCount = sum(Count)) %>%
+#     mutate(.data = ., Freq = Count/totalCount)
+#   
+#   temp.dt <- melt(temp.dt, id.vars = setdiff(names(temp.dt), c(x)), 
+#                   variable.name = "Attribute")
+#   temp.dt
+#   
+# })
 

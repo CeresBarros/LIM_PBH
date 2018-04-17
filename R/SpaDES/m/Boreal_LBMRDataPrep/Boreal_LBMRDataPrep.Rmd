@@ -25,11 +25,17 @@ devtools::install_github("ygc2l/webDatabases") # For fetching KNN layers from PF
 library(magrittr) # for %>% pipe
 library(SpaDES)
 library(raster)
+setPaths(cachePath = file.path("R/SpaDES/cache"),
+         modulePath = file.path("R/SpaDES/m"),
+         inputPath = file.path("R/SpaDES/inputs"),
+         outputPath = file.path("R/SpaDES/outputs"))
+
 cachePath <- file.path("Boreal_LBMRDataPrep", "cache")
 modulePath <- Cache(readline, paste0("Where is the module path? (e.g., ~/module, with no quotes).\n",
                                      "Press Enter to accept the path in getPaths()$modulePath: "),
                     cacheRepo = cachePath)
 if(nchar(modulePath)==0) modulePath <- getPaths()$modulePath
+
 canadaMap <- Cache(getData, 'GADM', country = 'CAN', level = 1,
                    cacheRepo = cachePath, digestPathContent = FALSE) 
 dev()
@@ -46,7 +52,7 @@ Plot(shpStudyRegionFull, addTo = "canadaMap", col = "red")
 inputDir <- file.path(tempdir(), "inputs") %>% checkPath(create = TRUE)
 outputDir <- file.path(tempdir(), "outputs")
 times <- list(start = 0, end = 10)
-modules <- list("Boreal_LBMRDataPrep")
+modules <- list("Boreal_LBMRDataPrep", "LBMR")
 objects <- list("shpStudyRegionFull" = shpStudyRegionFull,
                 "shpStudySubRegion" = shpStudyRegionFull)
 paths <- list(

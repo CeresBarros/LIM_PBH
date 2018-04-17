@@ -5,18 +5,39 @@ date: "March 28, 2018"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r, include = FALSE}
+knitr::opts_knit$set(root.dir = getwd())
+library(factoextra)
+library(reshape2)
+
+```
+
+
+```{r setup, echo=FALSE}
 ## source dataprep:
 source("R/DAfires_expAnalyses_dataPrep.R")
 
-## variables of interest:
-vars <- which(names(AB1_VegFireEvents.dt) %in% 
+## subset variables of interest:
+vars <- which(names(AB1_vegFireEvents.mdt) %in% 
                 c(grep("MOIS|DENS|HEIG|TPR|ORIG|NFL|NAT_N|STRUC", 
-                       names(AB1_VegFireEvents.dt), value = TRUE),
-                  grep("^SP", names(AB1_VegFireEvents.dt), value = TRUE),
-                  grep("^USP", names(AB1_VegFireEvents.dt), value = TRUE),
-                  names(AB1_fireEvents), "WATER_TY"))
-AB1_VegFireEvents.dt <- AB1_VegFireEvents.dt[, vars]
+                       names(AB1_vegFireEvents.mdt), value = TRUE),
+                  grep("^SP", names(AB1_vegFireEvents.mdt), value = TRUE),
+                  grep("^USP", names(AB1_vegFireEvents.mdt), value = TRUE),
+                  names(AB1_fireEvents), "SEV_CONT",
+                  "WATER_TY"))
+AB1_vegFireEvents.mdt <- AB1_vegFireEvents.mdt[, vars, with = FALSE]
+```
+
+
+## COMMUNITY COMPOSITION PCA
+PCA of species percentage cover. `^SP` stands for canopy species in decreasing order of dominance, and `^USP` for understory species (also in decreasing order of dominance).
+Across all fire event patch types
+```{r, echo = FALSE}
+sp.vars <- grep("SP", names(AB1_vegFireEvents.mdt), value = TRUE)
+vegCompPCA <- prcomp(AB1_vegFireEvents.mdt[, sp.vars, with = FALSE])  ## no need for rescaling as variables are all on the sale scale
+
+fviz_screeplot(vegCompPCA, addlabels = TRUE, ylim = c(0, 35))  
+fviz_pca(vegCompPCA, col.var = "red")    ## horseshoe
 
 ```
 
@@ -25,24 +46,21 @@ I believe some of the outer matrix patches overlap with the disturbed patches in
 
 ## Pre-fire conditions in fire event patches
 
-### Dominant species
-Disturbed patches and outer matrix remnants are v. similar, both mostly dominated by Lodgepole pine (Pl). Inner matrix patches never have Lodgepole pine as a dominant species, usually being dominated by Trembling aspen (Aw) or White spruce (Sw)
-
-```{r histogram1, echo = FALSE}
+```{r canopy_patch, echo = FALSE}
 dev()
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$SP1),], aes(x = SP1)) +
-  geom_histogram(aes(y =  ..count../sum(..count..)), stat = "count") +
-  facet_wrap(~ PatchType)
-
+plot.table <- melt(AB1_vegFireEvents.mdt,
+                   measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
+ggplot(plot.table[grep("^SP", SPP),], aes(x = as.factor(PatchType), y = Cover, fill = SPP)) +
+  geom_boxplot()
 ```
 
-### Sub-dominant species
-Disturbed patches and outer matrix remnants are v. similar, with their secondary dominant species being most often White spruce (Sw). Inner matrix patches seem to be a sub sample of the others.
-
-```{r histogram2, echo = FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$SP2),], aes(x = SP2)) +
-  geom_histogram(aes(y =  ..count../sum(..count..)), stat = "count") +
-  facet_wrap(~ PatchType)
+### Understory species
+Probably can't look at understory species by themselves as the data is mostly composed of 0s.
+```{r undestory_patch, echo = FALSE}
+plot.table <- melt(AB1_vegFireEvents.mdt,
+                   measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
+ggplot(plot.table[grep("^USP", SPP),], aes(x = as.factor(PatchType), y = Cover, fill = SPP)) +
+  geom_boxplot()
 
 ```
 
@@ -50,65 +68,155 @@ ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$SP2),], aes(x = SP2)) +
 ### Moisture regime
 No noticeable diferences in either the canopy or understory moisture (UMOIS) regimes
 
-```{r histogram3, echo = FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$MOIST),], aes(x = MOIST)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r moisture_patch, echo = FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$MOIST),], aes(x = as.factor(PatchType), fill = MOIST)) +
+  geom_histogram(stat = "count", position = "dodge") #+ facet_wrap(~ PatchType)
 
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$UMOIS),], aes(x = UMOIS)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UMOIS),], aes(x = as.factor(PatchType), fill = UMOIS)) +
+  geom_histogram(stat = "count", position = "dodge") #+ facet_wrap(~ PatchType)
+
 ```
 
 ### Crown closure class
 Disturbed patches and outer matrix remnants have a qualitatively similar distribution of crown closure classes. Inner matrix remnants seem to have lower crown closure.
 
-```{r pressure, echo=FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$DENSI),], aes(x = DENSI)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r crownclos_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$DENSI),], aes(x = as.factor(PatchType), fill = DENSI)) +
+  geom_histogram(stat = "count", position = "dodge")
+
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UDENS),], aes(x = as.factor(PatchType), fill = UDENS)) +
+  geom_histogram(stat = "count", position = "dodge")
+
+```
+
+### Vegetation Height
+
+```{r crownclos_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$HEIGH),], aes(x = as.factor(PatchType), fill = HEIGH)) +
+  geom_histogram(stat = "count", position = "dodge")
+
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UHEIG),], aes(x = as.factor(PatchType), fill = HEIGH)) +
+  geom_histogram(stat = "count", position = "dodge")
+
 ```
 
 ### Timber productivity rating
 Disturbed patches and outer matrix remnants have a qualitatively similar distribution of timber porductivity classes. Inner matrix remnants seem to be a subsample of the other two.
-```{r pressure, echo=FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$TPR),], aes(x = TPR)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r TPR_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$TPR),], aes(x = as.factor(PatchType), fill = TPR)) +
+  geom_histogram(stat = "count", position = "dodge")
 ```
 
 ### Non forest vegetated land
 Disturbed patches and outer matrix remnants have a qualitatively similar distribution of non forested land classes. Inner matrix remnants seem to be a subsample of the other two.
 
-```{r pressure, echo=FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$NFL),], aes(x = NFL)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r NFL_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$NFL),], aes(x = as.factor(PatchType), fill = NFL)) +
+  geom_histogram(stat = "count", position = "dodge")
 ```
 
 ### Natural-non vegetated land
 Disturbed patches and outer matrix remnants have a qualitatively similar distribution of class frequencies, with quite a few flooded areas (NWF) and rivers (NWR). Inner matix remnants also have several river patches, but no flooded areas. They also seem to have a higher relative proportion of sandy soil (NMS)
 
-```{r pressure, echo=FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$NAT_N),], aes(x = NAT_N)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r NATN_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$NAT_N),], aes(x = as.factor(PatchType), fill = NAT_N)) +
+  geom_histogram(stat = "count", position = "dodge")
 ```
 
 ### Forest age - Origin
 Disturbed patches and outer matrix remnants have identical age distributions (which are not being added up at all). Inner matrix patches seem to be a very biased subsample.
 
-```{r pressure, echo=FALSE}
-ggplot(AB1_VegFireEvents.dt[!is.na(AB1_VegFireEvents.dt$ORIGI),], aes(x = ORIGI)) +
-  geom_histogram(stat = "count") +
-  facet_wrap(~ PatchType)
+```{r orig_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$ORIGI),], aes(x = as.factor(PatchType), y = ORIGI)) +
+  geom_boxplot()
 ```
 
 
+-------------------
 
 ## Pre-fire conditions in fire severity classes
-```{r setup, include=FALSE}
-## intersect with severity patches
-AB1_vegSevFireEvents <- st_intersection(AB1_vegFireEvents[AB1_vegFireEvents$PatchType == "disturbedPatch",], albertafires1_postfire[, "SURVIVAL"])
+### Canopy species
+```{r canopy_patch, echo = FALSE}
+dev()
+plot.table <- melt(AB1_vegFireEvents.mdt,
+                   measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
+ggplot(plot.table[grep("^SP", SPP),], aes(x = as.factor(SEV_CONT), y = Cover, fill = SPP)) +
+  geom_boxplot()
+```
+
+### Understory species
+Probably can't look at understory species by themselves as the data is mostly composed of 0s.
+```{r undestory_patch, echo = FALSE}
+plot.table <- melt(AB1_vegFireEvents.mdt,
+                   measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
+ggplot(plot.table[grep("^USP", SPP),], aes(x = as.factor(SEV_CONT), y = Cover, fill = SPP)) +
+  geom_boxplot()
 
 ```
+
+
+### Moisture regime
+No noticeable diferences in either the canopy or understory moisture (UMOIS) regimes
+
+```{r moisture_patch, echo = FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$MOIST),], aes(x = as.factor(SEV_CONT), fill = MOIST)) +
+  geom_histogram(stat = "count", position = "dodge") #+ facet_wrap(~ SEV_CONT)
+
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UMOIS),], aes(x = as.factor(SEV_CONT), fill = UMOIS)) +
+  geom_histogram(stat = "count", position = "dodge") #+ facet_wrap(~ SEV_CONT)
+
+```
+
+### Crown closure class
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of crown closure classes. Inner matrix remnants seem to have lower crown closure.
+
+```{r crownclos_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$DENSI),], aes(x = as.factor(SEV_CONT), fill = DENSI)) +
+  geom_histogram(stat = "count", position = "dodge")
+
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UDENS),], aes(x = as.factor(SEV_CONT), fill = UDENS)) +
+  geom_histogram(stat = "count", position = "dodge")
+
+```
+
+### Vegetation Height
+
+```{r crownclos_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$HEIGH),], aes(x = as.factor(SEV_CONT), y = HEIGH)) +
+    geom_boxplot()
+
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$UHEIG),], aes(x = as.factor(SEV_CONT), y = UHEIG)) +
+    geom_boxplot()
+```
+
+### Timber productivity rating
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of timber porductivity classes. Inner matrix remnants seem to be a subsample of the other two.
+```{r TPR_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$TPR),], aes(x = as.factor(SEV_CONT), fill = TPR)) +
+  geom_histogram(stat = "count", position = "dodge")
+```
+
+### Non forest vegetated land
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of non forested land classes. Inner matrix remnants seem to be a subsample of the other two.
+
+```{r NFL_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$NFL),], aes(x = as.factor(SEV_CONT), fill = NFL)) +
+  geom_histogram(stat = "count", position = "dodge")
+```
+
+### Natural-non vegetated land
+Disturbed patches and outer matrix remnants have a qualitatively similar distribution of class frequencies, with quite a few flooded areas (NWF) and rivers (NWR). Inner matix remnants also have several river patches, but no flooded areas. They also seem to have a higher relative proportion of sandy soil (NMS)
+
+```{r NATN_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$NAT_N),], aes(x = as.factor(SEV_CONT), fill = NAT_N)) +
+  geom_histogram(stat = "count", position = "dodge")
+```
+
+### Forest age - Origin
+Disturbed patches and outer matrix remnants have identical age distributions (which are not being added up at all). Inner matrix patches seem to be a very biased subsample.
+
+```{r orig_patch, echo=FALSE}
+ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$ORIGI),], aes(x = as.factor(SEV_CONT), y = ORIGI)) +
+  geom_boxplot()
+```
+

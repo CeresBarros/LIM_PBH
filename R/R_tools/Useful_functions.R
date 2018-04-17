@@ -63,42 +63,34 @@ neighboursMatrix = function(mat) {
 ## files is a character string of file names (does not require extension)
 ## folder is the folder where they can be found
 
-loadBindSpatialObjs <- function(files, folder) {
-  require(raster); require(tools)
-  if(all(files %in% file_path_sans_ext(list.files(folder)))) {
-    files2 <- grep(paste(files, collapse = "|"), list.files(folder), value = TRUE)
+loadBindSpatialObjs <- function(files, destinationPath, urls) {
+  require(sf); require(raster); require(tools)
+  
+  ## name URLs with file names
+  if(length(urls) > 1) {
+    names(urls) = files
     
-    ## check if all are shapefiles
-    if(all(paste0(files, ".shp") %in% files2)) {
-      files2 <- files2[files2  %in% paste0(files, ".shp")]
-      
-      ## load files
-      obj.ls <- lapply(files2, FUN = function(f){
-        eval(parse(text = paste0(
-          file_path_sans_ext(f), " <- shapefile('", file.path(folder, f),"')"
-        )))
-        
-        eval(parse(text = paste0("return(", file_path_sans_ext(f), ")")))
+    if(all(grepl(".shp", files))) {
+      obj.ls <- lapply(files, FUN = function(targetFile) {
+        prepInputs(targetFile = file.path(destinationPath, targetFile), 
+                   url = urls[targetFile], destinationPath = destinationPath, 
+                   fun = "shapefile", pkg = "raster")
       })
-      
-      ## check projections match and do the join
       if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
         joined = do.call(bind, obj.ls)
       } else(stop("Files do not share the same projection"))
       
-    } else {
+    }  else {
       ## check if all are raster files
-      if(all(paste0(files, ".grd") %in% files2) |
-         all(paste0(files, ".asc") %in% files2) |
-         all(paste0(files, ".tif") %in% files2) |
-         all(paste0(files, ".img") %in% files2)) {
+      if(all(grepl(".grd", files)) |
+         all(grepl(".asc", files)) |
+         all(grepl(".tif", files)) |
+         all(grepl(".img", files))) {
         
-        obj.ls <- lapply(files2, FUN = function(f){
-          eval(parse(text = paste0(
-            file_path_sans_ext(f), " <- raster('", file.path(folder, f),"')"
-          )))
-          
-          eval(parse(text = paste0("return(", file_path_sans_ext(f), ")")))
+        obj.ls <- lapply(files, FUN = function(targetFile) {
+          prepInputs(targetFile = file.path(destinationPath, targetFile), 
+                     url = urls[targetFile], destinationPath = destinationPath, 
+                     fun = "raster", pkg = "raster")
         })
         
         ## check projections match and do the join
@@ -109,10 +101,39 @@ loadBindSpatialObjs <- function(files, folder) {
       } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
     }
     
-    return(joined)
-  } else(stop(paste("Can't find", 
-                    files[files %in% file_path_sans_ext(list.files(folder))], 
-                    "in", folder)))
+  } else {
+    if(all(grepl(".shp", files))) {
+      obj.ls <- lapply(files, FUN = function(targetFile) {
+        prepInputs(targetFile = file.path(destinationPath, targetFile), 
+                   url = urls, destinationPath = destinationPath, 
+                   fun = "shapefile", pkg = "raster")
+    })
+      if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
+        joined = do.call(bind, obj.ls)
+      } else(stop("Files do not share the same projection"))
+      
+    }  else {
+      ## check if all are raster files
+      if(all(grepl(".grd", files)) |
+         all(grepl(".asc", files)) |
+         all(grepl(".tif", files)) |
+         all(grepl(".img", files))) {
+        
+        obj.ls <- lapply(files, FUN = function(targetFile) {
+          prepInputs(targetFile = file.path(destinationPath, targetFile), 
+                     url = urls, destinationPath = destinationPath, 
+                     fun = "raster", pkg = "raster")
+        })
+        
+        ## check projections match and do the join
+        if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
+          joined = do.call(bind, obj.ls)
+        } else(stop("Files do not share the same projection"))
+        
+      } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
+    }
+  }
+  return(joined)
 }
 
 

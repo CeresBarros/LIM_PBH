@@ -11,3 +11,4 @@ R/SpaDES/outputs/*
 R/SpaDES/m/*/data/*
 R/SpaDES/m/old/*/data/*
 analyses/FireEvents/*
+.httr-oauth

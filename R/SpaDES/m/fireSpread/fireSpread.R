@@ -117,7 +117,7 @@ do.Fire <- function(sim) {
   }
   
   if(is.null(sim$persistProb_mat)){
-    sim$persistProb_mat <- matrix(c(0:5, 0, 0.2, 0.4, 0.9, 0.8, 0.7), byrow = FALSE, nrow = 6, ncol = 2,
+    sim$persistProb_mat <- matrix(c(0:5, 0, 0.1, 0.4, 0.3, 0.6, 0.8), byrow = FALSE, nrow = 6, ncol = 2,
                                  dimnames = list(paste0("hab", as.character(0:5)), c("hab", "persistProb")))
     
   }

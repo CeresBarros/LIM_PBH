@@ -64,25 +64,46 @@ fireInit <- function(sim) {
   
   ## VEGETATION CLASSES ----------------------------------------
   ## Non-burnable:
+  ## LCC2005 ---
   ## wetlands (19), wet tundra (23) cropland/woodlands (26, 27,28,29), lichen dominated (30, 31,32)
   ## rock outcrops (33), recent burns (34), cities (36), water (37, 38), snow/ice (39)
-  non_burn <- c(19, 26, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39)
+  # non_burn <- c(19, 26, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39)
   
   ## Grasslands/open habs:
   ## open habs (17, 18, 20, 21, 22, 24, 25)
-  grass <- c(17, 18, 20, 21, 22, 24, 25)
+  # grass <- c(17, 18, 20, 21, 22, 24, 25)
   
   ## Shrublands, recently burnt forest (within last 10y) = old burns (35), shrublands (16)
-  shrubs <- c(16, 35)
+  # shrubs <- c(16, 35)
   
   ## Deciduous Forest
-  decid_forst <- c(2, 11, 12)
+  # decid_forst <- c(2, 11, 12)
   
   ## Mixed forest
-  mixed_forst <- c(3, 4, 5, 13, 14, 15)
+  # mixed_forst <- c(3, 4, 5, 13, 14, 15)
   
   ## Coniferous forest
-  conif_forst <- c(1, 6, 7, 8, 9, 10)
+  # conif_forst <- c(1, 6, 7, 8, 9, 10)
+  
+  ## LCC2010 --
+  ## wetlands (14), sub-polar grassland/shrubland (11,12) cropland (15), lichen dominated (13)
+  ## barren lands (16), urban (17), water (18), snow/ice (19)
+  non_burn <- c(11, 12, 13, 14, 15, 16, 17, 18, 19)
+  
+  ## Grasslands/open habs:
+  grass <- c(9, 10)
+  
+  ## Shrublands
+  shrubs <- c(7,8)
+  
+  ## Deciduous Forest
+  decid_forst <- c(3, 4, 5)
+  
+  ## Mixed forest
+  mixed_forst <- c(6)
+  
+  ## Coniferous forest
+  conif_forst <- c(1, 2)
   
   ## RECLASSIFY VEGETATION ------------------------------------
   reclass_mat <- as.matrix(data.frame(old = c(non_burn, grass, shrubs, decid_forst, mixed_forst, conif_forst),
