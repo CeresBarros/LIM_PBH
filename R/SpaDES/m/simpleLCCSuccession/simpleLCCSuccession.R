@@ -60,25 +60,6 @@ doEvent.simpleLCCSuccession = function(sim, eventTime, eventType) {
 
 ## Initialisation
 successionInit <- function(sim) {
-  ## make climate raster
-  if(is.null(sim$climate)) {
-    ## make a raster template from vegetation - to change later
-    if(G(sim)$.useCache) {
-      sim$climate <- sim$vegetation[[start(sim)]]
-      sim$climate <- Cache(SpaDES.tools::gaussMap, x = sim$climate)
-      
-      ## rescale 0 to 1
-      sim$climate[] <- (sim$climate[] - min(sim$climate[], na.rm = TRUE)) / (max(sim$climate[], na.rm = TRUE) - min(sim$climate[], na.rm = TRUE))
-      
-    } else {
-      sim$climate <- sim$vegetation[[start(sim)]]
-      sim$climate <- SpaDES.tools::gaussMap(x = sim$climate)
-      
-      ## rescale 0 to 1
-      sim$climate[] <- (sim$climate[] - min(sim$climate[], na.rm = TRUE)) / (max(sim$climate[], na.rm = TRUE) - min(sim$climate[], na.rm = TRUE))
-    }
-  }
-    
   return(invisible(sim))
 }
 

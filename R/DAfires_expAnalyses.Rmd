@@ -26,20 +26,90 @@ vars <- which(names(AB1_vegFireEvents.mdt) %in%
                   names(AB1_fireEvents), "SEV_CONT",
                   "WATER_TY"))
 AB1_vegFireEvents.mdt <- AB1_vegFireEvents.mdt[, vars, with = FALSE]
+
 ```
 
 
-## COMMUNITY COMPOSITION PCA
-PCA of species percentage cover. `^SP` stands for canopy species in decreasing order of dominance, and `^USP` for understory species (also in decreasing order of dominance).
-Across all fire event patch types
+## COMMUNITY COMPOSITION/STRUCTURE PCA
+PCA of species percentage cover and height. `^SP` stands for canopy species in decreasing order of dominance, and `^USP` for understory species (also in decreasing order of dominance).
+Across all fire event patch types. Blue arrow is SEV_CONT, fitted to the ordination *a posteriori*, using `vegan::env.fit`.
+Severity is higher in "plots" dominated by Black spruce (Sb), Lodgepole pine (Pl) and Tamarack (Lt). 
+It seems that canopy and understory levels are highly correlated within species.
 ```{r, echo = FALSE}
-sp.vars <- grep("SP", names(AB1_vegFireEvents.mdt), value = TRUE)
-vegCompPCA <- prcomp(AB1_vegFireEvents.mdt[, sp.vars, with = FALSE])  ## no need for rescaling as variables are all on the sale scale
+pca.vars <- grep("SP|HEIG|SEV_CONT", names(AB1_vegFireEvents.mdt), value = TRUE)
+temp <- na.omit(AB1_vegFireEvents.mdt[, pca.vars, with = FALSE])
 
-fviz_screeplot(vegCompPCA, addlabels = TRUE, ylim = c(0, 35))  
-fviz_pca(vegCompPCA, col.var = "red")    ## horseshoe
+sp.vars <- grep("SP|HEIG", names(AB1_vegFireEvents.mdt), value = TRUE)
+vegCompPCA <- prcomp(temp[, sp.vars, with = FALSE], scale = TRUE)  ## no need for rescaling as variables are all on the sale scale
+env.fit <- vegan::envfit(vegCompPCA, env = temp$SEV_CONT)
+
+# dev()
+biplot(vegCompPCA)
+vegan:::plot.envfit(env.fit)
 
 ```
+
+PCA with canopy and understory levels collapsed for tree species (summed and rescaled to 0-1 - maybe not the best way)
+Results are similar.
+```{r}
+pca.vars <- grep("SP|HEIG|SEV_CONT", names(AB1_vegFireEvents.mdt), value = TRUE)
+temp <- na.omit(AB1_vegFireEvents.mdt[, pca.vars, with = FALSE])
+
+sp.vars <- grep("SP", names(AB1_vegFireEvents.mdt), value = TRUE)
+sp.names <- unique(sub(".*_", "", sp.vars)) 
+
+for(x in sp.names) {
+  ## sum canopy and understory percentages per species
+  temp[, paste(x):= rowSums(.SD), .SDcols = grep(x, names(temp), value = TRUE)]
+}
+## and rescale between 0-1
+temp[, lapply(.SD, rescale01), .SDcols = sp.names]
+
+## run PCA
+pca.vars <- c(sp.names, grep("HEIG|SEV_CONT", names(temp), value = TRUE))
+temp <- temp[, pca.vars, with = FALSE]
+
+vegCompPCA <- prcomp(temp[, -"SEV_CONT", with = FALSE], scale = TRUE)
+env.fit <- vegan::envfit(vegCompPCA, env = temp$SEV_CONT)
+
+fviz_screeplot(vegCompPCA)
+fviz_pca(vegCompPCA, col.var = "red")
+
+biplot(vegCompPCA)
+vegan:::plot.envfit(env.fit)
+
+```
+
+Add moisture - can't see much
+```{r}
+pca.vars <- grep("SP|HEIG|SEV_CONT|MOIST", names(AB1_vegFireEvents.mdt), value = TRUE)
+temp <- na.omit(AB1_vegFireEvents.mdt[, pca.vars, with = FALSE])
+
+sp.vars <- grep("SP", names(AB1_vegFireEvents.mdt), value = TRUE)
+sp.names <- unique(sub(".*_", "", sp.vars)) 
+
+for(x in sp.names) {
+  ## sum canopy and understory percentages per species
+  temp[, paste(x):= rowSums(.SD), .SDcols = grep(x, names(temp), value = TRUE)]
+}
+## and rescale between 0-1
+temp[, lapply(.SD, rescale01), .SDcols = sp.names]
+
+## run PCA
+pca.vars <- c(sp.names, grep("HEIG|SEV_CONT|MOIST", names(temp), value = TRUE))
+temp <- temp[, pca.vars, with = FALSE]
+
+vegCompPCA <- prcomp(temp[, -c("SEV_CONT", "MOIST"), with = FALSE], scale = TRUE)
+env.fit <- vegan::envfit(vegCompPCA, env = temp[, list(SEV_CONT, MOIST)])
+
+fviz_screeplot(vegCompPCA)
+fviz_pca(vegCompPCA, col.var = "red")
+
+biplot(vegCompPCA)
+vegan:::plot.envfit(env.fit)
+
+```
+
 
 ## NOTES
 I believe some of the outer matrix patches overlap with the disturbed patches in terms of vegetation polygons, because they often have similar distributions of vegetation attributes, whose frequencies are not being added up in the event perimeter frequencies.
@@ -48,15 +118,17 @@ I believe some of the outer matrix patches overlap with the disturbed patches in
 
 ```{r canopy_patch, echo = FALSE}
 dev()
+sp.vars <- grep("SP|HEIG", names(AB1_vegFireEvents.mdt), value = TRUE)
 plot.table <- melt(AB1_vegFireEvents.mdt,
                    measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
 ggplot(plot.table[grep("^SP", SPP),], aes(x = as.factor(PatchType), y = Cover, fill = SPP)) +
   geom_boxplot()
 ```
 
-### Understory species
+### understory species
 Probably can't look at understory species by themselves as the data is mostly composed of 0s.
 ```{r undestory_patch, echo = FALSE}
+sp.vars <- grep("SP|HEIG", names(AB1_vegFireEvents.mdt), value = TRUE)
 plot.table <- melt(AB1_vegFireEvents.mdt,
                    measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
 ggplot(plot.table[grep("^USP", SPP),], aes(x = as.factor(PatchType), y = Cover, fill = SPP)) +
@@ -138,15 +210,17 @@ ggplot(AB1_vegFireEvents.mdt[!is.na(AB1_vegFireEvents.mdt$ORIGI),], aes(x = as.f
 ### Canopy species
 ```{r canopy_patch, echo = FALSE}
 dev()
+sp.vars <- grep("SP|HEIG", names(AB1_vegFireEvents.mdt), value = TRUE)
 plot.table <- melt(AB1_vegFireEvents.mdt,
                    measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
 ggplot(plot.table[grep("^SP", SPP),], aes(x = as.factor(SEV_CONT), y = Cover, fill = SPP)) +
   geom_boxplot()
 ```
 
-### Understory species
+### understory species
 Probably can't look at understory species by themselves as the data is mostly composed of 0s.
 ```{r undestory_patch, echo = FALSE}
+sp.vars <- grep("SP|HEIG", names(AB1_vegFireEvents.mdt), value = TRUE)
 plot.table <- melt(AB1_vegFireEvents.mdt,
                    measure.vars = sp.vars, variable.name = "SPP", value.name = "Cover")
 ggplot(plot.table[grep("^USP", SPP),], aes(x = as.factor(SEV_CONT), y = Cover, fill = SPP)) +

@@ -8,6 +8,17 @@
 
 rm(list = ls()); gc(reset = TRUE)
 
+## using - as of April 19th, 2018
+# loading reproducible     0.1.4.9015
+# loading quickPlot        0.1.3.9002
+# loading SpaDES.core      0.1.1.9009
+# loading SpaDES.tools     0.1.1.9005
+# loading SpaDES.addins    0.1.1
+# devtools::install_github("PredictiveEcology/reproducible@development")
+# devtools::install_github("PredictiveEcology/quickPlot@development")
+# devtools::install_github("PredictiveEcology/SpaDES.core@development")
+# devtools::install_github("PredictiveEcology/SpaDES.tools@development")
+
 ## requires
 library(SpaDES); library(sf); library(ggplot2); library(data.table); library(dplyr)
 source("R/R_tools/Useful_functions.R")
@@ -94,13 +105,12 @@ for(x in files) {
 #   )))
 # }
 
-
 ## DEFINE FIRE EVENTS ----------------------------------------
 
 # firesABSK <- Cache(loadBindSpatialObjs, 
 #                    files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire"),
 #                    folder = "data/fires_Dave/Projected_renamed", 
-#                    cacheRepo = getPaths()$cachePath, userTags = "fireData")
+#                    cacheRepo = "analyses/cache", userTags = "fireData")
 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
 rm(albertafires2_postfire, albertafires2_prefire, saskatchewanfires_postfire, saskatchewanfires_prefire)
@@ -111,14 +121,15 @@ AB1_fireEvents <- Cache(defineFireEvents,
                     buff.dist = 200L, 
                     PLOT = FALSE, SAVE = FALSE, outputDIR = "analyses/FireEvents", 
                     fileNAME = "Andison_AB1_fireEvents", overwrite = TRUE,
-                    cacheRepo = getPaths()$cachePath, userTags = "dataTreat_fireEvents",
+                    cacheRepo = "analyses/cache", userTags = "dataTreat_fireEvents",
                     omitArgs = c("PLOT", "SAVE", "outputDIR", "fileNAME", "overwrite"))
 
 ## ADD SEVERITY
 ## (doing it in defineFireEvents seems to produce an overly large polygon)
 AB1_distPatchSev <- Cache(st_intersection, 
                           x = AB1_fireEvents[AB1_fireEvents$PatchType == "disturbedPatch",], 
-                          y = albertafires1_postfire[, "SEV_CLAS"], userTags = "dataTreat_fireEvents")
+                          y = albertafires1_postfire[, "SEV_CLAS"], userTags = "dataTreat_fireEvents",
+                          cacheRepo = "analyses/cache")
 
 ## make NA columns for binding
 AB1_fireEvents[, setdiff(names(AB1_distPatchSev), names(AB1_fireEvents))] <- NA
@@ -127,7 +138,8 @@ AB1_fireEventsSev <- rbind(AB1_fireEvents[AB1_fireEvents$PatchType != "disturbed
 ## JOIN WATER, VEGETATION AND FIRE EVENTS --------------------
 AB1_vegFireEvents <- Cache(st_intersection, 
                            x = albertafires1_prefire, y = AB1_fireEventsSev,
-                           userTags = "dataTreat_fireEvents_wVeg")
+                           userTags = "dataTreat_fireEvents_wVeg",
+                           cacheRepo = "analyses/cache")
 
 ## save - not working, R thinks this is sfc instead of sf.
 # st_write(st_as_sf(AB1_vegFireEvents), 
@@ -141,7 +153,7 @@ AB1_vegFireEvents <- Cache(st_intersection,
 ## perhaps just remove these areas with st difference before intersecting with veg?
 # AB1_watVegFireInters <- Cache(st_intersection,
 #                               x = AB1_vegFireEvents, y = water_abta[, "FEATURE_TY"],
-#                               userTags = "dataTreat_fireEvents_wVeg_water")
+#                               userTags = "dataTreat_fireEvents_wVeg_water", cacheRepo = "analyses/cache")
 # names(AB1_watVegFireEvents)[which(names(AB1_watVegFireEvents) == "FEATURE_TY")] <- "WATER_TY"
 
 ## MAKE DATATABLE ----
@@ -157,12 +169,17 @@ NAcols <- sapply(AB1_vegFireEvents.dt, FUN = function(x) {
 AB1_vegFireEvents.dt <- AB1_vegFireEvents.dt[!duplicated(AB1_vegFireEvents.dt),]
 
 ## MAKE SEVERITY CONTINUOUS --------------
-AB1_vegFireEvents.dt[SEV_CLAS == "0-5%", SEV_CONT:= median(c(0,5))]
-AB1_vegFireEvents.dt[SEV_CLAS == "6-24%", SEV_CONT:= median(c(6,24))]
-AB1_vegFireEvents.dt[SEV_CLAS == "25-49%", SEV_CONT:= median(c(25,49))]
-AB1_vegFireEvents.dt[SEV_CLAS == "50-74%", SEV_CONT:= median(c(50,74))]
-AB1_vegFireEvents.dt[SEV_CLAS == "75-99%", SEV_CONT:= median(c(75,99))]
-AB1_vegFireEvents.dt[SEV_CLAS == "100%", SEV_CONT:= 100]
+
+## alberta 1 classes are in survival %, invert scale
+AB1_vegFireEvents.dt[SEV_CLAS == "100%", SEV_CONT:= 0]
+AB1_vegFireEvents.dt[SEV_CLAS == "75-99%", SEV_CONT:= median(c(1,25))]
+AB1_vegFireEvents.dt[SEV_CLAS == "50-74%", SEV_CONT:= median(c(26,50))]
+AB1_vegFireEvents.dt[SEV_CLAS == "25-49%", SEV_CONT:= median(c(51,75))]
+AB1_vegFireEvents.dt[SEV_CLAS == "6-24%", SEV_CONT:= median(c(76,94))]
+AB1_vegFireEvents.dt[SEV_CLAS == "0-5%", SEV_CONT:= median(c(95,100))]
+
+## attribute 0 severity to remnants
+AB1_vegFireEvents.dt[PatchType %in% c("outMatrixRemn", "inMatrixRemn"), SEV_CONT:= 0]
 
 ## MELT DATA -------
 id.vars <- grep("SP", names(AB1_vegFireEvents.dt), value = TRUE, invert = TRUE)

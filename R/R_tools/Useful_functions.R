@@ -6,6 +6,13 @@
 
 ## this script should be sourced
 
+## STANDARDIZE DATA TO 0-1 RANGE ------------------------
+## x is a numeric vector
+rescale01 <- function(x) {
+  xx <- (x - min(x))/(max(x) - min(x))
+  return(xx)
+}
+
 ## CHECK PROJECTIONS ------------------------------------
 ## obj.list is a list of spatial objects
 checkProjections <- function(obj.list){
@@ -19,14 +26,24 @@ checkProjections <- function(obj.list){
 
 
 ## CROP & MASK TO STUDY AREA ----------------------------
-## study.area and tocrop are "Raster*" or "Spatial*" objects
-cropToStudyArea <- function(study.area, tocrop) {
-  require(raster)
-  temp <- crop(x = tocrop, y = study.area)
+## study.area is a "Raster*" or "Spatial*" object
+## tocrop must be a Raster
+## method is passed to projectRaster - might need to be changed for factors
+cropToStudyArea <- function(study.area, tocrop, method = "bilinear") {
+  temp <- tocrop
+  
+  if(class(study.area) == class(temp) & class(study.area) == "RasterLayer") {
+    temp <- projectRaster(from = temp, to = study.area, crs = crs(study.area), method = method)
+  } else {
+    if(crs(study.area)@projargs != crs(tocrop)@projargs){
+      temp <- projectRaster(tocrop, crs = crs(study.area))
+    }
+  }
+  temp <- crop(x = temp, y = study.area) 
   temp <- mask(x = temp, mask = study.area)
+
   return(temp)
 }
-
 
 ## RASTER TO BINARY MATRIX ------------------------------
 ## converts a vector of values into a binary "presence/absence" matrix
@@ -107,7 +124,7 @@ loadBindSpatialObjs <- function(files, destinationPath, urls) {
         prepInputs(targetFile = file.path(destinationPath, targetFile), 
                    url = urls, destinationPath = destinationPath, 
                    fun = "shapefile", pkg = "raster")
-    })
+      })
       if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
         joined = do.call(bind, obj.ls)
       } else(stop("Files do not share the same projection"))

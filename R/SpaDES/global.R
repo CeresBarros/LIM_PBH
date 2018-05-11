@@ -8,7 +8,12 @@
 ## clean workspace
 rm(list=ls()); gc(reset = TRUE)
 
-## requires as of April 10th 2018
+## requires as of April 17th 2018
+# loading reproducible     0.1.4.9015
+# loading quickPlot        0.1.3.9002
+# loading SpaDES.core      0.1.1.9009
+# loading SpaDES.tools     0.1.1.9005
+# loading SpaDES.addins    0.1.1
 # devtools::install_github("PredictiveEcology/reproducible@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
@@ -36,30 +41,30 @@ foothills <- prepInputs(targetFile = "data/maps/Foothills_study_area.shp",
 foothillsSMALL <- raster::buffer(foothills, width = -0.3)
 
 ## Dave's AB and SK fire datasets - get from GDrive - NOT WORKING YET
-firesABSK <- prepInputs(targetFile = "data/fires_Dave/albertafires1_postfire.shp",
-                        alsoExtract = c("data/fires_Dave/albertafires1_postfire.",
-                                        "data/fires_Dave/albertafires2_prefire.",
-                                        "data/fires_Dave/albertafires2_postfire.",
-                                        "data/fires_Dave/saskatchewanfires_prefire.",
-                                        "data/fires_Dave/saskatchewanfires_postfire."),
-                        url = "https://drive.google.com/file/d/1wGCqI_X1t-PDM5eO6JWQW9hpNv_8zlum/view?usp=sharing",
-                        destinationPath = "data/fires_Dave",
-                        fun = "st_read", pkg = "sf")
-
-firesABSK <- Cache(loadBindSpatialObjs, 
-                   files = c("albertafires1_postfire.shp", "albertafires2_postfire.shp", "saskatchewanfires_postfire.shp"),
-                   destinationPath = "data/fires_Dave", 
-                   urls = "https://drive.google.com/file/d/1wGCqI_X1t-PDM5eO6JWQW9hpNv_8zlum/view?usp=sharing",
-                   cacheRepo = getPaths()$cachePath)
-
-## buffer around the polygons will be the study area
-firesABSK.buf <- Cache(outerBuffer, 
-                       x = firesABSK, 
-                       cacheRepo = getPaths()$cachePath)
-
-raster::crs(firesABSK.buf) = raster::crs(firesABSK)
-dev()
-sp::plot(firesABSK) ; sp::plot(firesABSK.buf, add =TRUE)
+# firesABSK <- prepInputs(targetFile = "data/fires_Dave/albertafires1_postfire.shp",
+#                         alsoExtract = c("data/fires_Dave/albertafires1_postfire.",
+#                                         "data/fires_Dave/albertafires2_prefire.",
+#                                         "data/fires_Dave/albertafires2_postfire.",
+#                                         "data/fires_Dave/saskatchewanfires_prefire.",
+#                                         "data/fires_Dave/saskatchewanfires_postfire."),
+#                         url = "https://drive.google.com/file/d/1wGCqI_X1t-PDM5eO6JWQW9hpNv_8zlum/view?usp=sharing",
+#                         destinationPath = "data/fires_Dave",
+#                         fun = "st_read", pkg = "sf")
+# 
+# firesABSK <- Cache(loadBindSpatialObjs, 
+#                    files = c("albertafires1_postfire.shp", "albertafires2_postfire.shp", "saskatchewanfires_postfire.shp"),
+#                    destinationPath = "data/fires_Dave", 
+#                    urls = "https://drive.google.com/file/d/1wGCqI_X1t-PDM5eO6JWQW9hpNv_8zlum/view?usp=sharing",
+#                    cacheRepo = getPaths()$cachePath)
+# 
+# ## buffer around the polygons will be the study area
+# firesABSK.buf <- Cache(outerBuffer, 
+#                        x = firesABSK, 
+#                        cacheRepo = getPaths()$cachePath)
+# 
+# raster::crs(firesABSK.buf) = raster::crs(firesABSK)
+# dev()
+# sp::plot(firesABSK) ; sp::plot(firesABSK.buf, add =TRUE)
 
 ## HERE ##
 ## TO DO: adapt study areas to fire datasets.
@@ -103,15 +108,15 @@ sp::plot(firesABSK) ; sp::plot(firesABSK.buf, add =TRUE)
 # successionTimestep <- 10
 
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 30)
+timesSim <- list(start = 1, end = 10)
 modulesSimtoy <- list("simplifyLCCVeg", "simpleLCCSuccession", "fireSpread", "fireSeverity")
 objectsSimtoy <-  list(studyArea = foothillsSMALL)
 paramsSimtoy <- list(
   .globals = list(.useCache = TRUE),
-  fireSpread = list(fireSize = 1000, noStartPix = 100),
+  fireSpread = list(fireSize = 1000, noStartPix = 100, fireFreq = 3),
   fireSeverity = list(.plotMaps = TRUE, .plotInterval = 1),
   fireStats = list(.plotStats = TRUE)
-  )
+)
 
 
 # eventCaching <- c(".inputObjects", "init")
@@ -134,13 +139,13 @@ showCache(getPaths()$cachePath)
 LBMR_testSim <- simInit(times = timesSim, params = paramsSimtoy, modules = modulesSimtoy,
                         objects = objectsSimtoy, paths = getPaths())
 
-moduleDiagram(LBMR_testSim)
-objectDiagram(LBMR_testSim)
+# moduleDiagram(LBMR_testSim)
+# objectDiagram(LBMR_testSim)
 events(LBMR_testSim)
 
 dev()
 clearPlot()
-LBMR_testSim <- Cache(spades, LBMR_testSim, cache = FALSE, debug = FALSE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSim <- spades(LBMR_testSim, cache = FALSE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 events(LBMR_testSim)
 
 

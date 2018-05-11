@@ -4,14 +4,6 @@
 ## Ceres: Dec 2017
 ## ------------------------------------------
 
-## CROP & MASK TO STUDY AREA ----------------------------
-## study.area and tocrop are "Raster*" or "Spatial*" objects
-cropToStudyArea <- function(study.area, tocrop) {
-  temp <- crop(x = tocrop, y = study.area)
-  temp <- mask(x = temp, mask = study.area)
-  return(temp)
-}
-
 ## MAKE INITIAL VEGETATION RASTER IN STUDY AREA  --------
 ## area is a shapefile of the study area
 ## vegRas is a raster of vegetation types to be cropped amd reprojected

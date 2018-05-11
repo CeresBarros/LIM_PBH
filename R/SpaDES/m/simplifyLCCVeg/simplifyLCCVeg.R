@@ -53,15 +53,6 @@ fireInit <- function(sim) {
   ## make raster storage lists 
   sim$vegetation <- sim$severity_ras <- sim$spreadRas <- list()
   
-  ## PRE-FIRE VEGETATION ---------------------------------------
-  ## get first vegetation state from original LCC raster
-  if(G(sim)$.useCache) {
-    vegetation_prefire <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, makePrefireVegetation,
-                                              area = sim$studyArea, vegRas = vegetationRas)
-  } else {
-    vegetation_prefire <- makePrefireVegetation(area = sim$studyArea, vegRas = vegetationRas)
-  }
-  
   ## VEGETATION CLASSES ----------------------------------------
   ## Non-burnable:
   ## LCC2005 ---
@@ -123,28 +114,27 @@ fireInit <- function(sim) {
 
 ## Inputs
 .inputObjects <- function(sim) {
-  if(is.null(sim$vegetationRas)){
-    checksums1 <- downloadData("simplifyLCCVeg", modulePath(sim), overwrite = FALSE)
-    result1 <- checksums1[checksums1$expectedFile == "NA_LandCover_2010_25haMMU.tif",]$result
-
-    if (result1 != "OK" | is.na(result1)) {
-      file.name <- grep("NA_LandCover_2010_25haMMU.tif$",
-                        unzip(file.path(modulePath(sim), "simplifyLCCVeg", "data", "Land_Cover_2010_TIFF.zip"), list = TRUE)$Name,
-                        value = TRUE)
-
-      unzip(zipfile = file.path(modulePath(sim), "simplifyLCCVeg", "data", "Land_Cover_2010_TIFF.zip"),
-            files = file.name,
-            exdir = file.path(modulePath(sim), "simplifyLCCVeg", "data"), junkpaths = TRUE)
+  ## PRE-FIRE VEGETATION ---------------------------------------
+  ## get first vegetation state from original LCC raster
+  if(is.null(sim$vegetation_prefire)){
+    sim$vegetationRas <- prepInputs(targetFile = "NA_LandCover_2010_25haMMU.tif",
+                                    url = "http://www.cec.org/sites/default/files/Atlas/Files/Land_Cover_2010/Land_Cover_2010_TIFF.zip",
+                                    useCache = TRUE, cacheRepo = cachePath(sim))
+    
+    if(G(sim)$.useCache) {
+      sim$vegetation_prefire <- reproducible::Cache(makePrefireVegetation,
+                                                    area = sim$studyArea, vegRas = sim$vegetationRas,
+                                                    cacheRepo = paths(sim)$cachePath)
+    } else {
+      sim$vegetation_prefire <- makePrefireVegetation(area = sim$studyArea, vegRas = sim$vegetationRas)
     }
-
-    file.name <- list.files(file.path(modulePath(sim), "simplifyLCCVeg", "data"), pattern = "NA_LandCover_2010_25haMMU.tif", full.names = TRUE)
-    sim$vegetationRas <- raster::raster(file.name)
   }
   
-   if(is.null(sim$studyArea)) {
-     sim$studyArea <- randomPolygon(SpatialPoints(cbind(-110, 59)), 1e4)
-     sim$studyArea <- sp::spTransform(x = studyArea, CRSobj = crs(sim$vegetationRas))
-   }
+  
+  if(is.null(sim$studyArea)) {
+    sim$studyArea <- randomPolygon(SpatialPoints(cbind(-110, 59)), 1e4)
+    sim$studyArea <- sp::spTransform(x = studyArea, CRSobj = crs(sim$vegetationRas))
+  }
   
   return(invisible(sim))
 }
