@@ -192,6 +192,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
   require(sf); require(dplyr)
   
+  # browser()
   ## checks
   if(any(class(sf.obj) != c("sf", "data.frame"))) stop ("sf.obj must be an sf object")
   if(is.null(buff.dist)) stop("Define a buffer distance")
@@ -225,7 +226,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
       sf.fire <- sf.obj[firePolys, c(fireNAMES)]
     } else sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
     
-    ## CALCULATE FIRE AND EVENT PERIMETERS
+    ## CALCULATE FIRE AND EVENT PERIMETERS - buffer out and then in.
     firePerim <- st_union(sf.fire$geometry)
     outerBuff <- st_buffer(firePerim, dist = buff.dist)
     eventPerim <- st_buffer(outerBuff, dist = -buff.dist)
@@ -255,6 +256,7 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
     allRemnants <- st_difference(eventPerim, firePerim)
     
     ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND REMNANTS
+    ## an inner remnant is matrix thta touches a "hole" (i.e. non-burnt patch that arrises after buffering)
     if(length(bufferedHoles) > 0) {
       if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
         remnHoleInters  <- sapply(allRemnants[[1]], FUN = function(sfgpoly) {

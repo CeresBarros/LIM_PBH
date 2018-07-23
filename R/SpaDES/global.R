@@ -8,16 +8,16 @@
 ## clean workspace
 rm(list=ls()); gc(reset = TRUE)
 
-## requires as of April 17th 2018
-# loading reproducible     0.1.4.9015
-# loading quickPlot        0.1.3.9002
-# loading SpaDES.core      0.1.1.9009
-# loading SpaDES.tools     0.1.1.9005
+## requires as of july 23rd 2018
+# loading reproducible     0.2.2
+# loading quickPlot        0.1.4
+# loading SpaDES.core      0.2.1
+# loading SpaDES.tools     0.3.0
 # loading SpaDES.addins    0.1.1
 # devtools::install_github("PredictiveEcology/reproducible@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
-# devtools::install_github("PredictiveEcology/SpaDES.tools@development")
+# devtools::install_github("Predictive/SpaDES.tools@development")
 
 
 library(SpaDES)
@@ -36,7 +36,9 @@ setPaths(cachePath = file.path("R/SpaDES/cache"),
 foothills <- prepInputs(targetFile = "data/maps/Foothills_study_area.shp",
                         url = "https://drive.google.com/file/d/10vFcsyMu_-UF3PEcDngKsU72gH7jciGk/view?usp=sharing",
                         destinationPath = "data/maps",
-                        fun = "shapefile", pkg = "raster")
+                        fun = "raster::shapefile")
+
+foothills <-  raster::shapefile("data/maps/Foothills_study_area.shp")
 
 foothillsSMALL <- raster::buffer(foothills, width = -0.3)
 
@@ -101,14 +103,13 @@ foothillsSMALL <- raster::buffer(foothills, width = -0.3)
 # list2env(studyRegionsShps, envir = environment()) # shpStudyRegion & shpStudyRegion
 
 
-## SIMUALTION SETUP ------------------------------
+## SIMULATION SETUP ------------------------------
 
 ## simulation parameters
-# fireTimestep <- 1
-# successionTimestep <- 10
 
 pathsSim <- getPaths()
 timesSim <- list(start = 1, end = 10)
+
 modulesSimtoy <- list("simplifyLCCVeg", "simpleLCCSuccession", "fireSpread", "fireSeverity")
 objectsSimtoy <-  list(studyArea = foothillsSMALL)
 paramsSimtoy <- list(
@@ -119,33 +120,35 @@ paramsSimtoy <- list(
 )
 
 
-# eventCaching <- c(".inputObjects", "init")
-# modulesSimLBMR <- list("Boreal_LBMRDataPrep", "LBMR")
-# objectsSimLBMR <- list("shpStudyRegionFull" = firesABSK.buf,
-#                    "shpStudySubRegion" = firesABSK.buf,
-#                    "useParallel" = 2)
-# paramsSimLBMR <- list(
-#   Boreal_LBMRDataPrep = list(.useCache = FALSE),
-#   LBMR = list(successionTimestep = successionTimestep,
-#               .plotInitialTime = timesSim$start,
-#               .saveInitialTime = NA,
-#               .useCache = FALSE)
-# )
+eventCaching <- c(".inputObjects")
+modulesSimLBMR <- list("Boreal_LBMRDataPrep", "LBMR")
+objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
+                   "shpStudySubRegion" = foothillsSMALL)
+paramsSimLBMR <- list(
+  Boreal_LBMRDataPrep = list(.useCache = eventCaching),
+  LBMR = list(successionTimestep = 1,
+              .plotInitialTime = timesSim$start,
+              .saveInitialTime = timesSim$start, 
+              seedingAlgorithm = "wardDispersal",
+              # seedingAlgorithm = "universalDispersal",
+              .useCache = eventCaching
+              )
+)
 
 
 showCache(getPaths()$cachePath)
-# clearCache(getPaths$cachePath, userTags = "LBMR")
+# clearCache(getPaths()$cachePath, userTags = "Boreal_LBMRDataPrep")
 
-LBMR_testSim <- simInit(times = timesSim, params = paramsSimtoy, modules = modulesSimtoy,
-                        objects = objectsSimtoy, paths = getPaths())
+LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
+                        objects = objectsSimLBMR, paths = pathsSim)
 
 # moduleDiagram(LBMR_testSim)
-# objectDiagram(LBMR_testSim)
+objectDiagram(LBMR_testSim)
 events(LBMR_testSim)
 
 dev()
 clearPlot()
-LBMR_testSim <- spades(LBMR_testSim, cache = FALSE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSim <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 events(LBMR_testSim)
 
 
