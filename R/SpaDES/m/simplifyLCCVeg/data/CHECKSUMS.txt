@@ -1,0 +1,3 @@
+"file" "checksum" "filesize" "algorithm"
+"Land_Cover_2010_TIFF.zip" "f4f647d11f5ce109" "50332897" "xxhash64"
+"NA_LandCover_2010_25haMMU.tif" "6b74878f59de5ea9" "1312468293" "xxhash64"

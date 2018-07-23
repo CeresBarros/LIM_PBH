@@ -12,3 +12,6 @@ R/SpaDES/m/*/data/*
 R/SpaDES/m/old/*/data/*
 analyses/FireEvents/*
 .httr-oauth
+
+## don't ignore:
+!R/SpaDES/m/*/data/CHECKSUMS.txt
