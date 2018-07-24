@@ -120,24 +120,26 @@ paramsSimtoy <- list(
 )
 
 
-eventCaching <- c(".inputObjects")
-modulesSimLBMR <- list("Boreal_LBMRDataPrep", "LBMR")
+# eventCaching <- c(".inputObjects")
+modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep", "LBMR")
 objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
-                   "shpStudySubRegion" = foothillsSMALL)
+                       "shpStudySubRegion" = foothillsSMALL)
+
 paramsSimLBMR <- list(
-  Boreal_LBMRDataPrep = list(.useCache = eventCaching),
+  # Boreal_LBMRDataPrep = list(.useCache = eventCaching),
   LBMR = list(successionTimestep = 1,
               .plotInitialTime = timesSim$start,
               .saveInitialTime = timesSim$start, 
-              seedingAlgorithm = "wardDispersal",
+              seedingAlgorithm = "wardDispersal"#,
               # seedingAlgorithm = "universalDispersal",
-              .useCache = eventCaching
+              # .useCache = eventCaching
               )
 )
 
 
 showCache(getPaths()$cachePath)
-# clearCache(getPaths()$cachePath, userTags = "Boreal_LBMRDataPrep")
+clearCache(getPaths()$cachePath#, userTags = "Boreal_LBMRDataPrep"
+           )
 
 LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
                         objects = objectsSimLBMR, paths = pathsSim)
