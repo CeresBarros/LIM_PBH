@@ -103,12 +103,17 @@ foothillsSMALL <- raster::buffer(foothills, width = -0.3)
 # list2env(studyRegionsShps, envir = environment()) # shpStudyRegion & shpStudyRegion
 
 
+## Species list
+
+speciesList <- as.matrix(data.frame(speciesnamesRaw = c("Abie_Las", "Abie_Bal", "Pice_Gla", "Pice_Mar", "Pinu_Ban", "Pinu_Con", "Popu_Tre"),
+                     speciesNamesEnd =  c("Abie_sp", "Abie_sp", "Pice_gla", "Pice_mar", "Pinu_sp", "Pinu_sp", "Popu_tre")))
+
 ## SIMULATION SETUP ------------------------------
 
 ## simulation parameters
 
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 10)
+timesSim <- list(start = 1, end = 3)
 
 modulesSimtoy <- list("simplifyLCCVeg", "simpleLCCSuccession", "fireSpread", "fireSeverity")
 objectsSimtoy <-  list(studyArea = foothillsSMALL)
@@ -123,7 +128,8 @@ paramsSimtoy <- list(
 # eventCaching <- c(".inputObjects")
 modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep", "LBMR")
 objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
-                       "shpStudySubRegion" = foothillsSMALL)
+                       "shpStudySubRegion" = foothillsSMALL,
+                       "speciesList" = speciesList)
 
 paramsSimLBMR <- list(
   # Boreal_LBMRDataPrep = list(.useCache = eventCaching),
@@ -138,19 +144,20 @@ paramsSimLBMR <- list(
 
 
 showCache(getPaths()$cachePath)
-clearCache(getPaths()$cachePath#, userTags = "Boreal_LBMRDataPrep"
-           )
+# clearCache(getPaths()$cachePath#, userTags = "Boreal_LBMRDataPrep"
+           # )
 
 LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
                         objects = objectsSimLBMR, paths = pathsSim)
 
 # moduleDiagram(LBMR_testSim)
 objectDiagram(LBMR_testSim)
+moduleDiagram(LBMR_testSim)
 events(LBMR_testSim)
 
 dev()
 clearPlot()
-LBMR_testSim <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 events(LBMR_testSim)
 
 
