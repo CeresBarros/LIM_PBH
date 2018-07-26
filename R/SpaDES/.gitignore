@@ -1,0 +1,10 @@
+# Ignore
+cache
+outputs
+.httr-oath
+m/*/data
+m/*/cache
+m/*/*.zip
+
+## don't ignore
+!m/*/data/CHECKSUMS.txt
