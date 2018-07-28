@@ -104,9 +104,15 @@ foothillsSMALL <- raster::buffer(foothills, width = -0.3)
 
 
 ## Species list
+# speciesList <- as.matrix(data.frame(speciesnamesRaw = c("Abie_Las", "Abie_Bal", "Betu_Pap", "Betu_Spp", "Lari_Lya", "Lari_Occ", "Pice_Eng", 
+#                                                         "Pice_Gla", "Pice_Mar", "Pinus_Alb","Pinu_Ban", "Pinu_Con", "Pinu_Fle", "Pinu_Pon",
+#                                                         "Popu_Del", "Popu_Tre", "Pseu_Men"),
+#                      speciesNamesEnd =  c("Abie_sp", "Abie_sp", "Betu_pap", "Betu_sp", "Lari_sp", "Lari_sp", "Pice_eng",
+#                                           "Pice_gla", "Pice_mar", "Pinu_sp", "Pinu_ban", "Pinu_con", "Pinu_sp", "Pinu_pon", 
+#                                           "Popu_tre", "Popu_tre", "Pseu_men")))
 
-speciesList <- as.matrix(data.frame(speciesnamesRaw = c("Abie_Las", "Abie_Bal", "Pice_Gla", "Pice_Mar", "Pinu_Ban", "Pinu_Con", "Popu_Tre"),
-                     speciesNamesEnd =  c("Abie_sp", "Abie_sp", "Pice_gla", "Pice_mar", "Pinu_sp", "Pinu_sp", "Popu_tre")))
+## Betu_pap was causing spades to hang on writing CASFRI raster to disk
+speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.csv"), header = TRUE))
 
 ## SIMULATION SETUP ------------------------------
 
@@ -126,7 +132,9 @@ paramsSimtoy <- list(
 
 
 # eventCaching <- c(".inputObjects")
-modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep", "LBMR")
+modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",
+                       "LBMR", "LandR_BiomassFuels")
+                       
 objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
                        "shpStudySubRegion" = foothillsSMALL,
                        "speciesList" = speciesList)
@@ -151,14 +159,14 @@ LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modu
                         objects = objectsSimLBMR, paths = pathsSim)
 
 # moduleDiagram(LBMR_testSim)
-objectDiagram(LBMR_testSim)
-moduleDiagram(LBMR_testSim)
-events(LBMR_testSim)
+# objectDiagram(LBMR_testSim)
+# moduleDiagram(LBMR_testSim)
+# events(LBMR_testSim)
 
 dev()
 clearPlot()
 LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
-events(LBMR_testSim)
+# events(LBMR_testSim)
 
 
 
