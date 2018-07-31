@@ -1,7 +1,7 @@
 [submodule "R/SpaDES/m/LBMR"]
 	path = R/SpaDES/m/LBMR
 	url = https://github.com/CeresBarros/LBMR.git
-	branch = development
+	branch = changes2FireDist
 [submodule "R/SpaDES/m/Boreal_LBMRDataPrep"]
 	path = R/SpaDES/m/Boreal_LBMRDataPrep
 	url = https://github.com/eliotmcintire/Boreal_LBMRDataPrep.git

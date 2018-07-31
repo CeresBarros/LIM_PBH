@@ -1,4 +1,3 @@
-
 # Everything in this file gets sourced during simInit, and all functions and objects
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
@@ -15,19 +14,20 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSeverity.Rmd"),
   reqdPkgs = list("raster"),
   parameters = rbind(
-    defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
-    defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
+    defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "vegetation", objectClass = "list",
-                 desc = "List of vegetation states rasters, with simplified classes"),
-    expectsInput(objectName = "spreadRas", objectClass = "list",
+    expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
+                 desc = "Biomass map at each succession time step"),
+    expectsInput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
+                 desc = "Biomass map from before the last fire."),
+    expectsInput(objectName = "fireSpreadRas", objectClass = "list",
                  desc = "List of rasters of fire spread"),
-    expectsInput(objectName = "climate", objectClass = "RasterLayes",
-                 desc = "Climate raster; defaults to a random gaussian map")
+    expectsInput(objectName = "fireYear", objectClass = "list",
+                 desc =  "Next fire year")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "severity_ras", objectClass = "RasterLayer",
+    createsOutput(objectName = "severityMap", objectClass = "RasterLayer",
                   desc = "Raster of fire severity")
   )
 ))
@@ -42,26 +42,44 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       ## Initialise module
       sim <- fireInit(sim)
       
-      ## schedule future event(s)
-      sim <- scheduleEvent(sim, start(sim) + 1, "fireSeverity", "severityMap", eventPriority = 3)
-      if(P(sim)$.plotMaps) {
-        sim <- scheduleEvent(sim, start(sim) + 1, "fireSeverity", "plot", eventPriority = 4)
+      ## schedule events
+      if(!is.null(sim$fireSpreadRas)) {   ## only if fire module is "active"
+        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "calcSeverity", eventPriority = 8)
+        if(P(sim)$.plotMaps) {
+          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "severityPlot", eventPriority = 8.5)
+        }
+        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart,
+                             "fireSeverity", "saveSeverity", eventPriority = 8.75)
       }
     },
-    severityMap = {
-      ## calculate severity
-      sim <- do.Severity(sim)
-      
-      ## schedule future events
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSeverity", "severityMap", eventPriority = 3)
+    calcSeverity = {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
+        ## calculate severity
+        sim <- doSeverity(sim)
+        
+        ## schedule future events
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "calcSeverity", eventPriority = 8)
+      }
     },
-    plot = {
-      ## Plot severity and vegetation changes
-      sim <- fire_STSMPlot(sim)
-      
-      ## schedule next plot
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "fireSeverity", "plot", eventPriority = 4)
+    severityPlot = {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
+        ## Plot severity and vegetation changes
+        sim <- doSeverityPlot(sim)
+        
+        ## schedule next plot
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8.5)
+      }
     },
+    saveSeverity = {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
+        ## Plot severity and vegetation changes
+        sim <- doSaveSeverity(sim)
+        
+        ## schedule next plot
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "saveSeverity", eventPriority = 8.75)
+      }
+    },
+    
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -70,42 +88,61 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
-  sim$severity_ras <- list()
-  
   return(invisible(sim))
 }
 
 ### Calculate severity based on vegetation state transitions
-do.Severity <- function(sim){
+doSeverity <- function(sim){
   ## convert fire spread raster to a mask
-  fireMask <- sim$spreadRas[[time(sim) - 1]]
+  fireMask <- sim$fireSpreadRas[[time(sim)]]
   fireMask[!is.na(fireMask)] <- 1
   
-  if(G(sim)$.useCache) {
-    sim$severity_ras[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, 
-                                                         FUN = calc, 
-                                                         x = stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask),
-                                                         fun = calculateSeverity)
-  } else {
-    sim$severity_ras[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask), 
-                                          fun = calculateSeverity)
-    
-  }
+  ## fire severity in % mortality ((pre - post)/pre)
+  sim$severityMap <- (sim$biomassMapPreFire - sim$biomassMap)/sim$biomassMapPreFire
+  sim$severityMap <- setValues(sim$severityMap, values = round(getValues(sim$severityMap)))
+  sim$severityMap <- raster::mask(sim$severityMap, mask = fireMask)
   
   return(invisible(sim))
 }
 
 ### Plot fire severity and vegetation
-fire_STSMPlot <- function(sim) {  
-  Plot(sim$severity_ras[[time(sim)]], new = TRUE,
-       title = "Fire Severity Map",
-       cols = c("grey", "green", "yellow", "red"))
+doSeverityPlot <- function(sim) {  
+  browser()
+  Plot(sim$severityMap, new = TRUE,
+       title = "Fire severity",
+       cols = heat.colors(10))
   
-  Plot(sim$vegetation[[time(sim) - 1]], new = TRUE,
-       title = "Vegetation pre-fire")
+  return(invisible(sim))
+}
+
+doSaveSeverity = function(sim) {
+  raster::projection(sim$severityMap) <- raster::projection(sim$ecoregionMap)
+  writeRaster(sim$severityMap,
+              file.path(outputPath(sim), paste("severityMap_Year", round(time(sim)), ".tif",sep="")), datatype='INT2S',
+              overwrite = TRUE)
+  return(invisible(sim))
+}
+
+## OTHER INPUTS AND FUNCTIONS --------------------------------
+.inputObjects = function(sim) {
   
-  Plot(sim$vegetation[[time(sim)]], new = TRUE,
-       title = "Vegetation post-fire")
+  dPath <- dataPath(sim)
+  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  
+  # if(!suppliedElsewhere("biomassMap", sim)) {
+  #   sim$biomassMap <- Cache(prepInputs,
+  #                           targetFile = biomassMapFilename,
+  #                           archive = asPath(c("kNN-StructureBiomass.tar",
+  #                                              "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+  #                           url = extractURL("biomassMap", sim), 
+  #                           destinationPath = dPath,
+  #                           studyArea = sim$shpStudySubRegion,
+  #                           useSAcrs = TRUE,
+  #                           method = "bilinear",
+  #                           datatype = "INT2U",
+  #                           filename2 = TRUE,
+  #                           userTags = cacheTags)
+  # } 
   
   return(invisible(sim))
 }

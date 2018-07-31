@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSpread.Rmd"),
-  reqdPkgs = list("raster", "cffdrs", "data.table", "dplyr"),
+  reqdPkgs = list("raster"),
   parameters = rbind(
     defineParameter("fireSize", "numeric", 1000, NA, NA, desc = "Fire size in pixels"),
     defineParameter("noStartPix", "numeric", 100, NA, NA, desc = "Number of fire events"),
@@ -22,34 +22,27 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "climData", objectClass = "data.table",
-                 desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
-    expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table", 
-                 desc = "Fuel types per pixel group, calculated from cohort biomasses"),
-    expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-                 desc = "updated community map at each succession time step"),
-    expectsInput(objectName = "FuelTypes", objectClass = "data.table",
-                 desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
-                 min and max age for each species"),
-    expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table", 
-                 desc = "Fuel types per pixel group, calculated from cohort biomasses")
+    expectsInput(objectName = "vegetation", objectClass = "list",
+                 desc = "List of vegetation states rasters, with simplified classes"),
+    expectsInput(objectName = "spreadProb_mat", objectClass = "matrix",
+                 desc = "Two-column matrix of baseline spread probs. per vegetation class. 
+                 1st column should contain vegetation class codes, with corresponding probs. in the 2nd column"),
+    expectsInput(objectName = "persistProb_mat", objectClass = "matrix",
+                 desc = "Two-column matrix of baseline persistence probs. per vegetation class. 
+                 1st column should contain vegetation class codes, with corresponding probs. in the 2nd column"),
+    expectsInput(objectName = "climate", objectClass = "RasterLayer",
+                 desc = "A raster of climate values that will increase fire spread probability and severity; 
+                 defaults to the Climate Moisture Index for Canada - Reference Period (1981-2010)",
+                 sourceURL = "https://apps-scf-cfs.rncan.gc.ca/opendata/Forest%20Change/Forest%20impact%20maps%20and%20data/Drought/Climate%20Moisture%20Index%20(CMI)/Reference%20Period/CMI%20-%20IHC%20-%201981-2010%20-%20Raster.zip")
     
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
-                  desc = "Fire weather inputs table"),
-    createsOutput(objectName = "FWIinit", objectClass = "RasterLayer",
-                  desc = "Fire weather initialisation table"),
-    createsOutput(objectName = "FWIoutputs", objectClass = "list",
-                  desc = "Fire weather outputs table"),
-    createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
-                  desc = "Fire behaviour prediction system inputs table"),
-    createsOutput(objectName = "ROSras", objectClass = "RasterLayer",
-                  desc = "Raster of equilibrium rate of spread"),
-    createsOutput(objectName = "IntRas", objectClass = "RasterLayer",
-                  desc = "Raster of equilibrium head fire intensity"),
-    createsOutput(objectName = "TFCRas", objectClass = "RasterLayer",
-                  desc = "Raster of total fuel consumed")
+    createsOutput(objectName = "burnable_areas", objectClass = "RasterLayer",
+                  desc = "Raster of areas that are susceptible to burning"),
+    createsOutput(objectName = "spreadProb_map", objectClass = "RasterLayer",
+                  desc = "Raster of rate of spread per pixel"),
+    createsOutput(objectName = "spreadRas", objectClass = "list",
+                  desc = "List of rasters of fire spread")
   )
 ))
 

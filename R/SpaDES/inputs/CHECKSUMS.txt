@@ -21,3 +21,6 @@
 "wc2.0_2.5m_prec_08.tif" "09551bed7785fd98" "6658737" "xxhash64"
 "wc2.0_2.5m_prec.zip" "e8dfc1dec34ab844" "71780842" "xxhash64"
 "wc2.0_2.5m_prec_09.tif" "9cba057418526837" "6216995" "xxhash64"
+"SLOPE.tif" "98b402215ead0ce4" "2739847" "xxhash64"
+"DEM_Foothills_study_area.zip" "4dd1612fde83081c" "7419646" "xxhash64"
+"ASPECT.tif" "ac342f853105ab50" "2739845" "xxhash64"
