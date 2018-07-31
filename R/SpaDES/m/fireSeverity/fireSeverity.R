@@ -129,6 +129,11 @@ doSaveSeverity = function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
   
+  if (!suppliedElsewhere("ecoregionMap", sim )) {
+    # load ecoregion map
+    sim$ecoregionMap <- raster(file.path(dPath, "ecoregions.gis"))
+  }
+  
   # if(!suppliedElsewhere("biomassMap", sim)) {
   #   sim$biomassMap <- Cache(prepInputs,
   #                           targetFile = biomassMapFilename,
