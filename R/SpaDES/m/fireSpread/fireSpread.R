@@ -21,6 +21,7 @@ defineModule(sim, list(
     defineParameter("crsUsed", "character", "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0",
                     NA, NA, "CRS to be used. Defaults to the biomassMap projection"),
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
+    defineParameter("vegFeedback", "lagical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
     defineParameter("fireStart", "integer", 2L, NA, NA, desc = "First fire year. Defaults to the 2nd year of the simulation"),
     defineParameter("fireFreq", "integer", 1L, NA, NA, desc = "Fire recurrence in years"),
@@ -100,14 +101,29 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2) ## always schedule fire
     },
     Fire = {
-      if(time(sim) == sim$fireYear) {
+      ## in the first year of fire calculate parameters and do fire
+      if(time(sim) == P(sim)$fireStart) { 
         ## calculate fire parameters
         sim <- FPBPercParams(sim)
         ## calculate fire spread
         sim <- doFireSpread(sim)
-      } else {
-        ## No fire
-        sim <- doNoFire(sim)
+        
+      } else{
+        ## in subsequent years evaluate if parameters are to be aclcualted again (veg feedbacks)
+        if(time(sim) == sim$fireYear) {
+          if(P(sim)$vegFeedback) {
+            ## calculate fire parameters
+            sim <- FPBPercParams(sim)
+            ## calculate fire spread
+            sim <- doFireSpread(sim)
+          } else {
+            ## calculate fire spread
+            sim <- doFireSpread(sim)
+          }
+        } else {
+          ## No fire
+          sim <- doNoFire(sim)
+        }
       }
       
       ## schedule future event(s) - always schedule fire
