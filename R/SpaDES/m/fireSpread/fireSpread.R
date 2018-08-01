@@ -61,8 +61,7 @@ defineModule(sim, list(
                  Default is Canada national biomass map"),
     createsOutput(objectName = "topoClimData", objectClass = "data.table",
                   desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
-    createsOutput(objectName = "fireYear", objectClass = "integer",
-                  desc = "Next fire year"),
+    createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                  desc = "updated community map at each succession time step, on FBP-compatible projection"),
     createsOutput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
@@ -98,23 +97,21 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
       
       ## schedule future event(s)
-      sim <- scheduleEvent(sim, sim$fireYear, "fireSpread", "FireSpread", eventPriority = 2)
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2) ## always schedule fire
     },
-    FireSpread = {
+    Fire = {
       if(time(sim) == sim$fireYear) {
         ## calculate fire parameters
         sim <- FPBPercParams(sim)
         ## calculate fire spread
         sim <- doFireSpread(sim)
-        
-        ## schedule next events - always schedule fire
-        sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "FireSpread", eventPriority = 2)
       } else {
+        ## No fire
         sim <- doNoFire(sim)
-        
-        ## schedule next events - always schedule fire
-        sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "FireSpread", eventPriority = 2)
       }
+      
+      ## schedule future event(s) - always schedule fire
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -130,7 +127,7 @@ fireInit <- function(sim) {
   latLong = "+proj=longlat +datum=WGS84"
   
   ## define first fire year
-  sim$fireYear <- P(sim)$fireStart
+  sim$fireYear <- as.integer(P(sim)$fireStart)
   
   ## get pixelGroupMapFBP and reproject
   pixelGroupMapFBP <- sim$pixelGroupMap
@@ -266,7 +263,7 @@ FPBPercParams <- function(sim) {
   sim$fireTFCRas <- raster::reclassify(sim$fireTFCRas, rcl = TFCvals)
 
   ## define next fire year
-  sim$fireYear <- sim$fireYear + P(sim)$fireFreq
+  sim$fireYear <- time(sim) + P(sim)$fireFreq
   
   ## transform pixel IDs in tables to LBMR compatible
   tempRas <- sim$pixelGroupMapFBP
