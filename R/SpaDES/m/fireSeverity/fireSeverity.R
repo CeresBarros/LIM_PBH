@@ -23,8 +23,7 @@ defineModule(sim, list(
                  desc = "Biomass map from before the last fire."),
     expectsInput(objectName = "fireSpreadRas", objectClass = "list",
                  desc = "List of rasters of fire spread"),
-    expectsInput(objectName = "fireYear", objectClass = "list",
-                 desc =  "Next fire year")
+    expectsInput(objectName = "fireYear", objectClass = "numeric", desc =  "Next fire year")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "severityMap", objectClass = "RasterLayer",
@@ -58,7 +57,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSeverity(sim)
         
         ## schedule future events
-        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "calcSeverity", eventPriority = 8)
+        sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", eventType = "calcSeverity", eventPriority = 8)
       }
     },
     severityPlot = {
@@ -107,7 +106,6 @@ doSeverity <- function(sim){
 
 ### Plot fire severity and vegetation
 doSeverityPlot <- function(sim) {  
-  browser()
   Plot(sim$severityMap, new = TRUE,
        title = "Fire severity",
        cols = heat.colors(10))
