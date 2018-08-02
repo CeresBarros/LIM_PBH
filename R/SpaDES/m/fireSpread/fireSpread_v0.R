@@ -23,10 +23,8 @@ defineModule(sim, list(
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
     defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
-    defineParameter(name = "fireInitialTime", class = "numeric", default = 2L, 
-                    desc = "The event time that the first fire disturbance event occurs"),
-    defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
-                    desc = "The number of time units between successive fire events in a fire module"),
+    defineParameter("fireStart", "integer", 2L, NA, NA, desc = "First fire year. Defaults to the 2nd year of the simulation"),
+    defineParameter("fireFreq", "integer", 1L, NA, NA, desc = "Fire recurrence in years"),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
@@ -60,13 +58,13 @@ defineModule(sim, list(
     ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapFBP", objectClass = "RasterLayer",
-                  desc = "Biomass map at each succession time step, on FBP-compatible projection.
-                  Default is Canada national biomass map"),
+                 desc = "Biomass map at each succession time step, on FBP-compatible projection.
+                 Default is Canada national biomass map"),
     createsOutput(objectName = "topoClimData", objectClass = "data.table",
                   desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
-                  desc = "updated community map at each succession time step, on FBP-compatible projection"),
+                 desc = "updated community map at each succession time step, on FBP-compatible projection"),
     createsOutput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step"),
     createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
@@ -87,10 +85,10 @@ defineModule(sim, list(
                   desc = "Raster of total fuel consumed"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels"),
-    createsOutput(objectName = "rstCurrentBurn", objectClass = "list",
+    createsOutput(objectName = "fireSpreadRas", objectClass = "list",
                   desc = "List of rasters of fire spread")
-    )
-    ))
+  )
+))
 
 doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -104,7 +102,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     Fire = {
       ## in the first year of fire calculate parameters and do fire
-      if(time(sim) == P(sim)$fireInitialTime) { 
+      if(time(sim) == P(sim)$fireStart) { 
         ## calculate fire parameters
         sim <- FPBPercParams(sim)
         ## calculate fire spread
@@ -129,7 +127,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       }
       
       ## define next fire year
-      sim$fireYear <- time(sim) + P(sim)$fireTimestep
+      sim$fireYear <- time(sim) + P(sim)$fireFreq
       
       ## schedule future event(s) - always schedule fire
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2)
@@ -148,7 +146,7 @@ fireInit <- function(sim) {
   latLong = "+proj=longlat +datum=WGS84"
   
   ## define first fire year
-  sim$fireYear <- as.integer(P(sim)$fireInitialTime)
+  sim$fireYear <- as.integer(P(sim)$fireStart)
   
   ## get pixelGroupMapFBP and reproject
   pixelGroupMapFBP <- sim$pixelGroupMap
@@ -187,7 +185,7 @@ fireInit <- function(sim) {
 ## Derive fire parameters from FBP system - rasters need to be in lat/long
 FPBPercParams <- function(sim) {
   require(cffdrs)   ## cffdrs was causing issues when included in metadata
-  
+
   ## Update pixelGroupMap and biomassMap if not init
   if(time(sim) != start(sim)) {
     ## get pixelGroupMapFBP and reproject
@@ -295,7 +293,7 @@ FPBPercParams <- function(sim) {
   FWIoutputs <- merge(FWIoutputs, pixCorresp, by.x = "pixID", by.y = "pixFBP", all.y = TRUE)
   FBPinputs <- merge(FBPinputs, pixCorresp, by.x = "id", by.y = "pixFBP", all.y = TRUE)
   FBPoutputs <- merge(FBPoutputs, pixCorresp, by.x = "pixID", by.y = "pixFBP", all.y = TRUE)
-  
+
   FWIinputs$id <- NULL; FBPinputs$id <- NULL
   FWIoutputs[, pixID := NULL]; FBPoutputs[, pixID := NULL] 
   
@@ -353,39 +351,39 @@ doFireSpread <- function(sim) {
   
   ## Favier's model:
   x <- try(expr = {
-    rstCurrentBurn <- spread2(landscape = burnableAreas,
-                              spreadProb = spreadProb_map,
-                              persistProb = persistProb_map,
-                              start = sim$startPix, 
-                              maxSize =  P(sim)$fireSize,
-                              plot.it = FALSE)
+    fireSpreadRas <- spread2(landscape = burnableAreas,
+                             spreadProb = spreadProb_map,
+                             persistProb = persistProb_map,
+                             start = sim$startPix, 
+                             maxSize =  P(sim)$fireSize,
+                             plot.it = FALSE)
   }, silent = TRUE) 
-  
+    
   while (class(x) == "try-error") {
     x <- try(expr = {
-      rstCurrentBurn <- spread2(landscape = burnableAreas,
-                                spreadProb = spreadProb_map,
-                                persistProb = persistProb_map,
-                                start = startPix, 
-                                maxSize =  P(sim)$fireSize,
-                                plot.it = FALSE)
+      fireSpreadRas <- spread2(landscape = burnableAreas,
+                               spreadProb = spreadProb_map,
+                               persistProb = persistProb_map,
+                               start = startPix, 
+                               maxSize =  P(sim)$fireSize,
+                               plot.it = FALSE)
     }, silent = TRUE) 
   }
-  
+
   
   
   ## remove fires that spread beyond burnable areas
-  rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
+  fireSpreadRas <- mask(fireSpreadRas, burnableAreas)
   
   ## export to sim
   sim$burnableAreas
-  sim$rstCurrentBurn[[time(sim)]] <- rstCurrentBurn
+  sim$fireSpreadRas[[time(sim)]] <- fireSpreadRas
   return(invisible(sim))
 }
 
 ## What to do in no fire years
 doNoFire <- function(sim) {
-  sim$rstCurrentBurn[[time(sim)]] <- NA
+  sim$fireSpreadRas[[time(sim)]] <- NA
   
   return(invisible(sim))
 }
@@ -395,9 +393,9 @@ doNoFire <- function(sim) {
   
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
-  
+
   ## make raster storage lists 
-  sim$rstCurrentBurn <- list()
+  sim$fireSpreadRas <- list()
   
   ## project to Lat/Long (decimal degrees) for compatibility with FBP system
   ## TODO: this results in data loss - but LandR doesn't deal well with lat/long
@@ -435,11 +433,11 @@ doNoFire <- function(sim) {
   if (!identical(latLong, crs(sim$shpStudyRegionFullFBP))) {
     sim$shpStudyRegionFullFBP <- spTransform(sim$shpStudyRegionFullFBP, latLong) #faster without Cache
   }
-  
+
   if (!identical(latLong, crs(sim$shpStudySubRegionFBP))) {
     sim$shpStudySubRegionFBP <- spTransform(sim$shpStudySubRegionFBP, latLong) #faster without Cache
   }
-  
+
   if(!suppliedElsewhere("biomassMap", sim)) {
     sim$biomassMap <- Cache(prepInputs,
                             targetFile = biomassMapFilename,

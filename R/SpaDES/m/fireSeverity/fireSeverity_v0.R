@@ -18,13 +18,13 @@ defineModule(sim, list(
     defineParameter(name = ".saveInitialTime", class = "numeric", default = 0,
                     min = NA, max = NA, desc = "This describes the simulation time at which the
                     first save event should occur")
-    ),
+  ),
   inputObjects = bind_rows(
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step"),
     expectsInput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
                  desc = "Biomass map from before the last fire."),
-    expectsInput(objectName = "rstCurrentBurn", objectClass = "list",
+    expectsInput(objectName = "fireSpreadRas", objectClass = "list",
                  desc = "List of rasters of fire spread"),
     expectsInput(objectName = "fireYear", objectClass = "numeric", desc =  "Next fire year")
   ),
@@ -32,7 +32,7 @@ defineModule(sim, list(
     createsOutput(objectName = "severityMap", objectClass = "RasterLayer",
                   desc = "Raster of fire severity")
   )
-  ))
+))
 
 ## event types
 #   - type `init` is required for initialiazation
@@ -45,7 +45,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
       
       ## schedule events
-      if(!is.null(sim$rstCurrentBurn)) {   ## only if fire module is "active"
+      if(!is.null(sim$fireSpreadRas)) {   ## only if fire module is "active"
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "calcSeverity", eventPriority = 8)
         
         if(P(sim)$.plotMaps)
@@ -57,7 +57,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       }
     },
     calcSeverity = {
-      if(!all(is.na(sim$rstCurrentBurn[[time(sim)]][]))) {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## calculate severity
         sim <- doSeverity(sim)
         
@@ -66,7 +66,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       }
     },
     severityPlot = {
-      if(!all(is.na(sim$rstCurrentBurn[[time(sim)]][]))) {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## Plot severity and vegetation changes
         sim <- doSeverityPlot(sim)
         
@@ -75,7 +75,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       }
     },
     saveSeverity = {
-      if(!all(is.na(sim$rstCurrentBurn[[time(sim)]][]))) {
+      if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## Plot severity and vegetation changes
         sim <- doSaveSeverity(sim)
         
@@ -86,8 +86,8 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
     
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  )
-  return(invisible(sim))
+        )
+        return(invisible(sim))
 }
 
 ### module initialization - part of this may pass to another module of data prep
@@ -98,7 +98,7 @@ fireInit <- function(sim) {
 ### Calculate severity based on vegetation state transitions
 doSeverity <- function(sim){
   ## convert fire spread raster to a mask
-  fireMask <- sim$rstCurrentBurn[[time(sim)]]
+  fireMask <- sim$fireSpreadRas[[time(sim)]]
   fireMask[!is.na(fireMask)] <- 1
   
   ## fire severity in % mortality ((pre - post)/pre)
