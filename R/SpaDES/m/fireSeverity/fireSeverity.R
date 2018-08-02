@@ -14,7 +14,10 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSeverity.Rmd"),
   reqdPkgs = list("raster"),
   parameters = rbind(
-    defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not")
+    defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
+    defineParameter(name = ".saveInitialTime", class = "numeric", default = 0,
+                    min = NA, max = NA, desc = "This describes the simulation time at which the
+                    first save event should occur")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
@@ -44,11 +47,13 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       ## schedule events
       if(!is.null(sim$fireSpreadRas)) {   ## only if fire module is "active"
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "calcSeverity", eventPriority = 8)
-        if(P(sim)$.plotMaps) {
+        
+        if(P(sim)$.plotMaps)
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "severityPlot", eventPriority = 8.5)
-        }
-        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart,
-                             "fireSeverity", "saveSeverity", eventPriority = 8.75)
+        
+        if(!any(is.na(P(sim)$.saveInitialTime)))
+          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart,
+                               "fireSeverity", "saveSeverity", eventPriority = 8.75)
       }
     },
     calcSeverity = {
@@ -81,8 +86,8 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
     
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  )
-  return(invisible(sim))
+        )
+        return(invisible(sim))
 }
 
 ### module initialization - part of this may pass to another module of data prep
