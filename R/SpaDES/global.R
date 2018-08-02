@@ -46,7 +46,7 @@ speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.c
 ## simulation parameters
 
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 10)
+timesSim <- list(start = 1, end = 100)
 
 # modulesSimtoy <- list("simplifyLCCVeg", "simpleLCCSuccession", "fireSpread", "fireSeverity")
 # objectsSimtoy <-  list(studyArea = foothillsSMALL)
@@ -70,16 +70,17 @@ objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
 
 paramsSimLBMR <- list(
   # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
-  # BiomassSpeciesData = list(crsUsed = projCRS), 
+  # BiomassSpeciesData = list(crsUsed = projCRS),
   LBMR = list(successionTimestep = 1,
-              .plotInitialTime = 10,#timesSim$start,
-              .saveInitialTime = timesSim$start, 
-              seedingAlgorithm = "wardDispersal"#,
+              seedingAlgorithm = "wardDispersal",
+              .saveInitialTime = NA, 
+              .plotInitialTime = timesSim$start
               # seedingAlgorithm = "universalDispersal",
               # .useCache = eventCaching
               ),
-  fireSpread = list(fireFreq = 2L),
-  fireSeverity = list(.plotMaps = TRUE)
+  fireSpread = list(fireFreq = 2L,
+                    vegFeedback = FALSE),
+  fireSeverity = list(.plotMaps = FALSE)
 )
 
 
@@ -90,10 +91,33 @@ showCache(getPaths()$cachePath)
 LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
                         objects = objectsSimLBMR, paths = pathsSim)
 
+expParams <- list(
+  # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
+  # BiomassSpeciesData = list(crsUsed = projCRS),
+  LBMR = list(successionTimestep = 1,
+              seedingAlgorithm = "wardDispersal",
+              .saveInitialTime = NA, 
+              .plotInitialTime = NA
+              # seedingAlgorithm = "universalDispersal",
+              # .useCache = eventCaching
+  ),
+  fireSpread = list(fireFreq = 2L,
+                    vegFeedback = c(FALSE,TRUE)),
+  fireSeverity = list(.plotMaps = FALSE)
+)
+
+graphics.off()
+dev()
+clearPlot()
+LBMR_experiment <- experiment(LBMR_testSim, replicates = 10, params = expParams,
+                              experimentFile = FALSE)
+endCluster()
+
 # moduleDiagram(LBMR_testSim)
 # objectDiagram(LBMR_testSim)
 # events(LBMR_testSim)
 
+graphics.off()
 dev()
 clearPlot()
 LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
