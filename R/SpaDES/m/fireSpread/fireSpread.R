@@ -21,7 +21,7 @@ defineModule(sim, list(
     defineParameter("crsUsed", "character", "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0",
                     NA, NA, "CRS to be used. Defaults to the biomassMap projection"),
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
-    defineParameter("vegFeedback", "lagical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
+    defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
     defineParameter("fireStart", "integer", 2L, NA, NA, desc = "First fire year. Defaults to the 2nd year of the simulation"),
     defineParameter("fireFreq", "integer", 1L, NA, NA, desc = "Fire recurrence in years"),
