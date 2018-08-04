@@ -48,14 +48,14 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       
       ## schedule events
       if(!is.null(sim$rstCurrentBurn)) {   ## only if fire module is "active"
-        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 8)
+        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 4)
         
         if(P(sim)$.plotMaps)
-          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 8.5)
+          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 4.5)
         
         if(!any(is.na(P(sim)$.saveInitialTime)))
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime,
-                               "fireSeverity", "saveSeverity", eventPriority = 8.75)
+                               "fireSeverity", "saveSeverity", eventPriority = 4.75)
       }
     },
     calcSeverity = {
@@ -64,7 +64,8 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSeverity(sim)
         
         ## schedule future events
-        sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", eventType = "calcSeverity", eventPriority = 8)
+        sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
+                             eventType = "calcSeverity", eventPriority = 4)
       }
     },
     severityPlot = {
@@ -73,7 +74,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSeverityPlot(sim)
         
         ## schedule next plot
-        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8.5)
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 4.5)
       }
     },
     saveSeverity = {
@@ -82,7 +83,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSaveSeverity(sim)
         
         ## schedule next plot
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSeverity", "saveSeverity", eventPriority = 8.75)
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSeverity", "saveSeverity", eventPriority = 4.75)
       }
     },
     
@@ -103,10 +104,25 @@ doSeverity <- function(sim){
   fireMask <- sim$rstCurrentBurn[[time(sim)]]
   fireMask[!is.na(fireMask)] <- 1
   
-  ## fire severity in % mortality ((pre - post)/pre)
-  sim$severityMap <- (sim$biomassMapPreFire - sim$biomassMap)/sim$biomassMapPreFire
-  sim$severityMap <- setValues(sim$severityMap, values = round(getValues(sim$severityMap)))
-  sim$severityMap <- raster::mask(sim$severityMap, mask = fireMask)
+  ## Make raster of post-fire biomass  
+  ## note that for this, this event must come before dispersal/regeneration events in LBMR
+  cohortData <- sim$cohortData
+  pixelAll <- cohortData[,.(uniqueSumB = as.integer(sum(B, na.rm=TRUE))), by=pixelGroup]
+  biomassMapPostFire <- rasterizeReduced(pixelAll, sim$pixelGroupMap, "uniqueSumB")
+  raster::projection(biomassMapPostFire) <- raster::projection(sim$biomassMap)
+  
+  ## fire severity in % mortality ((pre - post)/pre) -- this nedes to be changed as post-fire biomass cannot include dispersal/regeneration
+  severityMap <- ((sim$biomassMapPreFire - biomassMapPostFire)/sim$biomassMapPreFire) * 100
+  severityMap <- setValues(severityMap, values = round(getValues(severityMap)))
+  severityMap <- raster::mask(severityMap, mask = fireMask)
+
+  ## fire severity in % TFC
+  # sim$severityMap <- sim$fireTFCRas
+  # sim$severityMap <- setValues(sim$severityMap, values = scales::rescale(getValues(sim$severityMap), to = c(0,1))*100)
+  # sim$severityMap <- raster::mask(sim$severityMap, mask = fireMask)
+
+  ## export to sim
+  sim$severityMap <- severityMap
   
   return(invisible(sim))
 }
@@ -123,8 +139,8 @@ doSeverityPlot <- function(sim) {
 doSaveSeverity = function(sim) {
   raster::projection(sim$severityMap) <- raster::projection(sim$ecoregionMap)
   writeRaster(sim$severityMap,
-              file.path(outputPath(sim), paste("severityMap_Year", round(time(sim)), ".tif",sep="")), datatype='INT2S',
-              overwrite = TRUE)
+              file.path(outputPath(sim), paste("severityMap_Year", round(time(sim)), ".tif",sep="")), 
+              datatype='INT2S', overwrite = TRUE)
   return(invisible(sim))
 }
 
