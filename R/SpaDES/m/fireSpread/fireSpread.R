@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSpread.Rmd"),
-  reqdPkgs = list("raster", "data.table", "dplyr", "humidity", #"cffdrs",  ## cffdrs is causing installation problems
+  reqdPkgs = list("R.utils", "raster", "data.table", "dplyr", "humidity", #"cffdrs",  ## cffdrs is causing installation problems
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "CeresBarros/reproducible@development"),
@@ -341,7 +341,7 @@ doFireSpread <- function(sim) {
   ## and their sum is scaled to 0-1
   ## TODO: TFC and intensity should be combined differently
   persistProb_map <- sim$fireTFCRas + sim$fireIntRas
-  persistProb_map <- mask(persistProb_map , burnableAreas)
+  persistProb_map <- mask(persistProb_map, burnableAreas)
   
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
   vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
@@ -352,26 +352,31 @@ doFireSpread <- function(sim) {
   sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
   
   ## Favier's model:
-  x <- try(expr = {
-    rstCurrentBurn <- spread2(landscape = burnableAreas,
-                              spreadProb = spreadProb_map,
-                              persistProb = persistProb_map,
-                              start = sim$startPix, 
-                              maxSize =  P(sim)$fireSize,
-                              plot.it = FALSE)
-  }, silent = TRUE) 
-  
-  while (class(x) == "try-error") {
-    x <- try(expr = {
-      rstCurrentBurn <- spread2(landscape = burnableAreas,
-                                spreadProb = spreadProb_map,
-                                persistProb = persistProb_map,
-                                start = startPix, 
-                                maxSize =  P(sim)$fireSize,
-                                plot.it = FALSE)
-    }, silent = TRUE) 
-  }
-  
+  rstCurrentBurn <- NULL
+  rstCurrentBurn <- evalWithTimeout(timeout = 30, onTimeout = "warning",
+                                    expr = spread2(landscape = burnableAreas,
+                                                    spreadProb = spreadProb_map,
+                                                    persistProb = persistProb_map,
+                                                    start = sim$startPix, 
+                                                    maxSize =  P(sim)$fireSize, 
+                                                    iterations = 10000L,
+                                                    plot.it = FALSE))
+  if(is.null(rstCurrentBurn)) {
+    i = 1
+  while(i < 11) {
+      sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
+      rstCurrentBurn <- evalWithTimeout(timeout = 30, onTimeout = "warning",
+                                        expr = spread2(landscape = burnableAreas,
+                                                       spreadProb = spreadProb_map,
+                                                       persistProb = persistProb_map,
+                                                       start = sim$startPix, 
+                                                       maxSize =  P(sim)$fireSize, 
+                                                       iterations = 10000L,
+                                                       plot.it = FALSE))
+      i = i + 1
+    }
+    if(i == 10) browser()
+  } 
   
   
   ## remove fires that spread beyond burnable areas
