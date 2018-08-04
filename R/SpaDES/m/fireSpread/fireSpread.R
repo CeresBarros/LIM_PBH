@@ -47,16 +47,14 @@ defineModule(sim, list(
                  This table should be updated every year"),
     expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table", 
                  desc = "Fuel types per pixel group, calculated from cohort biomasses"),
-    expectsInput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
-                 desc = "updated community map at each succession time step, on FBP-compatible projection"),
+    expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
+                 desc = "updated community map at each succession time step"),
     expectsInput(objectName = "FuelTypes", objectClass = "data.table",
                  desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
                  min and max age for each species"),
     # expectsInput(objectName = "FWIinit", objectClass = "data.table",
     #              desc = "Table of Fire Weather Index initalisation parameters, defaults to default values
     #              available in the cffrs::fwi documentation"),
-    expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-                 desc = "updated community map at each succession time step")
     ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapFBP", objectClass = "RasterLayer",
@@ -67,8 +65,6 @@ defineModule(sim, list(
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
-    createsOutput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-                  desc = "updated community map at each succession time step"),
     createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
                   desc = "Fire weather inputs table"),
     createsOutput(objectName = "FWIinit", objectClass = "RasterLayer",
@@ -100,39 +96,40 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
       
       ## schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2) ## always schedule fire
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25) ## always schedule fire
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5) ## always schedule fire
     },
-    Fire = {
+    fireParams = {
       ## in the first year of fire calculate parameters and do fire
       if(time(sim) == P(sim)$fireInitialTime) { 
         ## calculate fire parameters
         sim <- FPBPercParams(sim)
-        ## calculate fire spread
-        sim <- doFireSpread(sim)
-        
-      } else{
-        ## in subsequent years evaluate if parameters are to be aclcualted again (veg feedbacks)
+      }
+      
+      ## in subsequent years evaluate if parameters are to be calculated again (veg feedbacks = TRUE)
+      if(time(sim) == sim$fireYear) {
+        if(P(sim)$vegFeedback) {
+          ## calculate fire parameters
+          sim <- FPBPercParams(sim)
+        }
+      } 
+      
+      ## schedule future event(s) - always schedule fire
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25)
+    },
+    fireSpread = {
+        ## calculate fire spread in fire years 
         if(time(sim) == sim$fireYear) {
-          if(P(sim)$vegFeedback) {
-            ## calculate fire parameters
-            sim <- FPBPercParams(sim)
-            ## calculate fire spread
             sim <- doFireSpread(sim)
-          } else {
-            ## calculate fire spread
-            sim <- doFireSpread(sim)
-          }
+          
+          ## define next fire year
+          sim$fireYear <- time(sim) + P(sim)$fireTimestep
         } else {
           ## No fire
           sim <- doNoFire(sim)
         }
-      }
-      
-      ## define next fire year
-      sim$fireYear <- time(sim) + P(sim)$fireTimestep
-      
       ## schedule future event(s) - always schedule fire
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "Fire", eventPriority = 2)
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -145,20 +142,19 @@ fireInit <- function(sim) {
   ## project to Lat/Long (decimal degrees) for compatibility with FBP system
   ## TODO: this results in data loss - but LandR doesn't deal well with lat/long
   ## need to find long term solution
-  latLong = "+proj=longlat +datum=WGS84"
   
   ## define first fire year
   sim$fireYear <- as.integer(P(sim)$fireInitialTime)
   
   ## get pixelGroupMapFBP and reproject
   pixelGroupMapFBP <- sim$pixelGroupMap
-  pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, rasterToMatch = sim$biomassMapFBP,
-                                  method = "ngb", filename2 = NULL)
+  pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+                                  useSAcrs = TRUE, method = "ngb", filename2 = NULL, useCache = FALSE)
   
-  ## get biomassMap and reproject to previous biomassMapFBP
+  ## get biomassMap and reproject to FBP-compatible projection
   biomassMapFBP <- sim$biomassMap
-  biomassMapFBP <- postProcess(biomassMapFBP, rasterToMatch = sim$biomassMapFBP,
-                               method = "bilinear", filename2 = NULL)
+  biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP,
+                               useSAcrs = TRUE, method = "bilinear", filename2 = NULL, useCache = FALSE)
   
   
   ## TOPOCLIMDATA TABLE - only needs to be created if not supplied by another module
@@ -190,15 +186,17 @@ FPBPercParams <- function(sim) {
   
   ## Update pixelGroupMap and biomassMap if not init
   if(time(sim) != start(sim)) {
-    ## get pixelGroupMapFBP and reproject
+    ## get pixelGroupMapFBP and reproject to previous biomassMapFBP
     pixelGroupMapFBP <- sim$pixelGroupMap
-    pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, rasterToMatch = sim$biomassMapFBP,
-                                    method = "ngb", filename2 = NULL)
+    pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+                                    useSAcrs = TRUE, method = "ngb", filename2 = NULL, useCache = FALSE)
     
-    ## get biomassMap and reproject to previous biomassMapFBP
+    ## get biomassMap and reproject to FBP-compatible projection
+    ## note: first provide the native projection to biomassMap as it is removed by rasterizereduced in LBMR
+    raster::projection(sim$biomassMap) <- P(sim)$.crsUsed
     biomassMapFBP <- sim$biomassMap
-    biomassMapFBP <- postProcess(biomassMapFBP, rasterToMatch = sim$biomassMapFBP, 
-                                 method = "bilinear", filename2 = NULL)
+    biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP,
+                                 useSAcrs = TRUE, method = "bilinear", filename2 = NULL, useCache = FALSE)
     
     ## export to sim and clean ws
     sim$pixelGroupMapFBP <- pixelGroupMapFBP
@@ -283,12 +281,12 @@ FPBPercParams <- function(sim) {
   sim$fireTFCRas[!getValues(sim$fireTFCRas) %in% FBPoutputs$pixelGroup] <- NA
   sim$fireTFCRas <- raster::reclassify(sim$fireTFCRas, rcl = TFCvals)
   
-  ## transform pixel IDs in tables to LBMR compatible
+  ## transform pixel IDs in tables match LBMR projection
   tempRas <- sim$pixelGroupMapFBP
-  tempRas[] <- 1:ncell(tempRas)
+  tempRas[] <- 1:ncell(tempRas)  ## create cell IDs
   tempRas <- postProcess(tempRas, rasterToMatch = sim$pixelGroupMap,
-                         res = res(sim$pixelGroupMap), method = "ngb", filename2 = NULL,
-                         useCache = FALSE)
+                         res = res(sim$pixelGroupMap), method = "ngb", 
+                         filename2 = NULL, useCache = FALSE)
   pixCorresp <- data.table(pixFBP = getValues(tempRas), pixelIndex = 1:ncell(tempRas))
   
   FWIinputs  <- merge(FWIinputs, pixCorresp, by.x = "id", by.y = "pixFBP", all.y = TRUE)
@@ -300,9 +298,9 @@ FPBPercParams <- function(sim) {
   FWIoutputs[, pixID := NULL]; FBPoutputs[, pixID := NULL] 
   
   ## reproject rasters and maps for LBMR compatibility
-  sim$fireROSRas <- postProcess(sim$fireROSRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
-  sim$fireIntRas <- postProcess(sim$fireIntRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
-  sim$fireTFCRas <- postProcess(sim$fireTFCRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
+  sim$fireROSRas <- postProcess(sim$fireROSRas, rasterToMatch = sim$pixelGroupMap, method = "bilinear", filename2 = NULL)
+  sim$fireIntRas <- postProcess(sim$fireIntRas, rasterToMatch = sim$pixelGroupMap, method = "bilinear", filename2 = NULL)
+  sim$fireTFCRas <- postProcess(sim$fireTFCRas, rasterToMatch = sim$pixelGroupMap, method = "bilinear", filename2 = NULL)
   
   ## export to sim
   sim$FWIinputs <- FWIinputs
@@ -457,8 +455,8 @@ doNoFire <- function(sim) {
   
   ## project biomassMap for next prepinput calls.
   biomassMapFBP <- sim$biomassMap
-  biomassMapFBP <- postProcess(biomassMapFBP, rasterToMatch = sim$biomassMapFBP, 
-                               method = "bilinear", filename2 = NULL)
+  biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+                               useSAcrs = TRUE, method = "bilinear", filename2 = NULL)
   
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
   ## these defaults are only necessary if the topoClimData is not supplied by another module
