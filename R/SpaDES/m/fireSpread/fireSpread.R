@@ -96,11 +96,11 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
       
       ## schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25) ## always schedule fire
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time 
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5) ## always schedule fire
     },
     fireParams = {
-      ## in the first year of fire calculate parameters and do fire
+      ## in the first year of fire always calculate parameters
       if(time(sim) == P(sim)$fireInitialTime) { 
         ## calculate fire parameters
         sim <- FPBPercParams(sim)
@@ -111,11 +111,13 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
         if(P(sim)$vegFeedback) {
           ## calculate fire parameters
           sim <- FPBPercParams(sim)
+          
+          ## schedule future event(s)
+          ## only calculate parameters in fire years.
+          sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSpread", "fireParams", eventPriority = 2.25)
         }
       } 
       
-      ## schedule future event(s) - always schedule fire
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25)
     },
     fireSpread = {
         ## calculate fire spread in fire years 
