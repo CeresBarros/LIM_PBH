@@ -73,14 +73,15 @@ paramsSimLBMR <- list(
   # BiomassSpeciesData = list(crsUsed = projCRS),
   LBMR = list(successionTimestep = 1,
               seedingAlgorithm = "wardDispersal",
-              .saveInitialTime = NA, 
-              .plotInitialTime = timesSim$start
+              .saveInitialTime = NA,
+              .plotInitialTime = timesSim$start#, 
               # seedingAlgorithm = "universalDispersal",
               # .useCache = eventCaching
               ),
-  fireSpread = list(fireFreq = 2L,
+  fireSpread = list(fireTimestep = 2L,
                     vegFeedback = FALSE),
-  fireSeverity = list(.plotMaps = FALSE)
+  fireSeverity = list(.plotMaps = FALSE,
+                      .saveInitialTime = 1)
 )
 
 
@@ -96,14 +97,15 @@ expParams <- list(
   # BiomassSpeciesData = list(crsUsed = projCRS),
   LBMR = list(successionTimestep = 1,
               seedingAlgorithm = "wardDispersal",
-              .saveInitialTime = NA, 
-              .plotInitialTime = NA
+              .saveInitialTime = NA,
+              .plotInitialTime = timesSim$start#, 
               # seedingAlgorithm = "universalDispersal",
               # .useCache = eventCaching
   ),
-  fireSpread = list(fireFreq = 2L,
+  fireSpread = list(fireTimestep = 2L,
                     vegFeedback = c(FALSE,TRUE)),
-  fireSeverity = list(.plotMaps = FALSE)
+  fireSeverity = list(.plotMaps = FALSE,
+                      .saveInitialTime = 1)
 )
 
 graphics.off()
@@ -111,7 +113,9 @@ dev()
 clearPlot()
 LBMR_experiment <- experiment(LBMR_testSim, replicates = 10, params = expParams,
                               experimentFile = FALSE)
-endCluster()
+
+## error when veg feeback are true
+# endCluster()
 
 # moduleDiagram(LBMR_testSim)
 # objectDiagram(LBMR_testSim)
