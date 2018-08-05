@@ -55,7 +55,7 @@ defineModule(sim, list(
     # expectsInput(objectName = "FWIinit", objectClass = "data.table",
     #              desc = "Table of Fire Weather Index initalisation parameters, defaults to default values
     #              available in the cffrs::fwi documentation"),
-    ),
+  ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapFBP", objectClass = "RasterLayer",
                   desc = "Biomass map at each succession time step, on FBP-compatible projection.
@@ -85,8 +85,8 @@ defineModule(sim, list(
                   desc = "List of starting fire pixels"),
     createsOutput(objectName = "rstCurrentBurn", objectClass = "list",
                   desc = "List of rasters of fire spread")
-    )
-    ))
+  )
+))
 
 doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -120,16 +120,16 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       
     },
     fireSpread = {
-        ## calculate fire spread in fire years 
-        if(time(sim) == sim$fireYear) {
-            sim <- doFireSpread(sim)
-          
-          ## define next fire year
-          sim$fireYear <- time(sim) + P(sim)$fireTimestep
-        } else {
-          ## No fire
-          sim <- doNoFire(sim)
-        }
+      ## calculate fire spread in fire years 
+      if(time(sim) == sim$fireYear) {
+        sim <- doFireSpread(sim)
+        
+        ## define next fire year
+        sim$fireYear <- time(sim) + P(sim)$fireTimestep
+      } else {
+        ## No fire
+        sim <- doNoFire(sim)
+      }
       ## schedule future event(s) - always schedule fire
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5)
     },
@@ -336,6 +336,9 @@ doFireSpread <- function(sim) {
   vals[!is.na(spreadP), spreadP := scales::rescale(spreadP, to = c(0.1,0.3))]
   spreadProb_map[] <- vals$spreadP
   
+  ## NAs get 0 probability
+  spreadProb_map[is.na(getValues(spreadProb_map))] <- 0 
+  
   ## MAKE RASTER OF PERSISTENCE PROABILITIES 
   ## persistence probability is the combination of TFC and intensity, which have an additive effect
   ## and their sum is scaled to 0-1
@@ -347,37 +350,21 @@ doFireSpread <- function(sim) {
   vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisP
   
+  ## NAs get 0 probability
+  persistProb_map[is.na(getValues(persistProb_map))] <- 0 
+  
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
   sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
   
   ## Favier's model:
-  rstCurrentBurn <- NULL
-  rstCurrentBurn <- evalWithTimeout(timeout = 30, onTimeout = "warning",
-                                    expr = spread2(landscape = burnableAreas,
-                                                    spreadProb = spreadProb_map,
-                                                    persistProb = persistProb_map,
-                                                    start = sim$startPix, 
-                                                    maxSize =  P(sim)$fireSize, 
-                                                    iterations = 10000L,
-                                                    plot.it = FALSE))
-  if(is.null(rstCurrentBurn)) {
-    i = 1
-  while(i < 11) {
-      sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
-      rstCurrentBurn <- evalWithTimeout(timeout = 30, onTimeout = "warning",
-                                        expr = spread2(landscape = burnableAreas,
-                                                       spreadProb = spreadProb_map,
-                                                       persistProb = persistProb_map,
-                                                       start = sim$startPix, 
-                                                       maxSize =  P(sim)$fireSize, 
-                                                       iterations = 10000L,
-                                                       plot.it = FALSE))
-      i = i + 1
-    }
-    if(i == 10) browser()
-  } 
-  
+  rstCurrentBurn <- spread2(landscape = burnableAreas,
+                            spreadProb = spreadProb_map,
+                            persistProb = persistProb_map,
+                            start = sim$startPix, 
+                            maxSize =  P(sim)$fireSize, 
+                            iterations = 10000L,
+                            plot.it = FALSE)
   
   ## remove fires that spread beyond burnable areas
   rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
