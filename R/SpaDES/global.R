@@ -44,9 +44,8 @@ speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.c
 ## SIMULATION SETUP ------------------------------
 
 ## simulation parameters
-
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 100)
+timesSim <- list(start = 1, end = 50)
 
 # modulesSimtoy <- list("simplifyLCCVeg", "simpleLCCSuccession", "fireSpread", "fireSeverity")
 # objectsSimtoy <-  list(studyArea = foothillsSMALL)
@@ -65,66 +64,112 @@ modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",
 objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
                        "shpStudySubRegion" = foothillsSMALL,
                        "speciesList" = speciesList)
-## projection for FBP system compatibility -  not tolerated for dispersal leave default parameter for now
-# projCRS = "+proj=longlat +datum=WGS84"
+outputs <- data.frame(expand.grid(objectName = c("cohortData","rstCurrentBurn"),
+                                  saveTime = seq(2, 50, by = 5),
+                                  stringsAsFactors = FALSE))
+
 
 paramsSimLBMR <- list(
   # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
   # BiomassSpeciesData = list(crsUsed = projCRS),
   LBMR = list(successionTimestep = 1,
+              fireTimestep = 5L,
               seedingAlgorithm = "wardDispersal",
-              .saveInitialTime = NA,
+              .saveInitialTime = 1,
               .plotInitialTime = timesSim$start#, 
-              # seedingAlgorithm = "universalDispersal",
               # .useCache = eventCaching
               ),
-  fireSpread = list(fireTimestep = 2L,
+  fireSpread = list(fireTimestep = 5L,
                     vegFeedback = FALSE),
-  fireSeverity = list(.plotMaps = FALSE,
+  fireSeverity = list(fireTimestep = 5L,
+                      .plotMaps = FALSE,
                       .saveInitialTime = 1)
 )
 
+pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_0"
+# pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1")
 
 showCache(getPaths()$cachePath)
 # clearCache(getPaths()$cachePath#, userTags = "Boreal_LBMRDataPrep"
-           # )
+# )
 
 LBMR_testSim <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
-                        objects = objectsSimLBMR, paths = pathsSim)
-
-expParams <- list(
-  # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
-  # BiomassSpeciesData = list(crsUsed = projCRS),
-  LBMR = list(successionTimestep = 1,
-              seedingAlgorithm = "wardDispersal",
-              .saveInitialTime = NA,
-              .plotInitialTime = timesSim$start#, 
-              # seedingAlgorithm = "universalDispersal",
-              # .useCache = eventCaching
-  ),
-  fireSpread = list(fireTimestep = 2L,
-                    vegFeedback = c(FALSE,TRUE)),
-  fireSeverity = list(.plotMaps = FALSE,
-                      .saveInitialTime = 1)
-)
+                        objects = objectsSimLBMR, outputs = outputs, paths = pathsSim)
 
 graphics.off()
 dev()
 clearPlot()
-LBMR_experiment <- experiment(LBMR_testSim, replicates = 10, params = expParams,
-                              experimentFile = FALSE)
+LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+# events(LBMR_testSim)
+
+
+paramsSimLBMR <- list(
+  # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
+  # BiomassSpeciesData = list(crsUsed = projCRS),
+  LBMR = list(successionTimestep = 1,
+              fireTimestep = 5L,
+              seedingAlgorithm = "wardDispersal",
+              .saveInitialTime = 1,
+              .plotInitialTime = timesSim$start#, 
+              # .useCache = eventCaching
+  ),
+  fireSpread = list(fireTimestep = 5L,
+                    vegFeedback = TRUE),
+  fireSeverity = list(fireTimestep = 5L,
+                      .plotMaps = FALSE,
+                      .saveInitialTime = 1)
+)
+
+pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_1"
+# pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1")
+
+showCache(getPaths()$cachePath)
+# clearCache(getPaths()$cachePath#, userTags = "Boreal_LBMRDataPrep"
+# )
+
+LBMR_testSim2 <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
+                        objects = objectsSimLBMR, paths = pathsSim)
+
+graphics.off()
+dev()
+clearPlot()
+LBMR_testSimout2 <- spades(LBMR_testSim2, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+# events(LBMR_testSim)
+
+
+
+
+
+
+
+# expParams <- list(
+#   # Boreal_LBMRDataPrep = list(crsUsed = projCRS),
+#   # BiomassSpeciesData = list(crsUsed = projCRS),
+#   LBMR = list(successionTimestep = 1,
+#               fireTimestep = 5L,
+#               seedingAlgorithm = "wardDispersal",
+#               .saveInitialTime = 1,
+#               .plotInitialTime = timesSim$start#,
+#               # .useCache = eventCaching
+#   ),
+#   fireSpread = list(fireTimestep = 5L,
+#                     vegFeedback = c(FALSE,TRUE)),
+#   fireSeverity = list(fireTimestep = 5L,
+#                       .plotMaps = FALSE,
+#                       .saveInitialTime = 1)
+# )
+# 
+# graphics.off()
+# dev()
+# clearPlot()
+# LBMR_experiment <- experiment(LBMR_testSim, replicates = 5, params = expParams,
+#                               experimentFile = TRUE)
 
 ## error when veg feeback are true
 # endCluster()
 
 # moduleDiagram(LBMR_testSim)
 # objectDiagram(LBMR_testSim)
-# events(LBMR_testSim)
-
-graphics.off()
-dev()
-clearPlot()
-LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 # events(LBMR_testSim)
 
 
