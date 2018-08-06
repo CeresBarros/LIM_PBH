@@ -64,10 +64,11 @@ modulesSimLBMR <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",
 objectsSimLBMR <- list("shpStudyRegionFull" = foothillsSMALL,
                        "shpStudySubRegion" = foothillsSMALL,
                        "speciesList" = speciesList)
-outputs <- data.frame(expand.grid(objectName = c("cohortData","rstCurrentBurn"),
+outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   saveTime = seq(2, 50, by = 5),
                                   stringsAsFactors = FALSE))
-
+outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn", 
+                                     saveTime = tail(seq(2, 50, by = 5), 1)))
 
 paramsSimLBMR <- list(
   # Boreal_LBMRDataPrep = list(crsUsed = projCRS), 
@@ -128,7 +129,7 @@ showCache(getPaths()$cachePath)
 # )
 
 LBMR_testSim2 <- simInit(times = timesSim, params = paramsSimLBMR, modules = modulesSimLBMR,
-                        objects = objectsSimLBMR, paths = pathsSim)
+                        objects = objectsSimLBMR, outputs = outputs, paths = pathsSim)
 
 graphics.off()
 dev()
