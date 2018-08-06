@@ -363,7 +363,6 @@ doFireSpread <- function(sim) {
                             persistProb = persistProb_map,
                             start = sim$startPix, 
                             maxSize =  P(sim)$fireSize, 
-                            iterations = 10000L,
                             plot.it = FALSE)
   
   ## remove fires that spread beyond burnable areas
