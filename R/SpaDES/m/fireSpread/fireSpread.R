@@ -31,12 +31,16 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "shpStudySubRegionFBP", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput(objectName = "shpStudySubRegion", objectClass = "SpatialPolygonsDataFrame",
                  desc = "this shape file contains two informaton: Sub study area with fire return interval attribute. 
                  Defaults to a square shapefile in Southwestern Alberta, Canada", sourceURL = ""),
-    expectsInput(objectName = "shpStudyRegionFullFBP", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput(objectName = "shpStudyRegionFull", objectClass = "SpatialPolygonsDataFrame",
                  desc = "this shape file contains two informaton: Full study area with fire return interval attribute.
                  Defaults to a square shapefile in Southwestern Alberta, Canada", sourceURL = ""),
+    expectsInput(objectName = "shpStudySubRegionFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as shpStudySubRegion,  but on FBP-compatible projection", sourceURL = ""),
+    expectsInput(objectName = "shpStudyRegionFullFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as shpStudyRegionFull,  but on FBP-compatible projection", sourceURL = ""),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
@@ -57,9 +61,6 @@ defineModule(sim, list(
     #              available in the cffrs::fwi documentation"),
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "biomassMapFBP", objectClass = "RasterLayer",
-                  desc = "Biomass map at each succession time step, on FBP-compatible projection.
-                  Default is Canada national biomass map"),
     createsOutput(objectName = "topoClimData", objectClass = "data.table",
                   desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
@@ -83,8 +84,8 @@ defineModule(sim, list(
                   desc = "Raster of total fuel consumed"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels"),
-    createsOutput(objectName = "rstCurrentBurn", objectClass = "list",
-                  desc = "List of rasters of fire spread")
+    createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+                  desc = "Binary raster of fire spread")
   )
 ))
 
@@ -96,8 +97,8 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
       
       ## schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time 
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5) ## always schedule fire
+      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread", "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time 
+      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread", "fireSpread", eventPriority = 2.5) ## always schedule fire
     },
     fireParams = {
       ## in the first year of fire always calculate parameters
@@ -148,17 +149,14 @@ fireInit <- function(sim) {
   ## define first fire year
   sim$fireYear <- as.integer(P(sim)$fireInitialTime)
   
-  ## get pixelGroupMapFBP and reproject
+  ## get pixelGroupMapFBP and reproject to previous CRS
+  ## note: first provide the native projection as it is removed by rasterizereduced in LBMR
   pixelGroupMapFBP <- sim$pixelGroupMap
-  pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+  raster::projection(pixelGroupMapFBP) <- P(sim)$.crsUsed
+  pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, rasterToMatch = pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
                                   useSAcrs = TRUE, method = "ngb", filename2 = NULL, useCache = FALSE)
   
-  ## get biomassMap and reproject to FBP-compatible projection
-  biomassMapFBP <- sim$biomassMap
-  biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP,
-                               useSAcrs = TRUE, method = "bilinear", filename2 = NULL, useCache = FALSE)
-  
-  
+
   ## TOPOCLIMDATA TABLE - only needs to be created if not supplied by another module
   ## can't be put in .inputObjects without a default picelGroupMap
   if(!suppliedElsewhere('topoClimData', sim)) {
@@ -177,7 +175,6 @@ fireInit <- function(sim) {
   
   ## export to sim
   sim$pixelGroupMapFBP <- pixelGroupMapFBP
-  sim$biomassMapFBP <- biomassMapFBP
   
   return(invisible(sim))
 }
@@ -188,22 +185,16 @@ FPBPercParams <- function(sim) {
   
   ## Update pixelGroupMap and biomassMap if not init
   if(time(sim) != start(sim)) {
-    ## get pixelGroupMapFBP and reproject to previous biomassMapFBP
-    pixelGroupMapFBP <- sim$pixelGroupMap
-    pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
-                                    useSAcrs = TRUE, method = "ngb", filename2 = NULL, useCache = FALSE)
-    
-    ## get biomassMap and reproject to FBP-compatible projection
+    ## get pixelGroupMapFBP and reproject to previous CRS
     ## note: first provide the native projection to biomassMap as it is removed by rasterizereduced in LBMR
-    raster::projection(sim$biomassMap) <- P(sim)$.crsUsed
-    biomassMapFBP <- sim$biomassMap
-    biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP,
-                                 useSAcrs = TRUE, method = "bilinear", filename2 = NULL, useCache = FALSE)
+    pixelGroupMapFBP <- sim$pixelGroupMap
+    raster::projection(pixelGroupMapFBP) <- P(sim)$.crsUsed
+    pixelGroupMapFBP <- postProcess(pixelGroupMapFBP, rasterToMatch = pixelGroupMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+                                    useSAcrs = TRUE, method = "ngb", filename2 = NULL, useCache = FALSE)
     
     ## export to sim and clean ws
     sim$pixelGroupMapFBP <- pixelGroupMapFBP
-    sim$biomassMapFBP <- biomassMapFBP
-    rm(pixelGroupMapFBP, biomassMapFBP)
+    rm(pixelGroupMapFBP)
   }
   
   ## make/update table of FWI inputs
@@ -233,13 +224,14 @@ FPBPercParams <- function(sim) {
                     coniferDom = sim$pixelFuelTypes$coniferDom)
   
   ## merge with FBP fuel type names
-  FTs <- sim$FuelTypes[, .(FuelTypeFBP,FuelType)] %>%
+  FTs <- sim$FuelTypes[, .(FuelTypeFBP, FuelType)] %>%
     .[!duplicated(.)] %>%
     .[FTs, on = "FuelType"]
   
-  ## add fuel types to FWIOutputs
-  FWIoutputs <- FTs[!duplicated(FTs)] %>%
-    .[FWIoutputs, on = "pixelGroup"]
+  FTs <- FTs[!duplicated(FTs)]
+  
+  ## add fuel types and conifer dominance to FWIOutputs
+  FWIoutputs <- FTs[FWIoutputs, on = "pixelGroup"]
   
   ## add slope and aspect
   FWIoutputs <- sim$topoClimData[, .(pixID, slope, aspect)] %>%
@@ -368,15 +360,17 @@ doFireSpread <- function(sim) {
   ## remove fires that spread beyond burnable areas
   rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
   
+  ## convert to mask
+  rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
+  
   ## export to sim
-  sim$burnableAreas
-  sim$rstCurrentBurn[[time(sim)]] <- rstCurrentBurn
+  sim$rstCurrentBurn <- rstCurrentBurn
   return(invisible(sim))
 }
 
 ## What to do in no fire years
 doNoFire <- function(sim) {
-  sim$rstCurrentBurn[[time(sim)]] <- NA
+  sim$rstCurrentBurn <- setValues(sim$rstCurrentBurn, rep(ncell(sim$rstCurrentBurn), NA))
   
   return(invisible(sim))
 }
@@ -395,7 +389,7 @@ doNoFire <- function(sim) {
   ## need to find long term solution
   latLong <- "+proj=longlat +datum=WGS84"
   
-  if(!suppliedElsewhere("shpStudyRegionFullFBP", sim)) {
+  if (!suppliedElsewhere("shpStudyRegionFullFBP", sim)) {
     if (!suppliedElsewhere("shpStudyRegionFull", sim)) {
       message("'shpStudyRegionFull' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
       
@@ -430,8 +424,8 @@ doNoFire <- function(sim) {
   if (!identical(latLong, crs(sim$shpStudySubRegionFBP))) {
     sim$shpStudySubRegionFBP <- spTransform(sim$shpStudySubRegionFBP, latLong) #faster without Cache
   }
-  
   if(!suppliedElsewhere("biomassMap", sim)) {
+    biomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
     sim$biomassMap <- Cache(prepInputs,
                             targetFile = biomassMapFilename,
                             archive = asPath(c("kNN-StructureBiomass.tar",
@@ -448,7 +442,7 @@ doNoFire <- function(sim) {
   
   ## project biomassMap for next prepinput calls.
   biomassMapFBP <- sim$biomassMap
-  biomassMapFBP <- postProcess(biomassMapFBP, studyArea = sim$shpStudySubRegionFBP, 
+  biomassMapFBP <- postProcess(biomassMapFBP, rasterToMatch = sim$biomassMap, studyArea = sim$shpStudySubRegionFBP,
                                useSAcrs = TRUE, method = "bilinear", filename2 = NULL)
   
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
