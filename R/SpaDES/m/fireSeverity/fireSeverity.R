@@ -34,8 +34,6 @@ defineModule(sim, list(
                   succession time step"),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step"),
-    expectsInput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
-                 desc = "Biomass map from before the last fire."),
     expectsInput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                  desc = "Binary raster of fire spread"),
     expectsInput(objectName = "fireYear", objectClass = "numeric", desc =  "Next fire year"),
@@ -47,6 +45,8 @@ defineModule(sim, list(
                  Defaults to a shapefile in Southwestern Alberta, Canada", sourceURL = "")
   ),
   outputObjects = bind_rows(
+    createsOutput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
+                 desc = "Biomass map from before the last fire."),
     createsOutput(objectName = "severityMap", objectClass = "RasterLayer",
                   desc = "Raster of fire severity")
   )
@@ -64,6 +64,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       
       ## schedule events
       if(!is.null(sim$rstCurrentBurn)) {   ## only if fire module is "active"
+        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "getBiomassPreFire", eventPriority = 2)  ## before regeneration
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 4)
         
         if(P(sim)$.plotMaps)
@@ -73,6 +74,15 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime,
                                "fireSeverity", "saveSeverity", eventPriority = 4.75)
       }
+    },
+    getBiomassPreFire = {
+      ## get the pre-fire biomass maps before any fire event
+      sim <- doBiomassPreFire(sim)
+      
+      ## schedule future events
+      sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
+                           eventType = "getBiomassPreFire", eventPriority = 2)
+      
     },
     calcSeverity = {
       if(!all(is.na(sim$rstCurrentBurn[]))) {
@@ -111,6 +121,9 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
+  ## store initial biomassMap as first pre-fire biomass raster
+  sim$biomassMapPreFire <- sim$biomassMap
+  
   return(invisible(sim))
 }
 
@@ -152,11 +165,17 @@ doSeverityPlot <- function(sim) {
   return(invisible(sim))
 }
 
-doSaveSeverity = function(sim) {
+doSaveSeverity <- function(sim) {
   raster::projection(sim$severityMap) <- raster::projection(sim$ecoregionMap)
   writeRaster(sim$severityMap,
               file.path(outputPath(sim), paste("severityMap_Year", round(time(sim)), ".tif",sep="")), 
               datatype='INT2S', overwrite = TRUE)
+  return(invisible(sim))
+}
+
+doBiomassPreFire <- function(sim){
+  ## before regeneration occurs, save the pre-fire biomass conditions
+  sim$biomassMapPreFire <- sim$biomassMap
   return(invisible(sim))
 }
 

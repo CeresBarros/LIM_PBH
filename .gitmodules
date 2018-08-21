@@ -1,7 +1,7 @@
 [submodule "R/SpaDES/m/LBMR"]
 	path = R/SpaDES/m/LBMR
 	url = https://github.com/CeresBarros/LBMR.git
-	branch = changes2FireDist2
+	branch = rmFireDisturbance
 [submodule "R/SpaDES/m/Boreal_LBMRDataPrep"]
 	path = R/SpaDES/m/Boreal_LBMRDataPrep
 	url = https://github.com/eliotmcintire/Boreal_LBMRDataPrep.git
@@ -14,3 +14,6 @@
 	path = R/SpaDES/m/LandR_BiomassFuels
 	url = https://github.com/CeresBarros/LandR_BiomassFuels.git
 	branch = development
+[submodule "R/SpaDES/m/LandR_BiomassRegen"]
+	path = R/SpaDES/m/LandR_BiomassRegen
+	url = https://github.com/CeresBarros/LandR_BiomassRegen.git
