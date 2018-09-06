@@ -17,6 +17,9 @@
 [submodule "R/SpaDES/m/LandR_BiomassRegen"]
 	path = R/SpaDES/m/LandR_BiomassRegen
 	url = https://github.com/CeresBarros/LandR_BiomassRegen.git
-[submodule "R\\SpaDES\\m\\LandR_BiomassGMCC"]
+[submodule "R/SpaDES/m/LandR_BiomassGMCC"]
 	path = R/SpaDES/m/LandR_BiomassGMCC
 	url = https://github.com/CeresBarros/LandR_BiomassGMCC.git
+[submodule "R/SpaDES/m/LandR_BiomassGMOrig"]
+	path = R/SpaDES/m/LandR_BiomassGMOrig
+	url = https://github.com/CeresBarros/LandR_BiomassGMOrig.git
