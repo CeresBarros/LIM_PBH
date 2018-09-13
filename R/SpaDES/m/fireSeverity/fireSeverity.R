@@ -68,7 +68,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 4)
         
         if(P(sim)$.plotMaps)
-          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 4.5)
+          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 8)
         
         if(!any(is.na(P(sim)$.saveInitialTime)))
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime,
@@ -78,10 +78,11 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
     getBiomassPreFire = {
       ## get the pre-fire biomass maps before any fire event
       sim <- doBiomassPreFire(sim)
-      
       ## schedule future events
-      sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
-                           eventType = "getBiomassPreFire", eventPriority = 2)
+      if(time(sim) != sim$fireYear) {
+        sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
+                             eventType = "getBiomassPreFire", eventPriority = 2)
+      }
       
     },
     calcSeverity = {
@@ -100,7 +101,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSeverityPlot(sim)
         
         ## schedule next plot
-        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 4.5)
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8)
       }
     },
     saveSeverity = {
