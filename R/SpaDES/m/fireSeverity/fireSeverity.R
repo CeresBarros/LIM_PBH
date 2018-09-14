@@ -162,6 +162,8 @@ doSeverityPlot <- function(sim) {
   Plot(sim$severityMap, new = TRUE,
        title = "Fire severity",
        cols = heat.colors(10))
+  # Plot(sim$severityMap, arr = c(2,2), new = TRUE)  ## doesn't re-arrange
+  
   
   return(invisible(sim))
 }
