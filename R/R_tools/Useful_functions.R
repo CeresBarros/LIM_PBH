@@ -8,6 +8,7 @@
 
 ## STANDARDIZE DATA TO 0-1 RANGE ------------------------
 ## x is a numeric vector
+## NOTE: this function is available on amc.
 rescale01 <- function(x) {
   xx <- (x - min(x))/(max(x) - min(x))
   return(xx)
@@ -157,6 +158,7 @@ loadBindSpatialObjs <- function(files, destinationPath, urls) {
 ## DRAW CONVEX HILL AROUND POLYGONS -----------------------
 ## draws a convex hull aroung vertice points of a polygon shape file.
 ## x must be a SpatialPolygons, or SpatialPolygonsDF
+## NOTE: this function as been passed to amc.
 outerBuffer <- function(x) {
   require(sp); require(dismo)
   if(class(x) == "SpatialPolygons" | class(x) == "SpatialPolygonsDataFrame") {
