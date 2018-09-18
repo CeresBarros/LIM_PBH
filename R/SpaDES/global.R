@@ -40,7 +40,7 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 
 ## Foothills and a smaller region for testing
 foothills <- raster::shapefile("data/maps/Foothills_study_area.shp")
-foothillsSMALL <- raster::buffer(foothills, width = -0.3)
+foothillsSMALL <- raster::buffer(foothills, width = -0.35)
 
 ## Betu_pap was causing spades to hang on writing CASFRI raster to disk
 speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.csv"), header = TRUE))
@@ -49,13 +49,13 @@ speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.c
 
 ## simulation parameters
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 3)
+timesSim <- list(start = 1, end = 20)
 
 # eventCaching <- c(".inputObjects")
 modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
-                   "LBMR", "LandR_BiomassGMOrig"#,
-                   # "LandR_BiomassRegen", "LandR_BiomassFuels", "fireSpread", 
-                   #"fireSeverity"
+                   "LBMR", "LandR_BiomassGMOrig",
+                   "LandR_BiomassRegen", "LandR_BiomassFuels", "fireSpread",
+                   "fireSeverity"
                    )
 
 objectsSim <- list("shpStudyRegionFull" = foothillsSMALL,
@@ -68,6 +68,7 @@ outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn", 
                                      saveTime = tail(seq(2, 50, by = 5), 1)))
+fireTimeStep <- 2L
 
 paramsSim <- list(
   LBMR = list(successionTimestep = 1,
@@ -75,29 +76,38 @@ paramsSim <- list(
               .saveInitialTime = 1,
               .plotInitialTime = timesSim$start#, 
               # .purge = 7
-              # .useCache = eventCaching
-              )#,
-  # LandR_BiomassRegen = list(fireTimestep = 2L)#,
-  # fireSpread = list(fireTimestep = 5L,
-  #                   vegFeedback = TRUE)#,
-  # fireSeverity = list(fireTimestep = 5L,
-  #                     .plotMaps = FALSE,
-  #                     .saveInitialTime = 1)
+              # .useCache = "eventCaching"
+              ),
+  BiomassSpeciesData = list(.useCache = "eventCaching"),
+  LandR_BiomassRegen = list(fireTimestep = fireTimeStep),
+  fireSpread = list(fireSize = 1000L,
+                    fireTimestep = fireTimeStep,
+                    vegFeedback = TRUE),
+  fireSeverity = list(fireTimestep = fireTimeStep,
+                      .plotMaps = TRUE,
+                      .saveInitialTime = 1)
 )
 
 # pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_0"
 pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests")
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests")
 
-showCache(pathsSim$cachePath, userTags = "simList")
-# reproducible::clearCache(pathsSim$cachePath, userTags = c("simList"))
+showCache(pathsSim$cachePath, userTags = "BiomassSpeciesData")
+# reproducible::clearCache(pathsSim$cachePath, userTags = "BiomassSpeciesData")
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, outputs = outputs, paths = pathsSim)
 
 graphics.off()
 dev()
 clearPlot()
-LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = FALSE)   ## debug = TRUE activates automatic browsing when errors occur
+
+dev(3)
+clearPlot(dev = 3)
+raster::plot(raster::stack(list.files(path = pathsSim$outputPath, pattern = "severity", full.names = TRUE)))
+stk <- stack(list.files(path = pathsSim$outputPath, pattern = "severity", full.names = TRUE))
+table(stk$severityMap_Year2[])
+
 
 # events(LBMR_testSimout)
 # year <- 5L
