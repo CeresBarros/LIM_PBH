@@ -81,7 +81,7 @@ neighboursMatrix = function(mat) {
 ## files is a character string of file names (does not require extension)
 ## folder is the folder where they can be found
 
-loadBindSpatialObjs <- function(files, destinationPath, urls) {
+loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
   require(sf); require(raster); require(tools)
   
   ## name URLs with file names
@@ -122,7 +122,7 @@ loadBindSpatialObjs <- function(files, destinationPath, urls) {
   } else {
     if(all(grepl(".shp", files))) {
       obj.ls <- lapply(files, FUN = function(targetFile) {
-        prepInputs(targetFile = file.path(destinationPath, targetFile), 
+        prepInputs(targetFile = targetFile, 
                    url = urls, destinationPath = destinationPath, 
                    fun = "shapefile", pkg = "raster")
       })
@@ -138,7 +138,7 @@ loadBindSpatialObjs <- function(files, destinationPath, urls) {
          all(grepl(".img", files))) {
         
         obj.ls <- lapply(files, FUN = function(targetFile) {
-          prepInputs(targetFile = file.path(destinationPath, targetFile), 
+          prepInputs(targetFile = targetFile, 
                      url = urls, destinationPath = destinationPath, 
                      fun = "raster", pkg = "raster")
         })

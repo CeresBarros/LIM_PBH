@@ -45,7 +45,8 @@ setPaths(cachePath = file.path("R/SpaDES/cache"),
 #                        destinationPath = dataDIR)
 
 files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire")
-folder = "~/../OneDrive/Documents/LandscapesInMotion/data/fires_Dave/Projected_renamed"
+# folder = "~/../OneDrive/Documents/LandscapesInMotion/data/fires_Dave/Projected_renamed"
+folder = "data/fires_Dave/"
 
 for(x in files) {
   eval(parse(text = paste0(
@@ -107,10 +108,10 @@ for(x in files) {
 
 ## DEFINE FIRE EVENTS ----------------------------------------
 
-# firesABSK <- Cache(loadBindSpatialObjs, 
-#                    files = c("albertafires1_postfire", "albertafires2_postfire", "saskatchewanfires_postfire"),
-#                    folder = "data/fires_Dave/Projected_renamed", 
-#                    cacheRepo = "analyses/cache", userTags = "fireData")
+firesABSK <- Cache(loadBindSpatialObjs,
+                   files = c("albertafires1_postfire.shp", "albertafires2_postfire.shp", "saskatchewanfires_postfire.shp"),
+                   destinationPath = "data/fires_Dave/", 
+                   cacheRepo = "analyses/cache", userTags = "fireData")
 
 ## Use Alberta 1 post fire data only for now, as severity classes on other datasets and not yet comparable.
 rm(albertafires2_postfire, albertafires2_prefire, saskatchewanfires_postfire, saskatchewanfires_prefire)
