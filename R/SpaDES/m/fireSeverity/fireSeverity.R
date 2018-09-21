@@ -78,12 +78,10 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
     getBiomassPreFire = {
       ## get the pre-fire biomass maps before any fire event
       sim <- doBiomassPreFire(sim)
-      ## schedule future events
-      if(time(sim) != sim$fireYear) {
-        sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
-                             eventType = "getBiomassPreFire", eventPriority = 2)
-      }
       
+      ## schedule future events - can't use fireyear because it's not updated at this point
+      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$fireTimestep, moduleName = "fireSeverity", 
+                           eventType = "getBiomassPreFire", eventPriority = 2)
     },
     calcSeverity = {
       if(!all(is.na(sim$rstCurrentBurn[]))) {
@@ -101,7 +99,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSeverityPlot(sim)
         
         ## schedule next plot
-        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8)
+        sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8.25)
       }
     },
     saveSeverity = {
@@ -130,28 +128,62 @@ fireInit <- function(sim) {
 
 ### Calculate severity based on vegetation state transitions
 doSeverity <- function(sim){
+  if(time(sim) == 2) browser()
+  ## Make raster of post-fire biomass - biomass calcualtion follows LBM approach
+  ## note that for this, this event must come before dispersal/regeneration events in LBMR
+  pixelGroups <- data.table(pixelGroupIndex = unique(sim$cohortData$pixelGroup),
+                            temID = 1:length(unique(sim$cohortData$pixelGroup)))
+  cutpoints <- sort(unique(c(seq(1, max(pixelGroups$temID), by = sim$cutpoint), max(pixelGroups$temID))))
+  
+  if (length(cutpoints) == 1) {
+    cutpoints <- c(cutpoints, cutpoints + 1)
+    }
+  pixelGroups[, groups := cut(temID, breaks = cutpoints,
+                              labels = paste0("Group", 1:(length(cutpoints) - 1)),
+                              include.lowest = T)]
+  
+  for(subgroup in pixelGroups$groups) {
+    subCohortData <- sim$cohortData[pixelGroup %in% pixelGroups[groups == subgroup, ]$pixelGroupIndex, ]
+    
+    if (nrow(subCohortData[age == (params(sim)$LBMR$successionTimestep + 1)]) > 0) {
+      subCohortData[age == (params(sim)$LBMR$successionTimestep + 1),reproduction := sum(B), by = pixelGroup]
+    } else {
+      subCohortData[, reproduction := 0]
+    }
+    subCohortData[is.na(reproduction), reproduction := 0L]
+    summarytable_sub <- subCohortData[, .(uniqueSumB = as.integer(sum(B, na.rm=TRUE))#,
+                                          # uniqueSumANPP = as.integer(sum(aNPPAct, na.rm=TRUE)),
+                                          # uniqueSumMortality = as.integer(sum(mortality, na.rm=TRUE)),
+                                          # uniqueSumRege = as.integer(mean(reproduction, na.rm = TRUE))
+                                          ),
+                                      by = pixelGroup]
+
+    if (subgroup == "Group1") {
+      summaryBGMtable <- summarytable_sub
+    } else {
+      summaryBGMtable <- rbindlist(list(summaryBGMtable, summarytable_sub))
+    }
+    rm(summarytable_sub, subCohortData)
+  }
+
+  # the unit for sumB, sumANPP, sumMortality are g/m2, g/m2/year, g/m2/year, respectively.
+  names(sim$pixelGroupMap) <- "pixelGroup"
+  biomassMapPostFire <- rasterizeReduced(summaryBGMtable, sim$pixelGroupMap,
+                                     "uniqueSumB")
+  
+  ## fire severity in changes in biomass 
+  ## TODO: change, as post-fire biomass cannot include dispersal/regeneration
+  
   ## convert fire spread raster to a mask
   fireMask <- sim$rstCurrentBurn
   fireMask[!is.na(fireMask)] <- 1
   
-  ## Make raster of post-fire biomass  
-  ## note that for this, this event must come before dispersal/regeneration events in LBMR
-  cohortData <- sim$cohortData
-  pixelAll <- cohortData[,.(uniqueSumB = as.integer(sum(B, na.rm=TRUE))), by=pixelGroup]
-  biomassMapPostFire <- rasterizeReduced(pixelAll, sim$pixelGroupMap, "uniqueSumB")
-  raster::projection(biomassMapPostFire) <- raster::projection(sim$biomassMap)
-  
-  ## fire severity in % mortality ((pre - post)/pre) -- this nedes to be changed as post-fire biomass cannot include dispersal/regeneration
-  severityMap <- ((sim$biomassMapPreFire - biomassMapPostFire)/sim$biomassMapPreFire) * 100
+  severityMap <- ((biomassMapPostFire - sim$biomassMapPreFire)/abs(sim$biomassMapPreFire)) * 100
   severityMap <- setValues(severityMap, values = round(getValues(severityMap)))
   severityMap <- raster::mask(severityMap, mask = fireMask)
 
-  ## fire severity in % TFC
-  # sim$severityMap <- sim$fireTFCRas
-  # sim$severityMap <- setValues(sim$severityMap, values = scales::rescale(getValues(sim$severityMap), to = c(0,1))*100)
-  # sim$severityMap <- raster::mask(sim$severityMap, mask = fireMask)
-
   ## export to sim
+  sim$biomassMapPostFire <- biomassMapPostFire
   sim$severityMap <- severityMap
   
   return(invisible(sim))
