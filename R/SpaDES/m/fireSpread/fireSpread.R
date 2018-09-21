@@ -59,7 +59,7 @@ defineModule(sim, list(
     # expectsInput(objectName = "FWIinit", objectClass = "data.table",
     #              desc = "Table of Fire Weather Index initalisation parameters, defaults to default values
     #              available in the cffrs::fwi documentation"),
-  ),
+    ),
   outputObjects = bind_rows(
     createsOutput(objectName = "topoClimData", objectClass = "data.table",
                   desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
@@ -87,7 +87,7 @@ defineModule(sim, list(
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                   desc = "Binary raster of fire spread")
   )
-))
+    ))
 
 doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -158,7 +158,7 @@ fireInit <- function(sim) {
                                     crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
   pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
                                     crs = crs(sim$shpStudySubRegionFBP))
-
+  
   ## PROJECT CLIMATE/TOPO RASTERS
   sim$temperatureRas <- postProcess(sim$temperatureRas,
                                     rasterToMatch = pixelGroupMapFBP,
@@ -167,11 +167,11 @@ fireInit <- function(sim) {
                                     filename2 = NULL, useCache = TRUE,
                                     userTags = c(cacheTags, "topoClimRas"))
   sim$precipitationRas <- postProcess(sim$precipitationRas,
-                                    rasterToMatch = pixelGroupMapFBP,
-                                    maskWithRTM = TRUE,
-                                    method = "bilinear", 
-                                    filename2 = NULL, useCache = TRUE,
-                                    userTags = c(cacheTags, "topoClimRas"))
+                                      rasterToMatch = pixelGroupMapFBP,
+                                      maskWithRTM = TRUE,
+                                      method = "bilinear", 
+                                      filename2 = NULL, useCache = TRUE,
+                                      userTags = c(cacheTags, "topoClimRas"))
   sim$slopeRas <- postProcess(sim$slopeRas,
                               rasterToMatch = pixelGroupMapFBP,
                               maskWithRTM = TRUE,
@@ -179,11 +179,11 @@ fireInit <- function(sim) {
                               filename2 = NULL, useCache = TRUE,
                               userTags = c(cacheTags, "topoClimRas"))
   sim$aspectRas <- postProcess(sim$aspectRas,
-                              rasterToMatch = pixelGroupMapFBP,
-                              maskWithRTM = TRUE,
-                              method = "bilinear", 
-                              filename2 = NULL, useCache = TRUE,
-                              userTags = c(cacheTags, "topoClimRas"))
+                               rasterToMatch = pixelGroupMapFBP,
+                               maskWithRTM = TRUE,
+                               method = "bilinear", 
+                               filename2 = NULL, useCache = TRUE,
+                               userTags = c(cacheTags, "topoClimRas"))
   
   ## TOPOCLIMDATA TABLE ----------------------
   topoClimData <- data.table(ID = 1:length(pixelGroupMapFBP),
@@ -225,16 +225,16 @@ FPBPercParams <- function(sim) {
   ## FUEL TYPES ------------------------------
   ## rasterize fuel types table 
   fuelTypesMaps <- rasterizeReduced(sim$pixelFuelTypes, sim$pixelGroupMap, 
-                                   newRasterCols = c("finalFuelType" , "coniferDom"),
-                                   mapcode = "pixelGroup")
+                                    newRasterCols = c("finalFuelType" , "coniferDom"),
+                                    mapcode = "pixelGroup")
   
   ## now reproject to FBP-compatible crs
   fuelTypeRas <- postProcess(fuelTypesMaps$finalFuelType,
-                               rasterToMatch = sim$pixelGroupMapFBP,
-                               maskWithRTM = TRUE,
-                               method = "bilinear", 
-                               filename2 = NULL, useCache = TRUE,
-                               userTags = c(cacheTags, "topoClimRas"))
+                             rasterToMatch = sim$pixelGroupMapFBP,
+                             maskWithRTM = TRUE,
+                             method = "bilinear", 
+                             filename2 = NULL, useCache = TRUE,
+                             userTags = c(cacheTags, "topoClimRas"))
   coniferDomRas <- postProcess(fuelTypesMaps$coniferDom,
                                rasterToMatch = sim$pixelGroupMapFBP,
                                maskWithRTM = TRUE,
@@ -275,7 +275,7 @@ FPBPercParams <- function(sim) {
   #   .[FWIoutputs , , on = "ID"]
   # 
   
-
+  
   
   ## FBP -----------------------------
   ## make inputs dataframe for FBI
@@ -310,10 +310,10 @@ FPBPercParams <- function(sim) {
   ## FBP OUTPUTS TO SPATIALPOINTS
   FBPOutputsPts <- FBPoutputs[, .(ID, ROS, HFI, TFC)]
   FBPOutputsPts <- FBPOutputsPts[FWIoutputs[, .(ID, LAT, LONG)],
-                         on = "ID", nomatch = 0] %>%
+                                 on = "ID", nomatch = 0] %>%
     .[, ID := NULL]
   FBPOutputsSf <- st_as_sf(FBPOutputsPts, coords = c("LONG", "LAT"), 
-                            crs =  as.character(crs(sim$shpStudySubRegionFBP)),
+                           crs =  as.character(crs(sim$shpStudySubRegionFBP)),
                            agr = "constant")
   
   ## reproject to original CRS without data loss and convert to raster
@@ -323,13 +323,13 @@ FPBPercParams <- function(sim) {
   
   ## Rate of spread
   sim$fireROSRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                          field = "ROS", fun = function(x, ...) mean(x))
+                              field = "ROS", fun = function(x, ...) mean(x))
   # Head fire intensity
   sim$fireIntRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                          field = "HFI", fun = function(x, ...) mean(x))
+                              field = "HFI", fun = function(x, ...) mean(x))
   ## Total fuel consumption
   sim$fireTFCRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                          field = "TFC", fun = function(x, ...) mean(x))
+                              field = "TFC", fun = function(x, ...) mean(x))
   ## export to sim
   sim$FWIinputs <- FWIinputs
   sim$FWIoutputs <- FWIoutputs
@@ -458,7 +458,7 @@ doNoFire <- function(sim) {
   if (!identical(latLong, crs(sim$shpStudySubRegionFBP))) {
     sim$shpStudySubRegionFBP <- spTransform(sim$shpStudySubRegionFBP, latLong) #faster without Cache
   }
-
+  
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
   ## these defaults are only necessary if the topoClimData is not supplied by another module
   ## climate defaults to http://worldclim.org/version2 (temperarute historical ensemble)
