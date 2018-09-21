@@ -49,7 +49,7 @@ speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.c
 
 ## simulation parameters
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 20)
+timesSim <- list(start = 1, end = 10)
 
 # eventCaching <- c(".inputObjects")
 modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
@@ -78,21 +78,24 @@ paramsSim <- list(
               # .purge = 7
               # .useCache = "eventCaching"
               ),
-  BiomassSpeciesData = list(.useCache = "eventCaching"),
+  # BiomassSpeciesData = list(.useCache = "eventCaching"),
   LandR_BiomassRegen = list(fireTimestep = fireTimeStep),
   fireSpread = list(fireSize = 1000L,
+                    noStartPix = 10,
                     fireTimestep = fireTimeStep,
-                    vegFeedback = TRUE),
+                    vegFeedback = TRUE#,
+                    # .useCache = "eventCaching"
+                    ),
   fireSeverity = list(fireTimestep = fireTimeStep,
                       .plotMaps = TRUE,
                       .saveInitialTime = 1)
 )
 
 # pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_0"
-pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests")
-pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests")
+pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests/Regen")
+pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/Regen")
 
-showCache(pathsSim$cachePath, userTags = "BiomassSpeciesData")
+# showCache(pathsSim$cachePath, userTags = c("BiomassSpeciesData"))
 # reproducible::clearCache(pathsSim$cachePath, userTags = "BiomassSpeciesData")
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, outputs = outputs, paths = pathsSim)
@@ -104,9 +107,20 @@ LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = FALSE)   ## debug 
 
 dev(3)
 clearPlot(dev = 3)
-raster::plot(raster::stack(list.files(path = pathsSim$outputPath, pattern = "severity", full.names = TRUE)))
-stk <- stack(list.files(path = pathsSim$outputPath, pattern = "severity", full.names = TRUE))
-table(stk$severityMap_Year2[])
+
+biomStk <- stack(list.files(path = "R/SpaDES/outputs/vegFB_1/tests/Regen/", pattern = "biomass", full.names = TRUE))
+sevStk <- stack(list.files(path = "R/SpaDES/outputs/vegFB_1/tests/Regen/", pattern = "severity", full.names = TRUE))
+
+plot(biomStk)
+plot(sevStk)
+
+# fireMap <- sevStk[[1]]
+# fireMap[!is.na(fireMap[])] <- 1
+# fireMap <- rasterToPolygons(fireMap, dissolve = TRUE)
+# clearPlot()
+# par(mfrow = c(1,2))
+# plot(biomStk[[9]], main = "Biomass - pre-fire"); plot(fireMap, add = TRUE, border = "black")
+# plot(biomStk[[1]], main = "Biomass - post-fire"); plot(fireMap, add = TRUE, border = "black")
 
 
 # events(LBMR_testSimout)
