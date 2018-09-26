@@ -14,9 +14,9 @@ rm(list=ls()); gc(reset = TRUE)
 # loading SpaDES.core      0.2.1
 # loading SpaDES.tools     0.3.0
 # loading SpaDES.addins    0.1.1
-# devtools::install_github("CeresBarros/reproducible@development", force = TRUE)
+# devtools::install_github("PredictiveEcology/reproducible@development", force = TRUE)
 # devtools::install_github("PredictiveEcology/quickPlot@development")
-# devtools::install_github("PredictiveEcology/SpaDES.core@development")  ## August 15th
+# devtools::install_github("CeresBarros/SpaDES.core@updateObjs-simInit")  ## September 25th
 # devtools::install_github("PredictiveEcology/SpaDES.tools@devel-amc") ## August 27th
 library(SpaDES)
 
@@ -59,8 +59,8 @@ modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpec
                    )
 
 objectsSim <- list("shpStudyRegionFull" = foothillsSMALL,
-                   "shpStudySubRegion" = foothillsSMALL#,
-                   # "speciesList" = speciesList
+                   "shpStudySubRegion" = foothillsSMALL,
+                   "speciesList" = "all"
                    )
 
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
@@ -92,11 +92,13 @@ paramsSim <- list(
 )
 
 # pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_0"
-pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests/Regen")
-pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/Regen")
+# pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests/Regen")
+# pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/Regen")
+pathsSim$outputPath <- file.path(pathsSim$outputPath, "allSPP")
+pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/allSPP")
 
-# showCache(pathsSim$cachePath, userTags = c("BiomassSpeciesData"))
-# reproducible::clearCache(pathsSim$cachePath, userTags = "BiomassSpeciesData")
+showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
+# reproducible::clearCache(pathsSim$cachePath, userTags = ".inputObjects")
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, outputs = outputs, paths = pathsSim)
 
@@ -104,6 +106,9 @@ graphics.off()
 dev()
 clearPlot()
 LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = FALSE)   ## debug = TRUE activates automatic browsing when errors occur
+
+
+## NOTE WITH "ALL" SPP, LAST YEAR IS THROWING AN ERROR.
 
 dev(3)
 clearPlot(dev = 3)
@@ -121,6 +126,8 @@ plot(sevStk)
 # par(mfrow = c(1,2))
 # plot(biomStk[[9]], main = "Biomass - pre-fire"); plot(fireMap, add = TRUE, border = "black")
 # plot(biomStk[[1]], main = "Biomass - post-fire"); plot(fireMap, add = TRUE, border = "black")
+
+
 
 
 # events(LBMR_testSimout)
