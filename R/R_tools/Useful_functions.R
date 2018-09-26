@@ -193,8 +193,7 @@ outerBuffer <- function(x) {
 defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
   require(sf); require(dplyr)
-  
-  # browser()
+
   ## checks
   if(any(class(sf.obj) != c("sf", "data.frame"))) stop ("sf.obj must be an sf object")
   if(is.null(buff.dist)) stop("Define a buffer distance")
@@ -255,44 +254,43 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
     bufferedHoles <- st_difference(noHolesEventPerim, eventPerim)
     
     ## EXTRACT ALL REMNANTS PRODUCED BY BUFFERING (except holes)
-    allRemnants <- st_difference(eventPerim, firePerim)
+    allResiduals <- st_difference(eventPerim, firePerim)
     
-    ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND REMNANTS
-    ## an inner remnant is matrix thta touches a "hole" (i.e. non-burnt patch that arrises after buffering)
+    ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND RESIDUALS
     if(length(bufferedHoles) > 0) {
-      if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
-        remnHoleInters  <- sapply(allRemnants[[1]], FUN = function(sfgpoly) {
+      if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+        remnHoleInters  <- sapply(allResiduals[[1]], FUN = function(sfgpoly) {
           sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
           st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
         })
       } else {
-        remnHoleInters  <- sapply(allRemnants[1], FUN = function(sfgpoly) {
+        remnHoleInters  <- sapply(allResiduals[1], FUN = function(sfgpoly) {
           sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
           st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
         })
       }
     } else {
-      remnHoleInters <- if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
-        rep(FALSE, length(allRemnants[[1]]))
+      remnHoleInters <- if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+        rep(FALSE, length(allResiduals[[1]]))
       } else {
-        rep(FALSE, length(allRemnants[1]))
+        rep(FALSE, length(allResiduals[1]))
       }
     }
     
-    ## DEFINE INNER MATRIX REMNANTS
-    if(class(allRemnants)[1] == "sfc_MULTIPOLYGON") {
-      inMatrixRemn <- lapply(allRemnants[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
-      inMatrixRemn <- st_union(inMatrixRemn)
+    ## DEFINE INTERIOR RESIDUALS
+    if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+      inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+      inResids <- st_union(inResids)
     } else {
-      inMatrixRemn <- lapply(allRemnants[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)  
-      inMatrixRemn <- st_union(inMatrixRemn)
+      inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)  
+      inResids <- st_union(inResids)
     }
     
     ## DEFINE OUTER MATRIX REMNANTS
-    outMatrixRemn <- st_difference(allRemnants, inMatrixRemn)
+    outResids <- st_difference(allResiduals, inResids)
     
     ## MERGE HOLES AND INNER MATRIX
-    inMatrixRemn2 <- c(bufferedHoles, inMatrixRemn)
+    inResids2 <- c(bufferedHoles, inResids)
     
     ## CONVERT TO MULTIPOLYGONS AND SIMPLE FEATURE COLLECTION, ADDING FIRE NAME
     firePerim <- st_sfc(firePerim) 
@@ -303,32 +301,32 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
     eventPerim <- st_sf(geometry = eventPerim)  
     eventPerim$PatchType <- "eventPerim"
     
-    outMatrixRemn <- st_sfc(outMatrixRemn)
-    outMatrixRemn <- st_sf(geometry = outMatrixRemn) 
-    outMatrixRemn$PatchType <- "outMatrixRemn"
+    outResids <- st_sfc(outResids)
+    outResids <- st_sf(geometry = outResids) 
+    outResids$PatchType <- "outResids"
     
-    inMatrixRemn2 <- st_sfc(inMatrixRemn2)
-    inMatrixRemn2 <- st_sf(geometry = inMatrixRemn2) 
-    inMatrixRemn2$PatchType <- "inMatrixRemn"
+    inResids2 <- st_sfc(inResids2)
+    inResids2 <- st_sf(geometry = inResids2) 
+    inResids2$PatchType <- "inResids"
     
     ## add fire details
     if(!is.null(fireVARS)) {
       firePerim <- st_join(firePerim, sf.fire, left = FALSE)     ## intersection because firePerim is entirely within sf.fire
       eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
-      temp.df <- firePerim[, !names(firePerim) %in% names(outMatrixRemn), drop = TRUE]
+      temp.df <- firePerim[, !names(firePerim) %in% names(outResids), drop = TRUE]
       
       if("SEV_CLASS" %in% fireVARS) temp.df$SEV_CLAS <- NA
       
       temp.df <- temp.df[!duplicated(temp.df),]
       
-      outMatrixRemn <- merge(outMatrixRemn, temp.df)
-      inMatrixRemn2 <- merge(inMatrixRemn2, temp.df)
+      outResids <- merge(outResids, temp.df)
+      inResids2 <- merge(inResids2, temp.df)
       
       ## COMBINE INTO ONE OBJECT
-      fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
+      fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
     } else {
       ## COMBINE INTO ONE OBJECT
-      fireEvent <- rbind(firePerim, eventPerim, outMatrixRemn, inMatrixRemn2)
+      fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
       
       ## ADD FIRE NAME
       eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire"))) 
