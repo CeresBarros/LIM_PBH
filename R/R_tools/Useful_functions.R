@@ -1,10 +1,13 @@
 ## ------------------------------------------------------
 ## USEFUL FUNCTIONS
 ##
-## Ceres: Dec 2017
+## Ceres: Sep 2018
 ## ------------------------------------------------------
 
 ## this script should be sourced
+require(raster); require(tools)
+require(sp); require(dismo)
+require(sf); require(dplyr)
 
 ## STANDARDIZE DATA TO 0-1 RANGE ------------------------
 ## x is a numeric vector
@@ -15,9 +18,9 @@ rescale01 <- function(x) {
 }
 
 ## CHECK PROJECTIONS ------------------------------------
-## obj.list is a list of spatial objects
-checkProjections <- function(obj.list){
-  projs <- sapply(obj.list, FUN = function(x) {
+## sfObj.list is a list of spatial objects
+checkProjections <- function(sfObj.list){
+  projs <- sapply(sfObj.list, FUN = function(x) {
     return(
       eval(expr = parse(text = paste0("projection(", x, ")")))
     )
@@ -82,20 +85,18 @@ neighboursMatrix = function(mat) {
 ## folder is the folder where they can be found
 
 loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
-  require(sf); require(raster); require(tools)
-  
   ## name URLs with file names
   if(length(urls) > 1) {
     names(urls) = files
     
     if(all(grepl(".shp", files))) {
-      obj.ls <- lapply(files, FUN = function(targetFile) {
+      sfObj.ls <- lapply(files, FUN = function(targetFile) {
         prepInputs(targetFile = file.path(destinationPath, targetFile), 
                    url = urls[targetFile], destinationPath = destinationPath, 
                    fun = "shapefile", pkg = "raster")
       })
-      if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
-        joined = do.call(bind, obj.ls)
+      if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
+        joined = do.call(bind, sfObj.ls)
       } else(stop("Files do not share the same projection"))
       
     }  else {
@@ -105,15 +106,15 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
          all(grepl(".tif", files)) |
          all(grepl(".img", files))) {
         
-        obj.ls <- lapply(files, FUN = function(targetFile) {
+        sfObj.ls <- lapply(files, FUN = function(targetFile) {
           prepInputs(targetFile = file.path(destinationPath, targetFile), 
                      url = urls[targetFile], destinationPath = destinationPath, 
                      fun = "raster", pkg = "raster")
         })
         
         ## check projections match and do the join
-        if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
-          joined = do.call(bind, obj.ls)
+        if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
+          joined = do.call(bind, sfObj.ls)
         } else(stop("Files do not share the same projection"))
         
       } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
@@ -121,13 +122,13 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
     
   } else {
     if(all(grepl(".shp", files))) {
-      obj.ls <- lapply(files, FUN = function(targetFile) {
+      sfObj.ls <- lapply(files, FUN = function(targetFile) {
         prepInputs(targetFile = targetFile, 
                    url = urls, destinationPath = destinationPath, 
                    fun = "shapefile", pkg = "raster")
       })
-      if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
-        joined = do.call(bind, obj.ls)
+      if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
+        joined = do.call(bind, sfObj.ls)
       } else(stop("Files do not share the same projection"))
       
     }  else {
@@ -137,15 +138,15 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
          all(grepl(".tif", files)) |
          all(grepl(".img", files))) {
         
-        obj.ls <- lapply(files, FUN = function(targetFile) {
+        sfObj.ls <- lapply(files, FUN = function(targetFile) {
           prepInputs(targetFile = targetFile, 
                      url = urls, destinationPath = destinationPath, 
                      fun = "raster", pkg = "raster")
         })
         
         ## check projections match and do the join
-        if(length(unique(sapply(obj.ls, FUN = function(obj) as.character(crs(obj))))) == 1) {
-          joined = do.call(bind, obj.ls)
+        if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
+          joined = do.call(bind, sfObj.ls)
         } else(stop("Files do not share the same projection"))
         
       } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
@@ -160,7 +161,6 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
 ## x must be a SpatialPolygons, or SpatialPolygonsDF
 ## NOTE: this function as been passed to amc.
 outerBuffer <- function(x) {
-  require(sp); require(dismo)
   if(class(x) == "SpatialPolygons" | class(x) == "SpatialPolygonsDataFrame") {
     ## Get polygon vertices
     pts <- SpatialPoints(do.call(rbind, lapply(x@polygons, FUN = function(x) { 
@@ -181,39 +181,37 @@ outerBuffer <- function(x) {
 ## island remnants (severity < 95%, surrounded by disturbed patches)
 ## matrix remnants (undisturbed, and partially surrouned by disturbed patches)
 
-## sf.obj is a Simple Features object from sf package
+## sfObj is a Simple Features object from sf package
 ## fireNAMES should be a column/attribute with fire ID/names
 ## fireVARS can be NULL, or a vector of variable names/indices to retain
-## crsProj is a string of the projection to use. If NULL (default) will use the same projection as sf.obj, otherwise sf.obj will be reprojected
+## crsProj is a string of the projection to use. If NULL (default) will use the same projection as sfObj, otherwise sfObj will be reprojected
 ## buff.dist if the buffer distance to define fire events
 ## PLOT, SAVE and overwrite determine if plotting, saving and overwriting should be done
 ## outputDIR and fileNAME define the directory and fileNAME to save the fire events shapefile (".shp" will be added to the name string),
 ## outputDIR will be created if non-existent
 
-defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
+defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
-  require(sf); require(dplyr)
-
   ## checks
-  if(any(class(sf.obj) != c("sf", "data.frame"))) stop ("sf.obj must be an sf object")
+  if(any(class(sfObj) != c("sf", "data.frame"))) stop ("sfObj must be an sf object")
   if(is.null(buff.dist)) stop("Define a buffer distance")
   if(is.null(fireNAMES)) stop("Provide the name of the fire ID variable")
   if(SAVE & is.null(outputDIR)) stop("SAVE is TRUE, but output folder is not defined")
   if(SAVE & is.null(fileNAME)) stop("SAVE is TRUE, but file name prefix is not defined")
   
   ## DEFINE PROJECTION AND RE-PROJECT IF NEED BE
-  crsProj <- if(is.null(crsProj)) st_crs(sf.obj) else CRS(crsProj)
+  crsProj <- if(is.null(crsProj)) st_crs(sfObj) else CRS(crsProj)
   
-  if(crsProj != st_crs(sf.obj)) {
-    warning("Reprojecting sf.obj to selected projection")
-    sf.obj <- st_transform(sf.obj, crs = crsProj)
+  if(crsProj != st_crs(sfObj)) {
+    warning("Reprojecting sfObj to selected projection")
+    sfObj <- st_transform(sfObj, crs = crsProj)
   }
   
   ## Get vector of fire names
-  fire.ls <- unique(eval(parse(text = paste0("sf.obj$", fireNAMES))))
+  fire.ls <- unique(eval(parse(text = paste0("sfObj$", fireNAMES))))
   
   ## CHECK FIRE VARIABLES
-  if(is.numeric(fireVARS)) fireVARS <- names(sf.obj)[fireVARS]
+  if(is.numeric(fireVARS)) fireVARS <- names(sfObj)[fireVARS]
   
   if(!is.null(fireVARS)) cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
   
@@ -221,11 +219,11 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
     print(as.character(fire))
     
-    firePolys <- eval(parse(text = paste0("sf.obj$", fireNAMES))) == fire
+    firePolys <- eval(parse(text = paste0("sfObj$", fireNAMES))) == fire
 
     if(is.null(fireVARS)) {
-      sf.fire <- sf.obj[firePolys, c(fireNAMES)]
-    } else sf.fire <- sf.obj[firePolys, c(fireNAMES, fireVARS)]
+      sf.fire <- sfObj[firePolys, c(fireNAMES)]
+    } else sf.fire <- sfObj[firePolys, c(fireNAMES, fireVARS)]
     
     ## CALCULATE FIRE AND EVENT PERIMETERS - buffer out and then in.
     firePerim <- st_union(sf.fire$geometry)
@@ -342,11 +340,82 @@ defineFireEvents <- function(sf.obj, fireNAMES = NULL, fireVARS = NULL, crsProj 
   ## SAVE AS SHAPEFILE
   if(SAVE) {
     ## clean ws before saving
-    rm(fireEvent.ls, sf.obj); gc(reset = TRUE)
+    rm(fireEvent.ls, sfObj); gc(reset = TRUE)
     
     if(!dir.exists(outputDIR)) dir.create(outputDIR, recursive = TRUE)
     st_write(fireEvent.all, file.path(outputDIR, paste0(fileNAME, ".shp")), delete_layer = overwrite)
   }
   
   return(fireEvent.all)
+}
+
+
+## CLEAN SF OBJECT FROM DUPLICATED COLUMNS ------------------------
+## this fucnton removes potentially duplicated data columns in an sf object
+## sfObj is an sf object from the sf package
+sfRmDupNACols <- function(sfObj) {
+  transposed <- t(st_set_geometry(sfObj, NULL))
+  ## get duplicates and NAs (note that cols became rows)
+  dupCols <- duplicated(transposed)
+  NAcols <- sapply(sfObj[,, drop = TRUE], FUN = function(var) all(is.na(var)))
+  
+  if (any(dupCols)) {
+    transposed <- transposed[!dupCols,]
+    dataSF <- data.frame(t(transposed), stringsAsFactors = FALSE)
+    
+    ## convert columns to numeric where appropriate
+    numCols <- intersect(names(dataSF), names(which(sapply(st_set_geometry(sfObj, NULL), is.numeric))))
+    for(col in numCols) {
+      dataSF[, col] <- as.numeric(dataSF[, col])
+    }
+    
+    ## check for NA cols that were not removed
+    NAcols <- sapply(dataSF, FUN = function(var) all(is.na(var)))
+    if (any(NAcols))
+      dataSF <- dataSF[, !NAcols]
+    
+    ## add geometry to data.frame to re-make sf object
+    st_geometry(dataSF) <- st_geometry(sfObj)
+    sfObj <- dataSF
+  } else {
+    if (any(NAcols)) {
+      sfObj <- sfObj[, !NAcols]
+    } else message("no duplicated or NA columns were found.")
+  }
+  return(sfObj)
+}
+
+
+## RENAME AND SUBSET FIELDS IN SF OBJECT ACCORDING TO TABLE------------------------
+## sfObj is an sf object from the sf package
+## namesTable is a two-column data.frame with the names to be replaced (1st column) and the new names (2nd column)
+##        if there are NAs in the second columns, the original columns will be removed if rmNAs = TRUE
+## rmNAs determines whether columns wiith missing new names are removed or not.
+
+renameCleanSfFields <- function(sfObj, namesTable, rmNAs = TRUE) {
+  origNames <- names(st_set_geometry(sfObj, NULL))
+  if (!all(origNames %in% namesTable$Name_shp))
+    stop("Some names in 'sfObj' are missing from 'namesTable'")
+  
+  ## get new names
+  rownames(namesTable) <- namesTable[, 1]
+  newNames <- as.character(namesTable[origNames, 2])
+  
+  ## if there are missing new names, either remove them, or maintain original name
+  if (any(is.na(newNames))) {
+    if (rmNAs) {
+      toRM <-  origNames[is.na(newNames)]
+      sfObj[, toRM] <- NULL
+      
+      ## re-do steps above
+      origNames <- names(st_set_geometry(sfObj, NULL))
+      newNames <- as.character(namesTable[origNames, 2])
+    } else {
+      newNames[is.na(newNames)] <- origNames[is.na(newNames)]
+    }
+  }
+  
+  names(sfObj)[names(sfObj) %in% origNames] <- newNames
+  
+  return(sfObj)
 }
