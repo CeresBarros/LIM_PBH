@@ -16,3 +16,6 @@
 [submodule "R/SpaDES/m/LandR_BiomassGMOrig"]
 	path = R/SpaDES/m/LandR_BiomassGMOrig
 	url = https://github.com/CeresBarros/LandR_BiomassGMOrig.git
+[submodule "R/SpaDES/m/Biomass_regeneration"]
+	path = R/SpaDES/m/Biomass_regeneration
+	url = https://github.com/CeresBarros/Biomass_regeneration
