@@ -8,18 +8,18 @@
 	branch = development
 [submodule "R/SpaDES/m/BiomassSpeciesData"]
 	path = R/SpaDES/m/BiomassSpeciesData
-	url = https://github.com/CeresBarros/BiomassSpeciesData.git
+	url = https://github.com/CeresBarros/Biomass_speciesData.git
 	branch = development
 [submodule "R/SpaDES/m/LandR_BiomassFuels"]
 	path = R/SpaDES/m/LandR_BiomassFuels
 	url = https://github.com/CeresBarros/LandR_BiomassFuels.git
 	branch = development
-[submodule "R/SpaDES/m/LandR_BiomassRegen"]
-	path = R/SpaDES/m/LandR_BiomassRegen
-	url = https://github.com/CeresBarros/LandR_BiomassRegen.git
 [submodule "R/SpaDES/m/LandR_BiomassGMCC"]
 	path = R/SpaDES/m/LandR_BiomassGMCC
 	url = https://github.com/CeresBarros/LandR_BiomassGMCC.git
 [submodule "R/SpaDES/m/LandR_BiomassGMOrig"]
 	path = R/SpaDES/m/LandR_BiomassGMOrig
 	url = https://github.com/CeresBarros/LandR_BiomassGMOrig.git
+[submodule "R/SpaDES/m/Biomass_regeneration"]
+	path = R/SpaDES/m/Biomass_regeneration
+	url = https://github.com/CeresBarros/Biomass_regeneration.git

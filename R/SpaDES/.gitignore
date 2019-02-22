@@ -1,10 +1,12 @@
 # Ignore
-cache
-outputs
+cache/*
+outputs/*
 .httr-oath
 m/*/data
 m/*/cache
 m/*/*.zip
+m/old
+inputs/*
 
 ## don't ignore
 !m/*/data/CHECKSUMS.txt
