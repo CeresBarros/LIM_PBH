@@ -503,6 +503,14 @@ FireMortality = function(sim) {
     #                           targetFile = "ecoregions.gis",
     #                           fun = "raster::raster")
     
+    ## Don't load ecoregions to sim even if they don't exist
+    if (!suppliedElsewhere("ecoregion", sim)) {
+      ecoregion <- prepInputsEcoregion(url = extractURL("ecoregion"),
+                                       dPath = dPath, cacheTags = cacheTags)
+    } else {
+      ecoregion <- sim$ecoregion
+    }
+    
     ## Dummy version with spatial location in Canada
     ras <- projectExtent(sim$shpStudySubRegion, crs = sim$shpStudySubRegion)
     res(ras) = 250

@@ -37,12 +37,16 @@ defineModule(sim, list(
     expectsInput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                  desc = "Binary raster of fire spread"),
     expectsInput(objectName = "fireYear", objectClass = "numeric", desc =  "Next fire year"),
-    expectsInput(objectName = "shpStudySubRegion", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "this shape file contains two informaton: Sub study area with fire return interval attribute. 
-                 Defaults to a shapefile in Southwestern Alberta, Canada", sourceURL = ""),
-    expectsInput(objectName = "shpStudyRegionFull", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "this shape file contains two informaton: Full study area with fire return interval attribute.
-                 Defaults to a shapefile in Southwestern Alberta, Canada", sourceURL = "")
+    expectsInput("studyArea", "SpatialPolygonsDataFrame",
+                 desc = paste("multipolygon to use as the study area,",
+                              "with attribute LTHFC describing the fire return interval.",
+                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 sourceURL = ""),
+    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
+                 desc = paste("multipolygon (larger area than studyArea) to use for parameter estimation,",
+                              "with attribute LTHFC describing the fire return interval.",
+                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 sourceURL = "")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
@@ -128,7 +132,7 @@ fireInit <- function(sim) {
 
 ### Calculate severity based on vegetation state transitions
 doSeverity <- function(sim){
-  if(time(sim) == 2) browser()
+  if(time(sim) == 2) 
   ## Make raster of post-fire biomass - biomass calcualtion follows LBM approach
   ## note that for this, this event must come before dispersal/regeneration events in LBMR
   pixelGroups <- data.table(pixelGroupIndex = unique(sim$cohortData$pixelGroup),
@@ -220,34 +224,34 @@ doBiomassPreFire <- function(sim){
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
   
-  if (!suppliedElsewhere("shpStudyRegionFull", sim)) {
-    message("'shpStudyRegionFull' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
+  if (!suppliedElsewhere("studyAreaLarge", sim)) {
+    message("'studyAreaLarge' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
     
     canadaMap <- Cache(getData, 'GADM', country = 'CAN', level = 1, path = asPath(dPath),
                        cacheRepo = getPaths()$cachePath, quick = FALSE) 
     smallPolygonCoords = list(coords = data.frame(x = c(-115.9022,-114.9815,-114.3677,-113.4470,-113.5084,-114.4291,-115.3498,-116.4547,-117.1298,-117.3140), 
                                                   y = c(50.45516,50.45516,50.51654,50.51654,51.62139,52.72624,52.54210,52.48072,52.11243,51.25310)))
     
-    sim$shpStudyRegionFull <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
+    sim$studyAreaLarge <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
                                               proj4string = crs(canadaMap))
     
     ## use CRS of biomassMap
-    sim$shpStudyRegionFull <- spTransform(sim$shpStudyRegionFull,
+    sim$studyAreaLarge <- spTransform(sim$studyAreaLarge,
                                           CRSobj = P(sim)$.crsUsed)
     
   }
   
-  if (!suppliedElsewhere("shpStudySubRegion", sim)) {
-    message("'shpStudySubRegion' was not provided by user. Using the same as 'shpStudyRegionFull'")
-    sim$shpStudySubRegion <- sim$shpStudyRegionFull
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("'studyArea' was not provided by user. Using the same as 'studyAreaLarge'")
+    sim$studyArea <- sim$studyAreaLarge
   }
   
-  if (!identical(P(sim)$.crsUsed, crs(sim$shpStudyRegionFull))) {
-    sim$shpStudyRegionFull <- spTransform(sim$shpStudyRegionFull, P(sim)$.crsUsed) #faster without Cache
+  if (!identical(P(sim)$.crsUsed, crs(sim$studyAreaLarge))) {
+    sim$studyAreaLarge <- spTransform(sim$studyAreaLarge, P(sim)$.crsUsed) #faster without Cache
   }
   
-  if (!identical(P(sim)$.crsUsed, crs(sim$shpStudySubRegion))) {
-    sim$shpStudySubRegion <- spTransform(sim$shpStudySubRegion, P(sim)$.crsUsed) #faster without Cache
+  if (!identical(P(sim)$.crsUsed, crs(sim$studyArea))) {
+    sim$studyArea <- spTransform(sim$studyArea, P(sim)$.crsUsed) #faster without Cache
   }
   
   ## load ecoregion map
@@ -260,10 +264,18 @@ doBiomassPreFire <- function(sim){
     #                           targetFile = "ecoregions.gis",
     #                           fun = "raster::raster")
     
+    ## Don't load ecoregions to sim even if they don't exist
+    if (!suppliedElsewhere("ecoregion", sim)) {
+      ecoregion <- prepInputsEcoregion(url = extractURL("ecoregion"),
+                                           dPath = dPath, cacheTags = cacheTags)
+    } else {
+      ecoregion <- sim$ecoregion
+    }
+    
     ## Dummy version with spatial location in Canada
-    ras <- projectExtent(sim$shpStudySubRegion, crs = sim$shpStudySubRegion)
+    ras <- projectExtent(sim$studyArea, crs = sim$studyArea)
     res(ras) = 250
-    ecoregionMap <- rasterize(sim$shpStudySubRegion, ras)
+    ecoregionMap <- rasterize(sim$studyArea, ras)
     
     ecoregionMap[!is.na(getValues(ecoregionMap))][] <- sample(ecoregion$mapcode, 
                                                               size = sum(!is.na(getValues(ecoregionMap))), 
@@ -279,7 +291,7 @@ doBiomassPreFire <- function(sim){
                                                "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
                             url = extractURL("biomassMap", sim), 
                             destinationPath = dPath,
-                            studyArea = sim$shpStudySubRegion,
+                            studyArea = sim$studyArea,
                             useSAcrs = TRUE,
                             method = "bilinear",
                             datatype = "INT2U",

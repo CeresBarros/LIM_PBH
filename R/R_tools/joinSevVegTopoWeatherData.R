@@ -44,7 +44,7 @@ joinSevVegTopoWeatherData <- function(sevDataSf, vegDataSf, topoDataSf, weatherD
                 weatherDataDt = weatherDataDt,
                 rasterToMatch = rasterToMatch, saveDir = saveDir)
   }
-
+  
   message("Binding tables...")
   
   allDataDT <- rbindlist(lapply(list.files(saveDir, pattern = "dataTable", full.names = TRUE),

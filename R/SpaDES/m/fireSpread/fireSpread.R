@@ -31,21 +31,23 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "shpStudySubRegion", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "this shape file contains two informaton: Sub study area with fire return interval attribute. 
-                 Defaults to a square shapefile in Southwestern Alberta, Canada", sourceURL = ""),
-    expectsInput(objectName = "shpStudyRegionFull", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "this shape file contains two informaton: Full study area with fire return interval attribute.
-                 Defaults to a square shapefile in Southwestern Alberta, Canada", sourceURL = ""),
-    expectsInput(objectName = "shpStudySubRegionFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as shpStudySubRegion,  but on FBP-compatible projection", sourceURL = ""),
-    expectsInput(objectName = "shpStudyRegionFullFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as shpStudyRegionFull,  but on FBP-compatible projection", sourceURL = ""),
+    expectsInput("studyArea", "SpatialPolygonsDataFrame",
+                 desc = paste("multipolygon to use as the study area,",
+                              "with attribute LTHFC describing the fire return interval.",
+                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 sourceURL = ""),
+    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
+                 desc = paste("multipolygon (larger area than studyArea) to use for parameter estimation,",
+                              "with attribute LTHFC describing the fire return interval.",
+                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 sourceURL = ""),
+    expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
+    expectsInput(objectName = "studyAreaLargeFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as studyAreaLarge,  but on FBP-compatible projection", sourceURL = ""),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
-    expectsInput(objectName = "topoClimData", objectClass = "data.table",
-                 desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
     expectsInput(objectName = "FWIinit", objectClass = "data.frame", 
                  desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
                  This table should be updated every year"),
@@ -157,7 +159,7 @@ fireInit <- function(sim) {
                                     res = res(sim$pixelGroupMap)*0.5,
                                     crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
   pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
-                                    crs = crs(sim$shpStudySubRegionFBP))
+                                    crs = crs(sim$studyAreaFBP))
   
   ## PROJECT CLIMATE/TOPO RASTERS
   sim$temperatureRas <- postProcess(sim$temperatureRas,
@@ -206,7 +208,6 @@ fireInit <- function(sim) {
 
 ## Derive fire parameters from FBP system - rasters need to be in lat/long
 FPBPercParams <- function(sim) {
-  require(cffdrs)   ## cffdrs was causing issues when included in metadata
   cacheTags <- c("fireSpread", "FBPPercParams")
   
   ## Update pixelGroupMap and biomassMap if not init
@@ -215,7 +216,7 @@ FPBPercParams <- function(sim) {
                                       res = res(sim$pixelGroupMap)*0.5,
                                       crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
     pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
-                                      crs = crs(sim$shpStudySubRegionFBP))
+                                      crs = crs(sim$studyAreaFBP))
     
     ## export to sim and clean ws
     sim$pixelGroupMapFBP <- pixelGroupMapFBP
@@ -265,7 +266,7 @@ FPBPercParams <- function(sim) {
                           prec = sim$topoClimData$precip)
   
   ## calculate FW indices
-  FWIoutputs <- fwi(input = na.omit(FWIinputs), 
+  FWIoutputs <- cffdrs::fwi(input = na.omit(FWIinputs), 
                     init = na.omit(sim$FWIinit), 
                     batch = FALSE, lat.adjust = TRUE) %>%
     data.table
@@ -300,7 +301,7 @@ FPBPercParams <- function(sim) {
                           Aspect = FWIoutputs$aspect,
                           PC = FWIoutputs$coniferDom)
   
-  FBPoutputs <- fbp(input = na.omit(FBPinputs)) %>%
+  FBPoutputs <- cffdrs::fbp(input = na.omit(FBPinputs)) %>%
     data.table
   
   # ## add pixelGroup
@@ -313,7 +314,7 @@ FPBPercParams <- function(sim) {
                                  on = "ID", nomatch = 0] %>%
     .[, ID := NULL]
   FBPOutputsSf <- st_as_sf(FBPOutputsPts, coords = c("LONG", "LAT"), 
-                           crs =  as.character(crs(sim$shpStudySubRegionFBP)),
+                           crs =  as.character(crs(sim$studyAreaFBP)),
                            agr = "constant")
   
   ## reproject to original CRS without data loss and convert to raster
@@ -423,40 +424,40 @@ doNoFire <- function(sim) {
   ## need to find long term solution
   latLong <- "+proj=longlat +datum=WGS84"
   
-  if (!suppliedElsewhere("shpStudyRegionFullFBP", sim)) {
-    if (!suppliedElsewhere("shpStudyRegionFull", sim)) {
-      message("'shpStudyRegionFull' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
+  if (!suppliedElsewhere("studyAreaLargeFBP", sim)) {
+    if (!suppliedElsewhere("studyAreaLarge", sim)) {
+      message("'studyAreaLarge' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
       
       canadaMap <- Cache(getData, 'GADM', country = 'CAN', level = 1, path = asPath(dPath),
                          cacheRepo = getPaths()$cachePath, quick = FALSE) 
       smallPolygonCoords = list(coords = data.frame(x = c(-115.9022,-114.9815,-114.3677,-113.4470,-113.5084,-114.4291,-115.3498,-116.4547,-117.1298,-117.3140), 
                                                     y = c(50.45516,50.45516,50.51654,50.51654,51.62139,52.72624,52.54210,52.48072,52.11243,51.25310)))
       
-      sim$shpStudyRegionFull <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
+      sim$studyAreaLarge <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
                                                 proj4string = crs(canadaMap))
       
       ## use CRS of biomassMap
-      sim$shpStudyRegionFull <- spTransform(sim$shpStudyRegionFull, CRSobj = P(sim)$.crsUsed)
+      sim$studyAreaLarge <- spTransform(sim$studyAreaLarge, CRSobj = P(sim)$.crsUsed)
       
     } 
-    sim$shpStudyRegionFullFBP <- sim$shpStudyRegionFull
+    sim$studyAreaLargeFBP <- sim$studyAreaLarge
   }
   
-  if (!suppliedElsewhere("shpStudySubRegionFBP", sim)) {
-    if (!suppliedElsewhere("shpStudySubRegion", sim)) {
-      message("'shpStudySubRegion' was not provided by user. Using the same as 'shpStudyRegionFull'")
-      sim$shpStudySubRegion <- sim$shpStudyRegionFull
+  if (!suppliedElsewhere("studyAreaFBP", sim)) {
+    if (!suppliedElsewhere("studyArea", sim)) {
+      message("'studyArea' was not provided by user. Using the same as 'studyAreaLarge'")
+      sim$studyArea <- sim$studyAreaLarge
     }
-    sim$shpStudySubRegionFBP <- sim$shpStudySubRegion
+    sim$studyAreaFBP <- sim$studyArea
   }
   
   ## if necessary reproject to lat/long - for compatibility with FBP
-  if (!identical(latLong, crs(sim$shpStudyRegionFullFBP))) {
-    sim$shpStudyRegionFullFBP <- spTransform(sim$shpStudyRegionFullFBP, latLong) #faster without Cache
+  if (!identical(latLong, crs(sim$studyAreaLargeFBP))) {
+    sim$studyAreaLargeFBP <- spTransform(sim$studyAreaLargeFBP, latLong) #faster without Cache
   }
   
-  if (!identical(latLong, crs(sim$shpStudySubRegionFBP))) {
-    sim$shpStudySubRegionFBP <- spTransform(sim$shpStudySubRegionFBP, latLong) #faster without Cache
+  if (!identical(latLong, crs(sim$studyAreaFBP))) {
+    sim$studyAreaFBP <- spTransform(sim$studyAreaFBP, latLong) #faster without Cache
   }
   
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION

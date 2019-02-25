@@ -6,27 +6,34 @@
 ## ------------------------------------------------------
 
 ## clean workspace
-rm(list=ls()); gc(reset = TRUE)
+rm(list=ls()); amc::.gc()
 
-## requires as of july 23rd 2018
-# loading reproducible     0.2.2
-# loading quickPlot        0.1.4
-# loading SpaDES.core      0.2.1
-# loading SpaDES.tools     0.3.0
-# loading SpaDES.addins    0.1.1
-# devtools::install_github("PredictiveEcology/reproducible@development", force = TRUE)
+## requires as of Feb 22nd 2019
+# loading reproducible     0.2.6.9003
+# loading quickPlot        0.1.6
+# loading SpaDES.core      0.2.5
+# loading SpaDES.tools     0.3.1.9000
+# loading SpaDES.addins    0.1.2
+# devtools::install_github("PredictiveEcology/reproducible@development")
+# devtools::install_github("achubaty/amc@development")
+# devtools::install_github("PredictiveEcology/pemisc@development")
+# devtools::install_github("PredictiveEcology/map@development")
+# devtools::install_github("CeresBarros/LandR@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
-# devtools::install_github("CeresBarros/SpaDES.core@updateObjs-simInit")  ## September 25th
-# devtools::install_github("PredictiveEcology/SpaDES.tools@devel-amc") ## August 27th
+# devtools::install_github("PredictiveEcology/SpaDES.tools@development")
+# devtools::install_github("PredictiveEcology/SpaDES.core@development")
 library(SpaDES)
+library(LandR)
 
 ## testing packages
+# try(detach("package:LandR", unload = TRUE))
 # try(detach("package:SpaDES.core", unload = TRUE))
 # try(detach("package:SpaDES.tools", unload = TRUE))
 # try(detach("package:reproducible", unload = TRUE))
-# devtools::load_all("E:/GitHub/reproducible")
-# devtools::load_all("E:/GitHub/SpaDES.tools")
-# devtools::load_all("E:/GitHub/SpaDES.core")
+# devtools::load_all("C:/Ceres/GitHub/reproducible")
+# devtools::load_all("C:/Ceres/GitHub/SpaDES.tools")
+# devtools::load_all("C:/Ceres/GitHub/SpaDES.core")
+# devtools::load_all("C:/Ceres/GitHub/LandR")
 
 source("R/R_tools/Useful_functions.R")
 
@@ -42,70 +49,155 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 foothills <- raster::shapefile("data/maps/Foothills_study_area.shp")
 foothillsSMALL <- raster::buffer(foothills, width = -0.35)
 
-## Betu_pap was causing spades to hang on writing CASFRI raster to disk
-speciesList <- as.matrix(read.csv(file.path(getPaths()$inputPath, "speciesList.csv"), header = TRUE))
+## -----------------------------------------------
+## SIMULATION SETUP 
+## -----------------------------------------------
 
-## SIMULATION SETUP ------------------------------
+## Set up sppEquiv  ---------------------------
 
-## simulation parameters
+data("sppEquivalencies_CA", package = "LandR")
+sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
+                                             EN_generic_full = "Pine",
+                                             Leading = "Pine leading")]
+
+## Make LIM spp equivalencies column
+sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
+                               Lari_lar = "Lari_lar", 
+                               Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
+                               Pinu_con = "Pinu_sp", Pinu_ban = "Pinu_sp", 
+                               Popu_tre = "Popu_sp", Betu_pap = "Popu_sp", Popu_bal = "Popu_sp",
+                               Pseu_men = "Pseu_men")[LandR]]
+
+sppEquivalencies_CA[LIM == "Abie_sp", EN_generic_full := "Fir"]
+sppEquivalencies_CA[LIM == "Abie_sp", EN_generic_short := "Fir"]
+sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
+
+sppEquivalencies_CA[LIM == "Popu_sp", EN_generic_full := "Deciduous"]
+sppEquivalencies_CA[LIM == "Popu_sp", EN_generic_short := "Decid"]
+sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
+
+sppEquivalencies_CA <- sppEquivalencies_CA[!is.na(LIM),]
+
+
+## create color palette for species used in model
+sppEquivCol <- "LIM"
+sppColors <- sppColors(sppEquivalencies_CA, sppEquivCol,
+                       newVals = "Mixed", palette = "Accent")
+
+
+## Set up modelling parameters  ---------------------------
+options('reproducible.useNewDigestAlgorithm' = TRUE) 
+runName <- "testFeb2019"
+eventCaching <- c(".inputObjects", "init")
+useParallel <- FALSE
+
+## paths
 pathsSim <- getPaths()
-timesSim <- list(start = 1, end = 10)
-
-# eventCaching <- c(".inputObjects")
-modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
-                   "LBMR", "LandR_BiomassGMOrig",
-                   "LandR_BiomassRegen", "LandR_BiomassFuels", "fireSpread",
-                   "fireSeverity"
-                   )
-
-objectsSim <- list("shpStudyRegionFull" = foothillsSMALL,
-                   "shpStudySubRegion" = foothillsSMALL,
-                   "speciesList" = "all"
-                   )
-
-outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = seq(2, 50, by = 5),
-                                  stringsAsFactors = FALSE))
-outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn", 
-                                     saveTime = tail(seq(2, 50, by = 5), 1)))
-fireTimeStep <- 2L
-
-paramsSim <- list(
-  LBMR = list(successionTimestep = 1,
-              seedingAlgorithm = "wardDispersal",
-              .saveInitialTime = 1,
-              .plotInitialTime = timesSim$start#, 
-              # .purge = 7
-              # .useCache = "eventCaching"
-              ),
-  # BiomassSpeciesData = list(.useCache = "eventCaching"),
-  LandR_BiomassRegen = list(fireTimestep = fireTimeStep),
-  fireSpread = list(fireSize = 1000L,
-                    noStartPix = 10,
-                    fireTimestep = fireTimeStep,
-                    vegFeedback = TRUE#,
-                    # .useCache = "eventCaching"
-                    ),
-  fireSeverity = list(fireTimestep = fireTimeStep,
-                      .plotMaps = TRUE,
-                      .saveInitialTime = 1)
-)
-
 # pathsSim$outputPath <- "R/SpaDES/outputs/vegFB_0"
 # pathsSim$outputPath <- file.path(pathsSim$outputPath, "vegFB_1/tests/Regen")
 # pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/Regen")
-pathsSim$outputPath <- file.path(pathsSim$outputPath, "allSPP")
-pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/allSPP")
+# pathsSim$outputPath <- file.path(pathsSim$outputPath, "allSPP")
+# pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests/allSPP")
+pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
+pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
-showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
+## simulation params
+timesSim <- list(start = 1, end = 10)
+.plotInitialTime = timesSim$start
+# eventCaching <- c(".inputObjects")
+
+
+vegLeadingProportion <- 0.8 # indicates what proportion the stand must be in one species group for it to be leading.
+# If all are below this, then it is a "mixed" stand
+fireTimestep <- 2L
+successionTimestep <- 1L
+
+modulesSim <- list("BiomassSpeciesData"
+                   , "Biomass_regeneration"
+                   , "Boreal_LBMRDataPrep"   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
+                   , "LandR_BiomassGMOrig"
+                   , "LandR_BiomassFuels"
+                   , "LBMR"
+                   , "fireSpread"
+                   , "fireSeverity"
+)
+
+
+
+objectsSim <- list("studyArea" = foothillsSMALL,
+                   "sppEquiv" = sppEquivalencies_CA,
+                   "sppColors" = sppColors)
+
+# outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+#                                   saveTime = seq(2, 50, by = 5),
+#                                   stringsAsFactors = FALSE))
+# outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn", 
+#                                      saveTime = tail(seq(2, 50, by = 5), 1)))
+
+paramsSim <- list(
+  Boreal_LBMRDataPrep = list(
+    "sppEquivCol" = sppEquivCol
+    # next two are used when assigning pixelGroup membership; what resolution for
+    #   age and biomass
+    , "pixelGroupAgeClass" = successionTimestep
+    , "pixelGroupBiomassClass" = 100
+    , "establishProbAdjFacResprout" = 1 ## TODO: check defaults
+    , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
+    , "runName" = runName
+    #, "useCloudCacheForStats" = TRUE
+    , ".useCache" = eventCaching[1]
+  )
+  , LBMR = list(
+    "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
+    , "seedingAlgorithm" = "wardDispersal"
+    , "sppEquivCol" = sppEquivCol
+    , "successionTimestep" = successionTimestep
+    , ".plotInitialTime" = 1
+    , ".useCache" = FALSE # seems slower to use Cache for both
+    , ".useParallel" = useParallel
+  )
+  , BiomassSpeciesData = list(
+    "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
+    , "sppEquivCol" = sppEquivCol
+    , "omitNonTreePixels" = FALSE
+    , .useCache = TRUE
+    )
+  , LandR_BiomassGMOrig = list(
+    ".useParallel" = useParallel
+  )
+  , LandR_BiomassFuels = list(
+    "sppEquivCol" = sppEquivCol
+  )
+  , Biomass_regeneration = list(
+    "fireInitialTime" = fireTimestep
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = successionTimestep
+    )
+  , fireSpread = list(
+    "fireSize" = 1000L
+    , "noStartPix" = 10
+    , "fireTimestep" = fireTimestep
+    , "vegFeedback" = TRUE
+    , ".useCache" = eventCaching[1]
+  ),
+  fireSeverity = list(
+    "fireTimestep" = fireTimestep
+    , ".plotMaps" = TRUE
+    , ".saveInitialTime" = 1)
+)
+
+
+# showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = ".inputObjects")
+
+## HERE RETRY AFTER UPDATING MODULES
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
-                        objects = objectsSim, outputs = outputs, paths = pathsSim)
+                        objects = objectsSim, paths = pathsSim)
 
 graphics.off()
 dev()
 clearPlot()
-LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = FALSE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSimout <- spades(LBMR_testSim, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 
 
 ## NOTE WITH "ALL" SPP, LAST YEAR IS THROWING AN ERROR.
@@ -170,18 +262,3 @@ LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug =
 completed(LBMR_testSimout)
 
 
-## test species layers in landweb
-# LandWebSA <- raster::shapefile("../LandWeb/inputs/studyarea-correct")
-# 
-# modulesSim <- list("BiomassSpeciesData")
-# pathsSim$cachePath <- "R/SpaDES/cache/tempLandWeb"
-# paramsSim <- list(BiomassSpeciesData = list(.crsUsed = as.character(raster::crs(LandWebSA))))
-# objectsSim <- list("shpStudyRegionFull" = LandWebSA,
-#                    "shpStudySubRegion" = LandWebSA)
-# 
-# # clearCache(pathsSim$cachePath, userTags = "Pickell")
-# LandWebSpp <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
-#                         objects = objectsSim, paths = pathsSim)
-# 
-# LandWebSppout <- spades(LandWebSpp, cache = TRUE, debug = TRUE) 
-# 
