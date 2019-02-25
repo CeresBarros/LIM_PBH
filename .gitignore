@@ -1,16 +1,10 @@
-# Ignore
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 .httr-oauth
 
-analyses/FireEvents/*
-analyses/cache/*
-analyses/firesInFMAs/*
-data/*
+
 figs/*
 outputs/*
-
-## don't ignore
-!data/CHECKSUMS.txt
+analyses/FireEvents/*
