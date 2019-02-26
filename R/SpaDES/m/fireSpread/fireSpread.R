@@ -58,6 +58,16 @@ defineModule(sim, list(
     expectsInput(objectName = "FuelTypes", objectClass = "data.table",
                  desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
                  min and max age for each species"),
+    expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
+                 desc = "Raster of temperature values", 
+                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip"),
+    expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
+                 desc = "Raster of precipitation values", 
+                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
+    expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
+                 desc = "Raster of aspect values - needs to be previously downloaded at this point"),
+    expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
+                 desc = "Raster of slope values - needs to be previously downloaded at this point")
     # expectsInput(objectName = "FWIinit", objectClass = "data.table",
     #              desc = "Table of Fire Weather Index initalisation parameters, defaults to default values
     #              available in the cffrs::fwi documentation"),
@@ -461,16 +471,16 @@ doNoFire <- function(sim) {
   }
   
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
-  ## these defaults are only necessary if the topoClimData is not supplied by another module
+  ## these defaults are only necessary if the rasters are not supplied by another module
   ## climate defaults to http://worldclim.org/version2 (temperarute historical ensemble)
   ## slope/aspect defaults obtained from Environment Canada using foothills shp
-  if(!suppliedElsewhere("topoClimData", sim)){
+  if(!suppliedElsewhere("temperatureRas", sim)){
     ## get default temperature values
     fnames <- paste0("wc2.0_2.5m_tmax_0", 5:9, ".tif")
     temperatureStk <- list()
     for(f in fnames) {
       temperatureStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                   url = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip",
+                                   url = extractURL("temperatureRas", sim),
                                    archive = "wc2.0_2.5m_tmax.zip", 
                                    alsoExtract = NA,
                                    destinationPath = getPaths()$inputPath, 
@@ -480,13 +490,16 @@ doNoFire <- function(sim) {
     }
     temperatureStk <- stack(temperatureStk)
     temperatureRas <- raster::mean(temperatureStk)
-    
+    sim$temperatureRas <- temperatureRas
+  }
+  
+  if(!suppliedElsewhere("precipitationRas", sim)){
     ## get default precipitation values
     fnames <- paste0("wc2.0_2.5m_prec_0", 5:9, ".tif")
     precipitationStk <- list()
     for(f in fnames) {
       precipitationStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                     url = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip",
+                                     url = extractURL("precipitationRas", sim),
                                      archive = "wc2.0_2.5m_prec.zip", 
                                      alsoExtract = NA,
                                      destinationPath = getPaths()$inputPath, 
@@ -496,7 +509,10 @@ doNoFire <- function(sim) {
     }
     precipitationStk <- stack(precipitationStk)
     precipitationRas <- raster::mean(precipitationStk) 
-    
+    sim$precipitationRas <- precipitationRas
+  }
+  
+  if(!suppliedElsewhere("slopeRas", sim)){
     ## TODO defaults of slope/aspect should cover whole of Canada
     ## get default slope values
     slopeRas <- Cache(prepInputs, targetFile = "dataset/SLOPE.tif",
@@ -506,7 +522,11 @@ doNoFire <- function(sim) {
                       datatype = "FLT4S",
                       filename2 = FALSE,
                       userTags = cacheTags)
+    sim$slopeRas <- slopeRas
     
+  }
+  
+  if(!suppliedElsewhere("aspectRas", sim)){
     ## get default aspect values
     aspectRas <- Cache(prepInputs, targetFile = "dataset/ASPECT.tif",
                        archive = "DEM_Foothills_study_area.zip",
@@ -515,14 +535,9 @@ doNoFire <- function(sim) {
                        datatype = "FLT4S",
                        filename2 = FALSE,
                        userTags = cacheTags)
-    
-    ## make a copy to reproject for FBP and base file loads and export to sim
-    sim$temperatureRas <- temperatureRas
-    sim$precipitationRas <- precipitationRas
-    sim$slopeRas <- slopeRas
     sim$aspectRas <- aspectRas
   }
-  
+
   ## FWI INITIALISATION DATAFRAME
   ## TODO:FWIinit should be updated every year from previous year's/days/months results
   if(!suppliedElsewhere("FWIinit", sim)) {

@@ -86,7 +86,7 @@ sppColors <- sppColors(sppEquivalencies_CA, sppEquivCol,
 
 
 ## Set up modelling parameters  ---------------------------
-options('reproducible.useNewDigestAlgorithm' = TRUE) 
+options('reproducible.useNewDigestAlgorithm' = TRUE)
 runName <- "testFeb2019"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
@@ -144,7 +144,8 @@ paramsSim <- list(
     , "establishProbAdjFacResprout" = 1 ## TODO: check defaults
     , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
     , "runName" = runName
-    #, "useCloudCacheForStats" = TRUE
+    , "useCloudCacheForStats" = FALSE
+    , "cloudFolderID" = NA
     , ".useCache" = eventCaching[1]
   )
   , LBMR = list(
@@ -178,7 +179,7 @@ paramsSim <- list(
     , "noStartPix" = 10
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
-    , ".useCache" = eventCaching[1]
+    # , ".useCache" = eventCaching[1]
   ),
   fireSeverity = list(
     "fireTimestep" = fireTimestep
@@ -190,14 +191,14 @@ paramsSim <- list(
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = ".inputObjects")
 
-## HERE RETRY AFTER UPDATING MODULES
+## fEB 25TH - STILL PROBLMES IN FIRESPREAD
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, paths = pathsSim)
 
 graphics.off()
 dev()
 clearPlot()
-LBMR_testSimout <- spades(LBMR_testSim, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
+LBMR_testSimout <- spades(LBMR_testSim, cache = TRUE, debug = TRUE)   ## debug = TRUE activates automatic browsing when errors occur
 
 
 ## NOTE WITH "ALL" SPP, LAST YEAR IS THROWING AN ERROR.
