@@ -354,8 +354,8 @@ FPBPercParams <- function(sim) {
 doFireSpread <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn
-  burnableAreas <- sim$biomassMap
-  vals <- data.table(B = getValues(sim$biomassMap))   ## making a mask is probably faster with data.table
+  burnableAreas <- sim$simulatedBiomassMap
+  vals <- data.table(B = getValues(sim$simulatedBiomassMap))   ## making a mask is probably faster with data.table
   vals <- vals[B > 0, B := 1]   
   vals <- vals[B <= 0, B := NA]
   
