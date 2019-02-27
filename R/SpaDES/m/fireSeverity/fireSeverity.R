@@ -22,15 +22,15 @@ defineModule(sim, list(
                     first save event should occur"),
     defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
                     desc = "The number of time units between successive fire events in a fire module")
-    ),
+  ),
   inputObjects = bind_rows(
     expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-                  desc = "updated community map at each succession time step"),
+                 desc = "updated community map at each succession time step"),
     expectsInput(objectName = "ecoregionMap", objectClass = "RasterLayer",
                  desc = "ecoregion map that has mapcodes match ecoregion table and speciesEcoregion table",
                  sourceURL = ""),
     expectsInput(objectName = "cohortData", objectClass = "data.table",
-                  desc = "age cohort-biomass table hooked to pixel group map by pixelGroupIndex at
+                 desc = "age cohort-biomass table hooked to pixel group map by pixelGroupIndex at
                   succession time step"),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step"),
@@ -50,11 +50,11 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
-                 desc = "Biomass map from before the last fire."),
+                  desc = "Biomass map from before the last fire."),
     createsOutput(objectName = "severityMap", objectClass = "RasterLayer",
                   desc = "Raster of fire severity")
   )
-  ))
+))
 
 ## event types
 #   - type `init` is required for initialiazation
@@ -69,14 +69,14 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       ## schedule events
       if(!is.null(sim$rstCurrentBurn)) {   ## only if fire module is "active"
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "getBiomassPreFire", eventPriority = 2)  ## before regeneration
-        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 4)
+        sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "calcSeverity", eventPriority = 4.25)
         
         if(P(sim)$.plotMaps)
-          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 8)
+          sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "severityPlot", eventPriority = 8.25)
         
         if(!any(is.na(P(sim)$.saveInitialTime)))
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime,
-                               "fireSeverity", "saveSeverity", eventPriority = 4.75)
+                               "fireSeverity", "saveSeverity", eventPriority = 4.50)
       }
     },
     getBiomassPreFire = {
@@ -94,7 +94,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         
         ## schedule future events
         sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", 
-                             eventType = "calcSeverity", eventPriority = 4)
+                             eventType = "calcSeverity", eventPriority = 4.25)
       }
     },
     severityPlot = {
@@ -112,7 +112,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- doSaveSeverity(sim)
         
         ## schedule next plot
-        sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSeverity", "saveSeverity", eventPriority = 4.75)
+        sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSeverity", "saveSeverity", eventPriority = 4.50)
       }
     },
     
@@ -125,59 +125,18 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
   ## store initial biomassMap as first pre-fire biomass raster
-  sim$biomassMapPreFire <- sim$biomassMap
+  sim$biomassMapPreFire <- sim$simulatedBiomassMap
   
   return(invisible(sim))
 }
 
 ### Calculate severity based on vegetation state transitions
-doSeverity <- function(sim){
-  if(time(sim) == 2) 
-  ## Make raster of post-fire biomass - biomass calcualtion follows LBM approach
-  ## note that for this, this event must come before dispersal/regeneration events in LBMR
-  pixelGroups <- data.table(pixelGroupIndex = unique(sim$cohortData$pixelGroup),
-                            temID = 1:length(unique(sim$cohortData$pixelGroup)))
-  cutpoints <- sort(unique(c(seq(1, max(pixelGroups$temID), by = sim$cutpoint), max(pixelGroups$temID))))
-  
-  if (length(cutpoints) == 1) {
-    cutpoints <- c(cutpoints, cutpoints + 1)
-    }
-  pixelGroups[, groups := cut(temID, breaks = cutpoints,
-                              labels = paste0("Group", 1:(length(cutpoints) - 1)),
-                              include.lowest = T)]
-  
-  for(subgroup in pixelGroups$groups) {
-    subCohortData <- sim$cohortData[pixelGroup %in% pixelGroups[groups == subgroup, ]$pixelGroupIndex, ]
-    
-    if (nrow(subCohortData[age == (params(sim)$LBMR$successionTimestep + 1)]) > 0) {
-      subCohortData[age == (params(sim)$LBMR$successionTimestep + 1),reproduction := sum(B), by = pixelGroup]
-    } else {
-      subCohortData[, reproduction := 0]
-    }
-    subCohortData[is.na(reproduction), reproduction := 0L]
-    summarytable_sub <- subCohortData[, .(uniqueSumB = as.integer(sum(B, na.rm=TRUE))#,
-                                          # uniqueSumANPP = as.integer(sum(aNPPAct, na.rm=TRUE)),
-                                          # uniqueSumMortality = as.integer(sum(mortality, na.rm=TRUE)),
-                                          # uniqueSumRege = as.integer(mean(reproduction, na.rm = TRUE))
-                                          ),
-                                      by = pixelGroup]
-
-    if (subgroup == "Group1") {
-      summaryBGMtable <- summarytable_sub
-    } else {
-      summaryBGMtable <- rbindlist(list(summaryBGMtable, summarytable_sub))
-    }
-    rm(summarytable_sub, subCohortData)
-  }
-
-  # the unit for sumB, sumANPP, sumMortality are g/m2, g/m2/year, g/m2/year, respectively.
-  names(sim$pixelGroupMap) <- "pixelGroup"
-  biomassMapPostFire <- rasterizeReduced(summaryBGMtable, sim$pixelGroupMap,
-                                     "uniqueSumB")
+doSeverity <- function(sim) {
+  ## if scheduling is correct simulatedBiomassMap should have been updated after fire and before growth/mortality/dispersal
+  ## the units for sumB, sumANPP, sumMortality are g/m2, g/m2/year, g/m2/year, respectively.
+  biomassMapPostFire <- sim$simulatedBiomassMap   
   
   ## fire severity in changes in biomass 
-  ## TODO: change, as post-fire biomass cannot include dispersal/regeneration
-  
   ## convert fire spread raster to a mask
   fireMask <- sim$rstCurrentBurn
   fireMask[!is.na(fireMask)] <- 1
@@ -185,7 +144,7 @@ doSeverity <- function(sim){
   severityMap <- ((biomassMapPostFire - sim$biomassMapPreFire)/abs(sim$biomassMapPreFire)) * 100
   severityMap <- setValues(severityMap, values = round(getValues(severityMap)))
   severityMap <- raster::mask(severityMap, mask = fireMask)
-
+  
   ## export to sim
   sim$biomassMapPostFire <- biomassMapPostFire
   sim$severityMap <- severityMap
@@ -233,11 +192,11 @@ doBiomassPreFire <- function(sim){
                                                   y = c(50.45516,50.45516,50.51654,50.51654,51.62139,52.72624,52.54210,52.48072,52.11243,51.25310)))
     
     sim$studyAreaLarge <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
-                                              proj4string = crs(canadaMap))
+                                          proj4string = crs(canadaMap))
     
     ## use CRS of biomassMap
     sim$studyAreaLarge <- spTransform(sim$studyAreaLarge,
-                                          CRSobj = P(sim)$.crsUsed)
+                                      CRSobj = P(sim)$.crsUsed)
     
   }
   
@@ -267,7 +226,7 @@ doBiomassPreFire <- function(sim){
     ## Don't load ecoregions to sim even if they don't exist
     if (!suppliedElsewhere("ecoregion", sim)) {
       ecoregion <- prepInputsEcoregion(url = extractURL("ecoregion"),
-                                           dPath = dPath, cacheTags = cacheTags)
+                                       dPath = dPath, cacheTags = cacheTags)
     } else {
       ecoregion <- sim$ecoregion
     }
