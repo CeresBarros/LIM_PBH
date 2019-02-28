@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of Feb 22nd 2019
+## requires as of Feb 27nd 2019
 # loading reproducible     0.2.6.9003
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5
@@ -65,9 +65,9 @@ sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
 
 ## Make LIM spp equivalencies column
 sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
-                               Lari_lar = "Lari_lar", 
+                               Lari_lar = "Lari_lar",
                                Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
-                               Pinu_con = "Pinu_sp", Pinu_ban = "Pinu_sp", 
+                               Pinu_con = "Pinu_sp", Pinu_ban = "Pinu_sp",
                                Popu_tre = "Popu_sp", Betu_pap = "Popu_sp", Popu_bal = "Popu_sp",
                                Pseu_men = "Pseu_men")[LandR]]
 
@@ -134,7 +134,7 @@ objectsSim <- list("studyArea" = foothillsSMALL,
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
 #                                   saveTime = seq(2, 50, by = 5),
 #                                   stringsAsFactors = FALSE))
-# outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn", 
+# outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
 #                                      saveTime = tail(seq(2, 50, by = 5), 1)))
 
 paramsSim <- list(
@@ -144,8 +144,8 @@ paramsSim <- list(
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep
     , "pixelGroupBiomassClass" = 100
-    , "establishProbAdjFacResprout" = 1 ## TODO: check defaults
-    , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
+    # , "establishProbAdjFacResprout" = 1 ## TODO: check defaults - not necessary with Boreal_.*@rmEstablishProbAdj
+    # , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
@@ -194,7 +194,8 @@ paramsSim <- list(
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = ".inputObjects")
 
-## fEB 25TH - STILL PROBLMES IN FIRESPREAD
+## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## problems with pixelGroupMatch res (from sim$rasterToMatch <-)
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, paths = pathsSim)
 
@@ -230,11 +231,11 @@ plot(sevStk)
 # year <- 5L
 # LBMR_testSimout <- scheduleEvent(LBMR_testSimout, eventTime = year, eventType = "save", moduleName = "LBMR")
 # events(LBMR_testSimout)
-# 
+#
 # year <- 5.0
 # LBMR_testSimout <- scheduleEvent(LBMR_testSimout, eventTime = year, eventType = "save", moduleName = "LBMR")
 # events(LBMR_testSimout)
-# 
+#
 # year <- time(LBMR_testSimout) + 2
 # LBMR_testSimout <- scheduleEvent(LBMR_testSimout, eventTime = year, eventType = "save", moduleName = "LBMR")
 # events(LBMR_testSimout)
