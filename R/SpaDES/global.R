@@ -47,10 +47,13 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 
 ## Foothills and a smaller region for testing
 foothills <- raster::shapefile("data/maps/Foothills_study_area.shp")
-foothillsSMALL <- raster::buffer(foothills, width = -0.35)
+foothills <- spTransform(foothills,
+                         "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+
+foothillsSMALL <- raster::buffer(foothills, width = -20000)
 
 ## -----------------------------------------------
-## SIMULATION SETUP 
+## SIMULATION SETUP
 ## -----------------------------------------------
 
 ## Set up sppEquiv  ---------------------------
