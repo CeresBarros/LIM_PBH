@@ -195,7 +195,6 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = ".inputObjects")
 
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
-## problems with pixelGroupMatch res (from sim$rasterToMatch <-)
 LBMR_testSim <- simInit(times = timesSim, params = paramsSim, modules = modulesSim,
                         objects = objectsSim, paths = pathsSim)
 
