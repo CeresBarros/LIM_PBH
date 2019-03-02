@@ -155,6 +155,11 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization
 fireInit <- function(sim) {
+  ## check package is installed
+  if (!"cffdrs" %in% installed.packages())
+    stop(paste("Please install the cffdrs R package to use",
+         currentModule(sim)))
+
   cacheTags <- c("fireSpread", "fireInit")
 
   ## define first fire year
@@ -277,10 +282,12 @@ FPBPercParams <- function(sim) {
                           prec = sim$topoClimData$precip)
 
   ## calculate FW indices
-  FWIoutputs <- cffdrs::fwi(input = na.omit(FWIinputs),
-                            init = na.omit(sim$FWIinit),
-                            batch = FALSE, lat.adjust = TRUE) %>%
-    data.table
+  FWIoutputs <- suppressWarnings({
+    cffdrs::fwi(input = na.omit(FWIinputs),
+                init = na.omit(sim$FWIinit),
+                batch = FALSE, lat.adjust = TRUE) %>%
+      data.table
+  })
 
   # ## add pixelGroup
   # FWIoutputs  <- sim$topoClimData[,.(ID, pixelGroup)] %>%   ## this is a right join (right table being FWIoutputs)
@@ -312,8 +319,10 @@ FPBPercParams <- function(sim) {
                           Aspect = FWIoutputs$aspect,
                           PC = FWIoutputs$coniferDom)
 
-  FBPoutputs <- cffdrs::fbp(input = na.omit(FBPinputs)) %>%
-    data.table
+  FBPoutputs <- suppressWarnings({
+    cffdrs::fbp(input = na.omit(FBPinputs)) %>%
+      data.table
+  })
 
   # ## add pixelGroup
   # FBPoutputs <- FWIoutputs[,.(ID, pixelGroup)] %>%   ## this is a right join (right table being FWIoutputs)
