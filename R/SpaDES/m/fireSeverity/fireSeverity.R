@@ -63,6 +63,23 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       ## Initialise module
       sim <- fireInit(sim)
 
+      stop("add sumamryBGM to severity module")
+      if (!is.null(sim$rstCurrentBurn)) {
+        ## schedule post-fire (pre-growth/mortality/dispersal) summaryBGM
+        ## if fires are simulated
+        fireTimestep <- grep("fireTimestep", names(unlist(sim@params, recursive = TRUE))) %>%
+          unlist(sim@params, recursive = TRUE)[.] %>%
+          unique(.) %>%
+          as.numeric(.)
+
+        if (length(fireTimestep) > 1)
+          stop(paste("Different values for fireTimestep parameter provided.",
+                     "Make sure all modules have the same fireTimestep value", sep = "\n"))
+
+        sim <- scheduleEvent(sim, time(sim) + fireTimestep,
+                             "LBMR", "summaryBGM", eventPriority = 4)
+      }
+
       ## schedule events
       if(!is.null(sim$rstCurrentBurn)) {   ## only if fire module is "active"
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireInitialTime, "fireSeverity", "getBiomassPreFire", eventPriority = 2)  ## before regeneration
