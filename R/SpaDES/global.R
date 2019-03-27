@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of March 19th 2019
+## requires as of March 27th 2019
 # loading reproducible     0.2.6.9003
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5
@@ -18,7 +18,7 @@ rm(list=ls()); amc::.gc()
 # devtools::install_github("achubaty/amc@development")
 # devtools::install_github("PredictiveEcology/pemisc@development")
 # devtools::install_github("PredictiveEcology/map@development")
-# devtools::install_github("CeresBarros/LandR@development")
+# devtools::install_github("PredictiveEcology/LandR@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
@@ -57,7 +57,6 @@ foothillsSMALL <- raster::buffer(foothills, width = -30000)
 ## -----------------------------------------------
 
 ## Set up sppEquiv  ---------------------------
-
 data("sppEquivalencies_CA", package = "LandR")
 sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
                                              EN_generic_full = "Pine",
@@ -95,14 +94,13 @@ sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
 sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
 sppEquivalencies_CA[LIM == "Pinu_sp", Leading := "Pine leading"]
 
-sppEquivalencies_CA <- sppEquivalencies_CA[!is.na(LIM),]
-
+## define spp column to use for model
+sppEquivCol <- "LIM"
+sppEquivalencies_CA <- na.omit(sppEquivalencies_CA, cols = sppEquivCol)
 
 ## create color palette for species used in model
-sppEquivCol <- "LIM"
 sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
                           newVals = "Mixed", palette = "Accent")
-
 
 ## Set up modelling parameters  ---------------------------
 options('reproducible.useNewDigestAlgorithm' = TRUE)
@@ -142,10 +140,30 @@ modulesSim <- list("BiomassSpeciesData"
 )
 
 
+## unforested pixels ---------------------------
+## choose which pixels will be considered inactive for vegetation succession
+## note - this is being done the easy way, i.e. after having an RTM saved to disk - be careful with dates!
+RTM <- raster(list.files("R/SpaDES/", pattern = "rasterToMatch.tif", full.names = TRUE, recursive = TRUE)[1])
+dPath <- pathsSim$inputPath
+LCC2005 <- Cache(prepInputs,
+                 targetFile = file.path(dPath, "LCC2005_V1_4a.tif"),
+                 archive = asPath("LandCoverOfCanada2005_V1_4.zip"),
+                 url = "https://drive.google.com/file/d/1g9jr0VrQxqxGjZ4ckF6ZkSMP-zuYzHQC/view?usp=sharing",
+                 destinationPath = dPath,
+                 studyArea = foothillsSMALL,
+                 rasterToMatch = RTM,
+                 method = "bilinear",
+                 datatype = "INT2U",
+                 cacheRepo = pathsSim$cachePath,
+                 filename2 = TRUE, overwrite = TRUE)
+
+projection(LCC2005) <- projection(RTM)
+nonTreePixels <- which(!LCC2005[] %in% c(1:15, 34:36))
 
 objectsSim <- list("studyArea" = foothillsSMALL,
                    "sppEquiv" = sppEquivalencies_CA,
-                   "sppColorVect" = sppColorVect)
+                   "sppColorVect" = sppColorVect,
+                   "nonTreePixels" = nonTreePixels)
 
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
 #                                   saveTime = seq(2, 50, by = 5),
@@ -158,9 +176,9 @@ paramsSim <- list(
     "sppEquivCol" = sppEquivCol
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
-    , "pixelGroupAgeClass" = successionTimestep
+    , "pixelGroupAgeClass" = successionTimestep*10
     , "pixelGroupBiomassClass" = 100
-    # , "establishProbAdjFacResprout" = 1 ## TODO: check defaults - not necessary with Boreal_.*@rmEstablishProbAdj
+    # , "establishProbAdjFacResprout" = 1 ## TODO: check defaults - not necessary with Boreal_.*@developmentCeres
     # , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
@@ -173,7 +191,7 @@ paramsSim <- list(
     , ".plotInitialTime" = .plotInitialTime
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep
+    , "successionTimestep" = successionTimestep*10
     , ".saveInitialTime" = 1
     , ".useCache" = FALSE # seems slower to use Cache for both
     , ".useParallel" = useParallel
@@ -181,7 +199,7 @@ paramsSim <- list(
   , BiomassSpeciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
-    , "omitNonTreePixels" = FALSE
+    , "omitNonTreePixels" = TRUE
     , .useCache = TRUE
   )
   , LandR_BiomassGMOrig = list(
@@ -189,7 +207,8 @@ paramsSim <- list(
     ,".useParallel" = useParallel
   )
   , LandR_BiomassFuels = list(
-    "sppEquivCol" = sppEquivCol
+    "successionTimestep" = successionTimestep
+    , "sppEquivCol" = sppEquivCol
     , ".useCache" = TRUE
   )
   , Biomass_regeneration = list(
@@ -213,9 +232,28 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## parameters for LBMR only
+paramsSim <- list(
+  LBMR = list(
+    "calcSummaryBGM" = c("start")
+    , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
+    , ".plotInitialTime" = .plotInitialTime
+    , "seedingAlgorithm" = "wardDispersal"
+    , "sppEquivCol" = sppEquivCol
+    , "successionTimestep" = successionTimestep*10
+    , ".saveInitialTime" = 1
+    , ".useCache" = FALSE # seems slower to use Cache for both
+    , ".useParallel" = useParallel
+  )
+  , LandR_BiomassGMOrig = list(
+    "growthInitialTime" = successionTimestep
+    ,".useParallel" = useParallel
+  )
+)
+
 graphics.off()
-LBMR_testSim <- simInitAndSpades(times = timesSim, params = paramsSim, modules = modulesSim[c(1,3,4,6)],
-                                 objects = objectsSim, paths = pathsSim, debug = TRUE)
+LBMR_testSim <- simInitAndSpades(times = timesSim, params = paramsSim, modules = modulesSim[c(4,6)],
+                        objects = objectsSim, paths = pathsSim, debug = TRUE)
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
