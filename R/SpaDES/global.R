@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of March 27th 2019
+## requires as of March 29th 2019
 # loading reproducible     0.2.6.9003
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5
@@ -18,12 +18,12 @@ rm(list=ls()); amc::.gc()
 # devtools::install_github("achubaty/amc@development")
 # devtools::install_github("PredictiveEcology/pemisc@development")
 # devtools::install_github("PredictiveEcology/map@development")
-# devtools::install_github("PredictiveEcology/LandR@development")
+# devtools::install_github("CeresBarros/LandR@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
 library(SpaDES)
-library(LandR)
+# library(LandR)
 
 ## testing packages
 # try(detach("package:LandR", unload = TRUE))
@@ -33,7 +33,7 @@ library(LandR)
 # devtools::load_all("C:/Ceres/GitHub/reproducible")
 # devtools::load_all("C:/Ceres/GitHub/SpaDES.tools")
 # devtools::load_all("C:/Ceres/GitHub/SpaDES.core")
-# devtools::load_all("C:/Ceres/GitHub/LandR")
+devtools::load_all("C:/Ceres/GitHub/LandR")
 
 source("R/R_tools/Useful_functions.R")
 
@@ -121,7 +121,7 @@ pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 ## simulation params
 timesSim <- list(start = 0, end = 10)
 .plotInitialTime = timesSim$start
-# eventCaching <- c(".inputObjects")
+eventCaching <- c(".inputObjects", "init")
 
 
 vegLeadingProportion <- 0.8 # indicates what proportion the stand must be in one species group for it to be leading.
@@ -183,7 +183,7 @@ paramsSim <- list(
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
-    , ".useCache" = eventCaching[1]
+    , ".useCache" = eventCaching
   )
   , LBMR = list(
     "calcSummaryBGM" = c("start")
@@ -193,67 +193,56 @@ paramsSim <- list(
     , "sppEquivCol" = sppEquivCol
     , "successionTimestep" = successionTimestep*10
     , ".saveInitialTime" = 1
-    , ".useCache" = FALSE # seems slower to use Cache for both
+    , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
   , BiomassSpeciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
     , "omitNonTreePixels" = TRUE
-    , .useCache = TRUE
+    , ".useCache" = TRUE
   )
   , LandR_BiomassGMOrig = list(
     "growthInitialTime" = successionTimestep
     ,".useParallel" = useParallel
+    # , ".useCache" = eventCaching
   )
   , LandR_BiomassFuels = list(
     "successionTimestep" = successionTimestep
     , "sppEquivCol" = sppEquivCol
-    , ".useCache" = TRUE
+    , ".useCache" = eventCaching
   )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireTimestep
     , "successionTimestep" = successionTimestep
+    , ".useCache" = eventCaching
   )
   , fireSpread = list(
     "fireSize" = 1000L
     , "noStartPix" = 10
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
-    # , ".useCache" = eventCaching[1]
+    , ".useCache" = eventCaching
   ),
   fireSeverity = list(
     "fireTimestep" = fireTimestep
     , ".plotMaps" = TRUE
-    , ".saveInitialTime" = 1)
+    , ".saveInitialTime" = 1
+    , ".useCache" = eventCaching
+  )
 )
 
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
-## parameters for LBMR only
-paramsSim <- list(
-  LBMR = list(
-    "calcSummaryBGM" = c("start")
-    , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-    , ".plotInitialTime" = .plotInitialTime
-    , "seedingAlgorithm" = "wardDispersal"
-    , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep*10
-    , ".saveInitialTime" = 1
-    , ".useCache" = FALSE # seems slower to use Cache for both
-    , ".useParallel" = useParallel
-  )
-  , LandR_BiomassGMOrig = list(
-    "growthInitialTime" = successionTimestep
-    ,".useParallel" = useParallel
-  )
-)
-
 graphics.off()
-LBMR_testSim <- simInitAndSpades(times = timesSim, params = paramsSim, modules = modulesSim[c(4,6)],
-                        objects = objectsSim, paths = pathsSim, debug = TRUE)
+LBMR_testSim <- simInitAndSpades(times = timesSim
+                                 , params = paramsSim
+                                 , modules = modulesSim
+                                 , objects = objectsSim
+                                 , paths = pathsSim
+                                 , debug = TRUE)
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
