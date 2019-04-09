@@ -8,32 +8,32 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of March 29th 2019
+## requires as of April 8th 2019
 # loading reproducible     0.2.6.9003
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5
 # loading SpaDES.tools     0.3.1.9000
 # loading SpaDES.addins    0.1.2
-# devtools::install_github("CeresBarros/reproducible@development")
+# devtools::install_github("PredictiveEcology/reproducible@development")
 # devtools::install_github("achubaty/amc@development")
 # devtools::install_github("PredictiveEcology/pemisc@development")
 # devtools::install_github("PredictiveEcology/map@development")
-# devtools::install_github("CeresBarros/LandR@development")
+# devtools::install_github("PredictiveEcology/LandR@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
 library(SpaDES)
-# library(LandR)
+library(LandR)
 
 ## testing packages
 # try(detach("package:LandR", unload = TRUE))
 # try(detach("package:SpaDES.core", unload = TRUE))
 # try(detach("package:SpaDES.tools", unload = TRUE))
 # try(detach("package:reproducible", unload = TRUE))
-# devtools::load_all("C:/Ceres/GitHub/reproducible")
-# devtools::load_all("C:/Ceres/GitHub/SpaDES.tools")
-# devtools::load_all("C:/Ceres/GitHub/SpaDES.core")
-devtools::load_all("C:/Ceres/GitHub/LandR")
+# devtools::load_all("../reproducible")
+# devtools::load_all("../SpaDES.tools")
+# devtools::load_all("../SpaDES.core")
+# devtools::load_all("../LandR")
 
 source("R/R_tools/Useful_functions.R")
 
@@ -119,7 +119,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 10)
+timesSim <- list(start = 0, end = 60)
 .plotInitialTime = timesSim$start
 eventCaching <- c(".inputObjects", "init")
 
@@ -160,10 +160,11 @@ LCC2005 <- Cache(prepInputs,
 projection(LCC2005) <- projection(RTM)
 nonTreePixels <- which(!LCC2005[] %in% c(1:15, 34:36))
 
-objectsSim <- list("studyArea" = foothillsSMALL,
-                   "sppEquiv" = sppEquivalencies_CA,
-                   "sppColorVect" = sppColorVect,
-                   "nonTreePixels" = nonTreePixels)
+objectsSim <- list("studyArea" = foothillsSMALL
+                   , "sppEquiv" = sppEquivalencies_CA
+                   , "sppColorVect" = sppColorVect
+                   # , "nonTreePixels" = nonTreePixels
+                   )
 
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
 #                                   saveTime = seq(2, 50, by = 5),
@@ -199,7 +200,7 @@ paramsSim <- list(
   , BiomassSpeciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
-    , "omitNonTreePixels" = TRUE
+    , "omitNonTreePixels" = FALSE
     , ".useCache" = TRUE
   )
   , LandR_BiomassGMOrig = list(
@@ -239,7 +240,7 @@ paramsSim <- list(
 graphics.off()
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim
+                                 , modules = modulesSim[c(1,3,4,6)]
                                  , objects = objectsSim
                                  , paths = pathsSim
                                  , debug = TRUE)
