@@ -5,7 +5,7 @@
 [submodule "R/SpaDES/m/Boreal_LBMRDataPrep"]
 	path = R/SpaDES/m/Boreal_LBMRDataPrep
 	url = https://github.com/CeresBarros/Boreal_LBMRDataPrep.git
-	branch = developmentCeres
+	branch = testsModelBiomass
 [submodule "R/SpaDES/m/BiomassSpeciesData"]
 	path = R/SpaDES/m/BiomassSpeciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
