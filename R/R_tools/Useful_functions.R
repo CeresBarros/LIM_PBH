@@ -35,7 +35,7 @@ checkProjections <- function(sfObj.list){
 ## method is passed to projectRaster - might need to be changed for factors
 cropToStudyArea <- function(study.area, tocrop, method = "bilinear") {
   temp <- tocrop
-  
+
   if(class(study.area) == class(temp) & class(study.area) == "RasterLayer") {
     temp <- projectRaster(from = temp, to = study.area, crs = crs(study.area), method = method)
   } else {
@@ -43,7 +43,7 @@ cropToStudyArea <- function(study.area, tocrop, method = "bilinear") {
       temp <- projectRaster(tocrop, crs = crs(study.area))
     }
   }
-  temp <- crop(x = temp, y = study.area) 
+  temp <- crop(x = temp, y = study.area)
   temp <- mask(x = temp, mask = study.area)
 
   return(temp)
@@ -60,7 +60,7 @@ vector2binmatrix <- function(x) {
 
 ## FIND NEIGHBOURS IN MATRIX ----------------------------
 ## finds the 8 neighbours of each cell in a matrix
-## output is a matrix of 8 rows, with a columns per cell of the input matrix, 
+## output is a matrix of 8 rows, with a columns per cell of the input matrix,
 ## which is treated by columns
 
 neighboursMatrix = function(mat) {
@@ -70,7 +70,7 @@ neighboursMatrix = function(mat) {
   for(i in 1:-1) {
     for(j in 1:-1) {
       if(i != 0 || j != 0) {
-        neighs <- rbind(neighs,mat2[addresses$x+i+1+nrow(mat2)*(addresses$y+j)])   ## each column contains the neighboors a cell (going by columns in mat) 
+        neighs <- rbind(neighs,mat2[addresses$x+i+1+nrow(mat2)*(addresses$y+j)])   ## each column contains the neighboors a cell (going by columns in mat)
       }
     }
   }
@@ -88,67 +88,67 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
   ## name URLs with file names
   if(length(urls) > 1) {
     names(urls) = files
-    
+
     if(all(grepl(".shp", files))) {
       sfObj.ls <- lapply(files, FUN = function(targetFile) {
-        prepInputs(targetFile = file.path(destinationPath, targetFile), 
-                   url = urls[targetFile], destinationPath = destinationPath, 
+        prepInputs(targetFile = file.path(destinationPath, targetFile),
+                   url = urls[targetFile], destinationPath = destinationPath,
                    fun = "shapefile", pkg = "raster")
       })
       if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
         joined = do.call(bind, sfObj.ls)
       } else(stop("Files do not share the same projection"))
-      
+
     }  else {
       ## check if all are raster files
       if(all(grepl(".grd", files)) |
          all(grepl(".asc", files)) |
          all(grepl(".tif", files)) |
          all(grepl(".img", files))) {
-        
+
         sfObj.ls <- lapply(files, FUN = function(targetFile) {
-          prepInputs(targetFile = file.path(destinationPath, targetFile), 
-                     url = urls[targetFile], destinationPath = destinationPath, 
+          prepInputs(targetFile = file.path(destinationPath, targetFile),
+                     url = urls[targetFile], destinationPath = destinationPath,
                      fun = "raster", pkg = "raster")
         })
-        
+
         ## check projections match and do the join
         if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
           joined = do.call(bind, sfObj.ls)
         } else(stop("Files do not share the same projection"))
-        
+
       } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
     }
-    
+
   } else {
     if(all(grepl(".shp", files))) {
       sfObj.ls <- lapply(files, FUN = function(targetFile) {
-        prepInputs(targetFile = targetFile, 
-                   url = urls, destinationPath = destinationPath, 
+        prepInputs(targetFile = targetFile,
+                   url = urls, destinationPath = destinationPath,
                    fun = "shapefile", pkg = "raster")
       })
       if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
         joined = do.call(bind, sfObj.ls)
       } else(stop("Files do not share the same projection"))
-      
+
     }  else {
       ## check if all are raster files
       if(all(grepl(".grd", files)) |
          all(grepl(".asc", files)) |
          all(grepl(".tif", files)) |
          all(grepl(".img", files))) {
-        
+
         sfObj.ls <- lapply(files, FUN = function(targetFile) {
-          prepInputs(targetFile = targetFile, 
-                     url = urls, destinationPath = destinationPath, 
+          prepInputs(targetFile = targetFile,
+                     url = urls, destinationPath = destinationPath,
                      fun = "raster", pkg = "raster")
         })
-        
+
         ## check projections match and do the join
         if(length(unique(sapply(sfObj.ls, FUN = function(sfObj) as.character(crs(sfObj))))) == 1) {
           joined = do.call(bind, sfObj.ls)
         } else(stop("Files do not share the same projection"))
-        
+
       } else stop("All files should be in the same format (.shp, .grd, .asc, .tif or .img)")
     }
   }
@@ -163,13 +163,13 @@ loadBindSpatialObjs <- function(files, destinationPath, urls = NULL) {
 outerBuffer <- function(x) {
   if(class(x) == "SpatialPolygons" | class(x) == "SpatialPolygonsDataFrame") {
     ## Get polygon vertices
-    pts <- SpatialPoints(do.call(rbind, lapply(x@polygons, FUN = function(x) { 
+    pts <- SpatialPoints(do.call(rbind, lapply(x@polygons, FUN = function(x) {
       return(x@Polygons[[1]]@coords)
     })))
-    
+
     ## Draw convex hull around points and extract polygons slot
     hull <- polygons(convHull(pts))
-    
+
     return(hull)
   } else(stop("x must be a SpatialPolygons, or SpatialPolygonsDF"))
 }
@@ -190,7 +190,7 @@ outerBuffer <- function(x) {
 ## outputDIR and fileNAME define the directory and fileNAME to save the fire events shapefile (".shp" will be added to the name string),
 ## outputDIR will be created if non-existent
 
-defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE, 
+defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj = NULL, buff.dist = NULL, PLOT = TRUE, SAVE = TRUE,
                              outputDIR = NULL, fileNAME = NULL, overwrite = TRUE) {
   ## checks
   if(any(class(sfObj) != c("sf", "data.frame"))) stop ("sfObj must be an sf object")
@@ -198,38 +198,38 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   if(is.null(fireNAMES)) stop("Provide the name of the fire ID variable")
   if(SAVE & is.null(outputDIR)) stop("SAVE is TRUE, but output folder is not defined")
   if(SAVE & is.null(fileNAME)) stop("SAVE is TRUE, but file name prefix is not defined")
-  
+
   ## DEFINE PROJECTION AND RE-PROJECT IF NEED BE
   crsProj <- if(is.null(crsProj)) st_crs(sfObj) else CRS(crsProj)
-  
+
   if(crsProj != st_crs(sfObj)) {
     warning("Reprojecting sfObj to selected projection")
     sfObj <- st_transform(sfObj, crs = crsProj)
   }
-  
+
   ## Get vector of fire names
   fire.ls <- unique(eval(parse(text = paste0("sfObj$", fireNAMES))))
-  
+
   ## CHECK FIRE VARIABLES
   if(is.numeric(fireVARS)) fireVARS <- names(sfObj)[fireVARS]
-  
+
   if(!is.null(fireVARS)) cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
-  
+
   ## CALCULATE FIRE EVENTS
   fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
     print(as.character(fire))
-    
+
     firePolys <- eval(parse(text = paste0("sfObj$", fireNAMES))) == fire
 
     if(is.null(fireVARS)) {
       sf.fire <- sfObj[firePolys, c(fireNAMES)]
     } else sf.fire <- sfObj[firePolys, c(fireNAMES, fireVARS)]
-    
+
     ## CALCULATE FIRE AND EVENT PERIMETERS - buffer out and then in.
     firePerim <- st_union(sf.fire$geometry)
     outerBuff <- st_buffer(firePerim, dist = buff.dist)
     eventPerim <- st_buffer(outerBuff, dist = -buff.dist)
-    
+
     ## REMOVE INNER MATRIX HOLES FROM EVENT AND ORIGINAL FIRE PERIMETER
     ## (i.e. unburnt patches surrounded by fire)
     if(class(eventPerim)[1] == "sfc_MULTIPOLYGON") {
@@ -239,32 +239,32 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
       noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = crsProj)
       noHolesEventPerim <- st_union(noHolesEventPerim) ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
     }
-    
+
     if(class(firePerim)[1] == "sfc_MULTIPOLYGON") {
       noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = crsProj)
-      noHolesFirePerim <- st_union(noHolesFirePerim)  
+      noHolesFirePerim <- st_union(noHolesFirePerim)
     } else {
       noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = crsProj)
       noHolesFirePerim <- st_union(noHolesFirePerim)
     }
-    
+
     ## EXTRACT INNER MATRIX HOLES PRODUCED BY BUFFERING - these will determine what the inner matrix remnants are
     bufferedHoles <- st_difference(noHolesEventPerim, eventPerim)
-    
+
     ## EXTRACT ALL REMNANTS PRODUCED BY BUFFERING (except holes)
     allResiduals <- st_difference(eventPerim, firePerim)
-    
+
     ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND RESIDUALS
     if(length(bufferedHoles) > 0) {
       if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
         remnHoleInters  <- sapply(allResiduals[[1]], FUN = function(sfgpoly) {
           sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
-          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
+          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
         })
       } else {
         remnHoleInters  <- sapply(allResiduals[1], FUN = function(sfgpoly) {
           sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
-          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE) 
+          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
         })
       }
     } else {
@@ -274,78 +274,78 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
         rep(FALSE, length(allResiduals[1]))
       }
     }
-    
+
     ## DEFINE INTERIOR RESIDUALS
     if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
       inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
       inResids <- st_union(inResids)
     } else {
-      inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)  
+      inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
       inResids <- st_union(inResids)
     }
-    
+
     ## DEFINE OUTER MATRIX REMNANTS
     outResids <- st_difference(allResiduals, inResids)
-    
+
     ## MERGE HOLES AND INNER MATRIX
     inResids2 <- c(bufferedHoles, inResids)
-    
+
     ## CONVERT TO MULTIPOLYGONS AND SIMPLE FEATURE COLLECTION, ADDING FIRE NAME
-    firePerim <- st_sfc(firePerim) 
+    firePerim <- st_sfc(firePerim)
     firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
     firePerim$PatchType <- "disturbedPatch"
-    
+
     eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
-    eventPerim <- st_sf(geometry = eventPerim)  
+    eventPerim <- st_sf(geometry = eventPerim)
     eventPerim$PatchType <- "eventPerim"
-    
+
     outResids <- st_sfc(outResids)
-    outResids <- st_sf(geometry = outResids) 
+    outResids <- st_sf(geometry = outResids)
     outResids$PatchType <- "outResids"
-    
+
     inResids2 <- st_sfc(inResids2)
-    inResids2 <- st_sf(geometry = inResids2) 
+    inResids2 <- st_sf(geometry = inResids2)
     inResids2$PatchType <- "inResids"
-    
+
     ## add fire details
     if(!is.null(fireVARS)) {
       firePerim <- st_join(firePerim, sf.fire, left = FALSE)     ## intersection because firePerim is entirely within sf.fire
       eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
       temp.df <- firePerim[, !names(firePerim) %in% names(outResids), drop = TRUE]
-      
+
       if("SEV_CLASS" %in% fireVARS) temp.df$SEV_CLAS <- NA
-      
+
       temp.df <- temp.df[!duplicated(temp.df),]
-      
+
       outResids <- merge(outResids, temp.df)
       inResids2 <- merge(inResids2, temp.df)
-      
+
       ## COMBINE INTO ONE OBJECT
       fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
     } else {
       ## COMBINE INTO ONE OBJECT
       fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
-      
+
       ## ADD FIRE NAME
-      eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire"))) 
+      eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire")))
     }
-    
+
     return(fireEvent)
   })
-  
+
   fireEvent.all <- do.call(rbind, fireEvent.ls)
-  
+
   if(PLOT) plot(fireEvent.all, key.pos = 1)
-  
+
   ## SAVE AS SHAPEFILE
   if(SAVE) {
     ## clean ws before saving
     rm(fireEvent.ls, sfObj); gc(reset = TRUE)
-    
+
     if(!dir.exists(outputDIR)) dir.create(outputDIR, recursive = TRUE)
     st_write(fireEvent.all, file.path(outputDIR, paste0(fileNAME, ".shp")), delete_layer = overwrite)
   }
-  
+
   return(fireEvent.all)
 }
 
@@ -358,22 +358,22 @@ sfRmDupNACols <- function(sfObj) {
   ## get duplicates and NAs (note that cols became rows)
   dupCols <- duplicated(transposed)
   NAcols <- sapply(sfObj[,, drop = TRUE], FUN = function(var) all(is.na(var)))
-  
+
   if (any(dupCols)) {
     transposed <- transposed[!dupCols,]
     dataSF <- data.frame(t(transposed), stringsAsFactors = FALSE)
-    
+
     ## convert columns to numeric where appropriate
     numCols <- intersect(names(dataSF), names(which(sapply(st_set_geometry(sfObj, NULL), is.numeric))))
     for(col in numCols) {
       dataSF[, col] <- as.numeric(dataSF[, col])
     }
-    
+
     ## check for NA cols that were not removed
     NAcols <- sapply(dataSF, FUN = function(var) all(is.na(var)))
     if (any(NAcols))
       dataSF <- dataSF[, !NAcols]
-    
+
     ## add geometry to data.frame to re-make sf object
     st_geometry(dataSF) <- st_geometry(sfObj)
     sfObj <- dataSF
@@ -396,17 +396,17 @@ renameCleanSfFields <- function(sfObj, namesTable, rmNAs = TRUE) {
   origNames <- names(st_set_geometry(sfObj, NULL))
   if (!all(origNames %in% namesTable$Name_shp))
     stop("Some names in 'sfObj' are missing from 'namesTable'")
-  
+
   ## get new names
   rownames(namesTable) <- namesTable[, 1]
   newNames <- as.character(namesTable[origNames, 2])
-  
+
   ## if there are missing new names, either remove them, or maintain original name
   if (any(is.na(newNames))) {
     if (rmNAs) {
       toRM <-  origNames[is.na(newNames)]
       sfObj[, toRM] <- NULL
-      
+
       ## re-do steps above
       origNames <- names(st_set_geometry(sfObj, NULL))
       newNames <- as.character(namesTable[origNames, 2])
@@ -414,8 +414,27 @@ renameCleanSfFields <- function(sfObj, namesTable, rmNAs = TRUE) {
       newNames[is.na(newNames)] <- origNames[is.na(newNames)]
     }
   }
-  
+
   names(sfObj)[names(sfObj) %in% origNames] <- newNames
-  
+
   return(sfObj)
+}
+
+
+## VALIDATE GEOMETRIES ------------------------
+## sfObj is an sf object from the sf package
+## dim is used for faster caching
+validateGeomsSf <- function(sfObj, dim) {
+  ## Any corrupt or invalid geometries?
+  if (any(is.na(st_is_valid(sfObj))) |
+      any(na.omit(st_is_valid(sfObj)) == FALSE)) {
+    message("Invalid gemoetries found. Attempting to make valid using st_make_valid")
+    sfObj <- st_make_valid(sfObj)
+  }
+
+  if (any(is.na(st_is_valid(sfObj))) |
+      any(na.omit(st_is_valid(sfObj)) == FALSE))
+    stop("st_make_valid did not work, please check what's wrong.")
+
+  sfObj
 }
