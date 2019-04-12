@@ -14,6 +14,7 @@ rm(list=ls()); amc::.gc()
 # loading SpaDES.core      0.2.5
 # loading SpaDES.tools     0.3.1.9000
 # loading SpaDES.addins    0.1.2
+# RandR
 # devtools::install_github("PredictiveEcology/reproducible@development")
 # devtools::install_github("achubaty/amc@development")
 # devtools::install_github("PredictiveEcology/pemisc@development")
@@ -46,7 +47,10 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 ## STUDY AREA(S) ---------------------------------------
 
 ## Foothills and a smaller region for testing
-foothills <- raster::shapefile("data/maps/Foothills_study_area.shp")
+# foothills <- raster::shapefile("data/maps/Foothills_study_area.shp")
+foothills <- prepInputs(targetFile = "Foothills_study_area.shp",
+                        archive = "Foothills_study_area.zip",
+                        url = "https://drive.google.com/file/d/10vFcsyMu_-UF3PEcDngKsU72gH7jciGk/view?usp=sharing")
 foothills <- spTransform(foothills,
                          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
@@ -235,6 +239,8 @@ paramsSim <- list(
 
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
+
+## TODO: try new modelBiomass with LCC separate (also modelCover?)
 
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
 graphics.off()
