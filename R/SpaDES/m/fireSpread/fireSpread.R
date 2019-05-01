@@ -178,6 +178,7 @@ fireInit <- function(sim) {
                                     crs = crs(sim$studyAreaFBP))
 
   ## PROJECT CLIMATE/TOPO RASTERS
+  message(blue("Processing climate data for fire weather and fuel calculation"))
   sim$temperatureRas <- postProcess(sim$temperatureRas,
                                     rasterToMatch = pixelGroupMapFBP,
                                     maskWithRTM = TRUE,
