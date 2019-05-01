@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of April 17th 2019
+## requires as of April 26th 2019
 # loading reproducible     0.2.8
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5.9000
