@@ -137,7 +137,7 @@ successionTimestep <- 1L
 modulesSim <- list("BiomassSpeciesData"
                    , "Biomass_regeneration"
                    , "Boreal_LBMRDataPrep"   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
-                   , "LandR_BiomassGMOrig"
+                   # , "LandR_BiomassGMOrig"
                    , "LandR_BiomassFuels"
                    , "LBMR"
                    , "fireSpread"
@@ -210,11 +210,11 @@ paramsSim <- list(
     , "omitNonTreePixels" = FALSE
     , ".useCache" = TRUE
   )
-  , LandR_BiomassGMOrig = list(
-    "growthInitialTime" = successionTimestep
-    ,".useParallel" = useParallel
-    # , ".useCache" = eventCaching
-  )
+  # , LandR_BiomassGMOrig = list(
+  #   "growthInitialTime" = successionTimestep
+  #   ,".useParallel" = useParallel
+  #   # , ".useCache" = eventCaching
+  # )
   , LandR_BiomassFuels = list(
     "successionTimestep" = successionTimestep
     , "sppEquivCol" = sppEquivCol
@@ -247,7 +247,7 @@ paramsSim <- list(
 graphics.off()
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1,3,4,6)]
+                                 , modules = modulesSim[c(1,3,5)]
                                  , objects = objectsSim
                                  , paths = pathsSim
                                  , debug = TRUE)
