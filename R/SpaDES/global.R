@@ -125,12 +125,11 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 60)
-.plotInitialTime = timesSim$start
+timesSim <- list(start = 0, end = 25)
 eventCaching <- c(".inputObjects", "init")
 
 
-vegLeadingProportion <- 0.8 # indicates what proportion the stand must be in one species group for it to be leading.
+vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireTimestep <- 2L
 successionTimestep <- 1L
@@ -195,10 +194,12 @@ paramsSim <- list(
   , LBMR = list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-    , ".plotInitialTime" = .plotInitialTime
+    , ".plotInitialTime" = timesSim$start
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
     , "successionTimestep" = successionTimestep*10
+    , "vegLeadingProportion" = vegLeadingProportion
+    , ".plotInterval" = 1
     , ".saveInitialTime" = 1
     , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
     , ".useParallel" = useParallel
