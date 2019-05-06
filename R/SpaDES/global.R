@@ -72,7 +72,7 @@ sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
 sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
                                Lari_lar = "Lari_lar",
                                Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
-                               Pinu_con = "Pinu_sp", Pinu_ban = "Pinu_sp",
+                               Pinu_con = "Pinu_sp",
                                Popu_tre = "Popu_sp", Betu_pap = "Popu_sp", Popu_bal = "Popu_sp",
                                Pseu_men = "Pseu_men")[LandR]]
 
