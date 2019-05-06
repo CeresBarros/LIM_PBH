@@ -158,12 +158,12 @@ objectsSim <- list("studyArea" = foothillsSMALL
 paramsSim <- list(
   Boreal_LBMRDataPrep = list(
     "sppEquivCol" = sppEquivCol
+    , "forestedLCCClasses" = c(1:15, 34:36)
+    , "omitNonTreePixels" = TRUE
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep*10
     , "pixelGroupBiomassClass" = 100
-    # , "establishProbAdjFacResprout" = 1 ## TODO: check defaults - not necessary with Boreal_.*@developmentCeres
-    # , "establishProbAdjFacNonResprout" = 1 ## TODO: check defaults
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
