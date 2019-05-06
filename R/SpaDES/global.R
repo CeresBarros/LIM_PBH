@@ -144,31 +144,9 @@ modulesSim <- list("BiomassSpeciesData"
                    , "fireSeverity"
 )
 
-
-## unforested pixels ---------------------------
-## choose which pixels will be considered inactive for vegetation succession
-## note - this is being done the easy way, i.e. after having an RTM saved to disk - be careful with dates!
-RTM <- raster(list.files("R/SpaDES/", pattern = "rasterToMatch.tif", full.names = TRUE, recursive = TRUE)[1])
-dPath <- pathsSim$inputPath
-LCC2005 <- Cache(prepInputs,
-                 targetFile = file.path(dPath, "LCC2005_V1_4a.tif"),
-                 archive = asPath("LandCoverOfCanada2005_V1_4.zip"),
-                 url = "https://drive.google.com/file/d/1g9jr0VrQxqxGjZ4ckF6ZkSMP-zuYzHQC/view?usp=sharing",
-                 destinationPath = dPath,
-                 studyArea = foothillsSMALL,
-                 rasterToMatch = RTM,
-                 method = "bilinear",
-                 datatype = "INT2U",
-                 cacheRepo = pathsSim$cachePath,
-                 filename2 = TRUE, overwrite = TRUE)
-
-projection(LCC2005) <- projection(RTM)
-nonTreePixels <- which(!LCC2005[] %in% c(1:15, 34:36))
-
 objectsSim <- list("studyArea" = foothillsSMALL
                    , "sppEquiv" = sppEquivalencies_CA
                    , "sppColorVect" = sppColorVect
-                   # , "nonTreePixels" = nonTreePixels
                    )
 
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
@@ -207,7 +185,6 @@ paramsSim <- list(
   , BiomassSpeciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
-    , "omitNonTreePixels" = FALSE
     , ".useCache" = TRUE
   )
   # , LandR_BiomassGMOrig = list(
