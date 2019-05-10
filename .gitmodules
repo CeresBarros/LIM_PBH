@@ -1,11 +1,11 @@
 [submodule "R/SpaDES/m/LBMR"]
 	path = R/SpaDES/m/LBMR
 	url = https://github.com/CeresBarros/LBMR.git
-	branch = weightedAgePlot
+	branch = development
 [submodule "R/SpaDES/m/Boreal_LBMRDataPrep"]
 	path = R/SpaDES/m/Boreal_LBMRDataPrep
 	url = https://github.com/CeresBarros/Boreal_LBMRDataPrep.git
-	branch = testsModelBiomass
+	branch = development
 [submodule "R/SpaDES/m/BiomassSpeciesData"]
 	path = R/SpaDES/m/BiomassSpeciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
