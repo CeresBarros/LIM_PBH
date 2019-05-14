@@ -48,21 +48,14 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 
 ## Foothills and a smaller region for testing
 ## prepInputs doens't work with kmz, so download and unzipping need to be done externally.
-
-##TODO MAKE THIS A FUNCTION TO CACHE
-googledrive::drive_download(file = googledrive::as_id("https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs"),
-                            path = "data/maps/Foothills_study_area.zip",
-                            overwrite = TRUE)
-fileKMZ <- unzip("data/maps/Foothills_study_area.zip", exdir = "data/maps")
-fileKML <- unzip(fileKMZ, exdir = "data/maps")
-foothills <- st_read(fileKML)
-foothills$Description <- NULL  ## weird unnecessary column
-foothills <- as(st_zm(foothills), "Spatial")
-
+foothills <- Cache(prepKMZ2shapefile,
+                   url = "https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs",
+                   archive = "Foothills_study_area.zip",
+                   destinationPath = "data/maps",
+                   cacheRepo = "data/cache")
 foothills <- spTransform(foothills,
                          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-foothillsSMALL <- raster::buffer(foothills2, width = -30000)
-file.remove(fileKML, fileKMZ)
+foothillsSMALL <- raster::buffer(foothills, width = -30000)
 
 ## -----------------------------------------------
 ## SIMULATION SETUP

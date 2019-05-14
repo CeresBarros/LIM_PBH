@@ -438,3 +438,46 @@ validateGeomsSf <- function(sfObj, dim) {
 
   sfObj
 }
+
+## DOWNLOAD KMZ AND CONVERT TO SHAPEFILE --------------------
+## url is a google drive URl
+## archive is the .zip file name where the .kmz is contained
+## destination path is the path to where archive will downloaded to, and where the final shapefile will be saved.
+prepKMZ2shapefile <- function(url, archive, destinationPath) {
+  ## check
+  if (class(url) != "character" | is.null(url))
+    stop("Provide url as a character string")
+  if (!grepl("\\.zip$", archive))
+    stop("archive should be the name of the .zip file in url")
+  if (is.null(destinationPath)) {
+    message("archive will be downloaded to tempdir()")
+    destinationPath <- tempdir()
+  }
+
+  archivePath <- file.path(destinationPath, archive)
+  downloaded_file <- googledrive::drive_download(file = googledrive::as_id(url),
+                                                 path = archivePath,
+                                                 overwrite = TRUE)
+  if (downloaded_file$local_path != archivePath |
+      downloaded_file$name != archive)
+    stop(paste0("Downloaded file name (", downloaded_file$name, ") and archive (",
+                archive, ") do not match."))
+
+  ## unzip .zip and .kmz
+  fileKMZ <- unzip(archivePath, exdir = destinationPath)
+  fileKML <- unzip(fileKMZ, exdir = destinationPath)
+
+  ## load as sf
+  sfObj <- st_read(fileKML)
+  if (any(names(sfObj) %in% "Description"))
+    sfObj$Description <- NULL  ## weird unnecessary column
+  ## convert to shapefile
+  shpObj <- as(st_zm(sfObj), "Spatial")
+
+  ## delete unecessary .kmz/.kml files and save .shp
+  file.remove(fileKML, fileKMZ)
+  shpFile <- sub(".zip", ".shp", archive, fixed = TRUE)
+  shapefile(shpObj, filename = file.path(destinationPath, shpFile), overwrite = TRUE)
+
+  return(shpObj)
+}
