@@ -8,8 +8,8 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of April 26th 2019
-# loading reproducible     0.2.8
+## requires as of May 13th 2019
+# loading reproducible     0.2.8.9000
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5.9000
 # loading SpaDES.tools     0.3.2.9000
@@ -47,16 +47,22 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 ## STUDY AREA(S) ---------------------------------------
 
 ## Foothills and a smaller region for testing
-foothills <- Cache(prepInputs,
-                   targetFile = "Foothills_study_area.shp",
-                   archive = "Foothills_study_area.zip",
-                   destinationPath = "data/maps",
-                   url = "https://drive.google.com/file/d/10vFcsyMu_-UF3PEcDngKsU72gH7jciGk/view?usp=sharing",
-                   cacheRepo = "data/")
+## prepInputs doens't work with kmz, so download and unzipping need to be done externally.
+
+##TODO MAKE THIS A FUNCTION TO CACHE
+googledrive::drive_download(file = googledrive::as_id("https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs"),
+                            path = "data/maps/Foothills_study_area.zip",
+                            overwrite = TRUE)
+fileKMZ <- unzip("data/maps/Foothills_study_area.zip", exdir = "data/maps")
+fileKML <- unzip(fileKMZ, exdir = "data/maps")
+foothills <- st_read(fileKML)
+foothills$Description <- NULL  ## weird unnecessary column
+foothills <- as(st_zm(foothills), "Spatial")
+
 foothills <- spTransform(foothills,
                          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-
-foothillsSMALL <- raster::buffer(foothills, width = -30000)
+foothillsSMALL <- raster::buffer(foothills2, width = -30000)
+file.remove(fileKML, fileKMZ)
 
 ## -----------------------------------------------
 ## SIMULATION SETUP
