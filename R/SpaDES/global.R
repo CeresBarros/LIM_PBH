@@ -214,6 +214,7 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
 graphics.off()
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
