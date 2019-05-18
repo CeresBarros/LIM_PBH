@@ -214,7 +214,6 @@ paramsSim <- list(
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
-## TODO: what's happening to aNPP?
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
 options(spades.moduleCodeChecks = FALSE)
@@ -225,17 +224,8 @@ LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , objects = objectsSim
                                  , paths = pathsSim
                                  , debug = FALSE
-                                 , .plotInitialTime = NA
+                                 # , .plotInitialTime = NA
                                  )
-Plot(sapply(LBMR_testSim$totalANPP2postD[2:13], sum), addTo = "sumPostD", new = TRUE)
-
-
-
-#50        LBMR                plotSummaryBySpecies      9
-# Error in addNoPixel2CohortData(sim$cohortData, sim$pixelGroupMap) :
-#   pixelGroups differ between pixelCohortData/pixelGroupMap and cohortData
-# Called from: addNoPixel2CohortData(sim$cohortData, sim$pixelGroupMap)
-
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
 rstCurrentBurn <- LBMR_testSimout@.envir$pixelGroupMap
