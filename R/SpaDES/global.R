@@ -124,7 +124,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 25)
+timesSim <- list(start = 0, end = 15)
 eventCaching <- c(".inputObjects", "init")
 
 
@@ -171,11 +171,12 @@ paramsSim <- list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
     , ".plotInitialTime" = timesSim$start
-    , "seedingAlgorithm" = "wardDispersal"
+    , "seedingAlgorithm" = "noDispersal"
     , "sppEquivCol" = sppEquivCol
     , "successionTimestep" = successionTimestep*10
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
+    , ".plotMaps" = FALSE
     , ".saveInitialTime" = 1
     , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
     , ".useParallel" = useParallel
@@ -213,15 +214,27 @@ paramsSim <- list(
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
-## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## TODO: what's happening to aNPP?
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
+## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+options(spades.moduleCodeChecks = FALSE)
 graphics.off()
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
                                  , modules = modulesSim[c(1,3,5)]
                                  , objects = objectsSim
                                  , paths = pathsSim
-                                 , debug = TRUE)
+                                 , debug = FALSE
+                                 , .plotInitialTime = NA
+                                 )
+Plot(sapply(LBMR_testSim$totalANPP2postD[2:13], sum), addTo = "sumPostD", new = TRUE)
+
+
+
+#50        LBMR                plotSummaryBySpecies      9
+# Error in addNoPixel2CohortData(sim$cohortData, sim$pixelGroupMap) :
+#   pixelGroups differ between pixelCohortData/pixelGroupMap and cohortData
+# Called from: addNoPixel2CohortData(sim$cohortData, sim$pixelGroupMap)
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
