@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of May 13th 2019
+## requires as of May 22th 2019
 # loading reproducible     0.2.8.9000
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5.9000
@@ -124,7 +124,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 15)
+timesSim <- list(start = 0, end = 35)
 eventCaching <- c(".inputObjects", "init")
 
 
@@ -173,7 +173,7 @@ paramsSim <- list(
     , ".plotInitialTime" = timesSim$start
     , "seedingAlgorithm" = "noDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep*10
+    , "successionTimestep" = successionTimestep*30
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
@@ -223,7 +223,7 @@ LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , modules = modulesSim[c(1,3,5)]
                                  , objects = objectsSim
                                  , paths = pathsSim
-                                 , debug = FALSE
+                                 , debug = TRUE
                                  # , .plotInitialTime = NA
                                  )
 ## TEST WITH FAKE FIRE MAP
