@@ -157,7 +157,6 @@ paramsSim <- list(
   Boreal_LBMRDataPrep = list(
     "sppEquivCol" = sppEquivCol
     , "forestedLCCClasses" = c(1:15, 34:36)
-    , "omitNonTreePixels" = TRUE
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep*10
