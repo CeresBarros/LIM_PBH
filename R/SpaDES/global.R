@@ -8,7 +8,7 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of May 22th 2019
+## requires as of June 6th 2019
 # loading reproducible     0.2.8.9000
 # loading quickPlot        0.1.6
 # loading SpaDES.core      0.2.5.9000
@@ -19,7 +19,7 @@ rm(list=ls()); amc::.gc()
 # devtools::install_github("achubaty/amc@development")
 # devtools::install_github("PredictiveEcology/pemisc@development")
 # devtools::install_github("PredictiveEcology/map@development")
-# devtools::install_github("PredictiveEcology/LandR@development")
+# devtools::install_github("CeresBarros/LandR@development")
 # devtools::install_github("PredictiveEcology/quickPlot@development")
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development")
 # devtools::install_github("PredictiveEcology/SpaDES.core@development")
@@ -159,7 +159,7 @@ paramsSim <- list(
     , "forestedLCCClasses" = c(1:15, 34:36)
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
-    , "pixelGroupAgeClass" = successionTimestep*10
+    , "pixelGroupAgeClass" = successionTimestep * 10L
     , "pixelGroupBiomassClass" = 100
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
@@ -172,11 +172,11 @@ paramsSim <- list(
     , ".plotInitialTime" = timesSim$start
     , "seedingAlgorithm" = "noDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep*30
+    , "successionTimestep" = successionTimestep * 10L
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
-    , ".saveInitialTime" = 1
+    , ".saveInitialTime" = NA
     , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
@@ -214,6 +214,7 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
+## TODO: MAKE SURE cohortData ONLY HAS ITEGER COLUMNS
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
 options(spades.moduleCodeChecks = FALSE)
 graphics.off()
@@ -223,7 +224,7 @@ LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , objects = objectsSim
                                  , paths = pathsSim
                                  , debug = TRUE
-                                 # , .plotInitialTime = NA
+                                 , .plotInitialTime = NA
                                  )
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
