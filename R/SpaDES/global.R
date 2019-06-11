@@ -89,11 +89,11 @@ sppEquivalencies_CA[, EN_generic_full := c(Abie_sp = "Fir",
                                            Pseu_men = "Doug-fir")[LIM]]
 
 sppEquivalencies_CA[, FI_layers := c(Abie_sp = "Fir",
-                                           Lari_lar = "",
-                                           Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
-                                           Pinu_sp = "Pine",
-                                           Popu_sp = "Deciduous",
-                                           Pseu_men = "")[LIM]]
+                                     Lari_lar = "",
+                                     Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
+                                     Pinu_sp = "Pine",
+                                     Popu_sp = "Deciduous",
+                                     Pseu_men = "")[LIM]]
 
 sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
 sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
@@ -145,7 +145,7 @@ modulesSim <- list("BiomassSpeciesData"
 objectsSim <- list("studyArea" = foothillsSMALL
                    , "sppEquiv" = sppEquivalencies_CA
                    , "sppColorVect" = sppColorVect
-                   )
+)
 
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
 #                                   saveTime = seq(2, 50, by = 5),
