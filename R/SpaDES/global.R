@@ -218,14 +218,22 @@ paramsSim <- list(
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
 options(spades.moduleCodeChecks = FALSE)
 graphics.off()
+
+## LBMR - only
+# pathsSim$cachePath <- "R/SpaDES/cache/LBMRonly/testJun2019"
+# pathsSim$outputPath <- "R/SpaDES/outputs/LBMRonly/testJun2019"
+# options("reproducible.overwrite" = TRUE)
+
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1,3,5)]
+                                 , modules = modulesSim[c(1, 3, 5)]
+                                 # , modules = modulesSim[c(5)]   ## LBMR only
                                  , objects = objectsSim
+                                 # , objects = objectsSim[c(2,3)] ## LBMR only
                                  , paths = pathsSim
                                  , debug = TRUE
                                  , .plotInitialTime = NA
-                                 )
+)
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
 rstCurrentBurn <- LBMR_testSimout@.envir$pixelGroupMap
