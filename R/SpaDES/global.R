@@ -124,7 +124,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 35)
+timesSim <- list(start = 0, end = 400)
 eventCaching <- c(".inputObjects", "init")
 
 
@@ -135,7 +135,7 @@ successionTimestep <- 1L
 
 modulesSim <- list("BiomassSpeciesData"
                    , "Biomass_regeneration"
-                   , "Boreal_LBMRDataPrep"   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
+                   , "Boreal_LBMRDataPrep"
                    , "LandR_BiomassFuels"
                    , "LBMR"
                    , "fireSpread"
@@ -170,7 +170,7 @@ paramsSim <- list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
     , ".plotInitialTime" = timesSim$start
-    , "seedingAlgorithm" = "noDispersal"
+    , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
     , "successionTimestep" = successionTimestep * 10L
     , "vegLeadingProportion" = vegLeadingProportion
@@ -214,7 +214,6 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
-## TODO: MAKE SURE cohortData ONLY HAS ITEGER COLUMNS
 ## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
 options(spades.moduleCodeChecks = FALSE)
 graphics.off()
@@ -232,8 +231,10 @@ LBMR_testSim <- simInitAndSpades(times = timesSim
                                  # , objects = objectsSim[c(2,3)] ## LBMR only
                                  , paths = pathsSim
                                  , debug = TRUE
-                                 , .plotInitialTime = NA
+                                 # , .plotInitialTime = NA
 )
+
+
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
 rstCurrentBurn <- LBMR_testSimout@.envir$pixelGroupMap
