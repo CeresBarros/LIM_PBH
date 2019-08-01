@@ -124,7 +124,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 400)
+timesSim <- list(start = 0, end = 15)
 eventCaching <- c(".inputObjects", "init")
 
 
@@ -136,7 +136,7 @@ successionTimestep <- 1L
 modulesSim <- list("BiomassSpeciesData"
                    , "Biomass_regeneration"
                    , "Boreal_LBMRDataPrep"
-                   , "LandR_BiomassFuels"
+                   , "Biomass_fuels"
                    , "LBMR"
                    , "fireSpread"
                    , "fireSeverity"
@@ -185,7 +185,7 @@ paramsSim <- list(
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = TRUE
   )
-  , LandR_BiomassFuels = list(
+  , Biomass_fuels = list(
     "successionTimestep" = successionTimestep
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = eventCaching
@@ -214,7 +214,7 @@ paramsSim <- list(
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
-## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## TODO: Biomass_fuels doFuelTypes is very slow. check.
 options(spades.moduleCodeChecks = FALSE)
 graphics.off()
 
@@ -225,13 +225,13 @@ graphics.off()
 
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1, 3, 5)]
+                                 , modules = modulesSim[c(1, 3, 4, 5)]
                                  # , modules = modulesSim[c(5)]   ## LBMR only
                                  , objects = objectsSim
                                  # , objects = objectsSim[c(2,3)] ## LBMR only
                                  , paths = pathsSim
                                  , debug = TRUE
-                                 # , .plotInitialTime = NA
+                                 , .plotInitialTime = NA
 )
 
 
@@ -247,7 +247,7 @@ objectsSim["rstCurrentBurn"] <- rstCurrentBurn
 
 modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
                    "LBMR", "LandR_BiomassGMOrig",
-                   "LandR_BiomassFuels",
+                   "Biomass_fuels",
                    "LandR_BiomassRegen", "fireSpread",
                    "fireSeverity")
 
