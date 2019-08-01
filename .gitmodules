@@ -10,10 +10,6 @@
 	path = R/SpaDES/m/BiomassSpeciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
 	branch = development
-[submodule "R/SpaDES/m/Biomass_fuels"]
-	path = R/SpaDES/m/Biomass_fuels
-	url = https://github.com/CeresBarros/Biomass_fuels.git
-	branch = development
 [submodule "R/SpaDES/m/Biomass_regeneration"]
 	path = R/SpaDES/m/Biomass_regeneration
 	url = https://github.com/CeresBarros/Biomass_regeneration.git
