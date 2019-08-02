@@ -18,8 +18,6 @@ defineModule(sim, list(
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
-    defineParameter(".crsUsed", "character", "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0",
-                    NA, NA, "CRS to be used. Defaults to the biomassMap projection"),
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
     defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
@@ -36,15 +34,8 @@ defineModule(sim, list(
                               "with attribute LTHFC describing the fire return interval.",
                               "Defaults to a square shapefile in Southwestern Alberta, Canada."),
                  sourceURL = ""),
-    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon (larger area than studyArea) to use for parameter estimation,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
-                 sourceURL = ""),
     expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
                  desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
-    expectsInput(objectName = "studyAreaLargeFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as studyAreaLarge,  but on FBP-compatible projection", sourceURL = ""),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
@@ -433,7 +424,6 @@ doNoFire <- function(sim) {
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
@@ -445,38 +435,16 @@ doNoFire <- function(sim) {
   ## need to find long term solution
   latLong <- "+proj=longlat +datum=WGS84"
 
-  if (!suppliedElsewhere("studyAreaLargeFBP", sim)) {
-    if (!suppliedElsewhere("studyAreaLarge", sim)) {
-      message("'studyAreaLarge' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
-
-      canadaMap <- Cache(getData, 'GADM', country = 'CAN', level = 1, path = asPath(dPath),
-                         cacheRepo = getPaths()$cachePath, quick = FALSE)
-      smallPolygonCoords = list(coords = data.frame(x = c(-115.9022,-114.9815,-114.3677,-113.4470,-113.5084,-114.4291,-115.3498,-116.4547,-117.1298,-117.3140),
-                                                    y = c(50.45516,50.45516,50.51654,50.51654,51.62139,52.72624,52.54210,52.48072,52.11243,51.25310)))
-
-      sim$studyAreaLarge <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
-                                            proj4string = crs(canadaMap))
-
-      ## use CRS of biomassMap
-      sim$studyAreaLarge <- spTransform(sim$studyAreaLarge, CRSobj = P(sim)$.crsUsed)
-
-    }
-    sim$studyAreaLargeFBP <- sim$studyAreaLarge
-  }
-
   if (!suppliedElsewhere("studyAreaFBP", sim)) {
     if (!suppliedElsewhere("studyArea", sim)) {
-      message("'studyArea' was not provided by user. Using the same as 'studyAreaLarge'")
-      sim$studyArea <- sim$studyAreaLarge
+      if (getOption("LandR.verbose", TRUE) > 0)
+        message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")
+      sim$studyArea <- randomStudyArea(seed = 1234, size = (250^2)*100)
     }
     sim$studyAreaFBP <- sim$studyArea
   }
 
   ## if necessary reproject to lat/long - for compatibility with FBP
-  if (!identical(latLong, crs(sim$studyAreaLargeFBP))) {
-    sim$studyAreaLargeFBP <- spTransform(sim$studyAreaLargeFBP, latLong) #faster without Cache
-  }
-
   if (!identical(latLong, crs(sim$studyAreaFBP))) {
     sim$studyAreaFBP <- spTransform(sim$studyAreaFBP, latLong) #faster without Cache
   }
