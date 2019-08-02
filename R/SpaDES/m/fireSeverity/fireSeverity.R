@@ -14,8 +14,6 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSeverity.Rmd"),
   reqdPkgs = list("raster"),
   parameters = rbind(
-    defineParameter(".crsUsed", "character", "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0",
-                    NA, NA, "CRS to be used. Defaults to the biomassMap projection"),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "Controls whether maps should be plotted or not"),
     defineParameter(name = ".saveInitialTime", class = "numeric", default = 0,
                     min = NA, max = NA, desc = "This describes the simulation time at which the
@@ -37,11 +35,8 @@ defineModule(sim, list(
                               "with attribute LTHFC describing the fire return interval.",
                               "Defaults to a square shapefile in Southwestern Alberta, Canada."),
                  sourceURL = ""),
-    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon (larger area than studyArea) to use for parameter estimation,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
-                 sourceURL = "")
+    expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = "")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",
@@ -193,50 +188,32 @@ doBiomassPreFire <- function(sim){
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyAreaLarge", sim)) {
-    message("'studyAreaLarge' was not provided by user. Using a polygon in Southwestern Alberta, Canada")
+  ## project to Lat/Long (decimal degrees) for compatibility with FBP system
+  ## TODO: this results in data loss - but LandR doesn't deal well with lat/long
+  ## need to find long term solution
+  latLong <- "+proj=longlat +datum=WGS84"
 
-    canadaMap <- Cache(getData, 'GADM', country = 'CAN', level = 1, path = asPath(dPath),
-                       cacheRepo = getPaths()$cachePath, quick = FALSE)
-    smallPolygonCoords = list(coords = data.frame(x = c(-115.9022,-114.9815,-114.3677,-113.4470,-113.5084,-114.4291,-115.3498,-116.4547,-117.1298,-117.3140),
-                                                  y = c(50.45516,50.45516,50.51654,50.51654,51.62139,52.72624,52.54210,52.48072,52.11243,51.25310)))
-
-    sim$studyAreaLarge <- SpatialPolygons(list(Polygons(list(Polygon(smallPolygonCoords$coords)), ID = "swAB_polygon")),
-                                          proj4string = crs(canadaMap))
-
-    ## use CRS of biomassMap
-    sim$studyAreaLarge <- spTransform(sim$studyAreaLarge,
-                                      CRSobj = P(sim)$.crsUsed)
-
+  if (!suppliedElsewhere("studyAreaFBP", sim)) {
+    if (!suppliedElsewhere("studyArea", sim)) {
+      if (getOption("LandR.verbose", TRUE) > 0)
+        message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")
+      sim$studyArea <- randomStudyArea(seed = 1234, size = (250^2)*100)
+    }
+    sim$studyAreaFBP <- sim$studyArea
   }
 
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("'studyArea' was not provided by user. Using the same as 'studyAreaLarge'")
-    sim$studyArea <- sim$studyAreaLarge
-  }
-
-  if (!identical(P(sim)$.crsUsed, crs(sim$studyAreaLarge))) {
-    sim$studyAreaLarge <- spTransform(sim$studyAreaLarge, P(sim)$.crsUsed) #faster without Cache
-  }
-
-  if (!identical(P(sim)$.crsUsed, crs(sim$studyArea))) {
-    sim$studyArea <- spTransform(sim$studyArea, P(sim)$.crsUsed) #faster without Cache
+  ## if necessary reproject to lat/long - for compatibility with FBP
+  if (!identical(latLong, crs(sim$studyAreaFBP))) {
+    sim$studyAreaFBP <- spTransform(sim$studyAreaFBP, latLong) #faster without Cache
   }
 
   ## load ecoregion map
+  ## TODO: make equal to LBMR.
   if (!suppliedElsewhere("ecoregionMap", sim )) {
     ## LANDIS-II demo data:
-
-    # sim$ecoregionMap <- Cache(prepInputs,
-    #                           url = extractURL("ecoregionMap"),
-    #                           destinationPath = dPath,
-    #                           targetFile = "ecoregions.gis",
-    #                           fun = "raster::raster")
-
     ## Don't load ecoregions to sim even if they don't exist
     if (!suppliedElsewhere("ecoregion", sim)) {
       ecoregion <- prepInputsEcoregion(url = extractURL("ecoregion"),
@@ -246,10 +223,9 @@ doBiomassPreFire <- function(sim){
     }
 
     ## Dummy version with spatial location in Canada
-    ras <- projectExtent(sim$studyArea, crs = sim$studyArea)
+    ras <- projectExtent(sim$studyAreaFBP, crs = crs(sim$studyAreaFBP))
     res(ras) = 250
-    ecoregionMap <- rasterize(sim$studyArea, ras)
-
+    ecoregionMap <- rasterize(sim$studyAreaFBP, ras)
     ecoregionMap[!is.na(getValues(ecoregionMap))][] <- sample(ecoregion$mapcode,
                                                               size = sum(!is.na(getValues(ecoregionMap))),
                                                               replace = TRUE)
