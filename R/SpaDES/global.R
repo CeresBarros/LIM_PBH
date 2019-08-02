@@ -186,12 +186,14 @@ paramsSim <- list(
     , ".useCache" = TRUE
   )
   , Biomass_fuels = list(
-    "successionTimestep" = successionTimestep
+    "fireInitialTime" = fireTimestep,
+    "fireTimestep" = fireTimestep
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = eventCaching
   )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireTimestep
+    , "fireTimestep" = fireTimestep
     , "successionTimestep" = successionTimestep
     , ".useCache" = eventCaching
   )
