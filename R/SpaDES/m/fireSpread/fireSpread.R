@@ -101,8 +101,10 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireInit(sim)
 
       ## schedule future event(s)
-      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread", "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time
-      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread", "fireSpread", eventPriority = 2.5) ## always schedule fire
+      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
+                           "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time
+      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
+                           "fireSpread", eventPriority = 2.5) ## always schedule fire
     },
     fireParams = {
       ## in the first year of fire always calculate parameters
@@ -137,7 +139,8 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       }
 
       ## schedule future event(s) - always schedule fire
-      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread", "fireSpread", eventPriority = 2.5)
+      sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread",
+                           "fireSpread", eventPriority = 2.5)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
