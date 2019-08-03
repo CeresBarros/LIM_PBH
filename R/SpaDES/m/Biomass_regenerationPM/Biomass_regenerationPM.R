@@ -128,20 +128,17 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
       stop("sim$cohortData has duplicated rows, i.e., multiple rows with the same pixelGroup, speciesCode and age")
     }
   }
-  # if (time(sim) >= 11) {
-  #   browser()
-  #   aaaa <<- 1
+
+  browser()
+  # postFirePixelCohortData <- sim$cohortData[0,]
+  # postFirePixelCohortData[, `:=`(pixelIndex = integer(),
+  #                                age = NULL, B = NULL, mortality = NULL,
+  #                                aNPPAct = NULL)]
+  #
+  # # In some cases sumB exists, but not always -- we want to remove it too here.
+  # if (isTRUE("sumB" %in% colnames(postFirePixelCohortData))) {
+  #   set(postFirePixelCohortData, NULL, "sumB", NULL)
   # }
-
-  postFirePixelCohortData <- sim$cohortData[0,]
-  postFirePixelCohortData[, `:=`(pixelIndex = integer(),
-                                 age = NULL, B = NULL, mortality = NULL,
-                                 aNPPAct = NULL)]
-
-  # In some cases sumB exists, but not always -- we want to remove it too here.
-  if (isTRUE("sumB" %in% colnames(postFirePixelCohortData))) {
-    set(postFirePixelCohortData, NULL, "sumB", NULL)
-  }
 
   if(P(sim)$calibrate){
     sim$postFireRegenSummary <- data.table(year = numeric(),
@@ -169,9 +166,30 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
 
   ## make table spp/ecoregionGroup/age in burnt pixels
   burnedcohortData <- sim$cohortData[pixelGroup %in% unique(treedFirePixelTableSinceLastDisp$pixelGroup)]
-  set(burnedcohortData, NULL, c("B", "mortality", "aNPPAct"), NULL)
+  # set(burnedcohortData, NULL, c("B", "mortality", "aNPPAct"), NULL)
   #   set(burnedcohortData, ,c("sumB", "siteShade"), 0) # assume the fire burns all cohorts on site
   setkey(burnedcohortData, speciesCode)
+
+  ## DO MORTALITY ----------------------------
+  ## TODO: MOVE SEVERITY ESTIMATES TO SEVERITY MODULE
+  ## lANDIS-II Dynamic Fire System v3.0
+  ## estimate fire severity from crown fraction burnt (CFB)
+  severityData <- data.table(pixelGroup = getValues(sim$pixelGroupMap),
+                             RSO = getValues(sim$fireRSORas),
+                             ROS = getValues(sim$fireROSRas),
+                             CFB = getValues(sim$fireCFBRas))
+  severityData <- na.omit(severityData)
+
+  severityData[CFB < 0.1 & ROS < (RSO + 0.458)/2, severity := 1]
+  severityData[CFB < 0.1 & ROS >= (RSO + 0.458)/2, severity := 2]
+  severityData[CFB >= 0.1 & CFB < 0.495, severity := 3]
+  severityData[CFB >= 0.495 & CFB < 0.9, severity := 4]
+  severityData[CFB >= 0.9, severity := 5]
+
+  severityData <- severityData[, .(pixelGroup, severity)]
+
+  ## join to burnt cohort data
+  severityData[burnedcohortData, on = "pixelGroup"]
 
   ## DO SEROTINY -----------------------------
   ## subset spp with serotiny
