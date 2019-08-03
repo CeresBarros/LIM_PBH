@@ -31,16 +31,14 @@ defineModule(sim, list(
                     desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon to use as the study area,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
-                 sourceURL = ""),
-    expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
+    expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
+                 desc = "Raster of aspect values - needs to be previously downloaded at this point"),
     expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
+    expectsInput(objectName = "FuelTypes", objectClass = "data.table",
+                 desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
+                 min and max age for each species"),
     expectsInput(objectName = "FWIinit", objectClass = "data.frame",
                  desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
                  This table should be updated every year"),
@@ -48,49 +46,46 @@ defineModule(sim, list(
                  desc = "Fuel types per pixel group, calculated from cohort biomasses"),
     expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
                  desc = "updated community map at each succession time step"),
-    expectsInput(objectName = "FuelTypes", objectClass = "data.table",
-                 desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
-                 min and max age for each species"),
-    expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
-                 desc = "Raster of temperature values",
-                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip"),
     expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
                  desc = "Raster of precipitation values",
                  sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
-    expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
-                 desc = "Raster of aspect values - needs to be previously downloaded at this point"),
     expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
-                 desc = "Raster of slope values - needs to be previously downloaded at this point")
-    # expectsInput(objectName = "FWIinit", objectClass = "data.table",
-    #              desc = "Table of Fire Weather Index initalisation parameters, defaults to default values
-    #              available in the cffrs::fwi documentation"),
+                 desc = "Raster of slope values - needs to be previously downloaded at this point"),
+    expectsInput("studyArea", "SpatialPolygonsDataFrame",
+                 desc = paste("multipolygon to use as the study area,",
+                              "with attribute LTHFC describing the fire return interval.",
+                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 sourceURL = ""),
+    expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
+    expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
+                 desc = "Raster of temperature values",
+                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "topoClimData", objectClass = "data.table",
-                  desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup"),
+    # createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
+    #               desc = "Fire behaviour prediction system inputs table"),
+    # createsOutput(objectName = "FBPoutputs", objectClass = "list",
+    #               desc = "Fire weather outputs table"),
+    createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
+                  desc = "Raster of equilibrium head fire intensity [kW/m]"),
+    createsOutput(objectName = "fireROSRas", objectClass = "RasterLayer",
+                  desc = "Raster of equilibrium rate of spread [m/min]"),
+    createsOutput(objectName = "fireTFCRas", objectClass = "RasterLayer",
+                  desc = "Raster of total fuel consumed [kg/m^2]"),
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
+    # createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
+    #               desc = "Fire weather inputs table"),
+    # createsOutput(objectName = "FWIoutputs", objectClass = "list",
+    #               desc = "Fire weather outputs table"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
-    createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
-                  desc = "Fire weather inputs table"),
-    createsOutput(objectName = "FWIinit", objectClass = "RasterLayer",
-                  desc = "Fire weather initialisation table, updated for the following fire year"),
-    createsOutput(objectName = "FWIoutputs", objectClass = "list",
-                  desc = "Fire weather outputs table"),
-    createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
-                  desc = "Fire behaviour prediction system inputs table"),
-    createsOutput(objectName = "FBPoutputs", objectClass = "list",
-                  desc = "Fire weather outputs table"),
-    createsOutput(objectName = "fireROSRas", objectClass = "RasterLayer",
-                  desc = "Raster of equilibrium rate of spread"),
-    createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
-                  desc = "Raster of equilibrium head fire intensity"),
-    createsOutput(objectName = "fireTFCRas", objectClass = "RasterLayer",
-                  desc = "Raster of total fuel consumed"),
+    createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+                  desc = "Binary raster of fire spread"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels"),
-    createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
-                  desc = "Binary raster of fire spread")
+    createsOutput(objectName = "topoClimData", objectClass = "data.table",
+                  desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
   )
 ))
 
@@ -257,9 +252,7 @@ FPBPercParams <- function(sim) {
                     FuelType = getValues(fuelTypeRas),
                     coniferDom = getValues(coniferDomRas))
   ## add FBP fuel type names
-  FTs <- sim$FuelTypes[, .(FuelTypeFBP, FuelType)] %>%
-    .[!duplicated(.)] %>%
-    .[FTs, on = "FuelType"]
+  FTs <- unique(sim$FuelTypes[, .(FuelTypeFBP, FuelType)])[FTs, on = "FuelType"]
   FTs <- FTs[!duplicated(FTs)]
   FTs <- FTs[!is.na(FuelType)]
 
@@ -279,16 +272,9 @@ FPBPercParams <- function(sim) {
   FWIoutputs <- suppressWarnings({
     cffdrs::fwi(input = na.omit(FWIinputs),
                 init = na.omit(sim$FWIinit),
-                batch = FALSE, lat.adjust = TRUE) %>%
-      data.table
+                batch = FALSE, lat.adjust = TRUE)
   })
-
-  # ## add pixelGroup
-  # FWIoutputs  <- sim$topoClimData[,.(ID, pixelGroup)] %>%   ## this is a right join (right table being FWIoutputs)
-  #   .[FWIoutputs , , on = "ID"]
-  #
-
-
+  FWIoutputs <- data.table(FWIoutputs)
 
   ## FBP -----------------------------
   ## make inputs dataframe for FBI
@@ -298,8 +284,7 @@ FPBPercParams <- function(sim) {
 
   ## add slope and aspect
   ## again, only keep pixels that have fuels
-  FWIoutputs <- sim$topoClimData[, .(ID, slope, aspect)] %>%
-    .[FWIoutputs, on = "ID", nomatch = 0]
+  FWIoutputs <- sim$topoClimData[, .(ID, slope, aspect)][FWIoutputs, on = "ID", nomatch = 0]
 
   FBPinputs <- data.frame(id = FWIoutputs$ID,
                           FuelType = FWIoutputs$FuelTypeFBP,
@@ -314,19 +299,16 @@ FPBPercParams <- function(sim) {
                           PC = FWIoutputs$coniferDom)
 
   FBPoutputs <- suppressWarnings({
-    cffdrs::fbp(input = na.omit(FBPinputs)) %>%
-      data.table
+    cffdrs::fbp(input = na.omit(FBPinputs), output = "All")
   })
+  FBPoutputs <- data.table(FBPoutputs)
 
-  # ## add pixelGroup
-  # FBPoutputs <- FWIoutputs[,.(ID, pixelGroup)] %>%   ## this is a right join (right table being FWIoutputs)
-  #   .[FBPoutputs, , on = "ID"]
 
   ## FBP OUTPUTS TO SPATIALPOINTS
   FBPOutputsPts <- FBPoutputs[, .(ID, ROS, HFI, TFC)]
   FBPOutputsPts <- FBPOutputsPts[FWIoutputs[, .(ID, LAT, LONG)],
-                                 on = "ID", nomatch = 0] %>%
-    .[, ID := NULL]
+                                 on = "ID", nomatch = 0][, ID := NULL]
+
   FBPOutputsSf <- st_as_sf(FBPOutputsPts, coords = c("LONG", "LAT"),
                            crs =  as.character(crs(sim$studyAreaFBP)),
                            agr = "constant")
