@@ -134,7 +134,7 @@ fireTimestep <- 2L
 successionTimestep <- 1L
 
 modulesSim <- list("BiomassSpeciesData"
-                   , "Biomass_regeneration"
+                   , "Biomass_regenerationPM"
                    , "Boreal_LBMRDataPrep"
                    , "Biomass_fuels"
                    , "LBMR"
@@ -186,21 +186,21 @@ paramsSim <- list(
     , ".useCache" = TRUE
   )
   , Biomass_fuels = list(
-    "fireInitialTime" = fireTimestep,
-    "fireTimestep" = fireTimestep
+      "fireInitialTime" = fireTimestep
+    , "fireTimestep" = fireTimestep
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = eventCaching
   )
-  , Biomass_regeneration = list(
+  , Biomass_regenerationPM = list(
     "fireInitialTime" = fireTimestep
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = successionTimestep
-    , ".useCache" = eventCaching
   )
   , fireSpread = list(
-    "fireSize" = 1000L
-    , "noStartPix" = 10
+    "fireInitialTime" = fireTimestep
     , "fireTimestep" = fireTimestep
+    , "fireSize" = 1000L
+    , "noStartPix" = 10
     , "vegFeedback" = TRUE
     , ".useCache" = eventCaching
   ),
@@ -217,7 +217,7 @@ paramsSim <- list(
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
 ## TODO: Biomass_fuels doFuelTypes is very slow. check.
-options(spades.moduleCodeChecks = FALSE)
+options(spades.moduleCodeChecks = TRUE)
 graphics.off()
 
 ## LBMR - only
@@ -227,12 +227,10 @@ graphics.off()
 
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1, 3, 4, 5)]
-                                 # , modules = modulesSim[c(5)]   ## LBMR only
+                                 , modules = modulesSim[c(1, 2, 4, 5, 3, 6)]
                                  , objects = objectsSim
-                                 # , objects = objectsSim[c(2,3)] ## LBMR only
                                  , paths = pathsSim
-                                 , debug = TRUE
+                                 , debug = "TRUE"
                                  , .plotInitialTime = NA
 )
 
