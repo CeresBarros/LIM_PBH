@@ -4,16 +4,18 @@
 # in R packages. If exact location is required, functions will be: sim$<moduleName>$FunctionName
 defineModule(sim, list(
   name = "Biomass_regenerationPM",
-  description = "Post-disturbance biomass regeneration module for LandR. Simulates post-fire mortality, regeneration and serotiny as part of the same event - all occurring sequentially immeadiately after fire. Mortality assumed to be 100%, serotiny and regeneration algorithms taken from LANDIS-II Biomass Succession extension, v3.6.1",
+  description = paste("Post-disturbance biomass regeneration module for LandR. Simulates post-fire partial cohort mortality,",
+                      "regeneration and serotiny as part of the same event - all occurring sequentially immeadiately after fire.",
+                      "Mortality depends of fire severity, serotiny and regeneration algorithms taken from LANDIS-II Biomass Succession extension, v3.2.1"),
   keywords = c("biomass regeneration", "LandR", "disturbance", "mortality", "vegetation succession", "vegetation model"),
   authors = person("Ceres", "Barros", email = "cbarros@mail.ubc.ca", role = c("aut", "cre")),
   childModules = character(0),
-  version = list(SpaDES.core = "0.2.3.9009", Biomass_regeneration = "0.1.0"),
+  version = list(SpaDES.core = "0.2.3.9009", Biomass_regenerationPM = "0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "Biomass_regeneration.Rmd"),
+  documentation = list("README.txt", "Biomass_regenerationPM.Rmd"),
   reqdPkgs = list("crayon", "data.table", "raster", ## TODO: update package list!
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development"),
@@ -75,7 +77,7 @@ defineModule(sim, list(
 ## event types
 #   - type `init` is required for initialiazation
 
-doEvent.Biomass_regeneration <- function(sim, eventTime, eventType) {
+doEvent.Biomass_regenerationPM <- function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
@@ -84,18 +86,18 @@ doEvent.Biomass_regeneration <- function(sim, eventTime, eventType) {
 
       ## schedule events
       sim <- scheduleEvent(sim, P(sim)$fireInitialTime,
-                           "Biomass_regeneration", "fireDisturbance",
+                           "Biomass_regenerationPM", "fireDisturbance",
                            eventPriority = 3)
     },
     fireDisturbance = {
       if(!is.null(sim$rstCurrentBurn)) {
         sim <- FireDisturbance(sim)
       } else {
-        message(crayon::red("The Biomass_regeneration module is expecting sim$rstCurrentBurn; ",
+        message(crayon::red("The Biomass_regenerationPM module is expecting sim$rstCurrentBurn; ",
                             " Currently, it does not exist."))
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep,
-                           "Biomass_regeneration", "fireDisturbance",
+                           "Biomass_regenerationPM", "fireDisturbance",
                            eventPriority = 3)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
@@ -119,7 +121,7 @@ Init <- function(sim) {
 ## Fire disturbance regeneration event
 FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
   # the presence of valid fire can cause three processes:
-  # 1. remove species cohorts from the pixels that have been affected.
+  # 1. partially remove species cohorts from the pixels that have been affected.
   # 2. initiate the post-fire regeneration
   # 3. change of cohortdata and pixelgroup map
   # may be a supplemenatary function is needed to convert non-logical map
@@ -151,12 +153,6 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
                                            numberOfRegen = numeric())
   }
 
-  # if (!is.null(sim$rstCurrentBurn)) { # anything related to fire disturbance
-  #   if (extent(sim$rstCurrentBurn) != extent(pixelGroupMap)) {
-  #     sim$rstCurrentBurn <- raster::crop(sim$rstCurrentBurn, extent(pixelGroupMap))
-  #   }
-  # }
-
   ## extract burn pixel indices/groups and remove potentially inactive pixels
   burnedLoci <- which(getValues(sim$rstCurrentBurn) > 0)
   treedBurnLoci <- if (length(sim$inactivePixelIndex) > 0) {
@@ -180,6 +176,7 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
   #   set(burnedcohortData, ,c("sumB", "siteShade"), 0) # assume the fire burns all cohorts on site
   setkey(burnedcohortData, speciesCode)
 
+  ## DO SEROTINY -----------------------------
   ## subset spp with serotiny
   tempspecies <- sim$species[postfireregen == "serotiny", .(speciesCode, postfireregen)]
 
@@ -256,8 +253,7 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
     serotinyPixel <- NULL
   }
 
-  #############################################################
-  #############################################################
+  ## DO RESPROUTING --------------------------
   # from now on, starting assessing resprouting reproduction:
   # basically same thing as serotiny
 
@@ -381,8 +377,8 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
 
   if (suppliedElsewhere(object = "scfmReturnInterval", sim = sim, where = "sim")) {
     if (P(sim)$fireTimestep != sim$scfmReturnInterval) {
-      sim@params$Biomass_regeneration$fireTimestep <- sim$scfmReturnInterval
-      message(paste0("Biomass_regeneration detected 'scfm' fire model. Setting fireTimestep to ",
+      sim@params$Biomass_regenerationPM$fireTimestep <- sim$scfmReturnInterval
+      message(paste0("Biomass_regenerationPM detected 'scfm' fire model. Setting fireTimestep to ",
                      sim$scfmReturnInterval, " to match it.")) ## TODO: don't hardcode module interdependencies!
     }
   } else {
