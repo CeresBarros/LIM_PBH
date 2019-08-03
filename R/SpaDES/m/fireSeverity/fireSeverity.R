@@ -14,12 +14,14 @@ defineModule(sim, list(
   documentation = list("README.txt", "fireSeverity.Rmd"),
   reqdPkgs = list("raster"),
   parameters = rbind(
+    defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
+                    desc = "The number of time units between successive fire events in a fire module"),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "Controls whether maps should be plotted or not"),
     defineParameter(name = ".saveInitialTime", class = "numeric", default = 0,
                     min = NA, max = NA, desc = "This describes the simulation time at which the
                     first save event should occur"),
-    defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
-                    desc = "The number of time units between successive fire events in a fire module")
+    defineParameter(".useCache", "logical", "init", NA, NA,
+                    desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "ecoregionMap", objectClass = "RasterLayer",
@@ -58,7 +60,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       ## Initialise module
       sim <- fireInit(sim)
 
-      stop("add sumamryBGM to severity module")
+      stop("add summaryBGM to severity module")
       if (!is.null(sim$rstCurrentBurn)) {
         ## schedule post-fire (pre-growth/mortality/dispersal) summaryBGM
         ## if fires are simulated
