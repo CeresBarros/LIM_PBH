@@ -67,10 +67,14 @@ defineModule(sim, list(
     #               desc = "Fire behaviour prediction system inputs table"),
     # createsOutput(objectName = "FBPoutputs", objectClass = "list",
     #               desc = "Fire weather outputs table"),
+    createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
+                  desc = "Raster of crown fraction burnt"),
     createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
                   desc = "Raster of equilibrium head fire intensity [kW/m]"),
     createsOutput(objectName = "fireROSRas", objectClass = "RasterLayer",
                   desc = "Raster of equilibrium rate of spread [m/min]"),
+    createsOutput(objectName = "fireRSORas", objectClass = "RasterLayer",
+                  desc = "Critical spread rate for crowning [m/min]"),
     createsOutput(objectName = "fireTFCRas", objectClass = "RasterLayer",
                   desc = "Raster of total fuel consumed [kg/m^2]"),
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
@@ -305,7 +309,7 @@ FPBPercParams <- function(sim) {
 
 
   ## FBP OUTPUTS TO SPATIALPOINTS
-  FBPOutputsPts <- FBPoutputs[, .(ID, ROS, HFI, TFC)]
+  FBPOutputsPts <- FBPoutputs[, .(ID, CFB, ROS, RSO, HFI, TFC)]
   FBPOutputsPts <- FBPOutputsPts[FWIoutputs[, .(ID, LAT, LONG)],
                                  on = "ID", nomatch = 0][, ID := NULL]
 
@@ -318,20 +322,29 @@ FPBPercParams <- function(sim) {
                                crs = as.character(crs(sim$pixelGroupMap)))
   FBPOutputsPoly <- as_Spatial(FBPOutputsSf)
 
+  ## Crown fraction burnt
+  sim$fireCFBRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
+                              field = "CFB", fun = function(x, ...) mean(x))
+
+  ## Head fire intensity
+  sim$fireIntRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
+                              field = "HFI", fun = function(x, ...) mean(x))
   ## Rate of spread
   sim$fireROSRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "ROS", fun = function(x, ...) mean(x))
-  # Head fire intensity
-  sim$fireIntRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "HFI", fun = function(x, ...) mean(x))
+
+  ## Critical spread rate for crowning
+  sim$fireRSORas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
+                              field = "RSO", fun = function(x, ...) mean(x))
+
   ## Total fuel consumption
   sim$fireTFCRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "TFC", fun = function(x, ...) mean(x))
   ## export to sim
-  sim$FWIinputs <- FWIinputs
-  sim$FWIoutputs <- FWIoutputs
-  sim$FBPinputs <- FBPinputs
-  sim$FBPoutputs <- FBPoutputs
+  # sim$FWIinputs <- FWIinputs
+  # sim$FWIoutputs <- FWIoutputs
+  # sim$FBPinputs <- FBPinputs
+  # sim$FBPoutputs <- FBPoutputs
 
   return(invisible(sim))
 }
@@ -393,6 +406,13 @@ doFireSpread <- function(sim) {
 
   ## convert to mask
   rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
+
+  ## remove pixels that didn't burn from ROS, Int and TFC rasters
+  sim$fireCFBRas <- mask(sim$fireIntRas, rstCurrentBurn)
+  sim$fireIntRas <- mask(sim$fireIntRas, rstCurrentBurn)
+  sim$fireROSRas <- mask(sim$fireROSRas, rstCurrentBurn)
+  sim$fireRSORas <- mask(sim$fireRSORas, rstCurrentBurn)
+  sim$fireTFCRas <- mask(sim$fireTFCRas, rstCurrentBurn)
 
   ## export to sim
   sim$rstCurrentBurn <- rstCurrentBurn
