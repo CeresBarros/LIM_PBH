@@ -26,7 +26,9 @@ defineModule(sim, list(
     defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
                     desc = "The number of time units between successive fire events in a fire module"),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
-    defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
+    defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
+    defineParameter(".useCache", "logical", "init", NA, NA,
+                    desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
