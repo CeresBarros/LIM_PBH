@@ -10,19 +10,11 @@
 	path = R/SpaDES/m/BiomassSpeciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
 	branch = development
-[submodule "R/SpaDES/m/LandR_BiomassFuels"]
-	path = R/SpaDES/m/LandR_BiomassFuels
-	url = https://github.com/CeresBarros/LandR_BiomassFuels.git
-	branch = development
-[submodule "R/SpaDES/m/LandR_BiomassGMCC"]
-	path = R/SpaDES/m/LandR_BiomassGMCC
-	url = https://github.com/CeresBarros/LandR_BiomassGMCC.git
-	branch = master
-[submodule "R/SpaDES/m/LandR_BiomassGMOrig"]
-	path = R/SpaDES/m/LandR_BiomassGMOrig
-	url = https://github.com/CeresBarros/LandR_BiomassGMOrig.git
-	branch = developmentCeres
 [submodule "R/SpaDES/m/Biomass_regeneration"]
 	path = R/SpaDES/m/Biomass_regeneration
 	url = https://github.com/CeresBarros/Biomass_regeneration.git
+	branch = development
+[submodule "R/SpaDES/m/Biomass_fuels"]
+	path = R/SpaDES/m/Biomass_fuels
+	url = https://github.com/CeresBarros/Biomass_fuels.git
 	branch = development

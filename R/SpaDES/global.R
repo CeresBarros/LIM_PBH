@@ -8,10 +8,10 @@
 ## clean workspace
 rm(list=ls()); amc::.gc()
 
-## requires as of April 26th 2019
-# loading reproducible     0.2.8
-# loading quickPlot        0.1.6
-# loading SpaDES.core      0.2.5.9000
+## requires as of June 18th 2019
+# loading reproducible     0.2.8.9001
+# loading quickPlot        0.1.6.9000
+# loading SpaDES.core      0.2.5.9004
 # loading SpaDES.tools     0.3.2.9000
 # loading SpaDES.addins    0.1.2
 
@@ -47,15 +47,14 @@ setPaths(modulePath = file.path("R/SpaDES/m"),
 ## STUDY AREA(S) ---------------------------------------
 
 ## Foothills and a smaller region for testing
-foothills <- Cache(prepInputs,
-                   targetFile = "Foothills_study_area.shp",
+## prepInputs doens't work with kmz, so download and unzipping need to be done externally.
+foothills <- Cache(prepKMZ2shapefile,
+                   url = "https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs",
                    archive = "Foothills_study_area.zip",
                    destinationPath = "data/maps",
-                   url = "https://drive.google.com/file/d/10vFcsyMu_-UF3PEcDngKsU72gH7jciGk/view?usp=sharing",
-                   cacheRepo = "data/")
+                   cacheRepo = "data/cache")
 foothills <- spTransform(foothills,
                          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-
 foothillsSMALL <- raster::buffer(foothills, width = -30000)
 
 ## -----------------------------------------------
@@ -90,11 +89,11 @@ sppEquivalencies_CA[, EN_generic_full := c(Abie_sp = "Fir",
                                            Pseu_men = "Doug-fir")[LIM]]
 
 sppEquivalencies_CA[, FI_layers := c(Abie_sp = "Fir",
-                                           Lari_lar = "",
-                                           Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
-                                           Pinu_sp = "Pine",
-                                           Popu_sp = "Deciduous",
-                                           Pseu_men = "")[LIM]]
+                                     Lari_lar = "",
+                                     Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
+                                     Pinu_sp = "Pine",
+                                     Popu_sp = "Deciduous",
+                                     Pseu_men = "")[LIM]]
 
 sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
 sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
@@ -125,7 +124,7 @@ pathsSim$outputPath <- file.path(pathsSim$outputPath, runName)
 pathsSim$cachePath <- file.path("R/SpaDES/cache/LIM_tests", runName)
 
 ## simulation params
-timesSim <- list(start = 0, end = 25)
+timesSim <- list(start = 0, end = 15)
 eventCaching <- c(".inputObjects", "init")
 
 
@@ -135,10 +134,9 @@ fireTimestep <- 2L
 successionTimestep <- 1L
 
 modulesSim <- list("BiomassSpeciesData"
-                   , "Biomass_regeneration"
-                   , "Boreal_LBMRDataPrep"   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
-                   # , "LandR_BiomassGMOrig"
-                   , "LandR_BiomassFuels"
+                   , "Biomass_regenerationPM"
+                   , "Boreal_LBMRDataPrep"
+                   , "Biomass_fuels"
                    , "LBMR"
                    , "fireSpread"
                    , "fireSeverity"
@@ -147,7 +145,7 @@ modulesSim <- list("BiomassSpeciesData"
 objectsSim <- list("studyArea" = foothillsSMALL
                    , "sppEquiv" = sppEquivalencies_CA
                    , "sppColorVect" = sppColorVect
-                   )
+)
 
 # outputs <- data.frame(expand.grid(objectName = c("cohortData"),
 #                                   saveTime = seq(2, 50, by = 5),
@@ -159,10 +157,9 @@ paramsSim <- list(
   Boreal_LBMRDataPrep = list(
     "sppEquivCol" = sppEquivCol
     , "forestedLCCClasses" = c(1:15, 34:36)
-    , "omitNonTreePixels" = TRUE
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
-    , "pixelGroupAgeClass" = successionTimestep*10
+    , "pixelGroupAgeClass" = successionTimestep * 10L
     , "pixelGroupBiomassClass" = 100
     , "runName" = runName
     , "useCloudCacheForStats" = FALSE
@@ -175,10 +172,11 @@ paramsSim <- list(
     , ".plotInitialTime" = timesSim$start
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep*10
+    , "successionTimestep" = successionTimestep * 10L
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
-    , ".saveInitialTime" = 1
+    , ".plotMaps" = FALSE
+    , ".saveInitialTime" = NA
     , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
@@ -187,25 +185,22 @@ paramsSim <- list(
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = TRUE
   )
-  # , LandR_BiomassGMOrig = list(
-  #   "growthInitialTime" = successionTimestep
-  #   ,".useParallel" = useParallel
-  #   # , ".useCache" = eventCaching
-  # )
-  , LandR_BiomassFuels = list(
-    "successionTimestep" = successionTimestep
+  , Biomass_fuels = list(
+      "fireInitialTime" = fireTimestep
+    , "fireTimestep" = fireTimestep
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = eventCaching
   )
-  , Biomass_regeneration = list(
+  , Biomass_regenerationPM = list(
     "fireInitialTime" = fireTimestep
+    , "fireTimestep" = fireTimestep
     , "successionTimestep" = successionTimestep
-    , ".useCache" = eventCaching
   )
   , fireSpread = list(
-    "fireSize" = 1000L
-    , "noStartPix" = 10
+    "fireInitialTime" = fireTimestep
     , "fireTimestep" = fireTimestep
+    , "fireSize" = 1000L
+    , "noStartPix" = 10
     , "vegFeedback" = TRUE
     , ".useCache" = eventCaching
   ),
@@ -220,14 +215,25 @@ paramsSim <- list(
 # showCache(pathsSim$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(pathsSim$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
 
-## TODO: LandR_BiomassFuels doFuelTypes is very slow. check.
+## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
+## TODO: Biomass_fuels doFuelTypes is very slow. check.
+options(spades.moduleCodeChecks = TRUE)
 graphics.off()
+
+## LBMR - only
+# pathsSim$cachePath <- "R/SpaDES/cache/LBMRonly/testJun2019"
+# pathsSim$outputPath <- "R/SpaDES/outputs/LBMRonly/testJun2019"
+# options("reproducible.overwrite" = TRUE)
+
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1,3,5)]
+                                 , modules = modulesSim[c(1, 2, 4, 5, 3, 6)]
                                  , objects = objectsSim
                                  , paths = pathsSim
-                                 , debug = TRUE)
+                                 , debug = "TRUE"
+                                 , .plotInitialTime = NA
+)
+
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
@@ -241,7 +247,7 @@ objectsSim["rstCurrentBurn"] <- rstCurrentBurn
 
 modulesSim <- list("BiomassSpeciesData", "Boreal_LBMRDataPrep",   ## biomassSpeciesData needs a data prep -can't cope with LBMR defaults
                    "LBMR", "LandR_BiomassGMOrig",
-                   "LandR_BiomassFuels",
+                   "Biomass_fuels",
                    "LandR_BiomassRegen", "fireSpread",
                    "fireSeverity")
 
