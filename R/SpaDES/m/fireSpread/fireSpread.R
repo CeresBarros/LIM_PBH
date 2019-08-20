@@ -33,9 +33,6 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
                  desc = "Raster of aspect values - needs to be previously downloaded at this point"),
-    expectsInput(objectName = "biomassMap", objectClass = "RasterLayer",
-                 desc = "Biomass map at each succession time step. Default is Canada national biomass map",
-                 sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
     expectsInput(objectName = "FuelTypes", objectClass = "data.table",
                  desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
                  min and max age for each species"),
@@ -49,6 +46,9 @@ defineModule(sim, list(
     expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
                  desc = "Raster of precipitation values",
                  sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
+    expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
+                 desc = "Biomass map at each succession time step. Default is Canada national biomass map",
+                 sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
     expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
                  desc = "Raster of slope values - needs to be previously downloaded at this point"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
@@ -67,6 +67,8 @@ defineModule(sim, list(
     #               desc = "Fire behaviour prediction system inputs table"),
     # createsOutput(objectName = "FBPoutputs", objectClass = "list",
     #               desc = "Fire weather outputs table"),
+    createsOutput(objectName = "aspectRas", objectClass = "RasterLayer",
+                  desc = "Raster of aspect values - reprojected/cropped"),
     createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
                   desc = "Raster of crown fraction burnt"),
     createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
@@ -84,10 +86,16 @@ defineModule(sim, list(
     #               desc = "Fire weather outputs table"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
+    createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
+                  desc = "Raster of precipitation values - reprojected/cropped"),
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                   desc = "Binary raster of fire spread"),
+    createsOutput(objectName = "slopeRas", objectClass = "RasterLayer",
+                  desc = "Raster of slope values - reprojected/cropped"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels"),
+    createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
+                  desc = "Raster of temperature values - reprojected/cropped"),
     createsOutput(objectName = "topoClimData", objectClass = "data.table",
                   desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
   )
@@ -153,7 +161,7 @@ fireInit <- function(sim) {
   ## check package is installed
   if (!"cffdrs" %in% installed.packages())
     stop(paste("Please install the cffdrs R package to use",
-         currentModule(sim)))
+               currentModule(sim)))
 
   cacheTags <- c("fireSpread", "fireInit")
 
@@ -229,10 +237,9 @@ FPBPercParams <- function(sim) {
                                       crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
     pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
                                       crs = crs(sim$studyAreaFBP))
-
     ## export to sim and clean ws
     sim$pixelGroupMapFBP <- pixelGroupMapFBP
-    rm(pixelGroupMapFBP)
+    rm(pixelGroupMapFBP); amc::.gc()
   }
 
   ## FUEL TYPES ------------------------------
@@ -310,7 +317,6 @@ FPBPercParams <- function(sim) {
   })
   FBPoutputs <- data.table(FBPoutputs)
 
-
   ## FBP OUTPUTS TO SPATIALPOINTS
   FBPOutputsPts <- FBPoutputs[, .(ID, CFB, ROS, RSO, HFI, TFC)]
   FBPOutputsPts <- FBPOutputsPts[FWIoutputs[, .(ID, LAT, LONG)],
@@ -360,7 +366,6 @@ doFireSpread <- function(sim) {
   vals <- data.table(B = getValues(sim$simulatedBiomassMap))   ## making a mask is probably faster with data.table
   vals <- vals[B > 0, B := 1]
   vals <- vals[B <= 0, B := NA]
-
   burnableAreas[] <- vals$B
 
   ## MAKE RASTER OF SPREAD PROABILITIES
@@ -375,7 +380,7 @@ doFireSpread <- function(sim) {
   vals[!is.na(spreadP), spreadP := scale(spreadP, scale = FALSE) + 0.20]
   spreadProb_map[] <- vals$spreadP
 
-  ## NAs get 0 probability
+  ## NAs get 0 probability - not necessary
   spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
 
   ## MAKE RASTER OF PERSISTENCE PROABILITIES
@@ -389,7 +394,7 @@ doFireSpread <- function(sim) {
   vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisP
 
-  ## NAs get 0 probability
+  ## NAs get 0 probability - not necessary?
   persistProb_map[is.na(getValues(persistProb_map))] <- 0
 
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
