@@ -429,7 +429,7 @@ doFireSpread <- function(sim) {
   spreadProb_map[] <- vals$spreadP
 
   ## NAs get 0 probability - not necessary
-  spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
+  # spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
 
   ## MAKE RASTER OF PERSISTENCE PROABILITIES
   ## persistence probability is the combination of TFC and intensity, which have an additive effect
@@ -443,7 +443,7 @@ doFireSpread <- function(sim) {
   persistProb_map[] <- vals$persisP
 
   ## NAs get 0 probability - not necessary?
-  persistProb_map[is.na(getValues(persistProb_map))] <- 0
+  # persistProb_map[is.na(getValues(persistProb_map))] <- 0
 
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
