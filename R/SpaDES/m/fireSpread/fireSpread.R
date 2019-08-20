@@ -379,6 +379,35 @@ FPBPercParams <- function(sim) {
 
 ## Fire spread event in fire years - rasters should be back in LBMR projection
 doFireSpread <- function(sim) {
+
+  ## if no simulatedBiomassMap is supplied then generate one from raw data
+  ## at the start
+  if (time(sim) == P(sim)$fireInitialTime) {
+    if (!suppliedElsewhere("simulatedBiomassMap", sim)) {
+      if (!suppliedElsewhere("rawBiomassMap", sim)) {
+        # Filenames
+        rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
+        rawBiomassMapURL <- "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"
+        sim$simulatedBiomassMap <- Cache(prepInputs,
+                                         targetFile = asPath(basename(rawBiomassMapFilename)),
+                                         archive = asPath(c("kNN-StructureBiomass.tar",
+                                                            "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+                                         url = rawBiomassMapURL,
+                                         destinationPath = dPath,
+                                         studyArea = sim$studyArea,
+                                         rasterToMatch = NULL,
+                                         maskWithRTM = FALSE,
+                                         useSAcrs = TRUE,
+                                         method = "bilinear",
+                                         datatype = "INT2U",
+                                         filename2 = TRUE, overwrite = TRUE,
+                                         omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
+      } else {
+        sim$simulatedBiomassMap <- sim$rawBiomassMap
+      }
+    }
+  }
+
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn
   burnableAreas <- sim$simulatedBiomassMap
