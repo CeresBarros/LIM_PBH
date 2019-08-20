@@ -171,12 +171,12 @@ fireInit <- function(sim) {
   ## project all inputs to Lat/Long (decimal degrees)
   ## for compatibility with FBP system
 
-  ## increase pixelGroupMap resolution to prevent data loss.
-  ## then reproject to FBP compatible projection
-  ## note: don't mask to studye area until the end.
-  pixelGroupMapFBP <- projectRaster(sim$pixelGroupMap,
-                                    res = res(sim$pixelGroupMap)*0.5,
-                                    crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
+  ## buffer pixelGroupMap to prevent data loss, using twice the pixel size and distance
+  ## then reproject to FBP compatible projection and mask buffer out (later)
+  ## note: don't mask to area until the end.
+
+  pixelGroupMapFBP <- buffer(sim$pixelGroupMap,
+                             width = res(sim$pixelGroupMap)[1]*2)
   pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
                                     crs = crs(sim$studyAreaFBP))
 
@@ -234,11 +234,10 @@ fireInit <- function(sim) {
 FPBPercParams <- function(sim) {
   cacheTags <- c("fireSpread", "FBPPercParams")
 
-  ## Update pixelGroupMap and biomassMap if not init
-  if(time(sim) != start(sim)) {
-    pixelGroupMapFBP <- projectRaster(sim$pixelGroupMap,
-                                      res = res(sim$pixelGroupMap)*0.5,
-                                      crs = crs(sim$pixelGroupMap))  ## can't change res and crs at the same time
+  ## redo only if pixelGroupMap has been updated
+  if (time(sim) != start(sim)) {
+    pixelGroupMapFBP <- buffer(sim$pixelGroupMap,
+                               width = res(sim$pixelGroupMap)[1]*2)
     pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
                                       crs = crs(sim$studyAreaFBP))
     ## export to sim and clean ws
@@ -274,9 +273,13 @@ FPBPercParams <- function(sim) {
                     coniferDom = getValues(coniferDomRas))
   ## add FBP fuel type names
   FTs <- unique(sim$FuelTypes[, .(FuelTypeFBP, FuelType)])[FTs, on = "FuelType"]
-  FTs <- FTs[!duplicated(FTs)]
   FTs <- FTs[!is.na(FuelType)]
 
+  ## check for duplicates (there shouldn't be any)
+  if (any(duplicated(FTs))) {
+    stop("Duplicated pixels found in fuel types table.",
+         " Please debug fireSpread FPBPercParams() event function")
+  }
 
   ## FWI ------------------------------
   ## make/update table of FWI inputs
@@ -333,7 +336,9 @@ FPBPercParams <- function(sim) {
                            crs =  as.character(crs(sim$studyAreaFBP)),
                            agr = "constant")
 
-  ## reproject to original CRS without data loss and convert to raster
+  ## REPROJECT TO ORIGINAL CRS without data loss and convert to raster
+  ## note that after rasterizing it is safer to mask, in case some of
+  ## the buffer artefacts come through
   FBPOutputsSf <- st_transform(FBPOutputsSf,
                                crs = as.character(crs(sim$pixelGroupMap)))
   FBPOutputsPoly <- as_Spatial(FBPOutputsSf)
