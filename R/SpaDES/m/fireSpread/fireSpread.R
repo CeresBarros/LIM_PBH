@@ -186,26 +186,30 @@ fireInit <- function(sim) {
                                     rasterToMatch = pixelGroupMapFBP,
                                     maskWithRTM = TRUE,
                                     method = "bilinear",
-                                    filename2 = NULL, useCache = TRUE,
-                                    userTags = c(cacheTags, "topoClimRas"))
+                                    filename2 = NULL,
+                                    userTags = c(cacheTags, "topoClimRas"),
+                                    omitArgs = c("cacheTags"))
   sim$precipitationRas <- postProcess(sim$precipitationRas,
                                       rasterToMatch = pixelGroupMapFBP,
                                       maskWithRTM = TRUE,
                                       method = "bilinear",
-                                      filename2 = NULL, useCache = TRUE,
-                                      userTags = c(cacheTags, "topoClimRas"))
+                                      filename2 = NULL,
+                                      userTags = c(cacheTags, "topoClimRas"),
+                                      omitArgs = c("cacheTags"))
   sim$slopeRas <- postProcess(sim$slopeRas,
                               rasterToMatch = pixelGroupMapFBP,
                               maskWithRTM = TRUE,
                               method = "bilinear",
-                              filename2 = NULL, useCache = TRUE,
-                              userTags = c(cacheTags, "topoClimRas"))
+                              filename2 = NULL,
+                              userTags = c(cacheTags, "topoClimRas"),
+                              omitArgs = c("cacheTags"))
   sim$aspectRas <- postProcess(sim$aspectRas,
                                rasterToMatch = pixelGroupMapFBP,
                                maskWithRTM = TRUE,
                                method = "bilinear",
-                               filename2 = NULL, useCache = TRUE,
-                               userTags = c(cacheTags, "topoClimRas"))
+                               filename2 = NULL,
+                               userTags = c(cacheTags, "topoClimRas"),
+                               omitArgs = c("cacheTags"))
 
   ## TOPOCLIMDATA TABLE ----------------------
   topoClimData <- data.table(ID = 1:length(pixelGroupMapFBP),
@@ -252,15 +256,18 @@ FPBPercParams <- function(sim) {
   fuelTypeRas <- postProcess(fuelTypesMaps$finalFuelType,
                              rasterToMatch = sim$pixelGroupMapFBP,
                              maskWithRTM = TRUE,
-                             method = "bilinear",
-                             filename2 = NULL, useCache = TRUE,
-                             userTags = c(cacheTags, "topoClimRas"))
+                             method = "ngb",
+                             filename2 = NULL,
+                             userTags = c(cacheTags, "fuelTypeRas"),
+                             omitArgs = c("cacheTags"))
+
   coniferDomRas <- postProcess(fuelTypesMaps$coniferDom,
                                rasterToMatch = sim$pixelGroupMapFBP,
                                maskWithRTM = TRUE,
                                method = "bilinear",
-                               filename2 = NULL, useCache = TRUE,
-                               userTags = c(cacheTags, "topoClimRas"))
+                               filename2 = NULL,
+                               userTags = c(cacheTags, "coniferDomRas"),
+                               omitArgs = c("cacheTags"))
   ## make table of final fuel types
   FTs <- data.table(ID = 1:length(sim$pixelGroupMapFBP),
                     FuelType = getValues(fuelTypeRas),
