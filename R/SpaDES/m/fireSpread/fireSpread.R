@@ -458,7 +458,8 @@ doFireSpread <- function(sim) {
                             plot.it = FALSE)
 
   ## remove fires that spread beyond burnable areas
-  rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
+  if (any(!is.na(rstCurrentBurn[is.na(burnableAreas[])])))
+    rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
 
   ## convert to mask
   rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
