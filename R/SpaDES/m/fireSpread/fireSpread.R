@@ -448,8 +448,13 @@ doFireSpread <- function(sim) {
   vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisP
 
-  ## NAs get 0 probability - not necessary?
-  # persistProb_map[is.na(getValues(persistProb_map))] <- 0
+  ## check if NAs match
+  if (any(!is.na(spreadProb_map[is.na(persistProb_map[])])))
+    stop("spread and persistence probability rasters have unmatching NAs")
+  ## redo burnable areas if missing fire probabilities
+  if (any(!is.na(burnableAreas[is.na(spreadProb_map[])])))
+    burnableAreas <- mask(burnableAreas, spreadProb_map)
+
 
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
