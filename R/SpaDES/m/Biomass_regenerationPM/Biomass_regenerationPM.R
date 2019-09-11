@@ -33,6 +33,9 @@ defineModule(sim, list(
     expectsInput("cohortData", "data.table",
                  desc = "age cohort-biomass table hooked to pixel group map by pixelGroupIndex at
                  succession time step"),
+    expectsInput("fireDamageTable", "data.table",
+                 desc = "data.table defining upper age limit of cohorts killed by fire.
+                 From LANDIS-II Dynamic Fire System v3.0 Manual"),
     expectsInput("inactivePixelIndex", "logical",
                  desc = "internal use. Keeps track of which pixels are inactive"),
     expectsInput("pixelGroupMap", "RasterLayer",
@@ -213,17 +216,13 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
   burnedPixelCohortData[severity == 5, `:=` (B = 0, mortality = 0, aNPPAct = 0)]
 
   if (P(sim)$LANDISPM) {
-    ## TODO MOVE TO INPUTS
-    fireDamageTable <- data.table(agesKilled = c(0.2, 0.5, 0.85, 1.0), ## proportion of longevity below which there is cohort removal
-                                  severityToleranceDif = c(-2, -1, 0, 1))   ## difference between severity and spp fire tolerance
-
     ## add fire tolerance and longevity
     burnedPixelCohortData <- burnedPixelCohortData[sim$species[, .(speciesCode, longevity, firetolerance)],
                                                        on = "speciesCode", nomatch = 0]
     ## calculate dif between severity and tolerance
     burnedPixelCohortData[, severityToleranceDif := severity - firetolerance]
     ## join the % reduction
-    burnedPixelCohortData <- burnedPixelCohortData[fireDamageTable, on = "severityToleranceDif", nomatch = 0]
+    burnedPixelCohortData <- burnedPixelCohortData[sim$fireDamageTable, on = "severityToleranceDif", nomatch = 0]
 
     ## and kill cohorts below longevity * prop. - still not partial cohort mortality
     ## but partial stand mortality  -- a lot are being killed because longevities are so large now (disparity from landis)
@@ -393,6 +392,11 @@ FireDisturbance <- function(sim, verbose = getOption("LandR.verbose", TRUE)) {
   if (!suppliedElsewhere(sim$treedFirePixelTableSinceLastDisp)) {
     sim$treedFirePixelTableSinceLastDisp <- data.table(pixelIndex = integer(), pixelGroup = integer(),
                                                        burnTime = numeric())
+  }
+
+  if (!suppliedElsewhere(sim$fireDamageTable)) {
+    sim$fireDamageTable <- data.table(agesKilled = c(0.2, 0.5, 0.85, 1.0), ## proportion of longevity below which there is cohort removal
+                                  severityToleranceDif = c(-2, -1, 0, 1))   ## difference between severity and spp fire tolerance
   }
 
   return(invisible(sim))
