@@ -18,3 +18,6 @@
 	path = R/SpaDES/m/Biomass_fuels
 	url = https://github.com/CeresBarros/Biomass_fuels.git
 	branch = development
+[submodule "R/SpaDES/m/Biomass_regenerationPM"]
+	path = R/SpaDES/m/Biomass_regenerationPM
+	url = https://github.com/CeresBarros/Biomass_regenerationPM.git
