@@ -224,14 +224,15 @@ graphics.off()
 # pathsSim$cachePath <- "R/SpaDES/cache/LBMRonly/testJun2019"
 # pathsSim$outputPath <- "R/SpaDES/outputs/LBMRonly/testJun2019"
 # options("reproducible.overwrite" = TRUE)
-
+reproducible::clearCache(pathsSim$cachePath, userTags = c("^LBMR$", "init"), ask = FALSE)
+set.seed(524326)
 LBMR_testSim <- simInitAndSpades(times = timesSim
                                  , params = paramsSim
-                                 , modules = modulesSim[c(1, 2, 4, 5, 3, 6)]
+                                 , modules = modulesSim[c(3, 1, 2, 5, 4, 6, 7)]
                                  , objects = objectsSim
                                  , paths = pathsSim
                                  , debug = "TRUE"
-                                 , .plotInitialTime = NA
+                                 # , .plotInitialTime = NA
 )
 
 
