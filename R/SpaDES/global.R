@@ -9,20 +9,20 @@
 rm(list=ls()); amc::.gc()
 
 ## requires as of June 18th 2019
-# loading reproducible     0.2.8.9001
+# loading reproducible     0.2.10.9000
 # loading quickPlot        0.1.6.9000
-# loading SpaDES.core      0.2.5.9004
-# loading SpaDES.tools     0.3.2.9000
+# loading SpaDES.core      0.2.6.9000
+# loading SpaDES.tools     0.3.2.9002
 # loading SpaDES.addins    0.1.2
 
-# devtools::install_github("PredictiveEcology/reproducible@development")
-# devtools::install_github("achubaty/amc@development")
-# devtools::install_github("PredictiveEcology/pemisc@development")
-# devtools::install_github("PredictiveEcology/map@development")
-# devtools::install_github("PredictiveEcology/LandR@development")
-# devtools::install_github("PredictiveEcology/quickPlot@development")
-# devtools::install_github("PredictiveEcology/SpaDES.tools@development")
-# devtools::install_github("PredictiveEcology/SpaDES.core@development")
+# devtools::install_github("PredictiveEcology/reproducible@development", upgrade = "always")
+# devtools::install_github("achubaty/amc@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/pemisc@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/map@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/LandR@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/quickPlot@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/SpaDES.tools@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/SpaDES.core@development", upgrade = "always")
 library(SpaDES)
 library(LandR)
 
