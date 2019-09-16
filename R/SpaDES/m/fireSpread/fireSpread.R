@@ -371,8 +371,8 @@ FPBPercParams <- function(sim) {
 
   ## Total fuel consumption
   sim$fireTFCRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "TFC", fun = function(x, ...) max(x, na.rm=TRUE))
-  sim$fireTFCRas <-  mask(sim$fireTFCRas, sim$pixelGroupMap)
+                              field = "TFC", fun = function(x, na.rm = TRUE) max(x))
+  sim$fireTFCRas <- mask(sim$fireTFCRas, sim$pixelGroupMap)
 
   ## export to sim
   # sim$FWIinputs <- FWIinputs
