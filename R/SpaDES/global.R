@@ -134,10 +134,11 @@ fireTimestep <- 2L
 successionTimestep <- 1L
 
 modulesSim <- list("BiomassSpeciesData"
-                   , "Biomass_regenerationPM"
                    , "Boreal_LBMRDataPrep"
-                   , "Biomass_fuels"
                    , "LBMR"
+                   , "Biomass_fuels"
+                   , "Biomass_regenerationPM"
+                   # , "Biomass_regeneration"
                    , "fireSpread"
                    , "fireSeverity"
 )
@@ -196,6 +197,11 @@ paramsSim <- list(
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = successionTimestep
   )
+  # , Biomass_regeneration = list(
+  #   "fireInitialTime" = fireTimestep
+  #   , "fireTimestep" = fireTimestep
+  #   , "successionTimestep" = successionTimestep
+  # )
   , fireSpread = list(
     "fireInitialTime" = fireTimestep
     , "fireTimestep" = fireTimestep
