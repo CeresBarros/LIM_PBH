@@ -489,7 +489,7 @@ doFireSpread <- function(sim) {
 
 ## What to do in no fire years
 doNoFire <- function(sim) {
-  sim$rstCurrentBurn <- setValues(sim$rstCurrentBurn, rep(NA, ncell(sim$rstCurrentBurn)))
+  sim$rstCurrentBurn <- NULL
 
   return(invisible(sim))
 }
