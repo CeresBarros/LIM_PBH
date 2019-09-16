@@ -352,22 +352,22 @@ FPBPercParams <- function(sim) {
   ## Crown fraction burnt
   sim$fireCFBRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "CFB", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireCFBRas <-  mask(sim$fireCFBRas, sim$pixelGroupMap)
+  sim$fireCFBRas <- mask(sim$fireCFBRas, sim$pixelGroupMap)
 
   ## Head fire intensity
   sim$fireIntRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "HFI", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireIntRas <-  mask(sim$fireIntRas, sim$pixelGroupMap)
+  sim$fireIntRas <- mask(sim$fireIntRas, sim$pixelGroupMap)
 
   ## Rate of spread
   sim$fireROSRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "ROS", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireROSRas <-  mask(sim$fireROSRas, sim$pixelGroupMap)
+  sim$fireROSRas <- mask(sim$fireROSRas, sim$pixelGroupMap)
 
   ## Critical spread rate for crowning
   sim$fireRSORas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
                               field = "RSO", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireRSORas <-  mask(sim$fireRSORas, sim$pixelGroupMap)
+  sim$fireRSORas <- mask(sim$fireRSORas, sim$pixelGroupMap)
 
   ## Total fuel consumption
   sim$fireTFCRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
