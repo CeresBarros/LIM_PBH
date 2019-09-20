@@ -3,7 +3,7 @@
 defineModule(sim, list(
   name = "fireSpread",
   description = "Fire spread model using Favier (2004) percolation model, where percolation probabilities are
-  conditioned on vegetation, climate and topography conditions via the Canadian Forest Fire Behaviour System",
+  conditioned on fire (behaviour) properties calculated using, e.g, the Canadian Forest Fire Behaviour Prediction System",
   keywords = c("fire", "percolation model", "fire-vegetation feedbacks", "fire-climate feedbacks", "FBP system"),
   authors = person("Ceres", "Barros", email = "cbarros@mail.ubc.ca", role = c("aut", "cre")),
   childModules = character(0),
@@ -19,7 +19,6 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
-    # defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
     defineParameter(name = "fireInitialTime", class = "numeric", default = 2L,
                     desc = "The event time that the first fire disturbance event occurs"),
@@ -41,47 +40,19 @@ defineModule(sim, list(
                  desc = "Critical spread rate for crowning [m/min]"),
     expectsInput(objectName = "fireTFCRas", objectClass = "RasterLayer",
                  desc = "Raster of total fuel consumed [kg/m^2]"),
-    # expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
-    #              desc = "Raster of aspect values - needs to be previously downloaded at this point"),
-    # expectsInput(objectName = "FuelTypes", objectClass = "data.table",
-    #              desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
-    #              min and max age for each species"),
-    # expectsInput(objectName = "FWIinit", objectClass = "data.frame",
-    #              desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
-    #              This table should be updated every year"),
-    # expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table",
-    #              desc = "Fuel types per pixel group, calculated from cohort biomasses"),
-    # expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-    #              desc = "updated community map at each succession time step"),
-    # expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
-    #              desc = "Raster of precipitation values",
-    #              sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
-    expectsInput("rasterToMatch", "RasterLayer",
+    expectsInput(objectName = "rasterToMatch", "RasterLayer",
                  desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
                  sourceURL = NA),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
-    # expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
-    #              desc = "Raster of slope values - needs to be previously downloaded at this point"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("multipolygon to use as the study area,",
                               "with attribute LTHFC describing the fire return interval.",
                               "Defaults to a square shapefile in Southwestern Alberta, Canada."),
-                 sourceURL = ""),
-    # expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
-    #              desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
-    # expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
-    #              desc = "Raster of temperature values",
-    #              sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip")
+                 sourceURL = "")
   ),
   outputObjects = bind_rows(
-    # createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
-    #               desc = "Fire behaviour prediction system inputs table"),
-    # createsOutput(objectName = "FBPoutputs", objectClass = "list",
-    #               desc = "Fire weather outputs table"),
-    # createsOutput(objectName = "aspectRas", objectClass = "RasterLayer",
-    #               desc = "Raster of aspect values - reprojected/cropped"),
     createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
                   desc = "Raster of crown fraction burnt"),
     createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
@@ -93,24 +64,12 @@ defineModule(sim, list(
     createsOutput(objectName = "fireTFCRas", objectClass = "RasterLayer",
                   desc = "Raster of total fuel consumed [kg/m^2]"),
     createsOutput(objectName = "fireYear", objectClass = "numeric", desc = "Next fire year"),
-    # createsOutput(objectName = "FWIinputs", objectClass = "RasterLayer",
-    #               desc = "Fire weather inputs table"),
-    # createsOutput(objectName = "FWIoutputs", objectClass = "list",
-    #               desc = "Fire weather outputs table"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
-    # createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
-    #               desc = "Raster of precipitation values - reprojected/cropped"),
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                   desc = "Binary raster of fire spread"),
-    # createsOutput(objectName = "slopeRas", objectClass = "RasterLayer",
-    #               desc = "Raster of slope values - reprojected/cropped"),
     createsOutput(objectName = "startPix", objectClass = "vector",
-                  desc = "List of starting fire pixels"),
-    # createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
-    #               desc = "Raster of temperature values - reprojected/cropped"),
-    # createsOutput(objectName = "topoClimData", objectClass = "data.table",
-    #               desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
+                  desc = "List of starting fire pixels")
   )
 ))
 
@@ -376,7 +335,7 @@ doNoFire <- function(sim) {
     valsROS[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
     valsRSO[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
 
-    ## TODO: decide on best valus
+    ## TODO: decide on best values
     browser()
 
     valsInt[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
