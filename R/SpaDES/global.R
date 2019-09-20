@@ -71,6 +71,7 @@ if (runName == "blogSep2019_noPM") {
                      , "LBMR"
                      , "Biomass_fuels"
                      , "Biomass_regeneration"
+                     , "Biomass_fireProperties"
                      , "fireSpread"
                      , "fireSeverity"
   )
@@ -113,15 +114,20 @@ if (runName == "blogSep2019_noPM") {
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
+    , Biomass_fireProperties = list(
+      "fireInitialTime" = fireTimestep
+      , "fireTimestep" = fireTimestep
+      , "vegFeedback" = TRUE
+      , ".useCache" = eventCaching
+    )
     , fireSpread = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
       , "fireSize" = 1000L
       , "noStartPix" = 10
-      , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
-    ),
-    fireSeverity = list(
+    )
+    , fireSeverity = list(
       "fireTimestep" = fireTimestep
       , ".plotMaps" = TRUE
       , ".saveInitialTime" = 1
@@ -135,6 +141,7 @@ if (runName == "blogSep2019_PM") {
                      , "LBMR"
                      , "Biomass_fuels"
                      , "Biomass_regenerationPM"
+                     , "Biomass_fireProperties"
                      , "fireSpread"
                      , "fireSeverity"
   )
@@ -177,6 +184,12 @@ if (runName == "blogSep2019_PM") {
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
+    , Biomass_fireProperties = list(
+      "fireInitialTime" = fireTimestep
+      , "fireTimestep" = fireTimestep
+      , "vegFeedback" = TRUE
+      , ".useCache" = eventCaching
+    )
     , fireSpread = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
@@ -184,8 +197,8 @@ if (runName == "blogSep2019_PM") {
       , "noStartPix" = 10
       , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
-    ),
-    fireSeverity = list(
+    )
+    , fireSeverity = list(
       "fireTimestep" = fireTimestep
       , ".plotMaps" = TRUE
       , ".saveInitialTime" = 1
