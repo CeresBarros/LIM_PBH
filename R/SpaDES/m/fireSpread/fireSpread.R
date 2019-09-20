@@ -19,7 +19,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
-    defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
+    # defineParameter("vegFeedback", "logical", TRUE, NA, NA, desc = "Should vegetation feedbacks unto fire be simulated? Defaults to TRUE"),
     defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
     defineParameter(name = "fireInitialTime", class = "numeric", default = 2L,
                     desc = "The event time that the first fire disturbance event occurs"),
@@ -31,44 +31,57 @@ defineModule(sim, list(
                     desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
-                 desc = "Raster of aspect values - needs to be previously downloaded at this point"),
-    expectsInput(objectName = "FuelTypes", objectClass = "data.table",
-                 desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
-                 min and max age for each species"),
-    expectsInput(objectName = "FWIinit", objectClass = "data.frame",
-                 desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
-                 This table should be updated every year"),
-    expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table",
-                 desc = "Fuel types per pixel group, calculated from cohort biomasses"),
-    expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
-                 desc = "updated community map at each succession time step"),
-    expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
-                 desc = "Raster of precipitation values",
-                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
+    expectsInput(objectName = "fireCFBRas", objectClass = "RasterLayer",
+                 desc = "Raster of crown fraction burnt"),
+    expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
+                 desc = "Raster of equilibrium head fire intensity [kW/m]"),
+    expectsInput(objectName = "fireROSRas", objectClass = "RasterLayer",
+                 desc = "Raster of equilibrium rate of spread [m/min]"),
+    expectsInput(objectName = "fireRSORas", objectClass = "RasterLayer",
+                 desc = "Critical spread rate for crowning [m/min]"),
+    expectsInput(objectName = "fireTFCRas", objectClass = "RasterLayer",
+                 desc = "Raster of total fuel consumed [kg/m^2]"),
+    # expectsInput(objectName = "aspectRas", objectClass = "RasterLayer",
+    #              desc = "Raster of aspect values - needs to be previously downloaded at this point"),
+    # expectsInput(objectName = "FuelTypes", objectClass = "data.table",
+    #              desc = "Table of Fuel Type parameters, with  base fuel type, species (in LANDIS code), their - or + contribution ('negSwitch'),
+    #              min and max age for each species"),
+    # expectsInput(objectName = "FWIinit", objectClass = "data.frame",
+    #              desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
+    #              This table should be updated every year"),
+    # expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table",
+    #              desc = "Fuel types per pixel group, calculated from cohort biomasses"),
+    # expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
+    #              desc = "updated community map at each succession time step"),
+    # expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
+    #              desc = "Raster of precipitation values",
+    #              sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
+    expectsInput("rasterToMatch", "RasterLayer",
+                 desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
+                 sourceURL = NA),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
-    expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
-                 desc = "Raster of slope values - needs to be previously downloaded at this point"),
+    # expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
+    #              desc = "Raster of slope values - needs to be previously downloaded at this point"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("multipolygon to use as the study area,",
                               "with attribute LTHFC describing the fire return interval.",
                               "Defaults to a square shapefile in Southwestern Alberta, Canada."),
                  sourceURL = ""),
-    expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
-    expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
-                 desc = "Raster of temperature values",
-                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip")
+    # expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
+    #              desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
+    # expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
+    #              desc = "Raster of temperature values",
+    #              sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip")
   ),
   outputObjects = bind_rows(
     # createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
     #               desc = "Fire behaviour prediction system inputs table"),
     # createsOutput(objectName = "FBPoutputs", objectClass = "list",
     #               desc = "Fire weather outputs table"),
-    createsOutput(objectName = "aspectRas", objectClass = "RasterLayer",
-                  desc = "Raster of aspect values - reprojected/cropped"),
+    # createsOutput(objectName = "aspectRas", objectClass = "RasterLayer",
+    #               desc = "Raster of aspect values - reprojected/cropped"),
     createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
                   desc = "Raster of crown fraction burnt"),
     createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
@@ -86,18 +99,18 @@ defineModule(sim, list(
     #               desc = "Fire weather outputs table"),
     createsOutput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
-    createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
-                  desc = "Raster of precipitation values - reprojected/cropped"),
+    # createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
+    #               desc = "Raster of precipitation values - reprojected/cropped"),
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                   desc = "Binary raster of fire spread"),
-    createsOutput(objectName = "slopeRas", objectClass = "RasterLayer",
-                  desc = "Raster of slope values - reprojected/cropped"),
+    # createsOutput(objectName = "slopeRas", objectClass = "RasterLayer",
+    #               desc = "Raster of slope values - reprojected/cropped"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels"),
-    createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
-                  desc = "Raster of temperature values - reprojected/cropped"),
-    createsOutput(objectName = "topoClimData", objectClass = "data.table",
-                  desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
+    # createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
+    #               desc = "Raster of temperature values - reprojected/cropped"),
+    # createsOutput(objectName = "topoClimData", objectClass = "data.table",
+    #               desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
   )
 ))
 
@@ -106,35 +119,34 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       ## Initialise module
-      sim <- fireInit(sim)
+      sim <- fireSpreadInit(sim)
 
       ## schedule future event(s)
+      # sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
+      #                      "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time
       sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
-                           "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time
-      sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
-                           "fireSpread", eventPriority = 2.5) ## always schedule fire
+                           "doFireSpread", eventPriority = 2.5) ## always schedule fire
     },
-    fireParams = {
-      ## in the first year of fire always calculate parameters
-      if(time(sim) == P(sim)$fireInitialTime) {
-        ## calculate fire parameters
-        sim <- FPBPercParams(sim)
-      }
-
-      ## in subsequent years evaluate if parameters are to be calculated again (veg feedbacks = TRUE)
-      if(time(sim) == sim$fireYear) {
-        if(P(sim)$vegFeedback) {
-          ## calculate fire parameters
-          sim <- FPBPercParams(sim)
-
-          ## schedule future event(s)
-          ## only calculate parameters in fire years.
-          sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSpread", "fireParams", eventPriority = 2.25)
-        }
-      }
-
-    },
-    fireSpread = {
+    # fireParams = {
+    #   ## in the first year of fire always calculate parameters
+    #   if(time(sim) == P(sim)$fireInitialTime) {
+    #     ## calculate fire parameters
+    #     sim <- FPBPercParams(sim)
+    #   }
+    #
+    #   ## in subsequent years evaluate if parameters are to be calculated again (veg feedbacks = TRUE)
+    #   if(time(sim) == sim$fireYear) {
+    #     if(P(sim)$vegFeedback) {
+    #       ## calculate fire parameters
+    #       sim <- FPBPercParams(sim)
+    #
+    #       ## schedule future event(s)
+    #       ## only calculate parameters in fire years.
+    #       sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSpread", "fireParams", eventPriority = 2.25)
+    #     }
+    #   }
+    # },
+    doFireSpread = {
       ## calculate fire spread in fire years
       if(time(sim) == sim$fireYear) {
         sim <- doFireSpread(sim)
@@ -148,7 +160,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
       ## schedule future event(s) - always schedule fire
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread",
-                           "fireSpread", eventPriority = 2.5)
+                           "doFireSpread", eventPriority = 2.5)
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -157,267 +169,53 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 ### module initialization
-fireInit <- function(sim) {
-  ## check package is installed
-  if (!"cffdrs" %in% installed.packages())
-    stop(paste("Please install the cffdrs R package to use",
-               currentModule(sim)))
-
-  cacheTags <- c("fireSpread", "fireInit")
-
-  ## define first fire year
-  sim$fireYear <- as.integer(P(sim)$fireInitialTime)
-
-  ## project all inputs to Lat/Long (decimal degrees)
-  ## for compatibility with FBP system
-
-  ## buffer pixelGroupMap to prevent data loss, using twice the pixel size and distance
-  ## then reproject to FBP compatible projection and mask buffer out (later)
-  ## note: don't mask to area until the end.
-
-  pixelGroupMapFBP <- buffer(sim$pixelGroupMap,
-                             width = res(sim$pixelGroupMap)[1]*2)
-  pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
-                                    crs = crs(sim$studyAreaFBP))
-
-  ## PROJECT CLIMATE/TOPO RASTERS
-  message(blue("Processing climate data for fire weather and fuel calculation"))
-  sim$temperatureRas <- Cache(postProcess,
-                              x = sim$temperatureRas,
-                              rasterToMatch = pixelGroupMapFBP,
-                              maskWithRTM = TRUE,
-                              method = "bilinear",
-                              filename2 = NULL,
-                              userTags = c(cacheTags, "topoClimRas"),
-                              omitArgs = c("userTags"))
-  sim$precipitationRas <- Cache(postProcess,
-                                x = sim$precipitationRas,
-                                rasterToMatch = pixelGroupMapFBP,
-                                maskWithRTM = TRUE,
-                                method = "bilinear",
-                                filename2 = NULL,
-                                userTags = c(cacheTags, "topoClimRas"),
-                                omitArgs = c("userTags"))
-  sim$slopeRas <- Cache(postProcess,
-                        x = sim$slopeRas,
-                        rasterToMatch = pixelGroupMapFBP,
-                        maskWithRTM = TRUE,
-                        method = "bilinear",
-                        filename2 = NULL,
-                        userTags = c(cacheTags, "topoClimRas"),
-                        omitArgs = c("userTags"))
-  sim$aspectRas <- Cache(postProcess,
-                         x = sim$aspectRas,
-                         rasterToMatch = pixelGroupMapFBP,
-                         maskWithRTM = TRUE,
-                         method = "bilinear",
-                         filename2 = NULL,
-                         userTags = c(cacheTags, "topoClimRas"),
-                         omitArgs = c("userTags"))
-
-  ## TOPOCLIMDATA TABLE ----------------------
-  topoClimData <- data.table(ID = 1:length(pixelGroupMapFBP),
-                             pixelGroup = getValues(pixelGroupMapFBP),
-                             temp = getValues(sim$temperatureRas), precip = getValues(sim$precipitationRas),
-                             slope = getValues(sim$slopeRas), aspect = getValues(sim$aspectRas),
-                             lat = coordinates(pixelGroupMapFBP)[,2],
-                             long = coordinates(pixelGroupMapFBP)[,1])
-  ## relative humidity
-  ## using dew point between -3 and 20%, quarterly seasonal for Jun 2013
-  ## https://calgary.weatherstats.ca/metrics/dew_point.html
-  topoClimData[, relHum := RH(t = topoClimData$temp, Td = runif(nrow(topoClimData), -3, 20), isK = FALSE)]
-
-  ## export to sim
-  sim$pixelGroupMapFBP <- pixelGroupMapFBP
-  sim$topoClimData <- topoClimData
-
-  return(invisible(sim))
-}
-
-## Derive fire parameters from FBP system - rasters need to be in lat/long
-FPBPercParams <- function(sim) {
-  cacheTags <- c("fireSpread", "FBPPercParams")
-
-  ## redo only if pixelGroupMap has been updated
-  if (time(sim) != start(sim)) {
-    pixelGroupMapFBP <- buffer(sim$pixelGroupMap,
-                               width = res(sim$pixelGroupMap)[1]*2)
-    pixelGroupMapFBP <- projectRaster(pixelGroupMapFBP,
-                                      crs = crs(sim$studyAreaFBP))
-    ## export to sim and clean ws
-    sim$pixelGroupMapFBP <- pixelGroupMapFBP
-    rm(pixelGroupMapFBP); amc::.gc()
-  }
-
-  ## FUEL TYPES ------------------------------
-  ## rasterize fuel types table
-  fuelTypesMaps <- rasterizeReduced(sim$pixelFuelTypes, sim$pixelGroupMap,
-                                    newRasterCols = c("finalFuelType" , "coniferDom"),
-                                    mapcode = "pixelGroup")
-
-  ## now reproject to FBP-compatible crs
-  fuelTypeRas <- Cache(postProcess,
-                       x = fuelTypesMaps$finalFuelType,
-                       rasterToMatch = sim$pixelGroupMapFBP,
-                       maskWithRTM = TRUE,
-                       method = "ngb",
-                       filename2 = NULL,
-                       userTags = c(cacheTags, "fuelTypeRas"),
-                       omitArgs = c("userTags"))
-
-  coniferDomRas <- Cache(postProcess,
-                         x = fuelTypesMaps$coniferDom,
-                         rasterToMatch = sim$pixelGroupMapFBP,
-                         maskWithRTM = TRUE,
-                         method = "bilinear",
-                         filename2 = NULL,
-                         userTags = c(cacheTags, "coniferDomRas"),
-                         omitArgs = c("userTags"))
-  ## make table of final fuel types
-  FTs <- data.table(ID = 1:length(sim$pixelGroupMapFBP),
-                    FuelType = getValues(fuelTypeRas),
-                    coniferDom = getValues(coniferDomRas))
-  ## add FBP fuel type names
-  FTs <- unique(sim$FuelTypes[, .(FuelTypeFBP, FuelType)])[FTs, on = "FuelType"]
-  FTs <- FTs[!is.na(FuelType)]
-
-  ## check for duplicates (there shouldn't be any)
-  if (any(duplicated(FTs))) {
-    stop("Duplicated pixels found in fuel types table.",
-         " Please debug fireSpread FPBPercParams() event function")
-  }
-
-  ## FWI ------------------------------
-  ## make/update table of FWI inputs
-  FWIinputs <- data.frame(id = sim$topoClimData$ID,
-                          lat = sim$topoClimData$lat,
-                          long = sim$topoClimData$long,
-                          mon = 7,
-                          temp = sim$topoClimData$temp,
-                          rh = sim$topoClimData$relHum,
-                          ws = 0,
-                          prec = sim$topoClimData$precip)
-
-  ## calculate FW indices
-  FWIoutputs <- suppressWarnings({
-    cffdrs::fwi(input = na.omit(FWIinputs),
-                init = na.omit(sim$FWIinit),
-                batch = FALSE, lat.adjust = TRUE)
-  })
-  FWIoutputs <- data.table(FWIoutputs)
-
-  ## FBP -----------------------------
-  ## make inputs dataframe for FBI
-  ## add fuel types and conifer dominance to FWIOutputs
-  ## note that because climate/topo data is "larger" there are pixels that have no fuels - these are removed.
-  FWIoutputs <- FTs[FWIoutputs, on = "ID", nomatch = 0]
-
-  ## add slope and aspect
-  ## again, only keep pixels that have fuels
-  FWIoutputs <- sim$topoClimData[, .(ID, slope, aspect)][FWIoutputs, on = "ID", nomatch = 0]
-
-  FBPinputs <- data.frame(id = FWIoutputs$ID,
-                          FuelType = FWIoutputs$FuelTypeFBP,
-                          LAT = FWIoutputs$LAT,
-                          LONG = FWIoutputs$LONG,
-                          FFMC = FWIoutputs$FFMC,
-                          BUI = FWIoutputs$BUI,
-                          WS = FWIoutputs$WS,
-                          GS = FWIoutputs$slope,
-                          Dj = rep(180, nrow(FWIoutputs)),
-                          Aspect = FWIoutputs$aspect,
-                          PC = FWIoutputs$coniferDom)
-
-  FBPoutputs <- suppressWarnings({
-    cffdrs::fbp(input = na.omit(FBPinputs), output = "All")
-  })
-  FBPoutputs <- data.table(FBPoutputs)
-
-  ## FBP OUTPUTS TO SPATIALPOINTS
-  FBPOutputsPts <- FBPoutputs[, .(ID, CFB, ROS, RSO, HFI, TFC)]
-  FBPOutputsPts <- FBPOutputsPts[FWIoutputs[, .(ID, LAT, LONG)],
-                                 on = "ID", nomatch = 0][, ID := NULL]
-
-  FBPOutputsSf <- st_as_sf(FBPOutputsPts, coords = c("LONG", "LAT"),
-                           crs =  as.character(crs(sim$studyAreaFBP)),
-                           agr = "constant")
-
-  ## REPROJECT TO ORIGINAL CRS without data loss and convert to raster
-  ## note that after rasterizing it is safer to mask, in case some of
-  ## the buffer artefacts come through
-  FBPOutputsSf <- st_transform(FBPOutputsSf,
-                               crs = as.character(crs(sim$pixelGroupMap)))
-  FBPOutputsPoly <- as_Spatial(FBPOutputsSf)
-
-  ## Crown fraction burnt
-  sim$fireCFBRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "CFB", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireCFBRas <- mask(sim$fireCFBRas, sim$pixelGroupMap)
-
-  ## Head fire intensity
-  sim$fireIntRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "HFI", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireIntRas <- mask(sim$fireIntRas, sim$pixelGroupMap)
-
-  ## Rate of spread
-  sim$fireROSRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "ROS", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireROSRas <- mask(sim$fireROSRas, sim$pixelGroupMap)
-
-  ## Critical spread rate for crowning
-  sim$fireRSORas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "RSO", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireRSORas <- mask(sim$fireRSORas, sim$pixelGroupMap)
-
-  ## Total fuel consumption
-  sim$fireTFCRas <- rasterize(FBPOutputsPoly, sim$pixelGroupMap,
-                              field = "TFC", fun = function(x, na.rm = TRUE) max(x))
-  sim$fireTFCRas <- mask(sim$fireTFCRas, sim$pixelGroupMap)
-
-  ## export to sim
-  # sim$FWIinputs <- FWIinputs
-  # sim$FWIoutputs <- FWIoutputs
-  # sim$FBPinputs <- FBPinputs
-  # sim$FBPoutputs <- FBPoutputs
-
+fireSpreadInit <- function(sim) {
   return(invisible(sim))
 }
 
 ## Fire spread event in fire years - rasters should be back in LBMR projection
 doFireSpread <- function(sim) {
 
+  ## MAKE BURNABLE AREAS RASTER -------------------------------
+  ## only areas with biomass can burn
   ## if no simulatedBiomassMap is supplied then generate one from raw data
   ## at the start
   if (time(sim) == P(sim)$fireInitialTime) {
-    if (!suppliedElsewhere("simulatedBiomassMap", sim)) {
-      if (!suppliedElsewhere("rawBiomassMap", sim)) {
-        # Filenames
+    if (is.null(sim$simulatedBiomassMap)) {
+      if (is.null(sim$biomassMap)) {
+        cacheTags <- c(currentModule(sim), current(sim))
+        dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+
+        # If biomassMap is not present either, get rawBiomassMap, but crop it to studyArea/RTM instead of SALarge/RTMLarge
         rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
         rawBiomassMapURL <- "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"
-        sim$simulatedBiomassMap <- Cache(prepInputs,
-                                         targetFile = asPath(basename(rawBiomassMapFilename)),
-                                         archive = asPath(c("kNN-StructureBiomass.tar",
-                                                            "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
-                                         url = rawBiomassMapURL,
-                                         destinationPath = dPath,
-                                         studyArea = sim$studyArea,
-                                         rasterToMatch = NULL,
-                                         maskWithRTM = FALSE,
-                                         useSAcrs = TRUE,
-                                         method = "bilinear",
-                                         datatype = "INT2U",
-                                         filename2 = TRUE, overwrite = TRUE,
-                                         omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
+        burnableAreas <- Cache(prepInputs,
+                               targetFile = asPath(basename(rawBiomassMapFilename)),
+                               archive = asPath(c("kNN-StructureBiomass.tar",
+                                                  "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+                               url = rawBiomassMapURL,
+                               destinationPath = dPath,
+                               studyArea = sim$studyArea,
+                               rasterToMatch = sim$rasterToMatch,
+                               maskWithRTM = TRUE,
+                               useSAcrs = FALSE,
+                               method = "bilinear",
+                               datatype = "INT2U",
+                               filename2 = TRUE, overwrite = TRUE,
+                               userTags = cacheTags,
+                               omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
+        rm(cacheTags)
       } else {
-        sim$simulatedBiomassMap <- sim$rawBiomassMap
+        burnableAreas <- sim$biomassMap
       }
+    } else {
+      burnableAreas <- sim$simulatedBiomassMap
     }
+  } else {
+    burnableAreas <- sim$simulatedBiomassMap
   }
 
-  ## MAKE BURNABLE AREAS RASTER -------------------------------
-  ## only areas with biomass can burn
-  burnableAreas <- sim$simulatedBiomassMap
-  vals <- data.table(B = getValues(sim$simulatedBiomassMap))   ## making a mask is probably faster with data.table
+  vals <- data.table(B = getValues(burnableAreas))   ## making a mask is probably faster with data.table
   vals <- vals[B > 0, B := 1]
   vals <- vals[B <= 0, B := NA]
   burnableAreas[] <- vals$B
@@ -427,6 +225,7 @@ doFireSpread <- function(sim) {
   ## and their sum is scaled to 0-0.23
   ## TODO: the scaling should guarantee an average value of 0.23
   ## TODO: ROS and intensity should be combined differently
+  browser()
   spreadProb_map <- sim$fireROSRas + sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
@@ -475,8 +274,8 @@ doFireSpread <- function(sim) {
   ## convert to mask
   rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
 
-  ## remove pixels that didn't burn from ROS, Int and TFC rasters
-  sim$fireCFBRas <- mask(sim$fireIntRas, rstCurrentBurn)
+  ## remove pixels that didn't burn from fire property rasters
+  sim$fireCFBRas <- mask(sim$fireCFBRas, rstCurrentBurn)
   sim$fireIntRas <- mask(sim$fireIntRas, rstCurrentBurn)
   sim$fireROSRas <- mask(sim$fireROSRas, rstCurrentBurn)
   sim$fireRSORas <- mask(sim$fireRSORas, rstCurrentBurn)
@@ -496,106 +295,98 @@ doNoFire <- function(sim) {
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-  dPath <- dataPath(sim)
+  ## TODO: ADD DUMMIES FOR FIRE PROPERTIES
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  ## make raster storage lists
-  sim$rstCurrentBurn <- list()
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")
+    sim$studyArea <- randomStudyArea(seed = 1234, size = (250^2)*100)
+  }
 
-  ## project to Lat/Long (decimal degrees) for compatibility with FBP system
-  ## TODO: this results in data loss - but LandR doesn't deal well with lat/long
-  ## need to find long term solution
-  latLong <- "+proj=longlat +datum=WGS84"
-
-  if (!suppliedElsewhere("studyAreaFBP", sim)) {
-    if (!suppliedElsewhere("studyArea", sim)) {
-      if (getOption("LandR.verbose", TRUE) > 0)
-        message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")
-      sim$studyArea <- randomStudyArea(seed = 1234, size = (250^2)*100)
+  ## DEFAULT RASTER TO MATCH
+  needRTM <- FALSE
+  if (is.null(sim$rasterToMatch)) {
+    if (!suppliedElsewhere("rasterToMatch", sim)) {      ## if one is not provided, re do both (safer?)
+      needRTM <- TRUE
+      message("There is no rasterToMatch supplied; will attempt to use rawBiomassMap")
+    } else {
+      stop("rasterToMatch is going to be supplied, but ", currentModule(sim), " requires it ",
+           "as part of its .inputObjects. Please make it accessible to ", currentModule(sim),
+           " in the .inputObjects by passing it in as an object in simInit(objects = list(rasterToMatch = aRaster)",
+           " or in a module that gets loaded prior to ", currentModule(sim))
     }
-    sim$studyAreaFBP <- sim$studyArea
   }
 
-  ## if necessary reproject to lat/long - for compatibility with FBP
-  if (!identical(latLong, crs(sim$studyAreaFBP))) {
-    sim$studyAreaFBP <- spTransform(sim$studyAreaFBP, latLong) #faster without Cache
-  }
+  if (needRTM) {
+    if(!suppliedElsewhere("rawBiomassMap", sim)) {
+      rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
+      rawBiomassMap <- Cache(prepInputs,
+                             targetFile = asPath(basename(rawBiomassMapFilename)),
+                             archive = asPath(c("kNN-StructureBiomass.tar",
+                                                "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+                             url = extractURL("rawBiomassMap"),
+                             destinationPath = dPath,
+                             studyArea = sim$studyArea,
+                             rasterToMatch = if (!needRTM) sim$rasterToMatch else NULL,
+                             maskWithRTM = if (!needRTM) TRUE else FALSE,
+                             useSAcrs = FALSE,     ## never use SA CRS
+                             method = "bilinear",
+                             datatype = "INT2U",
+                             filename2 = TRUE, overwrite = TRUE, userTags = cacheTags,
+                             omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
 
-  ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
-  ## these defaults are only necessary if the rasters are not supplied by another module
-  ## climate defaults to http://worldclim.org/version2 (temperarute historical ensemble)
-  ## slope/aspect defaults obtained from Environment Canada using foothills shp
-  if(!suppliedElsewhere("temperatureRas", sim)){
-    ## get default temperature values
-    fnames <- paste0("wc2.0_2.5m_tmax_0", 5:9, ".tif")
-    temperatureStk <- list()
-    for(f in fnames) {
-      temperatureStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                   url = extractURL("temperatureRas", sim),
-                                   archive = "wc2.0_2.5m_tmax.zip",
-                                   alsoExtract = NA,
-                                   destinationPath = getPaths()$inputPath,
-                                   datatype = "FLT4S",
-                                   filename2 = FALSE,
-                                   userTags = cacheTags)
+    } else {
+      rawBiomassMap <- Cache(postProcess,
+                             x = sim$rawBiomassMap,
+                             studyArea - sim$studyArea,
+                             maskWithRTM = FALSE,
+                             useSAcrs = FALSE,     ## never use SA CRS
+                             method = "bilinear",
+                             datatype = "INT2U",
+                             filename2 = TRUE, overwrite = TRUE, userTags = cacheTags,
+                             omitArgs = c("destinationPath", "userTags"))
     }
-    temperatureStk <- stack(temperatureStk)
-    temperatureRas <- raster::mean(temperatureStk)
-    sim$temperatureRas <- temperatureRas
+
+    ## if we need rasterToMatch, that means a) we don't have it, but b) we will have rawBiomassMap
+    ## even if one of the rasterToMatch is present re-do both.
+    ## if we need rasterToMatch, that means a) we don't have it, but b) we will have rawBiomassMap
+    sim$rasterToMatch <- rawBiomassMap
+    RTMvals <- getValues(sim$rasterToMatch)
+    sim$rasterToMatch[!is.na(RTMvals)] <- 1
+
+    sim$rasterToMatch <- Cache(writeRaster, sim$rasterToMatch,
+                               filename = file.path(dPath, "rasterToMatch"),
+                               datatype = "INT2U", overwrite = TRUE)
   }
 
-  if(!suppliedElsewhere("precipitationRas", sim)){
-    ## get default precipitation values
-    fnames <- paste0("wc2.0_2.5m_prec_0", 5:9, ".tif")
-    precipitationStk <- list()
-    for(f in fnames) {
-      precipitationStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                     url = extractURL("precipitationRas", sim),
-                                     archive = "wc2.0_2.5m_prec.zip",
-                                     alsoExtract = NA,
-                                     destinationPath = getPaths()$inputPath,
-                                     datatype = "FLT4S",
-                                     filename2 = FALSE,
-                                     userTags = cacheTags)
-    }
-    precipitationStk <- stack(precipitationStk)
-    precipitationRas <- raster::mean(precipitationStk)
-    sim$precipitationRas <- precipitationRas
+  ## DEFAULT FIRE PROPERTIES RASTERS
+  if (any(!suppliedElsewhere("fireRSORas", sim),
+          !suppliedElsewhere("fireROSRas", sim),
+          !suppliedElsewhere("fireIntRas", sim),
+          !suppliedElsewhere("fireTFCRas", sim),
+          !suppliedElsewhere("fireCFBRas", sim))) {
+    message(crayon::red(paste0("fireSpread is missing one/several of the following rasters:\n",
+                               "  fireRSORas, fireROSRas, fireIntRas, fireTFCRas and fireCFBRas.\n",
+                               "  DUMMY RASTERS will be used - if this is not intended, please \n",
+                               "  use a fire module that provides them (e.g. fireSpread)")))
+    vals <- getValues(sim$rasterToMatch)
+    valsCFB <- valsInt <- valsROS <- valsRSO <- valsTFC <- integer(0)
+    valsCFB[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
+    valsROS[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
+    valsRSO[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
+
+    ## TODO: decide on best valus
+    browser()
+
+    valsInt[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
+    valsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
+
+    sim$fireCFBRas <- setValues(sim$rasterToMatch, valsCFB)
+    sim$fireIntRas <- setValues(sim$rasterToMatch, valsInt)
+    sim$fireROSRas <- setValues(sim$rasterToMatch, valsROS)
+    sim$fireRSORas <- setValues(sim$rasterToMatch, valsRSO)
+    sim$fireTFCRas <- setValues(sim$rasterToMatch, valsTFC)
   }
-
-  if(!suppliedElsewhere("slopeRas", sim)){
-    ## TODO defaults of slope/aspect should cover whole of Canada
-    ## get default slope values
-    slopeRas <- Cache(prepInputs, targetFile = "dataset/SLOPE.tif",
-                      archive = "DEM_Foothills_study_area.zip",
-                      alsoExtract = NA,
-                      destinationPath = getPaths()$inputPath,
-                      datatype = "FLT4S",
-                      filename2 = FALSE,
-                      userTags = cacheTags)
-    sim$slopeRas <- slopeRas
-
-  }
-
-  if(!suppliedElsewhere("aspectRas", sim)){
-    ## get default aspect values
-    aspectRas <- Cache(prepInputs, targetFile = "dataset/ASPECT.tif",
-                       archive = "DEM_Foothills_study_area.zip",
-                       alsoExtract = NA,
-                       destinationPath = getPaths()$inputPath,
-                       datatype = "FLT4S",
-                       filename2 = FALSE,
-                       userTags = cacheTags)
-    sim$aspectRas <- aspectRas
-  }
-
-  ## FWI INITIALISATION DATAFRAME
-  ## TODO:FWIinit should be updated every year from previous year's/days/months results
-  if(!suppliedElsewhere("FWIinit", sim)) {
-    sim$FWIinit = data.frame(ffmc = 85,
-                             dmc = 6,
-                             dc = 15)
-  }
-
   return(invisible(sim))
 }
