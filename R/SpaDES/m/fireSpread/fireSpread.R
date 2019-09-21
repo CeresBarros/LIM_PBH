@@ -81,30 +81,9 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- fireSpreadInit(sim)
 
       ## schedule future event(s)
-      # sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
-      #                      "fireParams", eventPriority = 2.25) ## always calculate fire parameters before the first fire time
       sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
                            "doFireSpread", eventPriority = 2.5) ## always schedule fire
     },
-    # fireParams = {
-    #   ## in the first year of fire always calculate parameters
-    #   if(time(sim) == P(sim)$fireInitialTime) {
-    #     ## calculate fire parameters
-    #     sim <- FPBPercParams(sim)
-    #   }
-    #
-    #   ## in subsequent years evaluate if parameters are to be calculated again (veg feedbacks = TRUE)
-    #   if(time(sim) == sim$fireYear) {
-    #     if(P(sim)$vegFeedback) {
-    #       ## calculate fire parameters
-    #       sim <- FPBPercParams(sim)
-    #
-    #       ## schedule future event(s)
-    #       ## only calculate parameters in fire years.
-    #       sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep, "fireSpread", "fireParams", eventPriority = 2.25)
-    #     }
-    #   }
-    # },
     doFireSpread = {
       ## calculate fire spread in fire years
       if(time(sim) == sim$fireYear) {
@@ -119,7 +98,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
       ## schedule future event(s) - always schedule fire
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread",
-                           "doFireSpread", eventPriority = 2.5)
+                           "doFireSpread", eventPriority = 2.5)  ## always schedule fire
     },
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -134,7 +113,6 @@ fireSpreadInit <- function(sim) {
 
 ## Fire spread event in fire years - rasters should be back in LBMR projection
 doFireSpread <- function(sim) {
-
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn
   ## if no simulatedBiomassMap is supplied then generate one from raw data
@@ -256,7 +234,7 @@ doNoFire <- function(sim) {
 .inputObjects = function(sim) {
   ## TODO: ADD DUMMIES FOR FIRE PROPERTIES
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
-  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")

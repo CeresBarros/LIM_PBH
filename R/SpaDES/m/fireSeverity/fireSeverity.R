@@ -191,7 +191,7 @@ doBiomassPreFire <- function(sim){
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
   dPath <- dataPath(sim)
-  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
   ## project to Lat/Long (decimal degrees) for compatibility with FBP system
   ## TODO: this results in data loss - but LandR doesn't deal well with lat/long
