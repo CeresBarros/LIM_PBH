@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "Biomass_fireProperties.Rmd"),
-  reqdPkgs = list("R.utils", "raster", "data.table", "dplyr", "humidity", #"cffdrs",  ## cffdrs is causing installation problems
+  reqdPkgs = list("R.utils", "raster", "data.table", "dplyr", #"cffdrs",  ## cffdrs is causing installation problems
                   "sf", "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development"),
@@ -42,8 +42,13 @@ defineModule(sim, list(
     expectsInput(objectName = "pixelGroupMap", objectClass = "RasterLayer",
                  desc = "updated community map at each succession time step"),
     expectsInput(objectName = "precipitationRas", objectClass = "RasterLayer",
-                 desc = "Raster of precipitation values",
-                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_prec.zip"),
+                 desc = paste0("Raster of summer average precipitation values.",
+                               "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
+                 sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1"),
+    expectsInput(objectName = "relativeHumRas", objectClass = "RasterLayer",
+                 desc = paste0("Raster of summer average realtive humidity values.",
+                               "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
+                 sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1"),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
@@ -57,8 +62,9 @@ defineModule(sim, list(
     expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
                  desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
     expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
-                 desc = "Raster of temperature values",
-                 sourceURL = "http://biogeo.ucdavis.edu/data/worldclim/v2.0/tif/base/wc2.0_2.5m_tmax.zip")
+                 desc = paste0("Raster of summer average temperature values.",
+                 "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
+                 sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1")
   ),
   outputObjects = bind_rows(
     # createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
@@ -177,6 +183,14 @@ firePropertiesInit <- function(sim) {
                                 filename2 = NULL,
                                 userTags = c(cacheTags, "topoClimRas"),
                                 omitArgs = c("userTags"))
+  sim$relativeHumRas <- Cache(postProcess,
+                              x = sim$relativeHumRas,
+                              rasterToMatch = pixelGroupMapFBP,
+                              maskWithRTM = TRUE,
+                              method = "bilinear",
+                              filename2 = NULL,
+                              userTags = c(cacheTags, "topoClimRas"),
+                              omitArgs = c("userTags"))
   sim$slopeRas <- Cache(postProcess,
                         x = sim$slopeRas,
                         rasterToMatch = pixelGroupMapFBP,
@@ -198,13 +212,16 @@ firePropertiesInit <- function(sim) {
   topoClimData <- data.table(ID = 1:length(pixelGroupMapFBP),
                              pixelGroup = getValues(pixelGroupMapFBP),
                              temp = getValues(sim$temperatureRas), precip = getValues(sim$precipitationRas),
+                             relHum = getValues(sim$relativeHumRas),
                              slope = getValues(sim$slopeRas), aspect = getValues(sim$aspectRas),
                              lat = coordinates(pixelGroupMapFBP)[,2],
                              long = coordinates(pixelGroupMapFBP)[,1])
+
+  ## this is no longer necessary as ClimateNA as relative humidity data
   ## relative humidity
   ## using dew point between -3 and 20%, quarterly seasonal for Jun 2013
   ## https://calgary.weatherstats.ca/metrics/dew_point.html
-  topoClimData[, relHum := RH(t = topoClimData$temp, Td = runif (nrow(topoClimData), -3, 20), isK = FALSE)]
+  # topoClimData[, relHum := RH(t = topoClimData$temp, Td = runif (nrow(topoClimData), -3, 20), isK = FALSE)]
 
   ## export to sim
   sim$pixelGroupMapFBP <- pixelGroupMapFBP
@@ -388,44 +405,43 @@ calcFBPProperties <- function(sim) {
 
   ## DEFAULT TOPO, TEMPERATURE AND PRECIPITATION
   ## these defaults are only necessary if the rasters are not supplied by another module
-  ## climate defaults to http://worldclim.org/version2 (temperarute historical ensemble)
-  ## slope/aspect defaults obtained from Environment Canada using foothills shp
+  ## climate defaults to Climate NA Data, year 2011, RCP4.5
+  ## note that some Climate NA data were multiplied by 10
   if (!suppliedElsewhere("temperatureRas", sim)) {
-    ## get default temperature values
-    fnames <- paste0("wc2.0_2.5m_tmax_0", 5:9, ".tif")
-    temperatureStk <- list()
-    for(f in fnames) {
-      temperatureStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                   url = extractURL("temperatureRas", sim),
-                                   archive = "wc2.0_2.5m_tmax.zip",
-                                   alsoExtract = NA,
-                                   destinationPath = getPaths()$inputPath,
-                                   datatype = "FLT4S",
-                                   filename2 = FALSE,
-                                   userTags = cacheTags)
-    }
-    temperatureStk <- stack(temperatureStk)
-    temperatureRas <- raster::mean(temperatureStk)
-    sim$temperatureRas <- temperatureRas
+    ## get default temperature values, summer average
+    sim$temperatureRas <- Cache(prepInputs, targetFile = "Tave_sm.asc",
+                            url = extractURL("temperatureRas", sim),
+                            archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
+                            alsoExtract = NA,
+                            destinationPath = dPath,
+                            fun = "raster",
+                            filename2 = FALSE,
+                            userTags = cacheTags)
+    sim$temperatureRas <- sim$temperatureRas/10
   }
 
   if (!suppliedElsewhere("precipitationRas", sim)) {
-    ## get default precipitation values
-    fnames <- paste0("wc2.0_2.5m_prec_0", 5:9, ".tif")
-    precipitationStk <- list()
-    for(f in fnames) {
-      precipitationStk[[f]] <- Cache(prepInputs, targetFile = f,
-                                     url = extractURL("precipitationRas", sim),
-                                     archive = "wc2.0_2.5m_prec.zip",
-                                     alsoExtract = NA,
-                                     destinationPath = getPaths()$inputPath,
-                                     datatype = "FLT4S",
-                                     filename2 = FALSE,
-                                     userTags = cacheTags)
-    }
-    precipitationStk <- stack(precipitationStk)
-    precipitationRas <- raster::mean(precipitationStk)
-    sim$precipitationRas <- precipitationRas
+    ## get default precipitation values, summer cummulative precipitation
+    sim$precipitationRas <- Cache(prepInputs, targetFile = "PPT_sm.asc",
+                                  url = extractURL("precipitationRas", sim),
+                                  archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
+                                  alsoExtract = NA,
+                                  destinationPath = dPath,
+                                  fun = "raster",
+                                  filename2 = FALSE,
+                                  userTags = cacheTags)
+  }
+
+  if (!suppliedElsewhere("relativeHumRas", sim)) {
+    ## get default precipitation values, summer average
+    sim$relativeHumRas <- Cache(prepInputs, targetFile = "RH_sm.asc",
+                                  url = extractURL("relativeHumRas", sim),
+                                  archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
+                                  alsoExtract = NA,
+                                  destinationPath = dPath,
+                                  fun = "raster",
+                                  filename2 = FALSE,
+                                  userTags = cacheTags)
   }
 
   if (!suppliedElsewhere("slopeRas", sim)) {
@@ -439,7 +455,6 @@ calcFBPProperties <- function(sim) {
                       filename2 = FALSE,
                       userTags = cacheTags)
     sim$slopeRas <- slopeRas
-
   }
 
   if (!suppliedElsewhere("aspectRas", sim)) {
