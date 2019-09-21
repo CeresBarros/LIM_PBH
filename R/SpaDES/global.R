@@ -247,7 +247,7 @@ graphics.off()
 
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[1:5]
+                                 , modules = simModules[1:6]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , debug = TRUE
