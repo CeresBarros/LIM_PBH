@@ -63,7 +63,7 @@ defineModule(sim, list(
                  desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
     expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
                  desc = paste0("Raster of summer average temperature values.",
-                 "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
+                               "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
                  sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1")
   ),
   outputObjects = bind_rows(
@@ -447,26 +447,24 @@ calcFBPProperties <- function(sim) {
   if (!suppliedElsewhere("slopeRas", sim)) {
     ## TODO defaults of slope/aspect should cover whole of Canada
     ## get default slope values
-    slopeRas <- Cache(prepInputs, targetFile = "dataset/SLOPE.tif",
-                      archive = "DEM_Foothills_study_area.zip",
-                      alsoExtract = NA,
-                      destinationPath = getPaths()$inputPath,
-                      datatype = "FLT4S",
-                      filename2 = FALSE,
-                      userTags = cacheTags)
-    sim$slopeRas <- slopeRas
+    sim$slopeRas <- Cache(prepInputs, targetFile = "dataset/SLOPE.tif",
+                          archive = "DEM_Foothills_study_area.zip",
+                          alsoExtract = NA,
+                          destinationPath = getPaths()$inputPath,
+                          datatype = "FLT4S",
+                          filename2 = FALSE,
+                          userTags = cacheTags)
   }
 
   if (!suppliedElsewhere("aspectRas", sim)) {
     ## get default aspect values
-    aspectRas <- Cache(prepInputs, targetFile = "dataset/ASPECT.tif",
-                       archive = "DEM_Foothills_study_area.zip",
-                       alsoExtract = NA,
-                       destinationPath = getPaths()$inputPath,
-                       datatype = "FLT4S",
-                       filename2 = FALSE,
-                       userTags = cacheTags)
-    sim$aspectRas <- aspectRas
+    sim$aspectRas <- Cache(prepInputs, targetFile = "dataset/ASPECT.tif",
+                           archive = "DEM_Foothills_study_area.zip",
+                           alsoExtract = NA,
+                           destinationPath = getPaths()$inputPath,
+                           datatype = "FLT4S",
+                           filename2 = FALSE,
+                           userTags = cacheTags)
   }
 
   ## FWI INITIALISATION DATAFRAME
