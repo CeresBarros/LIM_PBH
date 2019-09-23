@@ -410,14 +410,18 @@ calcFBPProperties <- function(sim) {
   if (!suppliedElsewhere("temperatureRas", sim)) {
     ## get default temperature values, summer average
     sim$temperatureRas <- Cache(prepInputs, targetFile = "Tave_sm.asc",
-                            url = extractURL("temperatureRas", sim),
-                            archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
-                            alsoExtract = NA,
-                            destinationPath = dPath,
-                            fun = "raster",
-                            filename2 = FALSE,
-                            userTags = cacheTags)
-    sim$temperatureRas <- sim$temperatureRas/10
+                                url = extractURL("temperatureRas", sim),
+                                archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
+                                alsoExtract = NA,
+                                destinationPath = dPath,
+                                fun = "raster",
+                                filename2 = FALSE,
+                                userTags = cacheTags)
+    sim$temperatureRas <- sim$temperatureRas/10  ## back transform temp values
+
+    ## add the original CRS if it's not defined
+    if (is.na(crs(sim$temperatureRas)))
+      crs(sim$temperatureRas) <- "+init=epsg:4326 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
   }
 
   if (!suppliedElsewhere("precipitationRas", sim)) {
@@ -430,18 +434,24 @@ calcFBPProperties <- function(sim) {
                                   fun = "raster",
                                   filename2 = FALSE,
                                   userTags = cacheTags)
+
+    ## add the original CRS if it's not defined
+    if (is.na(crs(sim$precipitationRas)))
+      crs(sim$precipitationRas) <- "+init=epsg:4326 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
   }
 
   if (!suppliedElsewhere("relativeHumRas", sim)) {
     ## get default precipitation values, summer average
     sim$relativeHumRas <- Cache(prepInputs, targetFile = "RH_sm.asc",
-                                  url = extractURL("relativeHumRas", sim),
-                                  archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
-                                  alsoExtract = NA,
-                                  destinationPath = dPath,
-                                  fun = "raster",
-                                  filename2 = FALSE,
-                                  userTags = cacheTags)
+                                url = extractURL("relativeHumRas", sim),
+                                archive = "CanESM2_RCP45_r11i1p1_2011MSY.zip",
+                                alsoExtract = NA,
+                                destinationPath = dPath,
+                                fun = "raster",
+                                filename2 = FALSE,
+                                userTags = cacheTags)
+    if (is.na(crs(sim$relativeHumRas)))
+      crs(sim$relativeHumRas) <- "+init=epsg:4326 +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
   }
 
   if (!suppliedElsewhere("slopeRas", sim)) {
