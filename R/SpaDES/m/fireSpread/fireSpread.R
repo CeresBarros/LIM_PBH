@@ -47,9 +47,8 @@ defineModule(sim, list(
                  desc = "Biomass map at each succession time step. Default is Canada national biomass map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon to use as the study area,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 desc = paste("Polygon to use as the study area.",
+                              "Defaults to  an area in Southwestern Alberta, Canada."),
                  sourceURL = "")
   ),
   outputObjects = bind_rows(
@@ -162,7 +161,7 @@ doFireSpread <- function(sim) {
   ## and their sum is scaled to 0-0.23
   ## TODO: the scaling should guarantee an average value of 0.23
   ## TODO: ROS and intensity should be combined differently
-  browser()
+  # browser()
   spreadProb_map <- sim$fireROSRas + sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 

@@ -33,9 +33,8 @@ defineModule(sim, list(
                  desc = "Binary raster of fire spread"),
     expectsInput(objectName = "fireYear", objectClass = "numeric", desc =  "Next fire year"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon to use as the study area,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 desc = paste("Polygon to use as the study area.",
+                              "Defaults to  an area in Southwestern Alberta, Canada."),
                  sourceURL = ""),
     expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
                  desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = "")

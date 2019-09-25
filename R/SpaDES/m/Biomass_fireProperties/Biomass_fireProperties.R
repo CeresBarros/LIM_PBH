@@ -55,9 +55,8 @@ defineModule(sim, list(
     expectsInput(objectName = "slopeRas", objectClass = "RasterLayer",
                  desc = "Raster of slope values - needs to be previously downloaded at this point"),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = paste("multipolygon to use as the study area,",
-                              "with attribute LTHFC describing the fire return interval.",
-                              "Defaults to a square shapefile in Southwestern Alberta, Canada."),
+                 desc = paste("Polygon to use as the study area.",
+                              "Defaults to  an area in Southwestern Alberta, Canada."),
                  sourceURL = ""),
     expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
                  desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = ""),
@@ -285,10 +284,11 @@ calcFBPProperties <- function(sim) {
 
   ## FWI ------------------------------
   ## make/update table of FWI inputs
+  # browser()
   FWIinputs <- data.frame(id = sim$topoClimData$ID,
                           lat = sim$topoClimData$lat,
                           long = sim$topoClimData$long,
-                          mon = 7,
+                          mon = 7,  ## consider July.
                           temp = sim$topoClimData$temp,
                           rh = sim$topoClimData$relHum,
                           ws = 0,

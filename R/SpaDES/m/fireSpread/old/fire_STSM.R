@@ -21,7 +21,9 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "Polygon of study area", sourceURL = NA),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = paste("Needs to be provided by user."),
+                 sourceURL = NA),
     expectsInput(objectName = "vegetationRas", objectClass = "RasterLayer",
                  desc = "2010 land classification map in study area, default is canada national land classification in 2010",
                  sourceURL = "http://www.cec.org/sites/default/files/Atlas/Files/Land_Cover_2010/Land_Cover_2010_TIFF.zip"),
@@ -85,12 +87,12 @@ doEvent.fire_STSM = function(sim, eventTime, eventType, debug = FALSE) {
     plot = {
       ## Plot severity and vegetation changes
       # sim <- fire_STSMPlot(sim = sim ,
-      #                      severity = sim$severity_ras[[time(sim)]], 
+      #                      severity = sim$severity_ras[[time(sim)]],
       #                      preVegetation = sim$vegetation[[time(sim) - 1]],
       #                      postVegetation = sim$vegetation[[time(sim)]])
-      
+
       sim <- fire_STSMPlot(sim)
-      
+
       ## schedule next plot
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "fire_STSM", "plot", eventPriority = 4)
     },
@@ -102,9 +104,9 @@ doEvent.fire_STSM = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization - part of this may pass to another module of data prep
 fireInit <- function(sim) {
-  ## make raster storage lists 
+  ## make raster storage lists
   sim$vegetation = sim$severity_ras = sim$spreadRas = list()
-  
+
   ## PRE-FIRE VEGETATION ---------------------------------------
   ## get first vegetation state from original LCC raster
   if(G(sim)$.useCache) {
@@ -121,34 +123,34 @@ fireInit <- function(sim) {
   ## wetlands (19), wet tundra (23) cropland/woodlands (26, 27,28,29), lichen dominated (30, 31,32)
   ## rock outcrops (33), recent burns (34), cities (36), water (37, 38), snow/ice (39)
   non_burn <- c(19, 26, 23, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39)
-  
+
   ## Grasslands/open habs:
   ## open habs (17, 18, 20, 21, 22, 24, 25)
   grass <- c(17, 18, 20, 21, 22, 24, 25)
-  
+
   ## Shrublands, recently burnt forest (within last 10y) = old burns (35), shrublands (16)
   shrubs <- c(16, 35)
-  
+
   ## Deciduous Forest
   decid_forst <- c(2, 11, 12)
-  
+
   ## Mixed forest
   mixed_forst <- c(3, 4, 5, 13, 14, 15)
-  
+
   ## Coniferous forest
   conif_forst <- c(1, 6, 7, 8, 9, 10)
-  
+
   ## RECLASSIFY VEGETATION ------------------------------------
   reclass_mat <- as.matrix(data.frame(old = c(non_burn, grass, shrubs, decid_forst, mixed_forst, conif_forst),
                                       new = c(rep(0, length(non_burn)), rep(1, length(grass)), rep(2, length(shrubs)),
                                               rep(3, length(decid_forst)), rep(4, length(mixed_forst)), rep(5, length(conif_forst)))))
   vegetation_prefire <- reclassify(vegetation_prefire, rcl = reclass_mat)
-  
+
   sim$vegetation[[start(sim)]] <- vegetation_prefire
-  
+
   ## clean workspace
   rm(non_burn, grass, shrubs, decid_forst, mixed_forst, conif_forst, reclass_mat, vegetation_prefire)
-  
+
   return(invisible(sim))
 }
 
@@ -157,25 +159,25 @@ do.Fire <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   sim$burnable_areas <- sim$vegetation[[time(sim) - 1]]   ## using previous year vegetation map
   sim$burnable_areas[sim$vegetation[[time(sim) - 1]][] == 0] <- NA
-  
+
   ## MAKE RATE OF SPREAD RASTER -------------------------------
   sim$ROS_map <- sim$vegetation[[time(sim) - 1]]
   reclass_mat2 <- matrix(c(0:5, 0, 0.9, 0.7, 0.2, 0.4, 0.5), byrow = FALSE, nrow = 6, ncol = 2)
   sim$ROS_map <- reclassify(sim$ROS_map, rcl = reclass_mat2)
   rm(reclass_mat2)
-  
+
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function two random components: selection of starting pixels and fire spread
   if(G(sim)$.useCache){
     sim$spreadRas[[time(sim) - 1]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath,
                                          FUN = makeFireSpreadRas,
-                                         fMask = sim$burnable_areas, pixels = P(sim)$noStartPix, 
+                                         fMask = sim$burnable_areas, pixels = P(sim)$noStartPix,
                                          fROS = sim$ROS_map, fSize = P(sim)$fireSize)
   } else {
-    sim$spreadRas[[time(sim) - 1]] <- makeFireSpreadRas(fMask = sim$burnable_areas, pixels = P(sim)$noStartPix, 
+    sim$spreadRas[[time(sim) - 1]] <- makeFireSpreadRas(fMask = sim$burnable_areas, pixels = P(sim)$noStartPix,
                                        fROS = sim$ROS_map, fSize = P(sim)$fireSize)
   }
-  
+
   return(invisible(sim))
 }
 
@@ -183,8 +185,8 @@ do.Fire <- function(sim) {
 ## to really useCache, I will need to cache the fire rasters - these have a random component now.
 do.VegetationTransit <- function(sim) {
   if(G(sim)$.useCache) {
-    sim$vegetation[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, 
-                                                       FUN = calc, 
+    sim$vegetation[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath,
+                                                       FUN = calc,
                                                        x = stack(sim$vegetation[[time(sim) - 1]], sim$spreadRas[[time(sim) - 1]]),
                                                        fun = vegTransition)
   } else {
@@ -199,21 +201,21 @@ do.Severity <- function(sim){
   ## convert fire spread raster to a mask
   fireMask <- sim$spreadRas[[time(sim) - 1]]
   fireMask[!is.na(fireMask)] <- 1
-  
+
   if(G(sim)$.useCache) {
-    sim$severity_ras[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath, 
-                                                         FUN = calc, 
+    sim$severity_ras[[time(sim)]] <- reproducible::Cache(cacheRepo = paths(sim)$cachePath,
+                                                         FUN = calc,
                                                          x = stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask),
                                                          fun = calculateSeverity)
   } else {
     sim$severity_ras[[time(sim)]] <- calc(stack(sim$vegetation[[time(sim) - 1]], sim$vegetation[[time(sim)]], fireMask), fun = calculateSeverity)
   }
-  
+
   return(invisible(sim))
 }
 
 ### Plot fire severity and vegetation
-fire_STSMPlot <- function(sim) {  
+fire_STSMPlot <- function(sim) {
   Plot(sim$severity_ras[[time(sim)]], new = TRUE,
        title = "Fire Severity Map",
        cols = c("grey", "green", "yellow", "red"))
