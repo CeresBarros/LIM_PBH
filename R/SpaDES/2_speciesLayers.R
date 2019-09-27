@@ -25,7 +25,7 @@ speciesParameters <- list(
 speciesObjects <- list(
   "sppEquiv" = sppEquivalencies_CA
   , "sppColorVect" = sppColorVect
-  , "studyAreaLarge" = foothillsSMALL
+  , "studyAreaLarge" = foothillsMED
 )
 
 simOutSpeciesLayers <- Cache(simInitAndSpades

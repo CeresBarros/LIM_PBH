@@ -211,7 +211,7 @@ if (runName == "blogSep2019_PM") {
 source("R/SpaDES/2_speciesLayers.R")
 
 simObjects <- list("studyArea" = foothillsSMALL
-                   # , "studyAreaLarge" = foothillsMED
+                   , "studyAreaLarge" = foothillsMED
                    , "sppEquiv" = sppEquivalencies_CA
                    , "sppColorVect" = sppColorVect
                    , "speciesLayers" = simOutSpeciesLayers$speciesLayers
