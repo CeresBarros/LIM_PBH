@@ -63,7 +63,9 @@ defineModule(sim, list(
     expectsInput(objectName = "temperatureRas", objectClass = "RasterLayer",
                  desc = paste0("Raster of summer average temperature values.",
                                "Defaults data downloaded from Climate NA for 2011 using: CanESM2_RCP45_r11i1p1_2011MSY"),
-                 sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1")
+                 sourceURL = "https://drive.google.com/open?id=12iNnl3P7VjisVKC0vatSrXyhYtl6w-D1"),
+    expectsInput(objectName = "topoClimData", objectClass = "data.table",
+                 desc = "Climate data table with temperature, precipitation and relative humidity for each pixelGroup")
   ),
   outputObjects = bind_rows(
     # createsOutput(objectName = "FBPinputs", objectClass = "RasterLayer",
