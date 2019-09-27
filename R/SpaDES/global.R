@@ -35,7 +35,7 @@ library(LandR)
 # devtools::load_all("../reproducible")
 # devtools::load_all("../SpaDES.tools")
 # devtools::load_all("../SpaDES.core")
-devtools::load_all("../LandR")
+# devtools::load_all("../LandR")
 
 options('reproducible.useNewDigestAlgorithm' = TRUE)
 
@@ -154,7 +154,6 @@ if (runName == "blogSep2019_PM") {
       #   age and biomass
       , "pixelGroupAgeClass" = successionTimestep * 10L
       , "pixelGroupBiomassClass" = 100
-      , "runName" = runName
       , "useCloudCacheForStats" = FALSE
       , "cloudFolderID" = NA
       , ".useCache" = eventCaching
@@ -244,7 +243,7 @@ graphics.off()
 
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
-
+# reproducible::clearCache(simPaths$cachePath, userTags = c("Boreal", ".inputObjects", "rasterToMatch"))
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
                                  , modules = simModules[1:6]
