@@ -77,7 +77,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       ## Initialise module
-      sim <- fireSpreadInit(sim)
+      sim <- Init(sim)
 
       ## schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
@@ -106,7 +106,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 ### module initialization
-fireSpreadInit <- function(sim) {
+Init <- function(sim) {
   return(invisible(sim))
 }
 
