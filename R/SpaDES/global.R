@@ -235,9 +235,6 @@ options(spades.moduleCodeChecks = TRUE)
 graphics.off()
 
 # reproducible::clearCache(simPaths$cachePath, userTags = c("^LBMR$", "init"), ask = FALSE)
-## TODO TEST PARAMETRISING WITH SA LARGE
-# set.seed(524326)
-
 ## TODO RUN SIMUALTIONS W/ AND W/O PM for blog
 # set.seed(524326)
 
