@@ -60,7 +60,7 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
                  outputPath = file.path("R/SpaDES/outputs", runName))
 
 ## simulation params
-simTimes <- list(start = 0, end = 50)
+simTimes <- list(start = 0, end = 100)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireTimestep <- 2L
