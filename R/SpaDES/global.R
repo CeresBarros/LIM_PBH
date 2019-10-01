@@ -68,11 +68,11 @@ successionTimestep <- 1L
 
 if (runName == "blogSep2019_noPM") {
   simModules <- list("Boreal_LBMRDataPrep"
+                     , "Biomass_fireProperties"
                      , "LBMR"
                      , "Biomass_fuels"
-                     , "Biomass_regeneration"
-                     , "Biomass_fireProperties"
                      , "fireSpread"
+                     , "Biomass_regeneration"
                      , "fireSeverity"
   )
 
@@ -138,11 +138,11 @@ if (runName == "blogSep2019_noPM") {
 
 if (runName == "blogSep2019_PM") {
   simModules <- list("Boreal_LBMRDataPrep"
+                     , "Biomass_fireProperties"
                      , "LBMR"
                      , "Biomass_fuels"
-                     , "Biomass_regenerationPM"
-                     , "Biomass_fireProperties"
                      , "fireSpread"
+                     , "Biomass_regenerationPM"
                      , "fireSeverity"
   )
 
@@ -266,7 +266,7 @@ simObjects$rstCurrentBurn <- rstCurrentBurn
 
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[1:5]
+                                 , modules = simModules[1:6]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , debug = TRUE
