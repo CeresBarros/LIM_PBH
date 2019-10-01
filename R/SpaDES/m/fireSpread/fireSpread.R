@@ -192,16 +192,25 @@ doFireSpread <- function(sim) {
 
 
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
-  ## note that this function two random components: selection of starting pixels and fire spread
-  sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
-
+  ## note that this function has two random components: selection of starting pixels and fire spread
   ## Favier's model:
-  rstCurrentBurn <- spread2(landscape = burnableAreas,
-                            spreadProb = spreadProb_map,
-                            persistProb = persistProb_map,
-                            start = sim$startPix,
-                            maxSize =  P(sim)$fireSize,
-                            plot.it = FALSE)
+  rstCurrentBurn <- NULL
+  i <- 0
+  while (class(rstCurrentBurn) != "RasterLayer" &
+         i < 5) {
+    i <- i + 1
+    sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
+    rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
+                                       spreadProb = spreadProb_map,
+                                       persistProb = persistProb_map,
+                                       start = sim$startPix,
+                                       maxSize =  P(sim)$fireSize,
+                                       plot.it = FALSE), error = function(e) e)
+
+  }
+  if (class(rstCurrentBurn) != "RasterLayer")
+    stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
+         It is possible fires are not being able to spread. Please debug 'doFireSpread' event")
 
   ## remove fires that spread beyond burnable areas
   if (any(!is.na(rstCurrentBurn[is.na(burnableAreas[])])))
