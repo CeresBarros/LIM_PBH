@@ -1,0 +1,66 @@
+## -----------------------------------
+## LOAD/MAKE NECESSARY OBJECTS
+## -----------------------------------
+
+## this script loads/treats/makes the necessary objects for the simulation
+## it should be sourced before running any modules
+
+## STUDY AREA(S) ---------------------------------------
+
+## Foothills and a smaller region for testing
+## prepInputs doens't work with kmz, so download and unzipping need to be done externally.
+foothills <- Cache(prepKMZ2shapefile,
+                   url = "https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs",
+                   archive = "Foothills_study_area.zip",
+                   destinationPath = "data/maps",
+                   cacheRepo = "data/cache")
+foothills <- spTransform(foothills,
+                         "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+foothillsSMALL <- raster::buffer(foothills, width = -30000)
+foothillsMED <- raster::buffer(foothills, width = -15000)
+
+## Set up sppEquiv  ---------------------------
+data("sppEquivalencies_CA", package = "LandR")
+sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
+                                             EN_generic_full = "Pine",
+                                             Leading = "Pine leading")]
+
+## Make LIM spp equivalencies column
+sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
+                               Lari_lar = "Lari_lar",
+                               Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
+                               Pinu_con = "Pinu_sp",
+                               Popu_tre = "Popu_sp", Betu_pap = "Popu_sp", Popu_bal = "Popu_sp",
+                               Pseu_men = "Pseu_men")[LandR]]
+
+sppEquivalencies_CA[, EN_generic_short := c(Abie_sp = "Fir",
+                                            Lari_lar = "Larch",
+                                            Pice_mar = "Bl spruce", Pice_gla = "Wh spruce", Pice_eng = "Eng spruce",
+                                            Pinu_sp = "Pine",
+                                            Popu_sp = "Decid",
+                                            Pseu_men = "Doug-fir")[LIM]]
+sppEquivalencies_CA[, EN_generic_full := c(Abie_sp = "Fir",
+                                           Lari_lar = "Larch",
+                                           Pice_mar = "Black spruce", Pice_gla = "White spruce", Pice_eng = "Engelmann spruce",
+                                           Pinu_sp = "Pine",
+                                           Popu_sp = "Deciduous",
+                                           Pseu_men = "Doug-fir")[LIM]]
+
+sppEquivalencies_CA[, FI_layers := c(Abie_sp = "Fir",
+                                     Lari_lar = "",
+                                     Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
+                                     Pinu_sp = "Pine",
+                                     Popu_sp = "Deciduous",
+                                     Pseu_men = "")[LIM]]
+
+sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
+sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
+sppEquivalencies_CA[LIM == "Pinu_sp", Leading := "Pine leading"]
+
+## define spp column to use for model
+sppEquivCol <- "LIM"
+sppEquivalencies_CA <- na.omit(sppEquivalencies_CA, cols = sppEquivCol)
+
+## create color palette for species used in model
+sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
+                          newVals = "Mixed", palette = "Accent")
