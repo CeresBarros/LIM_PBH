@@ -1,0 +1,7 @@
+"file" "checksum" "filesize" "algorithm"
+"Foothills_study_area.qpj" "f4f12aa93af9af2f" "258" "xxhash64"
+"Foothills_study_area.zip" "509038740ab77573" "284072" "xxhash64"
+"Foothills_study_area.shp" "54f4fb8bd3df0f0d" "587124" "xxhash64"
+"Foothills_study_area.dbf" "42d9662d115d1c1e" "1801" "xxhash64"
+"Foothills_study_area.prj" "08e01e1643a7f913" "143" "xxhash64"
+"Foothills_study_area.shx" "83092243a3f0eb10" "108" "xxhash64"
