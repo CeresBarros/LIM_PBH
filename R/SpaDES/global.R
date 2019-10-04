@@ -49,7 +49,8 @@ source("R/R_tools/Useful_functions.R")
 source("R/SpaDES/1_simObjects.R")
 
 ## Set up modelling parameters  ---------------------------
-runName <- "blogSep2019_noPM"
+runName <- "blogSep2019_PM"
+# runName <- "blogSep2019_noPM"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -84,7 +85,6 @@ if (runName == "blogSep2019_noPM") {
       #   age and biomass
       , "pixelGroupAgeClass" = successionTimestep * 10L
       , "pixelGroupBiomassClass" = 100
-      , "runName" = runName
       , "useCloudCacheForStats" = FALSE
       , "cloudFolderID" = NA
       , ".useCache" = eventCaching
@@ -220,12 +220,16 @@ simObjects <- list("studyArea" = foothillsSMALL
 )
 
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = seq(2, 50, by = 5),
+                                  saveTime = seq(2, simTimes$end, by = 4),
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                     saveTime = seq(2, 50, by = 5)))
+                                     saveTime = seq(2, simTimes$end, by = 4)))
 outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                     saveTime = seq(2, 50, by = 5)))
+                                     saveTime = seq(2, simTimes$end, by = 4)))
+outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                     saveTime = seq(2, simTimes$end, by = 4)))
+outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                     saveTime = seq(2, simTimes$end, by = 4)))
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
@@ -246,6 +250,7 @@ LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , modules = simModules[1:6]
                                  , objects = simObjects
                                  , paths = simPaths
+                                 , outputs = outputs
                                  , debug = TRUE
                                  , .plotInitialTime = NA
 )
