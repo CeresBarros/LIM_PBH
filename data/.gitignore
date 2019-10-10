@@ -2,6 +2,7 @@ CA_admin/*
 fires_Dave/*
 FMA/*
 VegInventories/*
+cache/*
 
 ## don't ignore:
 !CHECKSUMS.txt
