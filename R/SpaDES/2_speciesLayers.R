@@ -18,7 +18,7 @@ speciesParameters <- list(
   BiomassSpeciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
-    , ".useCache" = TRUE
+    , ".useCache" = c(".inputObjects", "init")
   )
 )
 
