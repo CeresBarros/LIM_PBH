@@ -223,17 +223,22 @@ simObjects <- list("studyArea" = foothillsSMALL
 
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                  eventPriority = 1,
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4)))
+                                                    simTimes$end, by = 4),
+                                     eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4)))
+                                                    simTimes$end, by = 4),
+                                     eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4)))
+                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                     eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4)))
+                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                     eventPriority = 1))
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
