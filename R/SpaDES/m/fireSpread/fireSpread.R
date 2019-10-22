@@ -14,7 +14,8 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "fireSpread.Rmd"),
   reqdPkgs = list("R.utils", "raster", "data.table", "dplyr", "humidity", #"cffdrs",  ## cffdrs is causing installation problems
-                  "sf", "PredictiveEcology/SpaDES.core@development",
+                  "sf", "scales",
+                  "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
@@ -158,15 +159,15 @@ doFireSpread <- function(sim) {
 
   ## MAKE RASTER OF SPREAD PROABILITIES
   ## spread probability is the combination of ROS and intensity, which have an additive effect
-  ## and their sum is scaled to 0-0.23
-  ## TODO: the scaling should guarantee an average value of 0.23
+  ## and their product is centred is scaled to 0.15-0.25
   ## TODO: ROS and intensity should be combined differently
   # browser()
   spreadProb_map <- sim$fireROSRas + sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(spreadP), spreadP := scale(spreadP, scale = FALSE) + 0.20]
+  # vals[!is.na(spreadP), spreadP := scale(spreadP, scale = FALSE) + 0.20]
+  vals[!is.na(spreadP), spreadP := rescale(spreadP, to = c(0.21, 0.5))]
   spreadProb_map[] <- vals$spreadP
 
   ## NAs get 0 probability - not necessary
