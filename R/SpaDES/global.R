@@ -123,7 +123,7 @@ if (runName == "blogSep2019_noPM") {
     , fireSpread = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
-      , "fireSize" = 1000L
+      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
       , "noStartPix" = 10
       , ".useCache" = eventCaching
     )
@@ -192,7 +192,7 @@ if (runName == "blogSep2019_PM") {
     , fireSpread = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
-      , "fireSize" = 1000L
+      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
       , "noStartPix" = 10
       , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
