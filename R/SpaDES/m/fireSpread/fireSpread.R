@@ -158,11 +158,12 @@ doFireSpread <- function(sim) {
   burnableAreas[] <- vals$B
 
   ## MAKE RASTER OF SPREAD PROABILITIES
-  ## spread probability is the combination of ROS and intensity, which have an additive effect
+  ## spread probability is the combination of ROS and intensity, which have an multiplicative effect
   ## and their product is centred is scaled to 0.15-0.25
   ## TODO: ROS and intensity should be combined differently
+  ## TODO: fire needs to spread in non forested pixels.
   # browser()
-  spreadProb_map <- sim$fireROSRas + sim$fireIntRas
+  spreadProb_map <- sim$fireROSRas * sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
@@ -174,14 +175,15 @@ doFireSpread <- function(sim) {
   # spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
 
   ## MAKE RASTER OF PERSISTENCE PROABILITIES
-  ## persistence probability is the combination of TFC and intensity, which have an additive effect
-  ## and their sum is scaled to 0-1
+  ## persistence probability is the combination of TFC and intensity, as a ratio
+  ## (higher intensity fires should a same amount of biomass for less time tan a low intensity fire)
+  ## and their ratio is scaled to 0-1
   ## TODO: TFC and intensity should be combined differently
-  persistProb_map <- sim$fireTFCRas + sim$fireIntRas
+  persistProb_map <- sim$fireTFCRas / sim$fireIntRas
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
+  vals[!is.na(persisP), persisP := rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisP
 
   ## check if NAs match
