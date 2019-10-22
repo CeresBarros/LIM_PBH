@@ -93,6 +93,7 @@ if (runName == "blogSep2019_noPM") {
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
+      , "plotOverstory" = TRUE
       , "seedingAlgorithm" = "wardDispersal"
       , "sppEquivCol" = sppEquivCol
       , "successionTimestep" = successionTimestep * 10L
@@ -162,6 +163,7 @@ if (runName == "blogSep2019_PM") {
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
+      , "plotOverstory" = TRUE
       , "seedingAlgorithm" = "wardDispersal"
       , "sppEquivCol" = sppEquivCol
       , "successionTimestep" = successionTimestep * 10L
