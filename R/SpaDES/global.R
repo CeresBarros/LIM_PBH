@@ -263,7 +263,7 @@ LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , debug = TRUE
                                  , .plotInitialTime = NA
 )
-saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName)))
+saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
