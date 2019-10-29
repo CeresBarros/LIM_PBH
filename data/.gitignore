@@ -3,6 +3,7 @@ fires_Dave/*
 FMA/*
 VegInventories/*
 cache/*
+BioSIM/*
 
 ## don't ignore:
 !CHECKSUMS.txt
