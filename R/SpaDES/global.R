@@ -226,6 +226,7 @@ outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   saveTime = seq(simTimes$start, simTimes$end, by = 4),
                                   eventPriority = 1,
                                   stringsAsFactors = FALSE))
+outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
                                                     simTimes$end, by = 4),
