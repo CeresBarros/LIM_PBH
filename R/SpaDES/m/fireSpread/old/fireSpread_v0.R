@@ -43,7 +43,7 @@ defineModule(sim, list(
     expectsInput(objectName = "FWIinit", objectClass = "data.frame",
                  desc = "Initalisation parameter values for FWI calculations. Defaults to default values in cffdrs::fwi.
                  This table should be updated every year"),
-    expectsInput(objectName = "pixelFuelTypes", objectClass = "data.table",
+    expectsInput(objectName = "pixelGroupFuelTypes", objectClass = "data.table",
                  desc = "Fuel types per pixel group, calculated from cohort biomasses"),
     expectsInput(objectName = "pixelGroupMapFBP", objectClass = "RasterLayer",
                  desc = "updated community map at each succession time step, on FBP-compatible projection"),
@@ -226,9 +226,9 @@ FPBPercParams <- function(sim) {
 
 
   ## make table of final fuel types
-  FTs <- data.table(pixelGroup = sim$pixelFuelTypes$pixelGroup,
-                    FuelType = sim$pixelFuelTypes$finalFuelType,
-                    coniferDom = sim$pixelFuelTypes$coniferDom)
+  FTs <- data.table(pixelGroup = sim$pixelGroupFuelTypes$pixelGroup,
+                    FuelType = sim$pixelGroupFuelTypes$finalFuelType,
+                    coniferDom = sim$pixelGroupFuelTypes$coniferDom)
 
   ## merge with FBP fuel type names
   FTs <- sim$FuelTypes[, .(FuelTypeFBP,FuelType)] %>%
