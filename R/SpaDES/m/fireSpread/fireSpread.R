@@ -108,6 +108,10 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### module initialization
 Init <- function(sim) {
+  ## checks
+  if (start(sim) == P(sim)$fireInitialTime)
+    warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
+
   return(invisible(sim))
 }
 
