@@ -118,10 +118,11 @@ Init <- function(sim) {
 ## Fire spread event in fire years - rasters should be back in LBMR projection
 doFireSpread <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
-  ## only areas with biomass can burn
+  ## only areas with biomass can burn if no non-forest fire spread is allowed
   ## if no simulatedBiomassMap is supplied then generate one from raw data
   ## at the start
-  if (time(sim) == P(sim)$fireInitialTime) {
+  ## when non-forest fires are allowed, fire can spread across the whole SA
+  if (is.null(sim$pixelNonForestFuels)) {
     if (is.null(sim$simulatedBiomassMap)) {
       if (is.null(sim$biomassMap)) {
         cacheTags <- c(currentModule(sim), current(sim))
@@ -153,7 +154,7 @@ doFireSpread <- function(sim) {
       burnableAreas <- sim$simulatedBiomassMap
     }
   } else {
-    burnableAreas <- sim$simulatedBiomassMap
+    burnableAreas <- sim$rasterToMatch
   }
 
   vals <- data.table(B = getValues(burnableAreas))   ## making a mask is probably faster with data.table
@@ -165,8 +166,6 @@ doFireSpread <- function(sim) {
   ## spread probability is the combination of ROS and intensity, which have an multiplicative effect
   ## and their product is centred is scaled to 0.15-0.25
   ## TODO: ROS and intensity should be combined differently
-  ## TODO: fire needs to spread in non forested pixels.
-  # browser()
   spreadProb_map <- sim$fireROSRas * sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
@@ -181,9 +180,11 @@ doFireSpread <- function(sim) {
   ## MAKE RASTER OF PERSISTENCE PROABILITIES
   ## persistence probability is the combination of TFC and intensity, as a ratio
   ## (higher intensity fires should a same amount of biomass for less time tan a low intensity fire)
+  ## Note that 0 denominator will create NAs, so these need to be zeroed
   ## and their ratio is scaled to 0-1
   ## TODO: TFC and intensity should be combined differently
   persistProb_map <- sim$fireTFCRas / sim$fireIntRas
+  persistProb_map[sim$fireIntRas[] == 0] <- 0
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
@@ -191,8 +192,9 @@ doFireSpread <- function(sim) {
   persistProb_map[] <- vals$persisP
 
   ## check if NAs match
-  if (any(!is.na(spreadProb_map[is.na(persistProb_map[])])))
-    stop("spread and persistence probability rasters have unmatching NAs")
+    if (any(!is.na(spreadProb_map[is.na(persistProb_map[])])))
+      stop("spread and persistence probability rasters have unmatching NAs")
+
   ## redo burnable areas if missing fire probabilities
   if (any(!is.na(burnableAreas[is.na(spreadProb_map[])])))
     burnableAreas <- mask(burnableAreas, spreadProb_map)
