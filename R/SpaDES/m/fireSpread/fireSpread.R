@@ -192,6 +192,7 @@ doFireSpread <- function(sim) {
   persistProb_map[] <- vals$persisP
 
   ## check if NAs match
+  if (getOption("LandR.assertions"))
     if (any(!is.na(spreadProb_map[is.na(persistProb_map[])])))
       stop("spread and persistence probability rasters have unmatching NAs")
 
