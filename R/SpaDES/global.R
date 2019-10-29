@@ -201,7 +201,6 @@ if (runName == "blogSep2019_PM") {
       , "fireTimestep" = fireTimestep
       , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
       , "noStartPix" = 10
-      , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
     )
     , fireSeverity = list(
@@ -212,9 +211,6 @@ if (runName == "blogSep2019_PM") {
     )
   )
 }
-
-## Run Biomass_speciesData to get species layers
-source("R/SpaDES/2_speciesLayers.R")
 
 simObjects <- list("studyArea" = foothillsSMALL
                    , "studyAreaLarge" = foothillsMED
