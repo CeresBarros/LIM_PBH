@@ -54,6 +54,9 @@ runName <- "blogSep2019_PM"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
+## Run Biomass_speciesData to get species layers
+source("R/SpaDES/2_speciesLayers.R")
+
 ## paths define simulation paths
 simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
                  modulePath = file.path("R/SpaDES/m"),
@@ -107,6 +110,7 @@ if (runName == "blogSep2019_noPM") {
     , Biomass_fuels = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
+      , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
       , ".useCache" = eventCaching
     )
@@ -177,6 +181,7 @@ if (runName == "blogSep2019_PM") {
     , Biomass_fuels = list(
       "fireInitialTime" = fireTimestep
       , "fireTimestep" = fireTimestep
+      , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
       , ".useCache" = eventCaching
     )
