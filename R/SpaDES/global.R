@@ -277,12 +277,16 @@ rstCurrentBurn[IDs[1:round(length(IDs)/2)]] <- NA
 
 simObjects$rstCurrentBurn <- rstCurrentBurn
 
+simTimes$end <- 11
+
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[1:6]
+                                 , modules = simModules[c(1:4, 6)]
                                  , objects = simObjects
                                  , paths = simPaths
+                                 , outputs = outputs
                                  , debug = TRUE
                                  , .plotInitialTime = NA
 )
+saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
 
