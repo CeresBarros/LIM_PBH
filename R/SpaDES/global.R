@@ -49,8 +49,8 @@ source("R/R_tools/Useful_functions.R")
 source("R/SpaDES/1_simObjects.R")
 
 ## Set up modelling parameters  ---------------------------
-runName <- "blogSep2019_PM"
-# runName <- "blogSep2019_noPM"
+# runName <- "blogSep2019_PM"
+runName <- "blogSep2019_noPM"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
