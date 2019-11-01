@@ -5,11 +5,11 @@ library(data.table)
 library(ggplot2)
 library(raster)
 library(quickPlot)
-# simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM/simList_fakeRstCurrentBurnblogSep2019_PM.rds")
-# simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_PM/simList_fakeRstCurrentBurnblogSep2019_noPM.rds")
+simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
+simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
 
-cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM/", pattern = "cohortData", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/blogSep2019_PM/", pattern = "cohortData", full.names = TRUE))
+cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire", pattern = "cohortData", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire", pattern = "cohortData", full.names = TRUE))
 
 allCohortData <- rbindlist(fill = TRUE, l = lapply(cohortDataFiles, FUN = function(ff) {
   cohortData <- readRDS(ff)
@@ -20,12 +20,12 @@ allCohortData <- rbindlist(fill = TRUE, l = lapply(cohortDataFiles, FUN = functi
   return(cohortData)
 }))
 
-rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM/", pattern = "rstCurrentBurn", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/blogSep2019_PM/", pattern = "rstCurrentBurn", full.names = TRUE))
-pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM/", pattern = "pixelGroupMap", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/blogSep2019_PM/", pattern = "pixelGroupMap", full.names = TRUE))
-vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM/", pattern = "vegTypeMap", full.names = TRUE),
-                       list.files("R/SpaDES/outputs/blogSep2019_PM/", pattern = "vegTypeMap", full.names = TRUE))
+rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE),
+                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE))
+pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE),
+                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE))
+vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "vegTypeMap", full.names = TRUE),
+                       list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
 
 rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM", rstCurrentBurnFiles, value = TRUE), readRDS))
 rstCurrentBurnStk_PM <- stack(lapply(grep("_PM", rstCurrentBurnFiles, value = TRUE), readRDS))
@@ -41,25 +41,71 @@ names(pixelGroupMapStk_PM) <- sub(".*year(0)*", "year", sub("\\.rds", "", grep("
 names(vegTypeMapStk_noPM) <- sub(".*year(0)*", "year", sub("\\.rds", "", grep("_noPM", vegTypeMapFiles, value = TRUE)))
 names(vegTypeMapStk_PM) <- sub(".*year(0)*", "year", sub("\\.rds", "", grep("_PM", vegTypeMapFiles, value = TRUE)))
 
+if (grepl("_oneFire", rstCurrentBurnFiles[1])) {
+  ## compile all rasters except rstCurrentBurn
+  pixelBurnCohortData <- rbind(
+    rbindlist(lapply(names(vegTypeMapStk_noPM), FUN = function(x) {
+      data.table(pixelID = seq_len(ncell(pixelGroupMapStk_noPM[[x]])),
+                 pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
+                 vegType = getValues(vegTypeMapStk_noPM[[x]]),
+                 Year = as.integer(sub("year", "", x)),
+                 Scenario = "noPM")
+    })),
+    rbindlist(lapply(names(vegTypeMapStk_PM), FUN = function(x) {
+      data.table(pixelID = seq_len(ncell(pixelGroupMapStk_PM[[x]])),
+                 pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
+                 vegType = getValues(vegTypeMapStk_PM[[x]]),
+                 Year = as.integer(sub("year", "", x)),
+                 Scenario = "PM")
+    }))
+  )
 
-pixelBurnCohortData <- rbind(
-  rbindlist(lapply(names(rstCurrentBurnStk_noPM), FUN = function(x) {
-    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_noPM[[x]])),
-               pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
-               burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
-               vegType = getValues(vegTypeMapStk_noPM[[x]]),
-               Year = as.integer(sub("year", "", x)),
-               Scenario = "noPM")
-  })),
-  rbindlist(lapply(names(rstCurrentBurnStk_PM), FUN = function(x) {
-    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_PM[[x]])),
-               pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
-               burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
-               vegType = getValues(vegTypeMapStk_PM[[x]]),
-               Year = as.integer(sub("year", "", x)),
+  burnPix <- rbind(
+    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_noPM)),
+               burnt = getValues(rstCurrentBurnStk_noPM[[1]]),
+               Year = as.integer(sub("year", "", names(rstCurrentBurnStk_noPM))),
+               Scenario = "noPM"),
+    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_PM)),
+               burnt = getValues(rstCurrentBurnStk_PM[[1]]),
+               Year = as.integer(sub("year", "", names(rstCurrentBurnStk_PM))),
                Scenario = "PM")
-  }))
-)
+    )
+
+  ## checks
+  if (length(setdiff(burnPix$pixelID, pixelBurnCohortData$pixelID)) |
+      length(setdiff(pixelBurnCohortData$pixelID, burnPix$pixelID)))
+    stop("pixel IDs differ between rstCurrentBurn and other output rasters")
+  pixelBurnCohortData <- burnPix[, .(Scenario, pixelID, burnt)][pixelBurnCohortData, on = c("Scenario", "pixelID")]
+
+  pixelBurnCohortData <- na.omit(pixelBurnCohortData)
+
+  ## checks
+  outer(X = lapply(split(pixelBurnCohortData, f = "Year"),
+                   FUN = function(DT) DT[burnt == 1, pixelID]),
+        Y = lapply(split(pixelBurnCohortData, f = "Year"),
+                   FUN = function(DT) DT[burnt == 1, pixelID]),
+        setdiff)
+
+} else {
+  pixelBurnCohortData <- rbind(
+    rbindlist(lapply(names(rstCurrentBurnStk_noPM), FUN = function(x) {
+      data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_noPM[[x]])),
+                 pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
+                 burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
+                 vegType = getValues(vegTypeMapStk_noPM[[x]]),
+                 Year = as.integer(sub("year", "", x)),
+                 Scenario = "noPM")
+    })),
+    rbindlist(lapply(names(rstCurrentBurnStk_PM), FUN = function(x) {
+      data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_PM[[x]])),
+                 pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
+                 burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
+                 vegType = getValues(vegTypeMapStk_PM[[x]]),
+                 Year = as.integer(sub("year", "", x)),
+                 Scenario = "PM")
+    }))
+  )
+}
 
 pixelBurnCohortData <- na.omit(pixelBurnCohortData)
 pixelBurnCohortData <- allCohortData[pixelBurnCohortData, on = c("Scenario", "Year", "pixelGroup")]

@@ -52,8 +52,8 @@ source("R/SpaDES/1_simObjects.R")
 # runName <- "blogSep2019_PM"
 # runName <- "blogSep2019_noPM"
 
-runName <- "blogSep2019_PM_oneFire"
-# runName <- "blogSep2019_noPM_oneFire"
+# runName <- "blogSep2019_PM_oneFire"
+runName <- "blogSep2019_noPM_oneFire"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -70,6 +70,7 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
 simTimes <- list(start = 0, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
+fireInitialTime <- 2L
 fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
@@ -111,25 +112,25 @@ if (grepl("blogSep2019_noPM", runName)) {
       , ".useParallel" = useParallel
     )
     , Biomass_fuels = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
       , ".useCache" = eventCaching
     )
     , Biomass_regeneration = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireProperties = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
     )
     , fireSpread = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
       , "noStartPix" = 10
@@ -182,32 +183,32 @@ if (grepl("blogSep2019_PM", runName)) {
       , ".useParallel" = useParallel
     )
     , Biomass_fuels = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
       , ".useCache" = eventCaching
     )
     , Biomass_regenerationPM = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireProperties = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "vegFeedback" = TRUE
       , ".useCache" = eventCaching
     )
     , fireSpread = list(
-      "fireInitialTime" = fireTimestep
+      "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
       , "noStartPix" = 10
       , ".useCache" = eventCaching
     )
     , fireSeverity = list(
-      "fireTimestep" = fireTimestep
+      "fireTimestep" = fireInitialTime
       , ".plotMaps" = TRUE
       , ".saveInitialTime" = 1
       , ".useCache" = eventCaching
@@ -225,25 +226,53 @@ simObjects <- list("studyArea" = foothillsSMALL
                    , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
 )
 
-outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                  eventPriority = 10,
-                                  stringsAsFactors = FALSE))
-outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
-outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                     eventPriority = 10))
-outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                     eventPriority = 10))
-outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                     eventPriority = 10))
-outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                     eventPriority = 10))
+if (grepl(oneFire, runName)) {
+  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+                                    saveTime = seq(simTimes$start, simTimes$end,
+                                                   by = 5),
+                                    eventPriority = 10,
+                                    stringsAsFactors = FALSE))
+  outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
+  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
+                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
+                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                       saveTime = seq(simTimes$start, simTimes$end,
+                                                      by = 5),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                       saveTime = seq(simTimes$start, simTimes$end,
+                                                      by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+} else {
+  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+                                    saveTime = seq(simTimes$start, simTimes$end,
+                                                   by = simParams$fireSpread$fireTimestep),
+                                    eventPriority = 10,
+                                    stringsAsFactors = FALSE))
+  outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
+  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
+                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
+                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                       saveTime = seq(simTimes$start, simTimes$end,
+                                                      by = simParams$fireSpread$fireTimestep),
+                                       eventPriority = 10))
+  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                       saveTime = seq(simTimes$start, simTimes$end,
+                                                      by = 5),
+                                       eventPriority = 10))
+}
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
