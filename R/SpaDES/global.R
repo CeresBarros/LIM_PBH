@@ -50,7 +50,10 @@ source("R/SpaDES/1_simObjects.R")
 
 ## Set up modelling parameters  ---------------------------
 # runName <- "blogSep2019_PM"
-runName <- "blogSep2019_noPM"
+# runName <- "blogSep2019_noPM"
+
+runName <- "blogSep2019_PM_oneFire"
+# runName <- "blogSep2019_noPM_oneFire"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -64,13 +67,13 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
                  outputPath = file.path("R/SpaDES/outputs", runName))
 
 ## simulation params
-simTimes <- list(start = 0, end = 100)
+simTimes <- list(start = 0, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
-fireTimestep <- 2L
+fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
-if (runName == "blogSep2019_noPM") {
+if (grepl("blogSep2019_noPM", runName)) {
   simModules <- list("Boreal_LBMRDataPrep"
                      , "Biomass_fireProperties"
                      , "LBMR"
@@ -141,7 +144,7 @@ if (runName == "blogSep2019_noPM") {
   )
 }
 
-if (runName == "blogSep2019_PM") {
+if (grepl("blogSep2019_PM", runName)) {
   simModules <- list("Boreal_LBMRDataPrep"
                      , "Biomass_fireProperties"
                      , "LBMR"
@@ -223,24 +226,24 @@ simObjects <- list("studyArea" = foothillsSMALL
 )
 
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = seq(simTimes$start, simTimes$end, by = 4),
-                                  eventPriority = 1,
+                                  saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                  eventPriority = 10,
                                   stringsAsFactors = FALSE))
 outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4),
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4),
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
-                                     eventPriority = 1))
+                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     eventPriority = 10))
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
@@ -269,15 +272,14 @@ saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName,
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
-rstCurrentBurn <- SpaDES.core:::.pkgEnv$.sim$pixelGroupMap
-rstCurrentBurn[rstCurrentBurn[]>0] <- 1
-rstCurrentBurn[rstCurrentBurn[] <= 0] <- NA
-IDs <- which(rstCurrentBurn[] == 1)
+rstCurrentBurn <- raster(file.path(sub("_oneFire", "", simPaths$cache), "rasterToMatch.tif"))
+IDs <- which(!is.na(rstCurrentBurn[]))
+rstCurrentBurn[IDs] <- 1
 rstCurrentBurn[IDs[1:round(length(IDs)/2)]] <- NA
 
 simObjects$rstCurrentBurn <- rstCurrentBurn
 
-simTimes$end <- 11
+# simTimes$end <- 21
 
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
@@ -286,7 +288,7 @@ LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , paths = simPaths
                                  , outputs = outputs
                                  , debug = TRUE
-                                 , .plotInitialTime = NA
+                                 # , .plotInitialTime = NA
 )
 saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
 
