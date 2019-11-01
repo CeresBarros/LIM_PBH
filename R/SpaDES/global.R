@@ -49,8 +49,8 @@ source("R/R_tools/Useful_functions.R")
 source("R/SpaDES/1_simObjects.R")
 
 ## Set up modelling parameters  ---------------------------
-# runName <- "blogSep2019_PM"
-runName <- "blogSep2019_noPM"
+runName <- "blogSep2019_PM"
+# runName <- "blogSep2019_noPM"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -223,23 +223,23 @@ simObjects <- list("studyArea" = foothillsSMALL
 )
 
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                  saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
                                   eventPriority = 1,
                                   stringsAsFactors = FALSE))
 outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4),
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = 4),
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = seq(simTimes$start, simTimes$end, by = 4),
+                                     saveTime = seq(simTimes$start, simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 1))
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
@@ -269,15 +269,14 @@ saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName,
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
-rstCurrentBurn <- SpaDES.core:::.pkgEnv$.sim$pixelGroupMap
-rstCurrentBurn[rstCurrentBurn[]>0] <- 1
-rstCurrentBurn[rstCurrentBurn[] <= 0] <- NA
-IDs <- which(rstCurrentBurn[] == 1)
+rstCurrentBurn <- raster(file.path(simPaths$cache, "rasterToMatch.tif"))
+IDs <- which(!is.na(rstCurrentBurn[]))
+rstCurrentBurn[IDs] <- 1
 rstCurrentBurn[IDs[1:round(length(IDs)/2)]] <- NA
 
 simObjects$rstCurrentBurn <- rstCurrentBurn
 
-simTimes$end <- 11
+simTimes$end <- 21
 
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
