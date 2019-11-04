@@ -1,0 +1,261 @@
+module,parameter,value,description
+LandR,p_size,32,package name size
+LandR,p_x,1,package name position x
+LandR,p_y,1.6,package name position y
+LandR,s_x,1,image position x
+LandR,s_y,0.75,image position y
+LandR,s_width,0.35,image width
+LandR,s_height,0.35,image height
+LandR,h_color,#78CC72,border color
+LandR,h_fill,#185408,filling color
+LandR,imageName,LandR,name of the image in tati-micheletti/host/images
+LandR.CS,p_size,32,package name size
+LandR.CS,p_x,1,package name position x
+LandR.CS,p_y,1.6,package name position y
+LandR.CS,s_x,0.753,image position x
+LandR.CS,s_y,0.75,image position y
+LandR.CS,s_width,0.62,image width
+LandR.CS,s_height,0.62,image height
+LandR.CS,h_color,#78CC72,border color
+LandR.CS,h_fill,#185408,filling color
+LandR.CS,imageName,LandR_CS,name of the image in tati-micheletti/host/images
+fireSense,p_size,32,package name size
+fireSense,p_x,1,package name position x
+fireSense,p_y,1.6,package name position y
+fireSense,s_x,0.88,image position x
+fireSense,s_y,0.75,image position y
+fireSense,s_width,0.85,image width
+fireSense,s_height,0.85,image height
+fireSense,h_color,#9B0303,border color
+fireSense,h_fill,#561616,filling color
+fireSense,imageName,fireSense,name of the image in tati-micheletti/host/images
+caribouRSF,p_size,32,package name size
+caribouRSF,p_x,1,package name position x
+caribouRSF,p_y,1.55,package name position y
+caribouRSF,s_x,1.15,image position x
+caribouRSF,s_y,0.85,image position y
+caribouRSF,s_width,0.75,image width
+caribouRSF,s_height,0.75,image height
+caribouRSF,h_color,#FF9B21,border color
+caribouRSF,h_fill,#FFE228,filling color
+caribouRSF,imageName,antlers,name of the image in tati-micheletti/host/images
+caribouLambda,p_size,32,package name size
+caribouLambda,p_x,0.8,package name position x
+caribouLambda,p_y,1.55,package name position y
+caribouLambda,s_x,1.15,image position x
+caribouLambda,s_y,0.85,image position y
+caribouLambda,s_width,0.75,image width
+caribouLambda,s_height,0.75,image height
+caribouLambda,h_color,#FFE228,border color
+caribouLambda,h_fill,#FFB523,filling color
+caribouLambda,imageName,antlers,name of the image in tati-micheletti/host/images
+caribouTEK,p_size,32,package name size
+caribouTEK,p_x,1,package name position x
+caribouTEK,p_y,1.55,package name position y
+caribouTEK,s_x,1.15,image position x
+caribouTEK,s_y,0.85,image position y
+caribouTEK,s_width,0.75,image width
+caribouTEK,s_height,0.75,image height
+caribouTEK,h_color,#FF9B21,border color
+caribouTEK,h_fill,#FF783A,filling color
+caribouTEK,imageName,antlers,name of the image in tati-micheletti/host/images
+birds,p_size,32,package name size
+birds,p_x,1,package name position x
+birds,p_y,1.6,package name position y
+birds,s_x,1,image position x
+birds,s_y,0.75,image position y
+birds,s_width,0.5,image width
+birds,s_height,0.5,image height
+birds,h_color,#9D40E5,border color
+birds,h_fill,#60387F,filling color
+birds,imageName,birds,name of the image in tati-micheletti/host/images
+birds.CS,p_size,32,package name size
+birds.CS,p_x,1,package name position x
+birds.CS,p_y,1.6,package name position y
+birds.CS,s_x,0.83,image position x
+birds.CS,s_y,0.75,image position y
+birds.CS,s_width,0.72,image width
+birds.CS,s_height,0.72,image height
+birds.CS,h_color,#9D40E5,border color
+birds.CS,h_fill,#60387F,filling color
+birds.CS,imageName,birds_CS,name of the image in tati-micheletti/host/images
+carbon,p_size,32,package name size
+carbon,p_x,1,package name position x
+carbon,p_y,1.6,package name position y
+carbon,s_x,1,image position x
+carbon,s_y,0.6,image position y
+carbon,s_width,1.4,image width
+carbon,s_height,1.2,image height
+carbon,h_color,#C1C1C1,border color
+carbon,h_fill,#828282,filling color
+carbon,imageName,carbon,name of the image in tati-micheletti/host/images
+SCFM,p_size,32,package name size
+SCFM,p_x,1,package name position x
+SCFM,p_y,1.6,package name position y
+SCFM,s_x,1,image position x
+SCFM,s_y,0.75,image position y
+SCFM,s_width,0.6,image width
+SCFM,s_height,0.6,image height
+SCFM,h_color,#9B0303,border color
+SCFM,h_fill,#561616,filling color
+SCFM,imageName,SCFM,name of the image in tati-micheletti/host/images
+fireSense + SCFM,p_size,32,package name size
+fireSense + SCFM,p_x,1,package name position x
+fireSense + SCFM,p_y,1.5,package name position y
+fireSense + SCFM,s_x,0.88,image position x
+fireSense + SCFM,s_y,0.75,image position y
+fireSense + SCFM,s_width,0.7,image width
+fireSense + SCFM,s_height,0.7,image height
+fireSense + SCFM,h_color,#9B0303,border color
+fireSense + SCFM,h_fill,#561616,filling color
+fireSense + SCFM,imageName,fireSense_SCFM,name of the image in tati-micheletti/host/images
+MPB,p_size,32,package name size
+MPB,p_x,1,package name position x
+MPB,p_y,1.6,package name position y
+MPB,s_x,1,image position x
+MPB,s_y,0.85,image position y
+MPB,s_width,0.7,image width
+MPB,s_height,0.7,image height
+MPB,h_color,#B29239,border color
+MPB,h_fill,#7A6427,filling color
+MPB,imageName,MPB,name of the image in tati-micheletti/host/images
+trends,p_size,32,package name size
+trends,p_x,1,package name position x
+trends,p_y,1.6,package name position y
+trends,s_x,1.05,image position x
+trends,s_y,0.85,image position y
+trends,s_width,0.6,image width
+trends,s_height,0.6,image height
+trends,h_color,#4E5DB2,border color
+trends,h_fill,#162475,filling color
+trends,imageName,trends,name of the image in tati-micheletti/host/images
+climate,p_size,32,package name size
+climate,p_x,1,package name position x
+climate,p_y,1.6,package name position y
+climate,s_x,1,image position x
+climate,s_y,0.75,image position y
+climate,s_width,0.9,image width
+climate,s_height,0.9,image height
+climate,h_color,#3C4FBC,border color
+climate,h_fill,#8D99DD,filling color
+climate,imageName,climate,name of the image in tati-micheletti/host/images
+hotspot,p_size,32,package name size
+hotspot,p_x,1,package name position x
+hotspot,p_y,1.6,package name position y
+hotspot,s_x,1,image position x
+hotspot,s_y,0.7,image position y
+hotspot,s_width,0.55,image width
+hotspot,s_height,0.55,image height
+hotspot,h_color,#20A486,border color
+hotspot,h_fill,#440154,filling color
+hotspot,imageName,hotspot,name of the image in tati-micheletti/host/images
+harvest,p_size,32,package name size
+harvest,p_x,1,package name position x
+harvest,p_y,1.6,package name position y
+harvest,s_x,1,image position x
+harvest,s_y,0.7,image position y
+harvest,s_width,0.45,image width
+harvest,s_height,0.45,image height
+harvest,h_color,#436436,border color
+harvest,h_fill,#5EB548,filling color
+harvest,imageName,harvest,name of the image in tati-micheletti/host/images
+diversity,p_size,32,package name size
+diversity,p_x,1,package name position x
+diversity,p_y,1.6,package name position y
+diversity,s_x,1.08,image position x
+diversity,s_y,0.77,image position y
+diversity,s_width,0.5,image width
+diversity,s_height,0.5,image height
+diversity,h_color,#828282,border color
+diversity,h_fill,#515151,filling color
+diversity,imageName,diversity,name of the image in tati-micheletti/host/images
+waterfowl,p_size,32,package name size
+waterfowl,p_x,1,package name position x
+waterfowl,p_y,1.6,package name position y
+waterfowl,s_x,1,image position x
+waterfowl,s_y,0.75,image position y
+waterfowl,s_width,0.45,image width
+waterfowl,s_height,0.45,image height
+waterfowl,h_color,#7C83BF,border color
+waterfowl,h_fill,#B4BAE8,filling color
+waterfowl,imageName,waterfowl,name of the image in tati-micheletti/host/images
+development,p_size,32,package name size
+development,p_x,1,package name position x
+development,p_y,1.45,package name position y
+development,s_x,1,image position x
+development,s_y,0.75,image position y
+development,s_width,0.45,image width
+development,s_height,0.45,image height
+development,h_color,#828282,border color
+development,h_fill,#191919,filling color
+development,imageName,anthro,name of the image in tati-micheletti/host/images
+Biomass_regenerationPM,p_size,25,package name size
+Biomass_regenerationPM,p_x,1,package name position x
+Biomass_regenerationPM,p_y,1.4,package name position y
+Biomass_regenerationPM,s_x,1,image position x
+Biomass_regenerationPM,s_y,0.8,image position y
+Biomass_regenerationPM,s_width,0.6,image width
+Biomass_regenerationPM,s_height,0.6,image height
+Biomass_regenerationPM,h_color,#78CC72,border color
+Biomass_regenerationPM,h_fill,#185408,filling color
+Biomass_regenerationPM,imageName,regeneration,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+Biomass_regeneration,p_size,25,package name size
+Biomass_regeneration,p_x,1,package name position x
+Biomass_regeneration,p_y,1.4,package name position y
+Biomass_regeneration,s_x,1,image position x
+Biomass_regeneration,s_y,0.8,image position y
+Biomass_regeneration,s_width,0.55,image width
+Biomass_regeneration,s_height,0.55,image height
+Biomass_regeneration,h_color,#78CC72,border color
+Biomass_regeneration,h_fill,#185408,filling color
+Biomass_regeneration,imageName,regeneration,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+LBMR,p_size,25,package name size
+LBMR,p_x,1,package name position x
+LBMR,p_y,1.4,package name position y
+LBMR,s_x,1,image position x
+LBMR,s_y,0.75,image position y
+LBMR,s_width,0.4,image width
+LBMR,s_height,0.4,image height
+LBMR,h_color,#78CC72,border color
+LBMR,h_fill,#185408,filling color
+LBMR,imageName,vegSuccession,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+Biomass_fireProperties,p_size,25,package name size
+Biomass_fireProperties,p_x,1,package name position x
+Biomass_fireProperties,p_y,1.4,package name position y
+Biomass_fireProperties,s_x,1,image position x
+Biomass_fireProperties,s_y,0.8,image position y
+Biomass_fireProperties,s_width,0.8,image width
+Biomass_fireProperties,s_height,0.7,image height
+Biomass_fireProperties,h_color,#9B0303,border color
+Biomass_fireProperties,h_fill,#561616,filling color
+Biomass_fireProperties,imageName,fireProperties,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+Biomass_fuels,p_size,25,package name size
+Biomass_fuels,p_x,1,package name position x
+Biomass_fuels,p_y,1.4,package name position y
+Biomass_fuels,s_x,0.9,image position x
+Biomass_fuels,s_y,0.8,image position y
+Biomass_fuels,s_width,0.6,image width
+Biomass_fuels,s_height,0.6,image height
+Biomass_fuels,h_color,#9B0303,border color
+Biomass_fuels,h_fill,#561616,filling color
+Biomass_fuels,imageName,fireFuels,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+fireSpread,p_size,25,package name size
+fireSpread,p_x,1,package name position x
+fireSpread,p_y,1.4,package name position y
+fireSpread,s_x,1,image position x
+fireSpread,s_y,0.8,image position y
+fireSpread,s_width,0.55,image width
+fireSpread,s_height,0.55,image height
+fireSpread,h_color,#9B0303,border color
+fireSpread,h_fill,#561616,filling color
+fireSpread,imageName,fireSpread,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
+Boreal_LBMRDataPrep,p_size,25,package name size
+Boreal_LBMRDataPrep,p_x,1,package name position x
+Boreal_LBMRDataPrep,p_y,1.4,package name position y
+Boreal_LBMRDataPrep,s_x,1,image position x
+Boreal_LBMRDataPrep,s_y,0.75,image position y
+Boreal_LBMRDataPrep,s_width,0.55,image width
+Boreal_LBMRDataPrep,s_height,0.55,image height
+Boreal_LBMRDataPrep,h_color,#828282,border color
+Boreal_LBMRDataPrep,h_fill,#515151,filling color
+Boreal_LBMRDataPrep,imageName,vegParams,name of the image in CeresBarros/LandscapesInMotion/R/SpaDES/moduleStickers
