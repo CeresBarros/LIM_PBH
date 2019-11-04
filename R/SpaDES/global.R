@@ -70,7 +70,7 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
 simTimes <- list(start = 0, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
-fireInitialTime <- 2L
+fireInitialTime <- 5L
 fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
@@ -226,10 +226,10 @@ simObjects <- list("studyArea" = foothillsSMALL
                    , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
 )
 
-if (grepl(oneFire, runName)) {
+if (grepl("oneFire", runName)) {
   outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = seq(simTimes$start, simTimes$end,
-                                                   by = 5),
+                                    saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                   by = 5))),
                                     eventPriority = 10,
                                     stringsAsFactors = FALSE))
   outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
@@ -242,12 +242,12 @@ if (grepl(oneFire, runName)) {
                                                       simTimes$end, by = simParams$fireSpread$fireTimestep),
                                        eventPriority = 10))
   outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = 5),
+                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                                by = 5))),
                                        eventPriority = 10))
   outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = simParams$fireSpread$fireTimestep),
+                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                                by = 5))),
                                        eventPriority = 10))
 } else {
   outputs <- data.frame(expand.grid(objectName = c("cohortData"),
@@ -288,16 +288,16 @@ graphics.off()
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
 # reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-LBMR_testSim <- simInitAndSpades(times = simTimes
-                                 , params = simParams
-                                 , modules = simModules[1:6]
-                                 , objects = simObjects
-                                 , paths = simPaths
-                                 , outputs = outputs
-                                 , debug = TRUE
-                                 , .plotInitialTime = NA
-)
-saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
+# LBMR_testSim <- simInitAndSpades(times = simTimes
+#                                  , params = simParams
+#                                  , modules = simModules[1:6]
+#                                  , objects = simObjects
+#                                  , paths = simPaths
+#                                  , outputs = outputs
+#                                  , debug = TRUE
+#                                  , .plotInitialTime = NA
+# )
+# saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
@@ -320,4 +320,6 @@ LBMR_testSim <- simInitAndSpades(times = simTimes
                                  # , .plotInitialTime = NA
 )
 saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
+dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
+          res = 300, units = "in")
 
