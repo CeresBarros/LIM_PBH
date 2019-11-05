@@ -135,15 +135,17 @@ speciesLabels <- c("Abie_sp" = "Fir", "Lari_lar" = "Larch",
                    "Pice_eng" = "En. spruce", "Pice_gla" = "Wh. spruce",
                    "Pice_mar" = "Bl. spruce", "Pinu_sp" = "Lo. pine",
                    "Popu_sp" = "Aspen", "Pseu_men" = "Douglas-fir")
+speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
+names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
 
 plot1 <- ggplot(data = summaryBurnCohortData,
                 aes(x = Year, y = log(BiomassBySpecies), colour = speciesCode)) +
+  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
-  geom_vline(xintercept = 5, linetype = "dashed", colour = "grey") +
   theme_classic() +
   theme(text = element_text(size = 16),
         legend.title = element_blank()) +
-  scale_colour_brewer(type = "qual", palette = "Dark2",
+  scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
   labs(title = "Total landscape biomass", y = "log-Biomass (g/m^2)") +
   facet_grid(burnt ~ Scenario,
@@ -151,12 +153,12 @@ plot1 <- ggplot(data = summaryBurnCohortData,
 
 plot2 <- ggplot(data = summaryBurnCohortData,
                 aes(x = Year, y = log(MortalityBySpecies), colour = speciesCode)) +
+  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
-  geom_vline(xintercept = 5, linetype = "dashed", colour = "grey") +
   theme_classic() +
   theme(text = element_text(size = 16),
         legend.title = element_blank()) +
-  scale_colour_brewer(type = "qual", palette = "Dark2",
+  scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
   facet_grid(burnt ~ Scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
@@ -164,8 +166,9 @@ plot2 <- ggplot(data = summaryBurnCohortData,
 plot3 <- ggplot(data = pixelBurnCohortData,
                 aes(x = Year, fill = vegType)) +
   geom_area(stat = "count", position = "fill") +
-  scale_fill_brewer(type = "qual", palette = "Dark2",
-                    labels = speciesLabels) +
+  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
+  scale_fill_manual(values = speciesColours,
+                      labels = speciesLabels) +
   theme_classic() +
   theme(text = element_text(size = 16),
         legend.title = element_blank()) +
@@ -180,50 +183,98 @@ ggsave(filename = "R/SpaDES/outputs/blogSep2019_noPM_PM_BMortVegType.tiff",
 
 
 ## make GIFs of vegetation maps
+## create individual pics first
+gif.dir <- "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif"
+dir.create(gif.dir)
 
-png(file="R/SpaDES/outputs/vegTypeMapStk_noPM%02d.png", width=200, height=200)
-for (i in c(10:1, "G0!")){
-  plot.new()
-  text(.5, .5, i, cex = 6)
+speciesLabels <- c("Fir", "Larch", "En. spruce", "Wh. spruce",
+                   "Bl. spruce", "Lo. pine", "Aspen","Douglas-fir")
+names(speciesLabels) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
+speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
+names(speciesColours) <-  levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
+
+foothillsMask <- simList_noPM$rawBiomassMap
+foothillsMask[!is.na(foothillsMask)] <- 1
+foothillsMaskDF <- as.data.frame(as(foothillsMask, "SpatialPixelsDataFrame"))
+names(foothillsMaskDF) <- c("value", "x", "y")
+
+for (i in 1:nlayers(vegTypeMapStk_noPM)) {
+  rasterVis::gplot(vegTypeMapStk_noPM[[i]],
+                   maxpixels = ncell(vegTypeMapStk_noPM[[i]])) +
+    geom_tile(data = foothillsMaskDF,
+              aes(x = x, y = y), fill = "grey90") +
+    geom_tile(aes(fill = as.factor(value))) +
+    scale_fill_manual(values = speciesColours,
+                      labels = speciesLabels) +
+    theme_void() + theme(legend.position = "none") +
+    labs(title = sub("year", "Year ", names(vegTypeMapStk_noPM)[i])) +
+    coord_equal()
+  ggsave(file.path(gif.dir, paste0("vegTypeMapStk_noPM", i, ".png")),
+         device = "png", width=5, height=10, dpi = 300, units = "in")
 }
-dev.off()
-
-# convert the .png files to one .gif file using ImageMagick.
-# The system() function executes the command as if it was done
-# in the terminal. the -delay flag sets the time between showing
-# the frames, i.e. the speed of the animation.
-system("convert -delay 80 *.png example_1.gif")
-
-# to not leave the directory with the single jpeg files
-# I remove them.
-file.remove(list.files(pattern=".png"))
-Plot(vegTypeMapStk_PM)
-
-
-
 
 ## OTHER PLOTS
+## topo and climate examples
 topoPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "BrBG"))
+plot(foothillsMaskDF, col = "grey90")
 plot(simList_noPM$slopeRas, col = topoPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-tempPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "RdYlBu"))
+tempPal <- colorRampPalette
+plot(foothillsMaskDF, col = "grey90")
 plot(simList_noPM$temperatureRas, col = tempPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
+plot(foothillsMaskDF, col = "grey90")
 plot(simList_noPM$precipitationRas, col = tempPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-
+## spp cover, age and biomass examples
 sppPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Blues"))
+plot(foothillsMaskDF, col = "grey90")
 plot(simList_noPM$speciesLayers[[1]], col = sppPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
+plot(foothillsMaskDF, col = "grey90")
 plot(simList_noPM$rawBiomassMap, axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
+plot(foothillsMaskDF, col = "grey90")
 agePal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Greens"))
 plot(simList_noPM$standAgeMap, col = agePal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
+     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
+
+## ecodistricts
+## https://www.statcan.gc.ca/eng/subjects/standard/environment/elc/12-607-x2018001-eng.pdf
+
+ecoDistSF <- sf::st_as_sf(simList_noPM$ecoDistrict)
+ecoDistSF$ECODISTRIC <- factor(ecoDistSF$ECODISTRIC,
+                               levels = c(798, 800, 801, 799, 793, 750, 631, 1018, 1017, 1019))
+canada <- sf::st_as_sf(shapefile("data/CA_admin/gpr_000a11a_e.shp"))
+canada <- sf::st_transform(canada, crs = crs(ecoDistSF))
+alberta <- canada[canada$PRENAME %in% "Alberta",]
+
+ggplot(ecoDistSF) +
+  geom_sf(data = alberta) +
+  geom_sf(data = ecoDistSF, aes(fill = as.factor(ECODISTRIC))) +
+  scale_fill_brewer(palette = "Paired",
+                    labels = c("631" = "W AB upland - Foothills",
+                               "750" = "Aspen parkland - Upland",
+                               "793" = "Moist mixed grassland - Plain",
+                               "798" = "Fescue grassland - Plain",
+                               "799" = "Fescue grassland - Upland",
+                               "800" = "Fescue grassland - Plain",
+                               "801" = "Fescue grassland - Foothills",
+                               "1017" = "N Cont. Divide - Mountains",
+                               "1018" = "N Cont. Divide - Foothills",
+                               "1019" = "N Cont. Divide - Mountains")) +
+  theme_void() +
+  theme(text = element_text(colour = "white"),
+                       plot.background = element_rect(fill = "black")) +
+  labs(fill = "Ecoregion - ecodistrict") +
+  coord_sf()
+
+plot(sf::st_as_sf(simList_noPM$ecoDistrict["ECODISTRIC"]))
 
 
+save(list = grep("model", ls(), value = TRUE), file = "E:/GitHub/LandscapesInMotion/analyses/modelsGAMLSS_0-3Days_goodSample_Nov1_v2.RData")
