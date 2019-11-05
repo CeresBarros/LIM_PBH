@@ -202,11 +202,11 @@ for (i in 1:nlayers(vegTypeMapStk_noPM)) {
   rasterVis::gplot(vegTypeMapStk_noPM[[i]],
                    maxpixels = ncell(vegTypeMapStk_noPM[[i]])) +
     geom_tile(data = foothillsMaskDF,
-              aes(x = x, y = y), fill = "grey90") +
+              aes(x = x, y = y), fill = "grey95") +
     geom_tile(aes(fill = as.factor(value))) +
     scale_fill_manual(values = speciesColours,
                       labels = speciesLabels) +
-    theme_void() + theme(legend.position = "none") +
+    theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
     labs(title = sub("year", "Year ", names(vegTypeMapStk_noPM)[i])) +
     coord_equal()
   ggsave(file.path(gif.dir, paste0("vegTypeMapStk_noPM", i, ".png")),
@@ -215,31 +215,40 @@ for (i in 1:nlayers(vegTypeMapStk_noPM)) {
 
 ## OTHER PLOTS
 ## topo and climate examples
+slopeRas <- projectRaster(simList_noPM$slopeRas, foothillsMask)
 topoPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "BrBG"))
-plot(foothillsMaskDF, col = "grey90")
-plot(simList_noPM$slopeRas, col = topoPal(20), axes = FALSE,
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
+plot(slopeRas, col = topoPal(20), axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-tempPal <- colorRampPalette
-plot(foothillsMaskDF, col = "grey90")
-plot(simList_noPM$temperatureRas, col = tempPal(20), axes = FALSE,
+temperatureRas <- projectRaster(simList_noPM$temperatureRas, foothillsMask)
+tempPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "RdBu"))
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
+plot(temperatureRas, col = tempPal(20), axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-plot(foothillsMaskDF, col = "grey90")
-plot(simList_noPM$precipitationRas, col = tempPal(20), axes = FALSE,
+precipitationRas <- projectRaster(simList_noPM$precipitationRas, foothillsMask)
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
+plot(precipitationRas, col = tempPal(20), axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
 ## spp cover, age and biomass examples
 sppPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Blues"))
-plot(foothillsMaskDF, col = "grey90")
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
 plot(simList_noPM$speciesLayers[[1]], col = sppPal(20), axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-plot(foothillsMaskDF, col = "grey90")
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
 plot(simList_noPM$rawBiomassMap, axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
 
-plot(foothillsMaskDF, col = "grey90")
+plot(foothillsMask, col = "grey90", axes = FALSE,
+     bg = "transparent", box = FALSE, legend = FALSE)
 agePal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Greens"))
 plot(simList_noPM$standAgeMap, col = agePal(20), axes = FALSE,
      bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
