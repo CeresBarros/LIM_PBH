@@ -6,6 +6,8 @@ library(ggplot2)
 library(raster)
 library(quickPlot)
 library(SpaDES)
+library(purrr)
+library(magick)
 simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
 simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
 
@@ -181,12 +183,9 @@ ggpubr::ggarrange(plot1, plot2, plot3, nrow = 3,
 ggsave(filename = "R/SpaDES/outputs/blogSep2019_noPM_PM_BMortVegType.tiff",
        width = 10, height = 15)
 
-
+## GIFS ------------------------------------------------------
 ## make GIFs of vegetation maps
-## create individual pics first
-gif.dir <- "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif"
-dir.create(gif.dir)
-
+## individual pics first
 speciesLabels <- c("Fir", "Larch", "En. spruce", "Wh. spruce",
                    "Bl. spruce", "Lo. pine", "Aspen","Douglas-fir")
 names(speciesLabels) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
@@ -198,22 +197,53 @@ foothillsMask[!is.na(foothillsMask)] <- 1
 foothillsMaskDF <- as.data.frame(as(foothillsMask, "SpatialPixelsDataFrame"))
 names(foothillsMaskDF) <- c("value", "x", "y")
 
-for (i in 1:nlayers(vegTypeMapStk_noPM)) {
-  rasterVis::gplot(vegTypeMapStk_noPM[[i]],
-                   maxpixels = ncell(vegTypeMapStk_noPM[[i]])) +
+makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
+  suppressWarnings(dir.create(gif.dir, recursive = TRUE))
+  cat("Making ", id, "\n")
+  rasterVis::gplot(rasterStack[[id]],
+                   maxpixels = ncell(rasterStack[[id]])) +
     geom_tile(data = foothillsMaskDF,
               aes(x = x, y = y), fill = "grey95") +
     geom_tile(aes(fill = as.factor(value))) +
     scale_fill_manual(values = speciesColours,
                       labels = speciesLabels) +
     theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
-    labs(title = sub("year", "Year ", names(vegTypeMapStk_noPM)[i])) +
+    labs(title = sub("year", "Year ", names(rasterStack)[id])) +
     coord_equal()
-  ggsave(file.path(gif.dir, paste0("vegTypeMapStk_noPM", i, ".png")),
+  ggsave(file.path(gif.dir, paste0(filePrefix, id, ".png")),
          device = "png", width=5, height=10, dpi = 300, units = "in")
 }
 
-## OTHER PLOTS
+map_df(.x = 1:nlayers(vegTypeMapStk_noPM), .f = makePNGs,
+       rasterStack = vegTypeMapStk_noPM,
+       filePrefix = "vegTypeMapStk_noPM",
+       gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif")
+map_df(.x = 1:nlayers(vegTypeMapStk_PM), .f = makePNGs,
+       rasterStack = vegTypeMapStk_PM,
+       filePrefix = "vegTypeMapStk_PM",
+       gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif")
+
+makeGIF <- function(gif.dir, gifPrefix, ...) {
+  ## get file list and the file numbers (to sort numerically, rather than alphabetically)
+  PNGlist <- list.files(path = gif.dir, pattern = "*.png")
+  fileNos <- as.numeric(sub("\\.png", "", sub("^\\D*(\\d)", "\\1", PNGlist)))
+
+  ## make GIF
+  file.path(gif.dir, PNGlist[order(fileNos)]) %>%
+    map(image_read) %>% # reads each path file
+    image_join() %>% # joins image
+    image_animate(...) %>% # animates, can opt for number of loops
+    image_write(file.path(gif.dir, paste0(gifPrefix, ".gif")))
+}
+
+makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif",
+        gifPrefix = "vegTypeMapStk_noPM",
+        fps = 2)
+makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif",
+        gifPrefix = "vegTypeMapStk_PM",
+        fps = 2)
+
+## OTHER PLOTS --------------------------------------------------------
 ## topo and climate examples
 slopeRas <- projectRaster(simList_noPM$slopeRas, foothillsMask)
 topoPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "BrBG"))
