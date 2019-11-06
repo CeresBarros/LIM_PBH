@@ -130,7 +130,8 @@ summaryBurnCohortData <- pixelBurnCohortData[, list(BiomassBySpecies = as.numeri
                                                     MortalityBySpecies = as.numeric(sum(mortality * noPixels, na.rm = TRUE)),
                                                     aNPPBySpecies = as.numeric(sum(aNPPAct * noPixels, na.rm = TRUE)),
                                                     AgeBySppWeighted = as.numeric(sum(age * B * noPixels, na.rm = TRUE) /
-                                                                                    sum(B * noPixels, na.rm = TRUE))),
+                                                                                    sum(B * noPixels, na.rm = TRUE)),
+                                                    noCohorts = as.numeric(length(unique(age)))),
                                              by = .(Scenario, Year, burnt, speciesCode)]
 
 speciesLabels <- c("Abie_sp" = "Fir", "Lari_lar" = "Larch",
@@ -175,6 +176,30 @@ plot3 <- ggplot(data = pixelBurnCohortData,
   theme(text = element_text(size = 16),
         legend.title = element_blank()) +
   labs(title = "No. pixels per vegetation type", y = "g/m^2") +
+  facet_grid(burnt ~ Scenario,
+             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+
+plot4 <- ggplot(data = summaryBurnCohortData,
+                 aes(x = Year, y = AgeBySppWeighted, colour = speciesCode)) +
+  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
+  geom_line(size = 1.5) +
+  theme_classic() +
+  theme(text = element_text(size = 16),
+        legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours,
+                      labels = speciesLabels) +
+  facet_grid(burnt ~ Scenario,
+             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+
+plot5 <- ggplot(data = summaryBurnCohortData,
+                aes(x = Year, y = noCohorts, colour = speciesCode)) +
+  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
+  geom_line(size = 1.5) +
+  theme_classic() +
+  theme(text = element_text(size = 16),
+        legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours,
+                      labels = speciesLabels) +
   facet_grid(burnt ~ Scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
