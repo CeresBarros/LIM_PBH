@@ -47,14 +47,13 @@ defineModule(sim, list(
     createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
                   desc = paste("Raster of daily mean air temperature values (Jun-Aug). Defaults to BioSIM-generated values,",
                                "for using Canada-US climate normals 1961-1990 available at",
-                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip"),
-                  createsOutput(objectName = "windSpeedRas", objectClass = "RasterLayer",
-                                desc = paste("Raster of daily mean wind speed at 10m (Jun-Aug). Defaults to BioSIM-generated values,",
-                                             "for using Canada-US climate normals 1961-1990 available at",
-                                             "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip"))
-    )
-  ))
-)
+                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip")),
+    createsOutput(objectName = "windSpeedRas", objectClass = "RasterLayer",
+                  desc = paste("Raster of daily mean wind speed at 10m (Jun-Aug). Defaults to BioSIM-generated values,",
+                               "for using Canada-US climate normals 1961-1990 available at",
+                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip"))
+  )
+))
 
 ## event types
 #   - type `init` is required for initialization
