@@ -77,6 +77,7 @@ successionTimestep <- 1L
 if (grepl("blogSep2019_noPM", runName)) {
   simModules <- list("Boreal_LBMRDataPrep"
                      , "Biomass_fireProperties"
+                     , "Biomass_fireWeather"
                      , "LBMR"
                      , "Biomass_fuels"
                      , "fireSpread"
@@ -123,6 +124,9 @@ if (grepl("blogSep2019_noPM", runName)) {
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
+    , Biomass_fireWeather = list(
+      ".useCache" = eventCaching
+    )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
@@ -148,6 +152,7 @@ if (grepl("blogSep2019_noPM", runName)) {
 if (grepl("blogSep2019_PM", runName)) {
   simModules <- list("Boreal_LBMRDataPrep"
                      , "Biomass_fireProperties"
+                     , "Biomass_fireWeather"
                      , "LBMR"
                      , "Biomass_fuels"
                      , "fireSpread"
@@ -193,6 +198,9 @@ if (grepl("blogSep2019_PM", runName)) {
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
+    )
+    , Biomass_fireWeather = list(
+      ".useCache" = eventCaching
     )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
@@ -312,7 +320,7 @@ simObjects$rstCurrentBurn <- rstCurrentBurn
 
 LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[c(1:4, 6)]
+                                 , modules = simModules[c(1:5, 7)]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , outputs = outputs
