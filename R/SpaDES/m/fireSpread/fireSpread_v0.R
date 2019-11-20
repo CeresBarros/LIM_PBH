@@ -281,7 +281,7 @@ FPBPercParams <- function(sim) {
   sim$fireTFCRas[!getValues(sim$fireTFCRas) %in% FBPoutputs$pixelGroup] <- NA
   sim$fireTFCRas <- raster::reclassify(sim$fireTFCRas, rcl = TFCvals)
 
-  ## transform pixel IDs in tables to LBMR compatible
+  ## transform pixel IDs in tables to Biomass_core compatible
   tempRas <- sim$pixelGroupMapFBP
   tempRas[] <- 1:ncell(tempRas)
   tempRas <- postProcess(tempRas, rasterToMatch = sim$pixelGroupMap,
@@ -297,7 +297,7 @@ FPBPercParams <- function(sim) {
   FWIinputs$id <- NULL; FBPinputs$id <- NULL
   FWIoutputs[, pixID := NULL]; FBPoutputs[, pixID := NULL]
 
-  ## reproject rasters and maps for LBMR compatibility
+  ## reproject rasters and maps for Biomass_core compatibility
   sim$fireROSRas <- postProcess(sim$fireROSRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
   sim$fireIntRas <- postProcess(sim$fireIntRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
   sim$fireTFCRas <- postProcess(sim$fireTFCRas, rasterToMatch = sim$biomassMap, method = "bilinear", filename2 = NULL)
@@ -311,7 +311,7 @@ FPBPercParams <- function(sim) {
   return(invisible(sim))
 }
 
-## Fire spread event in fire years - rasters should be back in LBMR projection
+## Fire spread event in fire years - rasters should be back in Biomass_core projection
 doFireSpread <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn

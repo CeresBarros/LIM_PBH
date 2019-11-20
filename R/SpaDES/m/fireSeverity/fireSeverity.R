@@ -73,7 +73,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
                      "Make sure all modules have the same fireTimestep value", sep = "\n"))
 
         sim <- scheduleEvent(sim, time(sim) + fireTimestep,
-                             "LBMR", "summaryBGM", eventPriority = 4)
+                             "Biomass_core", "summaryBGM", eventPriority = 4)
       }
 
       ## schedule events
@@ -212,7 +212,7 @@ doBiomassPreFire <- function(sim){
   }
 
   ## load ecoregion map
-  ## TODO: make equal to LBMR.
+  ## TODO: make equal to Biomass_core.
   if (!suppliedElsewhere("ecoregionMap", sim )) {
     ## LANDIS-II demo data:
     ## Don't load ecoregions to sim even if they don't exist

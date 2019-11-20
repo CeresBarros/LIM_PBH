@@ -66,11 +66,11 @@ moduleSticker <- function(moduleTable = NULL, moduleName,
     "fireSense\n+ SCFM" else
       if (moduleName == "caribouLambda")
         "caribou" else
-          if(moduleName == "Boreal_LBMRDataPrep")
+          if(moduleName == "Biomass_borealDataPrep")
             "Biomass_dataPrep" else
-              if(moduleName == "LBMR")
+              if(moduleName == "Biomass_core")
                 "Biomass_core" else
-                  if(moduleName == "BiomassSpeciesData")
+                  if(moduleName == "Biomass_speciesData")
                     "Biomass_speciesData" else
                   unique(moduleTable[["module"]])
 

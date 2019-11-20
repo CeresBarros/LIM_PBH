@@ -75,10 +75,10 @@ fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
 if (grepl("blogSep2019_noPM", runName)) {
-  simModules <- list("Boreal_LBMRDataPrep"
+  simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
                      , "Biomass_fireWeather"
-                     , "LBMR"
+                     , "Biomass_core"
                      , "Biomass_fuels"
                      , "fireSpread"
                      , "Biomass_regeneration"
@@ -86,7 +86,7 @@ if (grepl("blogSep2019_noPM", runName)) {
   )
 
   simParams <- list(
-    Boreal_LBMRDataPrep = list(
+    Biomass_borealDataPrep = list(
       "sppEquivCol" = sppEquivCol
       , "forestedLCCClasses" = c(1:15, 34:36)
       # next two are used when assigning pixelGroup membership; what resolution for
@@ -97,7 +97,7 @@ if (grepl("blogSep2019_noPM", runName)) {
       , "cloudFolderID" = NA
       , ".useCache" = eventCaching
     )
-    , LBMR = list(
+    , Biomass_core = list(
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
@@ -150,10 +150,10 @@ if (grepl("blogSep2019_noPM", runName)) {
 }
 
 if (grepl("blogSep2019_PM", runName)) {
-  simModules <- list("Boreal_LBMRDataPrep"
+  simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
                      , "Biomass_fireWeather"
-                     , "LBMR"
+                     , "Biomass_core"
                      , "Biomass_fuels"
                      , "fireSpread"
                      , "Biomass_regenerationPM"
@@ -161,7 +161,7 @@ if (grepl("blogSep2019_PM", runName)) {
   )
 
   simParams <- list(
-    Boreal_LBMRDataPrep = list(
+    Biomass_borealDataPrep = list(
       "sppEquivCol" = sppEquivCol
       , "forestedLCCClasses" = c(1:15, 34:36)
       # next two are used when assigning pixelGroup membership; what resolution for
@@ -172,7 +172,7 @@ if (grepl("blogSep2019_PM", runName)) {
       , "cloudFolderID" = NA
       , ".useCache" = eventCaching
     )
-    , LBMR = list(
+    , Biomass_core = list(
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
@@ -283,20 +283,20 @@ if (grepl("oneFire", runName)) {
 }
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
-# reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Boreal_LBMRDataPrep"))
+# reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Biomass_borealDataPrep"))
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
 options(spades.moduleCodeChecks = TRUE)
 graphics.off()
 
-# reproducible::clearCache(simPaths$cachePath, userTags = c("^LBMR$", "init"), ask = FALSE)
+# reproducible::clearCache(simPaths$cachePath, userTags = c("^Biomass_core$", "init"), ask = FALSE)
 ## TODO RUN SIMUALTIONS W/ AND W/O PM for blog
 # set.seed(524326)
 
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
 # reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-# LBMR_testSim <- simInitAndSpades(times = simTimes
+# Biomass_core_testSim <- simInitAndSpades(times = simTimes
 #                                  , params = simParams
 #                                  , modules = simModules[1:6]
 #                                  , objects = simObjects
@@ -305,7 +305,7 @@ graphics.off()
 #                                  , debug = TRUE
 #                                  , .plotInitialTime = NA
 # )
-# saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
+# saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
 
 ## TEST WITH FAKE FIRE MAP
 ## make fake fire map
@@ -318,7 +318,7 @@ simObjects$rstCurrentBurn <- rstCurrentBurn
 
 # simTimes$end <- 21
 
-LBMR_testSim <- simInitAndSpades(times = simTimes
+Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
                                  , modules = simModules[c(1:5, 7)]
                                  , objects = simObjects
@@ -327,7 +327,7 @@ LBMR_testSim <- simInitAndSpades(times = simTimes
                                  , debug = TRUE
                                  # , .plotInitialTime = NA
 )
-saveRDS(LBMR_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
+saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
 dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
           res = 300, units = "in")
 
