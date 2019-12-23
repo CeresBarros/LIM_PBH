@@ -133,7 +133,24 @@ summaryBurnCohortData <- pixelBurnCohortData[, list(BiomassBySpecies = as.numeri
                                                                                     sum(B * noPixels, na.rm = TRUE)),
                                                     noCohorts = as.numeric(length(unique(age)))),
                                              by = .(Scenario, Year, burnt, speciesCode)]
+## missing species in a year are of B == 0,
+## add them to show losses in B
+combinations <- as.data.table(expand.grid(unique(summaryBurnCohortData$Year), summaryBurnCohortData$Scenario,
+                                          unique(summaryBurnCohortData$burnt), unique(summaryBurnCohortData$speciesCode)))
+setnames(combinations, c("Year", "Scenario", "burnt", "speciesCode"))
 
+summaryBurnCohortData <- summaryBurnCohortData[combinations,
+                                               on = c("Year", "Scenario", "burnt", "speciesCode")]
+## replace NA's to 0s by converting to matrix
+summaryBurnCohortData <- as.matrix(summaryBurnCohortData)
+summaryBurnCohortData[is.na(summaryBurnCohortData)] <- 0
+summaryBurnCohortData <- as.data.table(summaryBurnCohortData)
+cols <- grep("Scenario|species", names(summaryBurnCohortData), invert = TRUE, value = TRUE)
+summaryBurnCohortData <- summaryBurnCohortData[, (cols) := lapply(.SD, as.numeric),
+                                               .SDcols = cols]
+summaryBurnCohortData <- unique(summaryBurnCohortData)
+
+## make species labels
 speciesLabels <- c("Abie_sp" = "Fir", "Lari_lar" = "Larch",
                    "Pice_eng" = "En. spruce", "Pice_gla" = "Wh. spruce",
                    "Pice_mar" = "Bl. spruce", "Pinu_sp" = "Lo. pine",
@@ -142,7 +159,7 @@ speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
 names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
 
 plot1 <- ggplot(data = summaryBurnCohortData,
-                aes(x = Year, y = log(BiomassBySpecies), colour = speciesCode)) +
+                aes(x = Year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
   theme_classic() +
@@ -151,7 +168,7 @@ plot1 <- ggplot(data = summaryBurnCohortData,
   scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
   labs(title = "Total landscape biomass", y = "log-Biomass (g/m^2)") +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(Scenario ~ burnt,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
 plot2 <- ggplot(data = summaryBurnCohortData,
