@@ -45,8 +45,12 @@ defineModule(sim, list(
                  desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
                  sourceURL = NA),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
-                 desc = "Biomass map at each succession time step. Default is Canada national biomass map",
-                 sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
+                 desc = paste("Biomass map at each succession time step. Defaults to the Canadian Forestry",
+                              "Service, National Forest Inventory, kNN-derived total aboveground biomass map",
+                              "from 2001. See https://open.canada.ca/data/en/dataset/ec9e2659-1c29-4ddb-87a2-6aced147a990",
+                              "for metadata"),
+                 sourceURL = paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                                    "canada-forests-attributes_attributs-forests-canada/2001-attributes_attributs-2001/")),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("Polygon to use as the study area.",
                               "Defaults to  an area in Southwestern Alberta, Canada."),
@@ -129,12 +133,13 @@ doFireSpread <- function(sim) {
         dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
         # If biomassMap is not present either, get rawBiomassMap, but crop it to studyArea/RTM instead of SALarge/RTMLarge
-        rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
-        rawBiomassMapURL <- "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"
-        burnableAreas <- Cache(prepInputs,
-                               targetFile = asPath(basename(rawBiomassMapFilename)),
-                               archive = asPath(c("kNN-StructureBiomass.tar",
-                                                  "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+        fileURLs <- getURL(extractURL("simulatedBiomassMap"), dirlistonly = TRUE)
+        fileNames <- getHTMLLinks(fileURLs)
+        rawBiomassMapFilename <- grep("Biomass_TotalLiveAboveGround.*.tif$", fileNames, value = TRUE)
+        rawBiomassMapURL <- paste0(url, rawBiomassMapFilename)
+
+        rawBiomassMap <- Cache(prepInputs,
+                               targetFile = rawBiomassMapFilename,
                                url = rawBiomassMapURL,
                                destinationPath = dPath,
                                studyArea = sim$studyArea,
@@ -144,9 +149,11 @@ doFireSpread <- function(sim) {
                                method = "bilinear",
                                datatype = "INT2U",
                                filename2 = TRUE, overwrite = TRUE,
-                               userTags = cacheTags,
+                               userTags = c(cacheTags, "rawBiomassMap"),
                                omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
-        rm(cacheTags)
+
+        burnableAreas <- rawBiomassMap
+        rm(cacheTags, rawBiomassMap)
       } else {
         burnableAreas <- sim$biomassMap
       }
