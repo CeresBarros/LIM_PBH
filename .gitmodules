@@ -21,3 +21,6 @@
 [submodule "R/SpaDES/m/Biomass_fireProperties"]
 	path = R/SpaDES/m/Biomass_fireProperties
 	url = https://github.com/CeresBarros/Biomass_fireProperties.git
+[submodule "R/SpaDES/m/LandR_speciesParameters"]
+	path = R/SpaDES/m/LandR_speciesParameters
+	url = https://github.com/CeresBarros/LandR_speciesParameters.git
