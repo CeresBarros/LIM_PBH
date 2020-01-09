@@ -9,12 +9,13 @@
 rm(list=ls()); amc::.gc()
 
 ## Get packages ----------------------
-## requires as of June 18th 2019
+## requires as of Jan 2nd 2020
 # loading reproducible     0.2.10.9000
 # loading quickPlot        0.1.6.9000
 # loading SpaDES.core      0.2.6.9000
 # loading SpaDES.tools     0.3.2.9002
 # loading SpaDES.addins    0.1.2
+# loading LandR            0.0.3.9000
 
 # devtools::install_github("PredictiveEcology/reproducible@development", upgrade = "always")
 # devtools::install_github("achubaty/amc@development", upgrade = "always")
@@ -52,8 +53,8 @@ source("R/SpaDES/1_simObjects.R")
 # runName <- "blogSep2019_PM"
 # runName <- "blogSep2019_noPM"
 
-# runName <- "blogSep2019_PM_oneFire"
-runName <- "blogSep2019_noPM_oneFire"
+runName <- "blogSep2019_PM_oneFire"
+# runName <- "blogSep2019_noPM_oneFire"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -125,7 +126,7 @@ if (grepl("blogSep2019_noPM", runName)) {
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireWeather = list(
-      ".useCache" = eventCaching
+      ".useCache" = eventCaching[2] ## don't cache .inputObjects
     )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
@@ -200,7 +201,7 @@ if (grepl("blogSep2019_PM", runName)) {
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireWeather = list(
-      ".useCache" = eventCaching
+      ".useCache" = eventCaching[2]  ## don't cache .inputObjects
     )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
@@ -240,7 +241,6 @@ if (grepl("oneFire", runName)) {
                                                    by = 5))),
                                     eventPriority = 10,
                                     stringsAsFactors = FALSE))
-  outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
   outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                        saveTime = seq(simParams$fireSpread$fireInitialTime,
                                                       simTimes$end, by = simParams$fireSpread$fireTimestep),
@@ -257,6 +257,8 @@ if (grepl("oneFire", runName)) {
                                        saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
                                                                 by = 5))),
                                        eventPriority = 10))
+  ## on the first year save after init events, but before mortalityAndGrowth
+  outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
 } else {
   outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                     saveTime = seq(simTimes$start, simTimes$end,
