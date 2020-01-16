@@ -126,7 +126,7 @@ if (grepl("blogSep2019_noPM", runName)) {
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireWeather = list(
-      ".useCache" = eventCaching[2] ## don't cache .inputObjects
+      ".useCache" = FALSE ## don't cache .inputObjects
     )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
@@ -201,7 +201,7 @@ if (grepl("blogSep2019_PM", runName)) {
       , "successionTimestep" = successionTimestep
     )
     , Biomass_fireWeather = list(
-      ".useCache" = eventCaching[2]  ## don't cache .inputObjects
+      ".useCache" = FALSE  ## don't cache .inputObjects
     )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
