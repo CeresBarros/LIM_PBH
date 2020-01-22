@@ -119,7 +119,7 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-## Fire spread event in fire years - rasters should be back in LBMR projection
+## Fire spread event in fire years - rasters should be back in LandR Biomass projection
 doFireSpread <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
