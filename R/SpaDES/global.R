@@ -10,49 +10,49 @@ rm(list=ls()); amc::.gc()
 
 ## Get packages ----------------------
 ## requires as of Jan 2nd 2020
-# loading reproducible     0.2.10.9000
+# loading reproducible     0.2.11.9000
 # loading quickPlot        0.1.6.9000
-# loading SpaDES.core      0.2.6.9000
-# loading SpaDES.tools     0.3.2.9002
+# loading SpaDES.core      0.2.8
+# loading SpaDES.tools     0.3.4.9000
 # loading SpaDES.addins    0.1.2
 # loading LandR            0.0.3.9000
 
-# devtools::install_github("PredictiveEcology/reproducible@development", upgrade = "always")
-# devtools::install_github("achubaty/amc@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/pemisc@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/map@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/LandR@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/quickPlot@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/SpaDES.tools@development", upgrade = "always")
-# devtools::install_github("PredictiveEcology/SpaDES.core@development", upgrade = "always")
+# devtools::install_github("PredictiveEcology/reproducible@development", upgrade = "always", type = "binary")
+# devtools::install_github("achubaty/amc@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/pemisc@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/map@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/LandR@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/quickPlot@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/SpaDES.tools@development", upgrade = "always", type = "binary")
+# devtools::install_github("PredictiveEcology/SpaDES.core@development", upgrade = "always", type = "binary")
 library(SpaDES)
 library(LandR)
 
 ## testing packages
-try(detach("package:LandR", unload = TRUE))
-try(detach("package:pemisc", unload = TRUE))
-try(detach("package:amc", unload = TRUE))
-try(detach("package:map", unload = TRUE))
-try(detach("package:SpaDES", unload = TRUE))
-try(detach("package:SpaDES.addins", unload = TRUE))
-try(detach("package:pemisc", unload = TRUE))
-try(detach("package:amc", unload = TRUE))
-try(detach("package:map", unload = TRUE))
-try(detach("package:SpaDES.core", unload = TRUE))
-try(detach("package:SpaDES.tools", unload = TRUE))
-try(detach("package:pemisc", unload = TRUE))
-try(detach("package:amc", unload = TRUE))
-try(detach("package:map", unload = TRUE))
-try(detach("package:reproducible", unload = TRUE))
-devtools::load_all("../reproducible")
-devtools::load_all("../SpaDES.tools")
-library(SpaDES.addins)
-library(logging)
-devtools::load_all("../SpaDES.core")
-library(map)
-library(amc)
-library(pemisc)
-devtools::load_all("../LandR")
+# try(detach("package:LandR", unload = TRUE))
+# try(detach("package:pemisc", unload = TRUE))
+# try(detach("package:amc", unload = TRUE))
+# try(detach("package:map", unload = TRUE))
+# try(detach("package:SpaDES", unload = TRUE))
+# try(detach("package:SpaDES.addins", unload = TRUE))
+# try(detach("package:pemisc", unload = TRUE))
+# try(detach("package:amc", unload = TRUE))
+# try(detach("package:map", unload = TRUE))
+# try(detach("package:SpaDES.core", unload = TRUE))
+# try(detach("package:SpaDES.tools", unload = TRUE))
+# try(detach("package:pemisc", unload = TRUE))
+# try(detach("package:amc", unload = TRUE))
+# try(detach("package:map", unload = TRUE))
+# try(detach("package:reproducible", unload = TRUE))
+# devtools::load_all("../reproducible")
+# devtools::load_all("../SpaDES.tools")
+# library(SpaDES.addins)
+# library(logging)
+# devtools::load_all("../SpaDES.core")
+# library(map)
+# library(amc)
+# library(pemisc)
+# devtools::load_all("../LandR")
 
 options('reproducible.useNewDigestAlgorithm' = TRUE)
 
@@ -62,20 +62,17 @@ source("R/R_tools/Useful_functions.R")
 ## SIMULATION SETUP
 ## -----------------------------------------------
 
-## Get necessary objects -----------------------
-source("R/SpaDES/1_simObjects.R")
-
-## Set up modelling parameters  ---------------------------
+## Set up simulation name  ---------------------------
 # runName <- "blogSep2019_PM"
 # runName <- "blogSep2019_noPM"
 
-runName <- "blogSep2019_PM_oneFire"
+# runName <- "blogSep2019_PM_oneFire"
 # runName <- "blogSep2019_noPM_oneFire"
+
+runName <- "PM_oneFire_newSppParams"
+runName <- "noPM_oneFire_newSppParams"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
-
-## Run Biomass_speciesData to get species layers
-source("R/SpaDES/2_speciesLayers.R")
 
 ## paths define simulation paths
 simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
@@ -83,7 +80,13 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
                  inputPath = file.path("R/SpaDES/inputs"),
                  outputPath = file.path("R/SpaDES/outputs", runName))
 
-## simulation params
+## Get necessary objects -----------------------
+source("R/SpaDES/1_simObjects.R")
+
+## Run Biomass_speciesData to get species layers
+source("R/SpaDES/2_speciesLayers.R")
+
+## Define simulation params --------------------
 simTimes <- list(start = 0, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
@@ -91,214 +94,13 @@ fireInitialTime <- 5L
 fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
-if (grepl("blogSep2019_noPM", runName)) {
-  simModules <- list("Biomass_borealDataPrep"
-                     , "Biomass_fireProperties"
-                     , "Biomass_fireWeather"
-                     , "Biomass_core"
-                     , "Biomass_fuels"
-                     , "fireSpread"
-                     , "Biomass_regeneration"
-                     , "fireSeverity"
-  )
+## Make simulation module list, paramters object, objects and outputs accoding to run
+## name and the parameters above
+source("R/SpaDES/3_simulationSetup.R")
 
-  simParams <- list(
-    Biomass_borealDataPrep = list(
-      "sppEquivCol" = sppEquivCol
-      , "forestedLCCClasses" = c(1:15, 34:36)
-      # next two are used when assigning pixelGroup membership; what resolution for
-      #   age and biomass
-      , "pixelGroupAgeClass" = successionTimestep * 10L
-      , "pixelGroupBiomassClass" = 100
-      , "useCloudCacheForStats" = FALSE
-      , "cloudFolderID" = NA
-      , ".useCache" = eventCaching
-    )
-    , Biomass_core = list(
-      "calcSummaryBGM" = c("start")
-      , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-      , ".plotInitialTime" = simTimes$start
-      , "plotOverstory" = TRUE
-      , "seedingAlgorithm" = "wardDispersal"
-      , "sppEquivCol" = sppEquivCol
-      , "successionTimestep" = successionTimestep * 10L
-      , "vegLeadingProportion" = vegLeadingProportion
-      , ".plotInterval" = 1
-      , ".plotMaps" = FALSE
-      , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
-      , ".useParallel" = useParallel
-    )
-    , Biomass_fuels = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "nonForestFire" = TRUE
-      , "sppEquivCol" = sppEquivCol
-      , ".useCache" = eventCaching
-    )
-    , Biomass_regeneration = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "successionTimestep" = successionTimestep
-    )
-    , Biomass_fireWeather = list(
-      ".useCache" = FALSE ## don't cache .inputObjects
-    )
-    , Biomass_fireProperties = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "vegFeedback" = TRUE
-      , ".useCache" = eventCaching
-    )
-    , fireSpread = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
-      , "noStartPix" = 10
-      , ".useCache" = eventCaching
-    )
-    , fireSeverity = list(
-      "fireTimestep" = fireTimestep
-      , ".plotMaps" = TRUE
-      , ".saveInitialTime" = 1
-      , ".useCache" = eventCaching
-    )
-  )
-}
-
-if (grepl("blogSep2019_PM", runName)) {
-  simModules <- list("Biomass_borealDataPrep"
-                     , "Biomass_fireProperties"
-                     , "Biomass_fireWeather"
-                     , "Biomass_core"
-                     , "Biomass_fuels"
-                     , "fireSpread"
-                     , "Biomass_regenerationPM"
-                     , "fireSeverity"
-  )
-
-  simParams <- list(
-    Biomass_borealDataPrep = list(
-      "sppEquivCol" = sppEquivCol
-      , "forestedLCCClasses" = c(1:15, 34:36)
-      # next two are used when assigning pixelGroup membership; what resolution for
-      #   age and biomass
-      , "pixelGroupAgeClass" = successionTimestep * 10L
-      , "pixelGroupBiomassClass" = 100
-      , "useCloudCacheForStats" = FALSE
-      , "cloudFolderID" = NA
-      , ".useCache" = eventCaching
-    )
-    , Biomass_core = list(
-      "calcSummaryBGM" = c("start")
-      , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-      , ".plotInitialTime" = simTimes$start
-      , "plotOverstory" = TRUE
-      , "seedingAlgorithm" = "wardDispersal"
-      , "sppEquivCol" = sppEquivCol
-      , "successionTimestep" = successionTimestep * 10L
-      , "vegLeadingProportion" = vegLeadingProportion
-      , ".plotInterval" = 1
-      , ".plotMaps" = FALSE
-      , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
-      , ".useParallel" = useParallel
-    )
-    , Biomass_fuels = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "nonForestFire" = TRUE
-      , "sppEquivCol" = sppEquivCol
-      , ".useCache" = eventCaching
-    )
-    , Biomass_regenerationPM = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "successionTimestep" = successionTimestep
-    )
-    , Biomass_fireWeather = list(
-      ".useCache" = FALSE  ## don't cache .inputObjects
-    )
-    , Biomass_fireProperties = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "vegFeedback" = TRUE
-      , ".useCache" = eventCaching
-    )
-    , fireSpread = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
-      , "noStartPix" = 10
-      , ".useCache" = eventCaching
-    )
-    , fireSeverity = list(
-      "fireTimestep" = fireInitialTime
-      , ".plotMaps" = TRUE
-      , ".saveInitialTime" = 1
-      , ".useCache" = eventCaching
-    )
-  )
-}
-
-simObjects <- list("studyArea" = foothillsSMALL
-                   , "studyAreaLarge" = foothillsMED
-                   , "sppEquiv" = sppEquivalencies_CA
-                   , "sppColorVect" = sppColorVect
-                   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
-                   , "treed" =  simOutSpeciesLayers$treed
-                   , "numTreed" =  simOutSpeciesLayers$numTreed
-                   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
-)
-
-if (grepl("oneFire", runName)) {
-  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                   by = 5))),
-                                    eventPriority = 10,
-                                    stringsAsFactors = FALSE))
-  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                                by = 5))),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                                by = 5))),
-                                       eventPriority = 10))
-  ## on the first year save after init events, but before mortalityAndGrowth
-  outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
-} else {
-  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = seq(simTimes$start, simTimes$end,
-                                                   by = simParams$fireSpread$fireTimestep),
-                                    eventPriority = 10,
-                                    stringsAsFactors = FALSE))
-  outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
-  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = 5),
-                                       eventPriority = 10))
-}
+## -----------------------------------------------
+## SIMULATION RUN
+## -----------------------------------------------
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Biomass_borealDataPrep"))
@@ -324,21 +126,11 @@ graphics.off()
 #                                  , .plotInitialTime = NA
 # )
 # saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
-
-## TEST WITH FAKE FIRE MAP
-## make fake fire map
-rstCurrentBurn <- raster(file.path(sub("_oneFire", "", simPaths$cache), "rasterToMatch.tif"))
-IDs <- which(!is.na(rstCurrentBurn[]))
-rstCurrentBurn[IDs] <- 1
-rstCurrentBurn[IDs[1:round(length(IDs)/2)]] <- NA
-
-simObjects$rstCurrentBurn <- rstCurrentBurn
-
 # simTimes$end <- 21
 
 Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[c(1:5, 7)]
+                                 , modules = simModules[c(1:6, 8)]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , outputs = outputs
