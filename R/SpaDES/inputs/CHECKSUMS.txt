@@ -25,3 +25,7 @@
 "ASPECT.tif" "ac342f853105ab50" "2739845" "xxhash64"
 "LandCoverOfCanada2005_V1_4.zip" "e100c037a257e377" "47185238" "xxhash64"
 "LCC2005_V1_4a.tif" "b50567fc83bcc5de" "437916202" "xxhash64"
+"randomized_LandR_speciesParameters_Inputs.zip" "13d7b108b26ac81c" "10507771" "xxhash64"
+"PSPmeasure.Rdat" "c0accd71125c3138" "10853021" "xxhash64"
+"PSPplot.Rdat" "5bf661a732fe8744" "170655" "xxhash64"
+"randomizedPSPdata.Rdat" "87c381f1b2d6e3e7" "111413" "xxhash64"
