@@ -45,12 +45,11 @@ defineModule(sim, list(
                  desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
                  sourceURL = NA),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
-                 desc = paste("Biomass map at each succession time step. Defaults to the Canadian Forestry",
+                 desc = paste("Biomass map at each succession time step. If not supplied, will use Canadian Forestry",
                               "Service, National Forest Inventory, kNN-derived total aboveground biomass map",
                               "from 2001. See https://open.canada.ca/data/en/dataset/ec9e2659-1c29-4ddb-87a2-6aced147a990",
                               "for metadata"),
-                 sourceURL = paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
-                                    "canada-forests-attributes_attributs-forests-canada/2001-attributes_attributs-2001/")),
+                 sourceURL = NA),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("Polygon to use as the study area.",
                               "Defaults to  an area in Southwestern Alberta, Canada."),
@@ -133,10 +132,10 @@ doFireSpread <- function(sim) {
         dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
         # If biomassMap is not present either, get rawBiomassMap, but crop it to studyArea/RTM instead of SALarge/RTMLarge
-        fileURLs <- getURL(extractURL("simulatedBiomassMap"), dirlistonly = TRUE)
-        fileNames <- getHTMLLinks(fileURLs)
-        rawBiomassMapFilename <- grep("Biomass_TotalLiveAboveGround.*.tif$", fileNames, value = TRUE)
-        rawBiomassMapURL <- paste0(url, rawBiomassMapFilename)
+        rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                                   "canada-forests-attributes_attributs-forests-canada/",
+                                   "2001-attributes_attributs-2001/",
+                                   "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif")
 
         rawBiomassMap <- Cache(prepInputs,
                                targetFile = rawBiomassMapFilename,
