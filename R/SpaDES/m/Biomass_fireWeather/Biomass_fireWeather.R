@@ -110,13 +110,22 @@ Event1 <- function(sim) {
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
   if (!suppliedElsewhere("weatherTable", sim)) {
-    weatherTable <- Cache(prepInputs(targetFile = "Export (WeatherGeneration).csv",
-                                     archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
-                                     fun = "read.csv",
-                                     destinationPath = dPath,
-                                     url = extractURL("weatherTable", sim),
-                                     userTags = c(cacheTags, "weatherTable"),
-                                     omitArgs = "userTags"))
+    sim$weatherTable <- Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
+                              archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
+                              fun = "read.csv",
+                              destinationPath = dPath,
+                              url = extractURL("weatherTable", sim),
+                              userTags = c(cacheTags, "weatherTable"),
+                              omitArgs = "userTags")
+  }
+
+  if (!suppliedElsewhere("DEMRas", sim)) {
+    sim$DEMRas <- Cache(prepInputs, targetFile = "DEM1kmRes.tif",
+                        archive = "DEMraster.zip",
+                        destinationPath = dPath,
+                        url = extractURL("DEMRas", sim),
+                        userTags = c(cacheTags, "DEMRas"),
+                        omitArgs = "userTags")
   }
 
   return(invisible(sim))
