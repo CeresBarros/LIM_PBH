@@ -29,11 +29,11 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "DEMRas", objectClass = "RasterLayer",
-                 desc = "DEM raster used by the weather generator",
-                 sourceURL = ""),
+                 desc = "Digital elevation model (DEM) raster used by the weather generator to make 'weatherTable'",
+                 sourceURL = "https://drive.google.com/file/d/1Fosf9xfD4UmljwZCxH7MHqsO9EtK4nvp/view?usp=sharing"),
     expectsInput(objectName = "weatherTable", objectClass = "data.table",
                  desc = "Weather data output by the weather generator, to be imported and converted to a raster",
-                 sourceURL = ""),
+                 sourceURL = "https://drive.google.com/file/d/16Oe8iN1QWRaG9QuiL1alsr3PYzdmff_K/view?usp=sharing"),
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
