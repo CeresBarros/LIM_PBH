@@ -321,6 +321,13 @@ doNoFire <- function(sim) {
                                datatype = "INT2U", overwrite = TRUE)
   }
 
+  if (!identical(crs(sim$studyArea), crs(sim$rasterToMatch))) {
+    warning(paste0("studyArea and rasterToMatch projections differ.\n",
+                   "studyArea will be projected to match rasterToMatch"))
+    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
+    sim$studyArea <- fixErrors(sim$studyArea)
+  }
+
   ## DEFAULT FIRE PROPERTIES RASTERS
   if (any(!suppliedElsewhere("fireRSORas", sim),
           !suppliedElsewhere("fireROSRas", sim),
