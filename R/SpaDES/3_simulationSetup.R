@@ -9,7 +9,7 @@
 
 ## SIM PARAMS ------------------------------------------------
 
-if (grepl("blogSep2019_noPM", runName)) {
+if (grepl("noPM", runName)) {
   simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
                      , "Biomass_fireWeather"
