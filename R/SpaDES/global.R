@@ -69,7 +69,7 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "blogSep2019_PM_oneFire"
 # runName <- "blogSep2019_noPM_oneFire"
 
-runName <- "PM_oneFire_newSppParams"
+# runName <- "PM_oneFire_newSppParams"
 runName <- "noPM_oneFire_newSppParams"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
@@ -130,13 +130,14 @@ graphics.off()
 
 Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[c(1:6, 8)]
+                                 , modules = simModules[c(1:3, 5:6, 8)]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , outputs = outputs
                                  , debug = TRUE
                                  # , .plotInitialTime = NA
 )
+
 saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
 dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
           res = 300, units = "in")
