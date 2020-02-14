@@ -8,41 +8,57 @@ library(quickPlot)
 library(SpaDES)
 library(purrr)
 library(magick)
-simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
-simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
 
-cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire", pattern = "cohortData", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire", pattern = "cohortData", full.names = TRUE))
+## GET FILE NAMES
+## old sims for blog post
+# cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire", pattern = "cohortData", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire", pattern = "cohortData", full.names = TRUE))
+# rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE),
+#                          list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE))
+# pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE),
+#                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE))
+# vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "vegTypeMap", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
+
+## new spp parameters
+cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE))
+rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE),
+                         list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE))
+pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE),
+                        list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE))
+vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE))
+
+## GET SIM LISTS
+# simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
+# simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
+simList_PM <- readRDS("R/SpaDES/outputs/PM_oneFire_newSppParams/simList_fakeRstCurrentBurnPM_oneFire_newSppParams.rds")
+simList_noPM <- readRDS("R/SpaDES/outputs/noPM_oneFire_newSppParams/simList_fakeRstCurrentBurnnoPM_oneFire_newSppParams.rds")
 
 allCohortData <- rbindlist(fill = TRUE, l = lapply(cohortDataFiles, FUN = function(ff) {
   cohortData <- readRDS(ff)
   yr <- as.integer(sub(".*year", "",  sub(".rds", "", ff)))
-  scen <- if (grepl("_noPM", ff)) "noPM" else "PM"
+  scen <- if (grepl("_noPM|noPM_", ff)) "noPM" else "PM"
   cohortData[, Year := yr]
   cohortData[, Scenario := scen]
   return(cohortData)
 }))
 
-rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE))
-pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE),
-                        list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE))
-vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "vegTypeMap", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
 
-rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM", rstCurrentBurnFiles, value = TRUE), readRDS))
-rstCurrentBurnStk_PM <- stack(lapply(grep("_PM", rstCurrentBurnFiles, value = TRUE), readRDS))
-pixelGroupMapStk_noPM <- stack(lapply(grep("_noPM", pixelGroupMapFiles, value = TRUE), readRDS))
-pixelGroupMapStk_PM <- stack(lapply(grep("_PM", pixelGroupMapFiles, value = TRUE), readRDS))
-vegTypeMapStk_noPM <- stack(lapply(grep("_noPM", vegTypeMapFiles, value = TRUE), readRDS))
-vegTypeMapStk_PM <- stack(lapply(grep("_PM", vegTypeMapFiles, value = TRUE), readRDS))
+rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE), readRDS))
+rstCurrentBurnStk_PM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE, invert = TRUE), readRDS))
+pixelGroupMapStk_noPM <- stack(lapply(grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE), readRDS))
+pixelGroupMapStk_PM <- stack(lapply(grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE, invert = TRUE), readRDS))
+vegTypeMapStk_noPM <- stack(lapply(grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE), readRDS))
+vegTypeMapStk_PM <- stack(lapply(grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE, invert = TRUE), readRDS))
 
-names(rstCurrentBurnStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", rstCurrentBurnFiles, value = TRUE)))
-names(rstCurrentBurnStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", rstCurrentBurnFiles, value = TRUE)))
-names(pixelGroupMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", pixelGroupMapFiles, value = TRUE)))
-names(pixelGroupMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", pixelGroupMapFiles, value = TRUE)))
-names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", vegTypeMapFiles, value = TRUE)))
-names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", vegTypeMapFiles, value = TRUE)))
+names(rstCurrentBurnStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE)))
+names(rstCurrentBurnStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE, invert = TRUE)))
+names(pixelGroupMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE)))
+names(pixelGroupMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE, invert = TRUE)))
+names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE)))
+names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE, invert = TRUE)))
 
 ## cheat
 
