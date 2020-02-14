@@ -72,9 +72,6 @@ doEvent.Biomass_fireWeather = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "Biomass_fireWeather", "plot")
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "Biomass_fireWeather", "save")
     },
-    event1 = {
-
-    },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
   )
@@ -86,21 +83,8 @@ doEvent.Biomass_fireWeather = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-  # # ! ----- EDIT BELOW ----- ! #
+browser()
 
-  # ! ----- STOP EDITING ----- ! #
-
-  return(invisible(sim))
-}
-
-### template for your event1
-Event1 <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # THE NEXT TWO LINES ARE FOR DUMMY UNIT TESTS; CHANGE OR DELETE THEM.
-  # sim$event1Test1 <- " this is test for event 1. " # for dummy unit test
-  # sim$event1Test2 <- 999 # for dummy unit test
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
