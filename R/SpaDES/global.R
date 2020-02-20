@@ -141,7 +141,8 @@ Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  # , .plotInitialTime = NA
 )
 
-saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".rds")))
+saveSimList(Biomass_core_testSim,
+            file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".RData")))
 dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
           res = 300, units = "in")
 
