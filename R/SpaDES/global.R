@@ -54,7 +54,9 @@ library(LandR)
 # library(pemisc)
 # devtools::load_all("../LandR")
 
-options('reproducible.useNewDigestAlgorithm' = TRUE)
+options("reproducible.useNewDigestAlgorithm" = TRUE)
+options("spades.moduleCodeChecks" = FALSE)
+options("reproducible.useCache" = TRUE)
 options("reproducible.inputPaths" = normPath("R/SpaDES/inputs"))  ## store everything in data/ so that there are no duplicated files across modules
 options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
 
@@ -108,7 +110,6 @@ source("R/SpaDES/3_simulationSetup.R")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Biomass_borealDataPrep"))
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
-options(spades.moduleCodeChecks = TRUE)
 graphics.off()
 
 # reproducible::clearCache(simPaths$cachePath, userTags = c("^Biomass_core$", "init"), ask = FALSE)
