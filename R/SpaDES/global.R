@@ -98,7 +98,7 @@ fireInitialTime <- 5L
 fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
 
-## Make simulation module list, paramters object, objects and outputs accoding to run
+## Make simulation module list, parameters objects, objects and outputs accoding to run
 ## name and the parameters above
 source("R/SpaDES/3_simulationSetup.R")
 
