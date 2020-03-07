@@ -12,7 +12,6 @@
 if (grepl("noPM", runName)) {
   simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
-                     , "Biomass_fireWeather"
                      , "Biomass_core"
                      , "Biomass_fuels"
                      , "fireSpread"
@@ -59,9 +58,6 @@ if (grepl("noPM", runName)) {
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
-    , Biomass_fireWeather = list(
-      ".useCache" = FALSE ## don't cache .inputObjects
-    )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
@@ -85,7 +81,6 @@ if (grepl("noPM", runName)) {
 } else {
   simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
-                     , "Biomass_fireWeather"
                      , "Biomass_core"
                      , "Biomass_fuels"
                      , "fireSpread"
@@ -132,9 +127,6 @@ if (grepl("noPM", runName)) {
       , "fireTimestep" = fireTimestep
       , "successionTimestep" = successionTimestep
     )
-    , Biomass_fireWeather = list(
-      ".useCache" = FALSE  ## don't cache .inputObjects
-    )
     , Biomass_fireProperties = list(
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
@@ -177,6 +169,8 @@ simObjects <- list("studyArea" = foothillsSMALL
                    , "treed" =  simOutSpeciesLayers$treed
                    , "numTreed" =  simOutSpeciesLayers$numTreed
                    , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+                   , "topoClimData" = simOutFireWeather$topoClimData
+                   , "topoClimDataCRS" = simOutFireWeather$topoClimDataCRS
 )
 
 ## add PSP data if need be
