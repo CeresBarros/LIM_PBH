@@ -20,7 +20,7 @@
 	branch = development
 [submodule "R/SpaDES/m/Biomass_fuels"]
 	path = R/SpaDES/m/Biomass_fuels
-	url = https://github.com/CeresBarros/Biomass_fuels.git
+	url = https://github.com/PredictiveEcology/Biomass_fuels.git
 	branch = development
 [submodule "R/SpaDES/m/Biomass_fireProperties"]
 	path = R/SpaDES/m/Biomass_fireProperties
