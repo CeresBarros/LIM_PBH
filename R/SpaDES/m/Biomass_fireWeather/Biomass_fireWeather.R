@@ -19,39 +19,41 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "Biomass_fireWeather.Rmd"),
   reqdPkgs = list("R.utils", "raster", "data.table", "sf",
+                  "cffdrs", "amc", "crayon",
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
+    defineParameter("FWIthresh", "integer", 19, NA, NA,
+                    paste("The fire weather index (FWI) minimum threshold value to classify a day as fire-day.",
+                          "Defaults to 19, a value commonly used across Canada for fire simulation",
+                          "(e.g. Wang et al 2016 Int. J. Wildl. Fire, Podur & Wotton 2011 Int. J. Wildl. Fire)")),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
     defineParameter(".useCache", "logical", "init", NA, NA,
                     desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "DEMRas", objectClass = "RasterLayer",
-                 desc = "Digital elevation model (DEM) raster used by the weather generator to make 'weatherTable'",
+                 desc = "Digital elevation model (DEM) raster used by the weather generator to make 'topoClimData'",
                  sourceURL = "https://drive.google.com/file/d/1Fosf9xfD4UmljwZCxH7MHqsO9EtK4nvp/view?usp=sharing"),
-    expectsInput(objectName = "weatherTable", objectClass = "data.table",
-                 desc = "Weather data output by the weather generator, to be imported and converted to a raster",
+    expectsInput(objectName = "topoClimDataCRS", objectClass = "character",
+                 desc = paste("The original projection of 'topoClimData'. Must be supplied if topoClimData is",
+                              "supplied by the user or a module. If using default 'topoClimData', 'topoClimDataCRS'",
+                              "defaults to '+proj=longlat +datum=WGS84 +no_defs', the projection used by BioSIM")),
+    expectsInput(objectName = "topoClimData", objectClass = "sf",
+                 desc = paste("Weather and topography point data, to be used to identify fire days.",
+                              "Needs to have the following columns: 'elevation', 'slope', 'aspect', 'month', 'day', 'temperature',",
+                              "'relativeHumidity', 'windSpeed', 'precipitation'. 'temperature' refers to average air temperature",
+                              "in Celsius, 'windSpeed' should be average wind speed (m/s) at 10m height, and 'precipitation' is",
+                              "total precipitation in mm. These data can be daily, monthly or yearly averages.",
+                              "Defaults to daily weather data between 1691-1990, generated with BioSIM v11 using CA-US climate",
+                              "normals 1961-1990 available from BioSIM."),
                  sourceURL = "https://drive.google.com/file/d/16Oe8iN1QWRaG9QuiL1alsr3PYzdmff_K/view?usp=sharing"),
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "precipitationRas", objectClass = "RasterLayer",
-                  desc = paste("Raster of total daily precipitation values (Jun-Aug). Defaults to BioSIM-generated values,",
-                               "for using Canada-US climate normals 1961-1990 available at",
-                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip")),
-    createsOutput(objectName = "relativeHumRas", objectClass = "RasterLayer",
-                  desc = paste("Raster of daily relative humidity values (Jun-Aug). Defaults to BioSIM-generated values,",
-                               "for using Canada-US climate normals 1961-1990 available at",
-                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip")),
-    createsOutput(objectName = "temperatureRas", objectClass = "RasterLayer",
-                  desc = paste("Raster of daily mean air temperature values (Jun-Aug). Defaults to BioSIM-generated values,",
-                               "for using Canada-US climate normals 1961-1990 available at",
-                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip")),
-    createsOutput(objectName = "windSpeedRas", objectClass = "RasterLayer",
-                  desc = paste("Raster of daily mean wind speed at 10m (Jun-Aug). Defaults to BioSIM-generated values,",
-                               "for using Canada-US climate normals 1961-1990 available at",
-                               "ftp://ftp.cfl.scf.rncan.gc.ca/regniere/Data11/Weather/Normals/past/Canada-USA_1961-1990.zip"))
+    createsOutput(objectName = "topoClimData", objectClass = "sf",
+                  desc = paste("Weather and topography point data subset to fire days, according",
+                               "to the FWIthresh parameter."))
   )
 ))
 
@@ -78,13 +80,51 @@ doEvent.Biomass_fireWeather = function(sim, eventTime, eventType) {
   return(invisible(sim))
 }
 
-## event functions
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
-
-### template initialization
 Init <- function(sim) {
-browser()
+  ## TODO: WILL NEED TO READ AND PROCESS DATA IN CHUNKS WHEN WHOLE DATASET IS INTEGRATED
+  ## SEE FREAD(SKIP)
 
+  ## check that topoClimData is in lat/long for fbp calc
+  ## Lat/Long (decimal degrees) projection for compatibility with FBP system
+  latLong <- "+proj=longlat +datum=WGS84 +no_defs"
+
+  tempRas <- raster(crs = latLong)
+  tempRas2 <- raster(crs = sim$topoClimDataCRS)
+  if (!compareRaster(tempRas, tempRas2, stopiffalse = FALSE)) {
+    warning("'topoClimDataCRS' is not compatible with cffdrs::fbp. Reprojecting to lat/long, WGS84")
+    sim$topoClimData <- st_transform(sim$topoClimData, crs = latLong)
+  }
+  rm(tempRas, tempRas2); .gc()
+
+  ## reduce weather data to fire days (FWI >= FWIthresh)
+  coords <- st_coordinates(sim$topoClimData)
+  FWIinputs <- data.frame(id = 1:nrow(coords),
+                          lat = coords[, "Y"],
+                          long = coords[, "X"],
+                          mon = sim$topoClimData$month,
+                          day = sim$topoClimData$day,
+                          temp = sim$topoClimData$temperature,
+                          rh = sim$topoClimData$relativeHumidity,
+                          ws = sim$topoClimData$windSpeed,
+                          prec = sim$topoClimData$precipitation)
+
+  ## use fwi() defaults to initialise
+  FWIinit <- data.frame(ffmc = 85, dmc = 6, dc = 15)
+
+  FWIoutputs <- suppressWarnings({
+    fwi(input = FWIinputs,
+        init = FWIinit,
+        batch = FALSE,
+        lat.adjust = TRUE)
+  })
+  FWIoutputs <- data.table(FWIoutputs)
+
+  ## subset to fire days
+  FWIoutputs <- FWIoutputs[FWI >= P(sim)$FWIthresh]
+
+  ## subset topoClimData
+  toKeep <- FWIoutputs$ID
+  sim$topoClimData <- sim$topoClimData[toKeep,]
   return(invisible(sim))
 }
 
@@ -93,23 +133,78 @@ browser()
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
-  if (!suppliedElsewhere("weatherTable", sim)) {
-    sim$weatherTable <- Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
-                              archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
-                              fun = "read.csv",
-                              destinationPath = dPath,
-                              url = extractURL("weatherTable", sim),
-                              userTags = c(cacheTags, "weatherTable"),
-                              omitArgs = "userTags")
-  }
-
   if (!suppliedElsewhere("DEMRas", sim)) {
     sim$DEMRas <- Cache(prepInputs, targetFile = "DEM1kmRes.tif",
+                        alsoExtract = "DEM1kmRes.prj",
                         archive = "DEMraster.zip",
                         destinationPath = dPath,
                         url = extractURL("DEMRas", sim),
                         userTags = c(cacheTags, "DEMRas"),
                         omitArgs = "userTags")
+  }
+
+  if (!suppliedElsewhere("topoClimData", sim)) {
+    ## get the original CRS
+    if (suppliedElsewhere("topoClimDataCRS", sim)) {
+      warning("'topoClimData' does not appear to be supplied to Biomass_fireWeather,",
+              "but 'topoClimDataCRS' does. Make sure it corresponds to 'topoClimData's CRS projection.")
+    } else {
+      ## get the shp from BioSIM to obtain projection
+      topoClimDataPoints <- Cache(prepInputs, targetFile = "1KmGridFoothills.shp",
+                                  archive = "1KmGridFoothills.zip",
+                                  alsoExtract = "similar",
+                                  destinationPath = dPath,
+                                  fun = "sf::st_read",
+                                  url = "https://drive.google.com/file/d/1XyvWGM0dm1TMiLq4jgYB2vXDjekEQTDl/view?usp=sharing",
+                                  userTags = c(cacheTags, "topoClimDataPoints"),
+                                  omitArgs = "userTags")
+
+      message(blue("Assuming that 'topoClimData' CRS projection is ", st_crs(topoClimDataPoints)$proj4string))
+      sim$topoClimDataCRS <- st_crs(topoClimDataPoints)$proj4string
+      rm(topoClimDataPoints); .gc()
+    }
+
+    ## get weather data generated by BioSIM - note that BioSIM saves data in lat/long proj
+    ## TODO: redoing weather generation as only 1005 (out of 19077 were in the csv file - wtf?)
+    ## will need to update. GDrive
+    sim$topoClimData <- Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
+                              archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
+                              fun = "data.table::fread",
+                              destinationPath = dPath,
+                              url = extractURL("topoClimData", sim),
+                              userTags = c(cacheTags, "topoClimData"),
+                              omitArgs = "userTags")
+
+    ## change column names, convert to sf
+    colsKeep <- c("longitude", "latitude", "elevation", "slope", "aspect", "month", "day", "temperature",
+                  "relativeHumidity", "windSpeed", "precipitation")
+    setnames(sim$topoClimData,
+             old = c("Longitude", "Latitude", "Elevation", "Slope", "Aspect", "Month", "Day", "Air Temperature",
+                     "Relative Humidity", "Wind Speed at 10 meters", "Total Precipitation"),
+             new = colsKeep)
+    sim$topoClimData <- sim$topoClimData[, ..colsKeep]
+    sim$topoClimData <- st_as_sf(sim$topoClimData, coords = c("longitude", "latitude"),
+                                 crs = sim$topoClimDataCRS, agr = "constant")
+  } else {
+    if (!suppliedElsewhere("topoClimDataCRS", sim))
+      stop(red("'topoClimData' appears to be supplied to Biomass_fireWeather,",
+               "but not topoClimDataCRS. Please provide 'topoClimDataCRS' with the projection of 'topoClimData'."))
+  }
+
+  ## checks
+  if (isTRUE(getOption("LandR.assertions"))) {
+    if (any(is.na(sim$topoClimData)))
+      warning("'topoClimData' has missing values - NAs - please check.")
+
+    if (!any(class(sim$topoClimData) == "sf"))
+      stop(red("'topoClimData' has to be a simple features object with points (see ?sf)."))
+
+    colMissing <- setdiff(c("elevation", "slope", "aspect", "month", "day", "temperature",
+                            "relativeHumidity", "windSpeed", "precipitation", "geometry"),
+                          names(sim$topoClimData))
+    if (length(colMissing))
+      stop(red(paste("The following columns are missing, or misnamed, in 'topoClimData':",
+                     paste(colMissing, collapse = ", "))))
   }
 
   return(invisible(sim))
