@@ -92,6 +92,8 @@ source("R/SpaDES/1_simObjects.R")
 ## Run Biomass_speciesData to get species layers
 source("R/SpaDES/2_speciesLayers.R")
 
+source("R/SpaDES/3_fireWeather.R")
+
 ## Define simulation params --------------------
 simTimes <- list(start = 0, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
@@ -102,7 +104,19 @@ successionTimestep <- 1L
 
 ## Make simulation module list, parameters objects, objects and outputs accoding to run
 ## name and the parameters above
-source("R/SpaDES/3_simulationSetup.R")
+source("R/SpaDES/4_simulationSetup.R")
+
+
+fireWeatherSim <- simInitAndSpades(times = simTimes
+                                   , params = simParams
+                                   # , modules = simModules[c(1:3, 5:6, 8)] ## for blog post
+                                   , modules = simModules[c(1:5, 7)]
+                                   , objects = simObjects
+                                   , paths = simPaths
+                                   , outputs = outputs
+                                   , debug = TRUE
+                                   # , .plotInitialTime = NA
+)
 
 ## -----------------------------------------------
 ## SIMULATION RUN
@@ -135,7 +149,8 @@ graphics.off()
 
 Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 , modules = simModules[c(1:3, 5:6, 8)]
+                                 # , modules = simModules[c(1:3, 5:6, 8)] ## for blog post
+                                 , modules = simModules[c(1:4, 5:6, 8)]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , outputs = outputs
