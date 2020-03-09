@@ -106,18 +106,6 @@ successionTimestep <- 1L
 ## name and the parameters above
 source("R/SpaDES/4_simulationSetup.R")
 
-
-fireWeatherSim <- simInitAndSpades(times = simTimes
-                                   , params = simParams
-                                   # , modules = simModules[c(1:3, 5:6, 8)] ## for blog post
-                                   , modules = simModules[c(1:5, 7)]
-                                   , objects = simObjects
-                                   , paths = simPaths
-                                   , outputs = outputs
-                                   , debug = TRUE
-                                   # , .plotInitialTime = NA
-)
-
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
