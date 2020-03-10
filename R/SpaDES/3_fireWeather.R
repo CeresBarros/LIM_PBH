@@ -26,4 +26,5 @@ simOutFireWeather <- Cache(simInitAndSpades
                            , modules = "Biomass_fireWeather"
                            , paths = fireWeatherPaths
                            , debug = TRUE
+                           # , useCache = "overwrite"
                            , .plotInitialTime = NA)
