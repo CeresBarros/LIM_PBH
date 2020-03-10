@@ -137,8 +137,7 @@ graphics.off()
 
 Biomass_core_testSim <- simInitAndSpades(times = simTimes
                                  , params = simParams
-                                 # , modules = simModules[c(1:3, 5:6, 8)] ## for blog post
-                                 , modules = simModules[c(1:4, 5:6, 8)]
+                                 , modules = simModules[c(1:7)]
                                  , objects = simObjects
                                  , paths = simPaths
                                  , outputs = outputs
