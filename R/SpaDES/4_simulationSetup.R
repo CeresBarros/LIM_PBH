@@ -169,8 +169,8 @@ simObjects <- list("studyArea" = foothillsSMALL
                    , "treed" =  simOutSpeciesLayers$treed
                    , "numTreed" =  simOutSpeciesLayers$numTreed
                    , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
-                   , "topoClimData" = simOutFireWeather$topoClimData
-                   , "topoClimDataCRS" = simOutFireWeather$topoClimDataCRS
+                   , "weatherData" = simOutFireWeather$weatherData
+                   , "weatherDataCRS" = simOutFireWeather$weatherDataCRS
 )
 
 ## add PSP data if need be
