@@ -1,7 +1,7 @@
 ## ------------------------------------------------------
 ## USEFUL FUNCTIONS
 ##
-## Ceres: Sep 2018
+## Ceres: March 2020
 ## ------------------------------------------------------
 
 ## this script should be sourced
@@ -176,6 +176,8 @@ outerBuffer <- function(x) {
 
 
 ## DEFINE FIRE EVENTS -----------------------
+## wrapper around .calculateFireEvents
+
 ## Method from Andison (2012), defines a fire event composed of
 ## disturbed patches (severity/mortality >= 95%)
 ## island remnants (severity < 95%, surrounded by disturbed patches)
@@ -216,122 +218,9 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   if(!is.null(fireVARS)) cat(paste0("Using the following fire variables: ", paste0(fireVARS, collapse =", ")), "\n")
 
   ## CALCULATE FIRE EVENTS
-  fireEvent.ls <- lapply(fire.ls, FUN = function(fire) {
-    print(as.character(fire))
-
-    firePolys <- eval(parse(text = paste0("sfObj$", fireNAMES))) == fire
-
-    if(is.null(fireVARS)) {
-      sf.fire <- sfObj[firePolys, c(fireNAMES)]
-    } else sf.fire <- sfObj[firePolys, c(fireNAMES, fireVARS)]
-
-    ## CALCULATE FIRE AND EVENT PERIMETERS - buffer out and then in.
-    firePerim <- st_union(sf.fire$geometry)
-    outerBuff <- st_buffer(firePerim, dist = buff.dist)
-    eventPerim <- st_buffer(outerBuff, dist = -buff.dist)
-
-    ## REMOVE INNER MATRIX HOLES FROM EVENT AND ORIGINAL FIRE PERIMETER
-    ## (i.e. unburnt patches surrounded by fire)
-    if(class(eventPerim)[1] == "sfc_MULTIPOLYGON") {
-      noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[[1]], function(x) x[1])), crs = crsProj)
-      noHolesEventPerim <- st_union(noHolesEventPerim)  ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
-    } else {
-      noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = crsProj)
-      noHolesEventPerim <- st_union(noHolesEventPerim) ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
-    }
-
-    if(class(firePerim)[1] == "sfc_MULTIPOLYGON") {
-      noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = crsProj)
-      noHolesFirePerim <- st_union(noHolesFirePerim)
-    } else {
-      noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = crsProj)
-      noHolesFirePerim <- st_union(noHolesFirePerim)
-    }
-
-    ## EXTRACT INNER MATRIX HOLES PRODUCED BY BUFFERING - these will determine what the inner matrix remnants are
-    bufferedHoles <- st_difference(noHolesEventPerim, eventPerim)
-
-    ## EXTRACT ALL REMNANTS PRODUCED BY BUFFERING (except holes)
-    allResiduals <- st_difference(eventPerim, firePerim)
-
-    ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND RESIDUALS
-    if(length(bufferedHoles) > 0) {
-      if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
-        remnHoleInters  <- sapply(allResiduals[[1]], FUN = function(sfgpoly) {
-          sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
-          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
-        })
-      } else {
-        remnHoleInters  <- sapply(allResiduals[1], FUN = function(sfgpoly) {
-          sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
-          st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
-        })
-      }
-    } else {
-      remnHoleInters <- if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
-        rep(FALSE, length(allResiduals[[1]]))
-      } else {
-        rep(FALSE, length(allResiduals[1]))
-      }
-    }
-
-    ## DEFINE INTERIOR RESIDUALS
-    if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
-      inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
-      inResids <- st_union(inResids)
-    } else {
-      inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
-      inResids <- st_union(inResids)
-    }
-
-    ## DEFINE OUTER MATRIX REMNANTS
-    outResids <- st_difference(allResiduals, inResids)
-
-    ## MERGE HOLES AND INNER MATRIX
-    inResids2 <- c(bufferedHoles, inResids)
-
-    ## CONVERT TO MULTIPOLYGONS AND SIMPLE FEATURE COLLECTION, ADDING FIRE NAME
-    firePerim <- st_sfc(firePerim)
-    firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
-    firePerim$PatchType <- "disturbedPatch"
-
-    eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
-    eventPerim <- st_sf(geometry = eventPerim)
-    eventPerim$PatchType <- "eventPerim"
-
-    outResids <- st_sfc(outResids)
-    outResids <- st_sf(geometry = outResids)
-    outResids$PatchType <- "outResids"
-
-    inResids2 <- st_sfc(inResids2)
-    inResids2 <- st_sf(geometry = inResids2)
-    inResids2$PatchType <- "inResids"
-
-    ## add fire details
-    if(!is.null(fireVARS)) {
-      firePerim <- st_join(firePerim, sf.fire, left = FALSE)     ## intersection because firePerim is entirely within sf.fire
-      eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
-      temp.df <- firePerim[, !names(firePerim) %in% names(outResids), drop = TRUE]
-
-      if("SEV_CLASS" %in% fireVARS) temp.df$SEV_CLAS <- NA
-
-      temp.df <- temp.df[!duplicated(temp.df),]
-
-      outResids <- merge(outResids, temp.df)
-      inResids2 <- merge(inResids2, temp.df)
-
-      ## COMBINE INTO ONE OBJECT
-      fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
-    } else {
-      ## COMBINE INTO ONE OBJECT
-      fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
-
-      ## ADD FIRE NAME
-      eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire")))
-    }
-
-    return(fireEvent)
-  })
+  fireEvent.ls <- lapply(fire.ls, FUN = .calculateFireEvents,
+                         sfObj = sfObj, fireNAMES = fireNAMES, fireVARS = fireVARS,
+                         crsProj = crsProj, buff.dist = buff.dist)
 
   fireEvent.all <- do.call(rbind, fireEvent.ls)
 
@@ -347,6 +236,137 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   }
 
   return(fireEvent.all)
+}
+
+## CALCULATE FIRE EVENTS -----------------------
+## Method from Andison (2012), defines a fire event composed of
+## disturbed patches (severity/mortality >= 95%)
+## island remnants (severity < 95%, surrounded by disturbed patches)
+## matrix remnants (undisturbed, and partially surrouned by disturbed patches)
+
+## sfObj is a Simple Features object from sf package
+## fireNAMES should be a column/attribute with fire ID/names
+## fireVARS can be NULL, or a vector of variable names/indices to retain
+## crsProj is a string of the projection to use. If NULL (default) will use the same projection as sfObj, otherwise sfObj will be reprojected
+## buff.dist if the buffer distance to define fire events
+
+.calculateFireEvents <- function(fire, sfObj, fireNAMES, fireVARS,
+                                 crsProj, buff.dist) {
+  print(as.character(fire))
+
+  firePolys <- eval(parse(text = paste0("sfObj$", fireNAMES))) == fire
+
+  if(is.null(fireVARS)) {
+    sf.fire <- sfObj[firePolys, c(fireNAMES)]
+  } else sf.fire <- sfObj[firePolys, c(fireNAMES, fireVARS)]
+
+  ## CALCULATE FIRE AND EVENT PERIMETERS - buffer out and then in.
+  firePerim <- st_union(sf.fire$geometry)
+  outerBuff <- st_buffer(firePerim, dist = buff.dist)
+  eventPerim <- st_buffer(outerBuff, dist = -buff.dist)
+
+  ## REMOVE INNER MATRIX HOLES FROM EVENT AND ORIGINAL FIRE PERIMETER
+  ## (i.e. unburnt patches surrounded by fire)
+  if(class(eventPerim)[1] == "sfc_MULTIPOLYGON") {
+    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[[1]], function(x) x[1])), crs = crsProj)
+    noHolesEventPerim <- st_union(noHolesEventPerim)  ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
+  } else {
+    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = crsProj)
+    noHolesEventPerim <- st_union(noHolesEventPerim) ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
+  }
+
+  if(class(firePerim)[1] == "sfc_MULTIPOLYGON") {
+    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = crsProj)
+    noHolesFirePerim <- st_union(noHolesFirePerim)
+  } else {
+    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = crsProj)
+    noHolesFirePerim <- st_union(noHolesFirePerim)
+  }
+
+  ## EXTRACT INNER MATRIX HOLES PRODUCED BY BUFFERING - these will determine what the inner matrix remnants are
+  bufferedHoles <- st_difference(noHolesEventPerim, eventPerim)
+
+  ## EXTRACT ALL REMNANTS PRODUCED BY BUFFERING (except holes)
+  allResiduals <- st_difference(eventPerim, firePerim)
+
+  ## CALCULATE INTERSECTIONS (TOUCH) BETWEEN HOLES AND RESIDUALS
+  if(length(bufferedHoles) > 0) {
+    if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+      remnHoleInters  <- sapply(allResiduals[[1]], FUN = function(sfgpoly) {
+        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+        st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
+      })
+    } else {
+      remnHoleInters  <- sapply(allResiduals[1], FUN = function(sfgpoly) {
+        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+        st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
+      })
+    }
+  } else {
+    remnHoleInters <- if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+      rep(FALSE, length(allResiduals[[1]]))
+    } else {
+      rep(FALSE, length(allResiduals[1]))
+    }
+  }
+
+  ## DEFINE INTERIOR RESIDUALS
+  if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
+    inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+    inResids <- st_union(inResids)
+  } else {
+    inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+    inResids <- st_union(inResids)
+  }
+
+  ## DEFINE OUTER MATRIX REMNANTS
+  outResids <- st_difference(allResiduals, inResids)
+
+  ## MERGE HOLES AND INNER MATRIX
+  inResids2 <- c(bufferedHoles, inResids)
+
+  ## CONVERT TO MULTIPOLYGONS AND SIMPLE FEATURE COLLECTION, ADDING FIRE NAME
+  firePerim <- st_sfc(firePerim)
+  firePerim <- st_sf(geometry = firePerim)   ## first "combine" list of polygons into a multipolygon, which is then converted to a Simple Features object
+  firePerim$PatchType <- "disturbedPatch"
+
+  eventPerim <- st_sfc(eventPerim, check_ring_dir = TRUE)
+  eventPerim <- st_sf(geometry = eventPerim)
+  eventPerim$PatchType <- "eventPerim"
+
+  outResids <- st_sfc(outResids)
+  outResids <- st_sf(geometry = outResids)
+  outResids$PatchType <- "outResids"
+
+  inResids2 <- st_sfc(inResids2)
+  inResids2 <- st_sf(geometry = inResids2)
+  if (length(inResids2$geometry))
+    inResids2$PatchType <- "inResids"
+
+  ## add fire details
+  if(!is.null(fireVARS)) {
+    firePerim <- st_join(firePerim, sf.fire, left = FALSE)     ## intersection because firePerim is entirely within sf.fire
+    eventPerim <- st_join(eventPerim, sf.fire, left = FALSE)   ## using inner join (see ?inner_join)
+    temp.df <- firePerim[, !names(firePerim) %in% names(outResids), drop = TRUE]
+
+    if("SEV_CLASS" %in% fireVARS) temp.df$SEV_CLAS <- NA
+
+    temp.df <- temp.df[!duplicated(temp.df),]
+
+    outResids <- merge(outResids, temp.df)
+    inResids2 <- merge(inResids2, temp.df)
+
+    ## COMBINE INTO ONE OBJECT
+    fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
+  } else {
+    ## COMBINE INTO ONE OBJECT
+    fireEvent <- rbind(firePerim, eventPerim, outResids, inResids2)
+
+    ## ADD FIRE NAME
+    eval(parse(text = paste0("fireEvent$", fireNAMES, "<- fire")))
+  }
+
+  return(fireEvent)
 }
 
 
@@ -480,4 +500,59 @@ prepKMZ2shapefile <- function(url, archive, destinationPath) {
   shapefile(shpObj, filename = file.path(destinationPath, shpFile), overwrite = TRUE)
 
   return(shpObj)
+}
+
+
+## CALCULATE NEIGHBOURHOOD SEVERITY -----------------------
+## Calcualtes the average severity of neighbours according
+## within a given distance or set of distances
+
+## dist is a vector of distances in meters - note that sevPoints much be in a meter-based projection
+## sevPoints is an sf object of points and severity
+## sevColID is the columns name of the severity column
+
+calculateNgbSevWrapper <- function(dists, sevPoints, sevColID) {
+  if (length(dists) > 1) {
+    ngbSEVList <- lapply(dists, FUN = .calculateNgbSev,
+                       sevPoints = sevPoints, sevColID = sevColID)
+    ngbSEVDT <- Reduce(function(x, y) merge(x, y, by = "pixID", all = TRUE),
+                       ngbSEVList)
+
+  } else
+    ngbSEVDT <- .calculateNgbSev(dists, sevPoints, sevColID)
+  return(ngbSEVDT)
+}
+
+.calculateNgbSev <- function(dist, sevPoints, sevColID) {
+    if (sum(names(sevPoints) %in% sevColID) > 1)
+      stop("Several column names match 'sevColID")
+    if (!sum(names(sevPoints) %in% sevColID))
+      stop("No column names match 'sevColID")
+
+    ## change col name for generality
+    names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
+
+    ## draw buffers
+    message(paste0("Drawing ", dist, "m buffers and detecting neighbours"))
+    bufferSf <- st_buffer(sevPoints, dist = dist) ## keep all columns so that the join identifies .x and .y columns
+
+    ## join to find with pixels are within another's buffer
+    ## st_touches avoids "self" joins, so pixels are not joined with their own buffer
+    pointsWithinBuffer <- st_join(bufferSf, sevPoints, join = st_touches)
+    names(pointsWithinBuffer) <- sub("\\.x", "buffer", names(pointsWithinBuffer))
+    names(pointsWithinBuffer) <- sub("\\.y", "points", names(pointsWithinBuffer))
+
+    pointsWithinBufferDT <- data.table(st_drop_geometry(pointsWithinBuffer))
+    pointsWithinBufferDT[, sevbuffer := NULL] ## keep track of neighbour sev only
+
+    setnames(pointsWithinBufferDT, old = c("pixIDbuffer", "pixIDpoints", "sevpoints"),
+             new = c("pixID", "pixIDneigh", "sevngb"))
+
+    message(paste0("Calculating average severity across neighbours"))
+    ngbhoodSEV <- pointsWithinBufferDT[, list(sevngbhood = mean(sevngb, na.rm = TRUE)),
+                                       by = pixID]
+    setnames(ngbhoodSEV, old = "sevngbhood",
+             new = paste0("meanngb", sevColID, "_", dist, "m"))
+    message(paste0("Done!"))
+    return(ngbhoodSEV)
 }

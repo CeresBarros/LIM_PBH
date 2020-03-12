@@ -1118,17 +1118,20 @@ ABToCASFRI <- function(inv, tablesDir, folder, dim) {
 
   ## if NATURALLY_NON_VEG resulted in ERRCODE and NON_FORESTED_ANTHRO was not resolved, try matching
   ## the NAT_NON AVI code with NON_FORESTED_ANTHRO table
-  temp <- invent2CASFRI(dt = casfriDT[NATURALLY_NON_VEG %in% ERRCODE], correspTab = NonFATable,
+  temp <- invent2CASFRI(dt = casfriDT[NATURALLY_NON_VEG %in% ERRCODE & is.na(NON_FORESTED_ANTHRO)],
+                        correspTab = NonFATable,
                         dtVar = "NAT_NON", correspVar = "AVI",
                         newVar = "CASFRI", newName = "NON_FORESTED_ANTHRO", keepOld = TRUE)
-  casfriDT[NATURALLY_NON_VEG %in% as.character(ERRCODE) & is.na(NON_FORESTED_ANTHRO), NON_FORESTED_ANTHRO := temp[, NON_FORESTED_ANTHRO]]
+  casfriDT[NATURALLY_NON_VEG %in% as.character(ERRCODE) & is.na(NON_FORESTED_ANTHRO),
+           NON_FORESTED_ANTHRO := temp[, NON_FORESTED_ANTHRO]]
 
   ## if NON_FORESTED_ANTHRO resulted in ERRCODE and NATURALLY_NON_VEG was not resolved, try matching
   ## the NON_FORESTED_ANTHRO AVI code with NATURALLY_NON_VEG table
-  temp <- invent2CASFRI(dt = casfriDT[NON_FORESTED_ANTHRO %in% ERRCODE], correspTab = NatNVTable,
+  temp <- invent2CASFRI(dt = casfriDT[NON_FORESTED_ANTHRO %in% ERRCODE & is.na(NATURALLY_NON_VEG)], correspTab = NatNVTable,
                         dtVar = "ANTH_NON", correspVar = "AVI",
                         newVar = "CASFRI", newName = "NATURALLY_NON_VEG", keepOld = TRUE)
-  casfriDT[NON_FORESTED_ANTHRO %in% as.character(ERRCODE) & is.na(NATURALLY_NON_VEG), NATURALLY_NON_VEG := temp[, NATURALLY_NON_VEG]]
+  casfriDT[NON_FORESTED_ANTHRO %in% as.character(ERRCODE) & is.na(NATURALLY_NON_VEG),
+           NATURALLY_NON_VEG := temp[, NATURALLY_NON_VEG]]
 
 
   ## NON FORESTED VEGETATION
@@ -1675,7 +1678,7 @@ meltPreFireABInv <- function(inv, invName, allVars, folder, dim) {
   ## IF SOME VARIABLES ARE MISSING ADD THEM AS NAs
   if (any(!allVars %in% names(tmpDT))) {
     addCols <- allVars[!allVars %in% names(tmpDT)]
-    tmpDT[, c(addCols) := list("NA", "NA")]
+    tmpDT[, c(addCols) := as.list(rep("NA", length(addCols)))]
   }
 
   ## melt various fields
