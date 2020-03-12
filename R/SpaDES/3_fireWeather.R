@@ -11,8 +11,7 @@
 
 fireWeatherPaths <-list(cachePath = file.path("R/SpaDES/cache/LIM_tests", "fireWeather"),
                         modulePath = file.path("R/SpaDES/m"),
-                        inputPath = file.path("R/SpaDES/inputs"),
-                        outputPath = file.path("R/SpaDES/outputs", runName))
+                        inputPath = file.path("R/SpaDES/inputs"))
 
 fireWeatherParameters <- list(
   Biomass_fireWeather = list(
@@ -26,5 +25,8 @@ simOutFireWeather <- Cache(simInitAndSpades
                            , modules = "Biomass_fireWeather"
                            , paths = fireWeatherPaths
                            , debug = TRUE
+                           , .plotInitialTime = NA
                            # , useCache = "overwrite"
-                           , .plotInitialTime = NA)
+                           , cacheRepo = fireWeatherPaths$cachePath
+                           , userTags = "simInitFireWeather"
+                           , omitArgs = c("userTags"))

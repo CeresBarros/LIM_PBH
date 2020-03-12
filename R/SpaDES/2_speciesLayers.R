@@ -11,8 +11,7 @@
 
 speciesPaths <-list(cachePath = file.path("R/SpaDES/cache/LIM_tests", "speciesLayers"),
                     modulePath = file.path("R/SpaDES/m"),
-                    inputPath = file.path("R/SpaDES/inputs"),
-                    outputPath = file.path("R/SpaDES/outputs", runName))
+                    inputPath = file.path("R/SpaDES/inputs"))
 
 speciesParameters <- list(
   Biomass_speciesData = list(
@@ -35,4 +34,7 @@ simOutSpeciesLayers <- Cache(simInitAndSpades
                              , objects = speciesObjects
                              , paths = speciesPaths
                              , debug = TRUE
-                             , .plotInitialTime = NA)
+                             , .plotInitialTime = NA
+                             , cacheRepo = speciesPaths$cachePath
+                             , userTags = "simInitSpeciesLayers"
+                             , omitArgs = c("userTags"))
