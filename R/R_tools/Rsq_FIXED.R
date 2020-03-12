@@ -2,7 +2,7 @@
 ## Rsq FUNCTION FOR GAMLSSINF0TO1 MODELS
 ## --------------------------------------
 
-## this is work around for the gamlss:::Rsq function which calculating Rsq in gamlssinf0to1 models
+## this is work around for the gamlss:::Rsq function for calculating Rsq in gamlssinf0to1 models
 ## because it doens't know which family to use.
 
 Rsq_2 <- function (object, type = c("Cox Snell", "Cragg Uhler", "both")) {
