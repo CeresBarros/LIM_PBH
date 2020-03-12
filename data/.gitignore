@@ -4,6 +4,7 @@ FMA/*
 VegInventories/*
 cache/*
 BioSIM/*
+maps/*
 
 ## don't ignore:
 !CHECKSUMS.txt
