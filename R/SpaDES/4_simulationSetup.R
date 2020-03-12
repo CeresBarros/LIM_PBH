@@ -43,7 +43,7 @@ if (grepl("noPM", runName)) {
       , ".plotInterval" = 1
       , ".plotMaps" = FALSE
       , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
+      , ".useCache" = eventCaching # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
     , Biomass_fuels = list(
@@ -112,7 +112,7 @@ if (grepl("noPM", runName)) {
       , ".plotInterval" = 1
       , ".plotMaps" = FALSE
       , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching[eventCaching] # seems slower to use Cache for both
+      , ".useCache" = eventCaching # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
     , Biomass_fuels = list(
