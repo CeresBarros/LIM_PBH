@@ -1,23 +1,26 @@
-[submodule "R/SpaDES/m/LBMR"]
-	path = R/SpaDES/m/LBMR
-	url = https://github.com/CeresBarros/LBMR.git
+[submodule "R/SpaDES/m/Biomass_core"]
+	path = R/SpaDES/m/Biomass_core
+	url = https://github.com/CeresBarros/Biomass_core.git
 	branch = development
-[submodule "R/SpaDES/m/Boreal_LBMRDataPrep"]
-	path = R/SpaDES/m/Boreal_LBMRDataPrep
-	url = https://github.com/CeresBarros/Boreal_LBMRDataPrep.git
+[submodule "R/SpaDES/m/Biomass_borealDataPrep"]
+	path = R/SpaDES/m/Biomass_borealDataPrep
+	url = https://github.com/CeresBarros/Biomass_borealDataPrep.git
 	branch = development
-[submodule "R/SpaDES/m/BiomassSpeciesData"]
-	path = R/SpaDES/m/BiomassSpeciesData
+[submodule "R/SpaDES/m/Biomass_speciesData"]
+	path = R/SpaDES/m/Biomass_speciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
-	branch = development
 [submodule "R/SpaDES/m/Biomass_regeneration"]
 	path = R/SpaDES/m/Biomass_regeneration
 	url = https://github.com/CeresBarros/Biomass_regeneration.git
-	branch = development
+[submodule "R/SpaDES/m/Biomass_regenerationPM"]
+	path = R/SpaDES/m/Biomass_regenerationPM
+	url = https://github.com/CeresBarros/Biomass_regenerationPM.git
 [submodule "R/SpaDES/m/Biomass_fuels"]
 	path = R/SpaDES/m/Biomass_fuels
 	url = https://github.com/CeresBarros/Biomass_fuels.git
-	branch = development
 [submodule "R/SpaDES/m/Biomass_fireProperties"]
 	path = R/SpaDES/m/Biomass_fireProperties
 	url = https://github.com/CeresBarros/Biomass_fireProperties.git
+[submodule "R/SpaDES/m/LandR_speciesParameters"]
+	path = R/SpaDES/m/LandR_speciesParameters
+	url = https://github.com/CeresBarros/LandR_speciesParameters.git

@@ -8,84 +8,116 @@ library(quickPlot)
 library(SpaDES)
 library(purrr)
 library(magick)
-simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
-simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
+library(LandR)
 
-cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire", pattern = "cohortData", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire", pattern = "cohortData", full.names = TRUE))
+## GET FILE NAMES
+## old sims for blog post
+# cohortDataFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire", pattern = "cohortData", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire", pattern = "cohortData", full.names = TRUE))
+# rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE),
+#                          list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE))
+# pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE),
+#                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE))
+# vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "vegTypeMap", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
 
-allCohortData <- rbindlist(fill = TRUE, l = lapply(cohortDataFiles, FUN = function(ff) {
-  cohortData <- readRDS(ff)
-  yr <- as.integer(sub(".*year", "",  sub(".rds", "", ff)))
-  scen <- if (grepl("_noPM", ff)) "noPM" else "PM"
-  cohortData[, Year := yr]
-  cohortData[, Scenario := scen]
-  return(cohortData)
-}))
+## new spp parameters
+cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE))
+rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE),
+                         list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE))
+pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE),
+                        list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE))
+vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE))
 
-rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "rstCurrentBurn", full.names = TRUE))
-pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE),
-                        list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "pixelGroupMap", full.names = TRUE))
-vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/blogSep2019_noPM_oneFire/", pattern = "vegTypeMap", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
+## GET SIM LISTS
+# simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
+# simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
+simList_PM <- readRDS("R/SpaDES/outputs/PM_oneFire_newSppParams/simList_fakeRstCurrentBurnPM_oneFire_newSppParams.rds")
+simList_noPM <- readRDS("R/SpaDES/outputs/noPM_oneFire_newSppParams/simList_fakeRstCurrentBurnnoPM_oneFire_newSppParams.rds")
 
-rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM", rstCurrentBurnFiles, value = TRUE), readRDS))
-rstCurrentBurnStk_PM <- stack(lapply(grep("_PM", rstCurrentBurnFiles, value = TRUE), readRDS))
-pixelGroupMapStk_noPM <- stack(lapply(grep("_noPM", pixelGroupMapFiles, value = TRUE), readRDS))
-pixelGroupMapStk_PM <- stack(lapply(grep("_PM", pixelGroupMapFiles, value = TRUE), readRDS))
-vegTypeMapStk_noPM <- stack(lapply(grep("_noPM", vegTypeMapFiles, value = TRUE), readRDS))
-vegTypeMapStk_PM <- stack(lapply(grep("_PM", vegTypeMapFiles, value = TRUE), readRDS))
+rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE), readRDS))
+rstCurrentBurnStk_PM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE, invert = TRUE), readRDS))
+pixelGroupMapStk_noPM <- stack(lapply(grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE), readRDS))
+pixelGroupMapStk_PM <- stack(lapply(grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE, invert = TRUE), readRDS))
+vegTypeMapStk_noPM <- stack(lapply(grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE), readRDS))
+vegTypeMapStk_PM <- stack(lapply(grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE, invert = TRUE), readRDS))
 
-names(rstCurrentBurnStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", rstCurrentBurnFiles, value = TRUE)))
-names(rstCurrentBurnStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", rstCurrentBurnFiles, value = TRUE)))
-names(pixelGroupMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", pixelGroupMapFiles, value = TRUE)))
-names(pixelGroupMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", pixelGroupMapFiles, value = TRUE)))
-names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM", vegTypeMapFiles, value = TRUE)))
-names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_PM", vegTypeMapFiles, value = TRUE)))
+names(rstCurrentBurnStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE)))
+names(rstCurrentBurnStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE, invert = TRUE)))
+names(pixelGroupMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE)))
+names(pixelGroupMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", pixelGroupMapFiles, value = TRUE, invert = TRUE)))
+names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE)))
+names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("_noPM|noPM_", vegTypeMapFiles, value = TRUE, invert = TRUE)))
 
-## cheat
 
 if (grepl("_oneFire", rstCurrentBurnFiles[1])) {
+
+  files <- grep("noPM", cohortDataFiles, value = TRUE)
+  pixelCohortData_noPM <- rbindlist(fill = TRUE, l = lapply(files, FUN = function(ff, pixelGroupMapStk) {
+    cohortData <- readRDS(ff)
+    yr <- sub(".*year", "",  sub(".rds", "", ff))
+    pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+    cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
+    cohortData[, year := as.integer(yr)]
+    return(cohortData)
+  }, pixelGroupMapStk = pixelGroupMapStk_noPM))
+
+  files <- grep("outputs/PM", cohortDataFiles, value = TRUE)
+  pixelCohortData_PM <- rbindlist(fill = TRUE, l = lapply(files, FUN = function(ff, pixelGroupMapStk) {
+    cohortData <- readRDS(ff)
+    yr <- sub(".*year", "",  sub(".rds", "", ff))
+    pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+    cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
+    cohortData[, year := as.integer(yr)]
+    return(cohortData)
+  }, pixelGroupMapStk = pixelGroupMapStk_PM))
+
+  ## rbind
+  pixelCohortData_noPM[, scenario := "noPM"]
+  pixelCohortData_PM[, scenario := "PM"]
+  allPixelCohortData <- rbind(pixelCohortData_noPM, pixelCohortData_PM, use.names = TRUE)
+
   ## compile all rasters except rstCurrentBurn
-  pixelBurnCohortData <- rbind(
+  pixelBurnData <- rbind(
     rbindlist(lapply(names(vegTypeMapStk_noPM), FUN = function(x) {
-      data.table(pixelID = seq_len(ncell(pixelGroupMapStk_noPM[[x]])),
+      data.table(pixelIndex = seq_len(ncell(pixelGroupMapStk_noPM[[x]])),
                  pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
                  vegType = getValues(vegTypeMapStk_noPM[[x]]),
-                 Year = as.integer(sub("year", "", x)),
-                 Scenario = "noPM")
+                 year = as.integer(sub("year", "", x)),
+                 scenario = "noPM")
     })),
     rbindlist(lapply(names(vegTypeMapStk_PM), FUN = function(x) {
-      data.table(pixelID = seq_len(ncell(pixelGroupMapStk_PM[[x]])),
+      data.table(pixelIndex = seq_len(ncell(pixelGroupMapStk_PM[[x]])),
                  pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
                  vegType = getValues(vegTypeMapStk_PM[[x]]),
-                 Year = as.integer(sub("year", "", x)),
-                 Scenario = "PM")
+                 year = as.integer(sub("year", "", x)),
+                 scenario = "PM")
     }))
   )
 
   burnPix <- rbind(
-    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_noPM)),
+    data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_noPM)),
                burnt = as.integer(!is.na(rstCurrentBurnStk_noPM[[1]][])),
-               Year = as.integer(sub("year", "", names(rstCurrentBurnStk_noPM))),
-               Scenario = "noPM"),
-    data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_PM)),
-               burnt = as.integer(!is.na(rstCurrentBurnStk_noPM[[1]][])),
-               Year = as.integer(sub("year", "", names(rstCurrentBurnStk_PM))),
-               Scenario = "PM")
+               year = as.integer(sub("year", "", names(rstCurrentBurnStk_noPM))),
+               scenario = "noPM"),
+    data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_PM)),
+               burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[1]][])),
+               year = as.integer(sub("year", "", names(rstCurrentBurnStk_PM))),
+               scenario = "PM")
   )
 
   ## checks
-  if (length(setdiff(burnPix$pixelID, pixelBurnCohortData$pixelID)) |
-      length(setdiff(pixelBurnCohortData$pixelID, burnPix$pixelID)))
+  if (length(setdiff(burnPix$pixelIndex, pixelBurnData$pixelIndex)) |
+      length(setdiff(pixelBurnData$pixelIndex, burnPix$pixelIndex)))
     stop("pixel IDs differ between rstCurrentBurn and other output rasters")
-  pixelBurnCohortData <- burnPix[, .(Scenario, pixelID, burnt)][pixelBurnCohortData, on = c("Scenario", "pixelID")]
 
-  # pixelBurnCohortData <- na.omit(pixelBurnCohortData)
+  ## join
+  pixelBurnData <- burnPix[pixelBurnData, on = c("scenario", "year", "pixelIndex")]
 
   ## checks
-  testList <- split(pixelBurnCohortData[, .(burnt, Year)], by = "Year", keep.by = FALSE)
+  testList <- split(pixelBurnData[, .(burnt, year)], by = "year", keep.by = FALSE)
   testList <- lapply(testList, FUN = function(DT) DT[["burnt"]])
 
   test <- sapply(seq_along(testList), FUN =  function(n) {
@@ -93,47 +125,85 @@ if (grepl("_oneFire", rstCurrentBurnFiles[1])) {
   })
   if (any(test > 0))
     stop("burnt pixel IDs differ between years")
-
 } else {
-  pixelBurnCohortData <- rbind(
+
+  files <- grep("noPM", cohortDataFiles, value = TRUE)
+  pixelCohortData_noPM <- rbindlist(fill = TRUE, l = lapply(files, FUN = function(ff, pixelGroupMapStk) {
+    cohortData <- readRDS(ff)
+    yr <- sub(".*year", "",  sub(".rds", "", ff))
+    pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+    cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
+    cohortData[, year := as.integer(yr)]
+    return(cohortData)
+  }, pixelGroupMapStk = pixelGroupMapStk_noPM))
+
+  files <- grep("outputs/PM", cohortDataFiles, value = TRUE)
+  pixelCohortData_PM <- rbindlist(fill = TRUE, l = lapply(files, FUN = function(ff, pixelGroupMapStk) {
+    cohortData <- readRDS(ff)
+    yr <- sub(".*year", "",  sub(".rds", "", ff))
+    pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+    cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
+    cohortData[, year := as.integer(yr)]
+    return(cohortData)
+  }, pixelGroupMapStk = pixelGroupMapStk_PM))
+
+
+  pixelBurnData <- rbind(
     rbindlist(lapply(names(rstCurrentBurnStk_noPM), FUN = function(x) {
-      data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_noPM[[x]])),
+      data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_noPM[[x]])),
                  pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
                  burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
                  vegType = getValues(vegTypeMapStk_noPM[[x]]),
-                 Year = as.integer(sub("year", "", x)),
-                 Scenario = "noPM")
+                 year = as.integer(sub("year", "", x)),
+                 scenario = "noPM")
     })),
     rbindlist(lapply(names(rstCurrentBurnStk_PM), FUN = function(x) {
-      data.table(pixelID = seq_len(ncell(rstCurrentBurnStk_PM[[x]])),
+      data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_PM[[x]])),
                  pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
                  burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
                  vegType = getValues(vegTypeMapStk_PM[[x]]),
-                 Year = as.integer(sub("year", "", x)),
-                 Scenario = "PM")
+                 year = as.integer(sub("year", "", x)),
+                 scenario = "PM")
     }))
   )
-  # pixelBurnCohortData <- na.omit(pixelBurnCohortData)
+  # pixelBurnData <- na.omit(pixelBurnData)
 }
 
-pixelBurnCohortData <- allCohortData[pixelBurnCohortData, nomatch = 0,
-                                     on = c("Scenario", "Year", "pixelGroup")]
+allPixelCohortData <- pixelBurnData[allPixelCohortData, nomatch = NA,
+                                    on = c("scenario", "year", "pixelIndex", "pixelGroup")]
 
 vegTypeTable <- as.data.table(levels(vegTypeMapStk_noPM[[1]]))
-pixelBurnCohortData <- vegTypeTable[, .(ID, VALUE)][pixelBurnCohortData, on = "ID==vegType"]
-setnames(pixelBurnCohortData, old = c("ID", "VALUE"),
+allPixelCohortData <- vegTypeTable[, .(ID, VALUE)][allPixelCohortData, on = "ID==vegType"]
+setnames(allPixelCohortData, old = c("ID", "VALUE"),
          new = c("vegTypeID", "vegType"))
 
-pixelBurnCohortData[, noPixels := length(pixelID), by = pixelGroup]
+allPixelCohortData[, noPixels := length(pixelIndex), by = pixelGroup]
 
-summaryBurnCohortData <- pixelBurnCohortData[, list(BiomassBySpecies = as.numeric(sum(B * noPixels, na.rm = TRUE)),
+summaryBurnCohortData <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum(B * noPixels, na.rm = TRUE)),
                                                     MortalityBySpecies = as.numeric(sum(mortality * noPixels, na.rm = TRUE)),
                                                     aNPPBySpecies = as.numeric(sum(aNPPAct * noPixels, na.rm = TRUE)),
                                                     AgeBySppWeighted = as.numeric(sum(age * B * noPixels, na.rm = TRUE) /
                                                                                     sum(B * noPixels, na.rm = TRUE)),
                                                     noCohorts = as.numeric(length(unique(age)))),
-                                             by = .(Scenario, Year, burnt, speciesCode)]
+                                             by = .(scenario, year, burnt, speciesCode)]
+## missing species in a year are of B == 0,
+## add them to show losses in B
+combinations <- as.data.table(expand.grid(unique(summaryBurnCohortData$year), summaryBurnCohortData$scenario,
+                                          unique(summaryBurnCohortData$burnt), unique(summaryBurnCohortData$speciesCode)))
+setnames(combinations, c("year", "scenario", "burnt", "speciesCode"))
 
+summaryBurnCohortData <- summaryBurnCohortData[combinations,
+                                               on = c("year", "scenario", "burnt", "speciesCode")]
+## replace NA's to 0s by converting to matrix
+summaryBurnCohortData <- as.matrix(summaryBurnCohortData)
+summaryBurnCohortData[is.na(summaryBurnCohortData)] <- 0
+summaryBurnCohortData <- as.data.table(summaryBurnCohortData)
+cols <- grep("scenario|species", names(summaryBurnCohortData), invert = TRUE, value = TRUE)
+summaryBurnCohortData <- summaryBurnCohortData[, (cols) := lapply(.SD, as.numeric),
+                                               .SDcols = cols]
+summaryBurnCohortData <- unique(summaryBurnCohortData)
+
+## make species labels
 speciesLabels <- c("Abie_sp" = "Fir", "Lari_lar" = "Larch",
                    "Pice_eng" = "En. spruce", "Pice_gla" = "Wh. spruce",
                    "Pice_mar" = "Bl. spruce", "Pinu_sp" = "Lo. pine",
@@ -142,7 +212,7 @@ speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
 names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
 
 plot1 <- ggplot(data = summaryBurnCohortData,
-                aes(x = Year, y = log(BiomassBySpecies), colour = speciesCode)) +
+                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
   theme_classic() +
@@ -151,11 +221,11 @@ plot1 <- ggplot(data = summaryBurnCohortData,
   scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
   labs(title = "Total landscape biomass", y = "log-Biomass (g/m^2)") +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(scenario ~ burnt,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
 plot2 <- ggplot(data = summaryBurnCohortData,
-                aes(x = Year, y = log(MortalityBySpecies), colour = speciesCode)) +
+                aes(x = year, y = log(MortalityBySpecies), colour = speciesCode)) +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
   theme_classic() +
@@ -163,11 +233,11 @@ plot2 <- ggplot(data = summaryBurnCohortData,
         legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(burnt ~ scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
-plot3 <- ggplot(data = pixelBurnCohortData,
-                aes(x = Year, fill = vegType)) +
+plot3 <- ggplot(data = allPixelCohortData,
+                aes(x = year, fill = vegType)) +
   geom_area(stat = "count", position = "fill") +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   scale_fill_manual(values = speciesColours,
@@ -176,11 +246,11 @@ plot3 <- ggplot(data = pixelBurnCohortData,
   theme(text = element_text(size = 16),
         legend.title = element_blank()) +
   labs(title = "No. pixels per vegetation type", y = "g/m^2") +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(burnt ~ scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
 plot4 <- ggplot(data = summaryBurnCohortData,
-                 aes(x = Year, y = AgeBySppWeighted, colour = speciesCode)) +
+                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
   theme_classic() +
@@ -188,11 +258,11 @@ plot4 <- ggplot(data = summaryBurnCohortData,
         legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(burnt ~ scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
 plot5 <- ggplot(data = summaryBurnCohortData,
-                aes(x = Year, y = noCohorts, colour = speciesCode)) +
+                aes(x = year, y = noCohorts, colour = speciesCode)) +
   geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
   geom_line(size = 1.5) +
   theme_classic() +
@@ -200,7 +270,7 @@ plot5 <- ggplot(data = summaryBurnCohortData,
         legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours,
                       labels = speciesLabels) +
-  facet_grid(burnt ~ Scenario,
+  facet_grid(burnt ~ scenario,
              labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
 
 ggpubr::ggarrange(plot1, plot2, plot3, nrow = 3,
@@ -233,7 +303,7 @@ makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
     scale_fill_manual(values = speciesColours,
                       labels = speciesLabels) +
     theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
-    labs(title = sub("year", "Year ", names(rasterStack)[id])) +
+    labs(title = sub("year", "year ", names(rasterStack)[id])) +
     coord_equal()
   ggsave(file.path(gif.dir, paste0(filePrefix, id, ".png")),
          device = "png", width=5, height=10, dpi = 300, units = "in")

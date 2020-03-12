@@ -19,7 +19,8 @@ foothills <- spTransform(foothills,
 foothillsSMALL <- raster::buffer(foothills, width = -30000)
 foothillsMED <- raster::buffer(foothills, width = -15000)
 
-## Set up sppEquiv  ---------------------------
+## SPECIES LISTS ---------------------------------------
+## Set up sppEquiV
 data("sppEquivalencies_CA", package = "LandR")
 sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
                                              EN_generic_full = "Pine",
@@ -64,3 +65,28 @@ sppEquivalencies_CA <- na.omit(sppEquivalencies_CA, cols = sppEquivCol)
 ## create color palette for species used in model
 sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
                           newVals = "Mixed", palette = "Accent")
+
+## PSP DATA ------------------------------------------------------------------
+## Set up PSP data for LandR_speciesParameters
+PSPmeasure <- Cache(prepInputs,
+                    targetFile = "PSPmeasure.Rdat",
+                    archive = "randomized_LandR_speciesParameters_Inputs.zip",
+                    url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
+                    destinationPath = simPaths$inputPath,
+                    fun = "readRDS")
+
+PSPplot <- Cache(prepInputs,
+                 targetFile = "PSPplot.Rdat",
+                 archive = "randomized_LandR_speciesParameters_Inputs.zip",
+                 url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
+                 destinationPath = simPaths$inputPath,
+                 fun = "readRDS")
+
+PSPgis <- Cache(prepInputs,
+                targetFile = "randomizedPSPdata.Rdat",
+                archive = "randomized_LandR_speciesParameters_Inputs.zip",
+                url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
+                destinationPath = simPaths$inputPath,
+                fun = "readRDS")
+
+

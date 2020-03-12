@@ -45,8 +45,11 @@ defineModule(sim, list(
                  desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
                  sourceURL = NA),
     expectsInput(objectName = "simulatedBiomassMap", objectClass = "RasterLayer",
-                 desc = "Biomass map at each succession time step. Default is Canada national biomass map",
-                 sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"),
+                 desc = paste("Biomass map at each succession time step. If not supplied, will use Canadian Forestry",
+                              "Service, National Forest Inventory, kNN-derived total aboveground biomass map",
+                              "from 2001. See https://open.canada.ca/data/en/dataset/ec9e2659-1c29-4ddb-87a2-6aced147a990",
+                              "for metadata"),
+                 sourceURL = NA),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("Polygon to use as the study area.",
                               "Defaults to  an area in Southwestern Alberta, Canada."),
@@ -115,7 +118,7 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-## Fire spread event in fire years - rasters should be back in LBMR projection
+## Fire spread event in fire years - rasters should be back in LandR Biomass projection
 doFireSpread <- function(sim) {
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
@@ -129,12 +132,13 @@ doFireSpread <- function(sim) {
         dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
         # If biomassMap is not present either, get rawBiomassMap, but crop it to studyArea/RTM instead of SALarge/RTMLarge
-        rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
-        rawBiomassMapURL <- "http://tree.pfc.forestry.ca/kNN-StructureBiomass.tar"
-        burnableAreas <- Cache(prepInputs,
-                               targetFile = asPath(basename(rawBiomassMapFilename)),
-                               archive = asPath(c("kNN-StructureBiomass.tar",
-                                                  "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
+        rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                                   "canada-forests-attributes_attributs-forests-canada/",
+                                   "2001-attributes_attributs-2001/",
+                                   "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif")
+
+        rawBiomassMap <- Cache(prepInputs,
+                               targetFile = rawBiomassMapFilename,
                                url = rawBiomassMapURL,
                                destinationPath = dPath,
                                studyArea = sim$studyArea,
@@ -144,9 +148,11 @@ doFireSpread <- function(sim) {
                                method = "bilinear",
                                datatype = "INT2U",
                                filename2 = TRUE, overwrite = TRUE,
-                               userTags = cacheTags,
+                               userTags = c(cacheTags, "rawBiomassMap"),
                                omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
-        rm(cacheTags)
+
+        burnableAreas <- rawBiomassMap
+        rm(cacheTags, rawBiomassMap)
       } else {
         burnableAreas <- sim$biomassMap
       }
@@ -313,6 +319,13 @@ doNoFire <- function(sim) {
     sim$rasterToMatch <- Cache(writeOutputs, sim$rasterToMatch,
                                filename2 = file.path(cachePath(sim), "rasters", "rasterToMatch.tif"),
                                datatype = "INT2U", overwrite = TRUE)
+  }
+
+  if (!identical(crs(sim$studyArea), crs(sim$rasterToMatch))) {
+    warning(paste0("studyArea and rasterToMatch projections differ.\n",
+                   "studyArea will be projected to match rasterToMatch"))
+    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
+    sim$studyArea <- fixErrors(sim$studyArea)
   }
 
   ## DEFAULT FIRE PROPERTIES RASTERS

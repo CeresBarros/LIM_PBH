@@ -3,7 +3,7 @@
 ## -----------------------------------
 
 ## this script makes a pre-simulation object that makes species layers
-## by running BiomassSpeciesData. This is the longest module to run and,
+## by running Biomass_speciesData. This is the longest module to run and,
 ## unless the study area or the species needed change, it whould only
 ## be run once (even if other things change, like the simulation rep,
 ## or other modules). That's why caching is kept separate from the rest
@@ -15,7 +15,7 @@ speciesPaths <-list(cachePath = file.path("R/SpaDES/cache/LIM_tests", "speciesLa
                     outputPath = file.path("R/SpaDES/outputs", runName))
 
 speciesParameters <- list(
-  BiomassSpeciesData = list(
+  Biomass_speciesData = list(
     "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = c(".inputObjects", "init")
@@ -31,7 +31,7 @@ speciesObjects <- list(
 simOutSpeciesLayers <- Cache(simInitAndSpades
                              , times = list(start = 0, end = 1)
                              , params = speciesParameters
-                             , modules = "BiomassSpeciesData"
+                             , modules = "Biomass_speciesData"
                              , objects = speciesObjects
                              , paths = speciesPaths
                              , debug = TRUE
