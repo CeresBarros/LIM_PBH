@@ -13,7 +13,9 @@ foothills <- Cache(prepKMZ2shapefile,
                    url = "https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs",
                    archive = "Foothills_study_area.zip",
                    destinationPath = "data/maps",
-                   cacheRepo = "data/cache")
+                   cacheRepo = "data/cache",
+                   userTags = "foothills",
+                   omitArgs = c("userTags"))
 foothills <- spTransform(foothills,
                          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 foothillsSMALL <- raster::buffer(foothills, width = -30000)
@@ -72,21 +74,30 @@ PSPmeasure <- Cache(prepInputs,
                     targetFile = "PSPmeasure.Rdat",
                     archive = "randomized_LandR_speciesParameters_Inputs.zip",
                     url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
+                    fun = "readRDS",
                     destinationPath = simPaths$inputPath,
-                    fun = "readRDS")
+                    cacheRepo = "data/cache",
+                    userTags = "PSPmeasure",
+                    omitArgs = c("userTags"))
 
 PSPplot <- Cache(prepInputs,
                  targetFile = "PSPplot.Rdat",
                  archive = "randomized_LandR_speciesParameters_Inputs.zip",
                  url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                  destinationPath = simPaths$inputPath,
-                 fun = "readRDS")
+                 fun = "readRDS",
+                 cacheRepo = "data/cache",
+                 userTags = "PSPplot",
+                 omitArgs = c("userTags"))
 
 PSPgis <- Cache(prepInputs,
                 targetFile = "randomizedPSPdata.Rdat",
                 archive = "randomized_LandR_speciesParameters_Inputs.zip",
                 url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                 destinationPath = simPaths$inputPath,
-                fun = "readRDS")
+                fun = "readRDS",
+                cacheRepo = "data/cache",
+                userTags = "PSPgis",
+                omitArgs = c("userTags"))
 
 
