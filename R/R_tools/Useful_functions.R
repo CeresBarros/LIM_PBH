@@ -511,15 +511,24 @@ prepKMZ2shapefile <- function(url, archive, destinationPath) {
 ## sevPoints is an sf object of points and severity
 ## sevColID is the columns name of the severity column
 
-calculateNgbSevWrapper <- function(dists, sevPoints, sevColID) {
+calculateNgbSevWrapper <- function(dists, sevPoints, sevColID, parallel = TRUE) {
   if (length(dists) > 1) {
-    ngbSEVList <- lapply(dists, FUN = .calculateNgbSev,
-                       sevPoints = sevPoints, sevColID = sevColID)
+    if (parallel) {
+      message("Starting parallelization...")
+      require(future.apply)
+      plan(multiprocess(gc = TRUE))
+      ngbSEVList <- future_lapply(dists, FUN = .calculateNgbSev,
+                                  sevPoints = sevPoints, sevColID = sevColID)
+
+    } else {
+      ngbSEVList <- lapply(dists, FUN = .calculateNgbSev,
+                           sevPoints = sevPoints, sevColID = sevColID)
+    }
     ngbSEVDT <- Reduce(function(x, y) merge(x, y, by = "pixID", all = TRUE),
                        ngbSEVList)
-
   } else
     ngbSEVDT <- .calculateNgbSev(dists, sevPoints, sevColID)
+
   return(ngbSEVDT)
 }
 
