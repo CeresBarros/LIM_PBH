@@ -1,6 +1,6 @@
 #' Calculate fire weather indices from weather table
 #'
-#' This is a wrapper function ued to cache fire weather indices
+#' This is a wrapper function used to cache fire weather indices
 #'   calculations from a weather table. See \code{cffdr::fwi}
 #'   for further information.
 #'

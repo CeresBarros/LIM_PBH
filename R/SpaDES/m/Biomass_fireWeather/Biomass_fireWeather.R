@@ -19,7 +19,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "Biomass_fireWeather.Rmd"),
   reqdPkgs = list("R.utils", "raster", "data.table", "sf",
-                  "cffdrs", "amc", "crayon",
+                  "cffdrs", "amc", "crayon", "LaF",
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development"),
@@ -33,6 +33,9 @@ defineModule(sim, list(
                     desc = "use caching for the spinup simulation?")
   ),
   inputObjects = bind_rows(
+    expectsInput(objectName = "loadWeatherInChunks", objectClass = "sf",
+                 desc = paste("Weather data can be extremely large and require being loaded in chunks. This defaults to FALSE,",
+                              "but if the weatherData file is > 4Gb, will be set to TRUE")),
     expectsInput(objectName = "weatherData", objectClass = "sf",
                  desc = paste("Weather and topography point data, to be used to identify fire days.",
                               "Needs to have the following columns: 'month' (optional), 'day' (optional), 'temperature',",
@@ -77,8 +80,7 @@ doEvent.Biomass_fireWeather = function(sim, eventTime, eventType) {
 }
 
 Init <- function(sim) {
-  ## TODO: WILL NEED TO READ AND PROCESS DATA IN CHUNKS WHEN WHOLE DATASET IS INTEGRATED
-  ## SEE FREAD(SKIP)
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
   ## check that weatherData is in lat/long for fbp calc
   ## Lat/Long (decimal degrees) projection for compatibility with FBP system
@@ -86,41 +88,87 @@ Init <- function(sim) {
 
   tempRas <- raster(crs = latLong)
   tempRas2 <- raster(crs = sim$weatherDataCRS)
-  if (!compareRaster(tempRas, tempRas2, stopiffalse = FALSE)) {
+  projectWeatherData <- if (!compareRaster(tempRas, tempRas2, stopiffalse = FALSE)) {
     warning("'weatherDataCRS' is not compatible with cffdrs::fbp. Reprojecting to lat/long, WGS84")
-    sim$weatherData <- st_transform(sim$weatherData, crs = latLong)
-  }
+    TRUE
+  } else FALSE
+
   rm(tempRas, tempRas2); .gc()
 
-  ## reduce weather data to fire days (FWI >= FWIthresh)
-  coords <- st_coordinates(sim$weatherData)
-  FWIinputs <- data.frame(id = 1:nrow(coords),
-                          lat = coords[, "Y"],
-                          long = coords[, "X"],
-                          mon = sim$weatherData$month,
-                          day = sim$weatherData$day,
-                          temp = sim$weatherData$temperature,
-                          rh = sim$weatherData$relativeHumidity,
-                          ws = sim$weatherData$windSpeed,
-                          prec = sim$weatherData$precipitation)
+  ## does weatherData need to be loaded and processed in chunks?
+  if (!sim$loadWeatherInChunks) {
+    if (isTRUE(getOption("LandR.assertions"))) {
+      if (any(is.na(sim$weatherData)))
+        warning("'weatherData' has missing values - NAs - please check.")
 
-  ## use fwi() defaults to initialise
-  FWIinit <- data.frame(ffmc = 85, dmc = 6, dc = 15)
+      if (!any(class(sim$weatherData) == "sf"))
+        stop(red("'weatherData' has to be a simple features object with points (see ?sf)."))
 
-  FWIoutputs <- suppressWarnings({
-    fwi(input = FWIinputs,
-        init = FWIinit,
-        batch = FALSE,
-        lat.adjust = TRUE)
-  })
-  FWIoutputs <- data.table(FWIoutputs)
+      colMissing <- setdiff(c("month", "day", "temperature",
+                              "relativeHumidity", "windSpeed", "precipitation", "geometry"),
+                            names(sim$weatherData))
+      if (length(colMissing))
+        stop(red(paste("The following columns are missing, or misnamed, in 'weatherData':",
+                       paste(colMissing, collapse = ", "))))
+    }
 
-  ## subset to fire days
-  FWIoutputs <- FWIoutputs[FWI >= P(sim)$FWIthresh]
+    ## reduce weather data to fire days (FWI >= FWIthresh)
+    coords <- st_coordinates(sim$weatherData)
+    FWIinputs <- data.frame(id = 1:nrow(coords),
+                            lat = coords[, "Y"],
+                            long = coords[, "X"],
+                            mon = sim$weatherData$month,
+                            day = sim$weatherData$day,
+                            temp = sim$weatherData$temperature,
+                            rh = sim$weatherData$relativeHumidity,
+                            ws = sim$weatherData$windSpeed,
+                            prec = sim$weatherData$precipitation)
 
-  ## subset weatherData
-  toKeep <- FWIoutputs$ID
-  sim$weatherData <- sim$weatherData[toKeep,]
+    ## use fwi() defaults to initialise
+    FWIinit <- data.frame(ffmc = 85, dmc = 6, dc = 15)
+
+    FWIoutputs <- suppressWarnings({
+      fwi(input = FWIinputs,
+          init = FWIinit,
+          batch = FALSE,
+          lat.adjust = TRUE)
+    })
+    FWIoutputs <- data.table(FWIoutputs)
+
+    ## subset to fire days
+    FWIoutputs <- FWIoutputs[FWI >= P(sim)$FWIthresh]
+
+    ## subset weatherData
+    toKeep <- FWIoutputs$ID
+    sim$weatherData <- sim$weatherData[toKeep,]
+
+  } else {
+    browser()
+    message(blue("Reading and processing weather data file in chunks..."))
+    dataModel <- detect_dm_csv(file.path(dPath, "Export (WeatherGeneration).csv"),
+                               header = TRUE)
+    dataLaF <- laf_open(dataModel)
+    sim$weatherData <- Cache(process_blocks,
+                             x = dataLaF,
+                             fun = loadAndProcessWeatherData,
+                             projectWeatherData = projectWeatherData,
+                             crsProj = latLong,
+                             FWIthresh = P(sim)$FWIthresh,
+                             progress = TRUE,
+                             userTags = c("weatherData", "summarized"),
+                             omitArgs = "userTags")
+
+    ## change column names, convert to sf
+    colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
+                  "relativeHumidity", "windSpeed", "precipitation")
+    setnames(sim$weatherData,
+             old = c("Longitude", "Latitude", "Month", "Day", "Air.Temperature",
+                     "Relative.Humidity", "Wind.Speed.at.10.meters", "Total.Precipitation"),
+             new = colsKeep)
+    sim$weatherData <- sim$weatherData[, ..colsKeep]
+    sim$weatherData <- st_as_sf(sim$weatherData, coords = c("longitude", "latitude"),
+                                crs = latLong, agr = "constant")
+  }
   return(invisible(sim))
 }
 
@@ -128,6 +176,9 @@ Init <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
+
+  if (!suppliedElsewhere("loadWeatherInChunks", sim))
+    sim$loadWeatherInChunks <- FALSE
 
   if (!suppliedElsewhere("weatherData", sim)) {
     ## get the original CRS
@@ -137,13 +188,13 @@ Init <- function(sim) {
     } else {
       ## get the shp from BioSIM to obtain projection
       weatherDataPoints <- Cache(prepInputs, targetFile = "1KmGridFoothills.shp",
-                                  archive = "1KmGridFoothills.zip",
-                                  alsoExtract = "similar",
-                                  destinationPath = dPath,
-                                  fun = "sf::st_read",
-                                  url = "https://drive.google.com/file/d/1XyvWGM0dm1TMiLq4jgYB2vXDjekEQTDl/view?usp=sharing",
-                                  userTags = c(cacheTags, "weatherDataPoints"),
-                                  omitArgs = "userTags")
+                                 archive = "1KmGridFoothills.zip",
+                                 alsoExtract = "similar",
+                                 destinationPath = dPath,
+                                 fun = "sf::st_read",
+                                 url = "https://drive.google.com/file/d/1XyvWGM0dm1TMiLq4jgYB2vXDjekEQTDl/view?usp=sharing",
+                                 userTags = c(cacheTags, "weatherDataPoints"),
+                                 omitArgs = "userTags")
 
       message(blue("Assuming that 'weatherData' CRS projection is ", st_crs(weatherDataPoints)$proj4string))
       sim$weatherDataCRS <- st_crs(weatherDataPoints)$proj4string
@@ -151,48 +202,47 @@ Init <- function(sim) {
     }
 
     ## get weather data generated by BioSIM - note that BioSIM saves data in lat/long proj
-    ## TODO: redoing weather generation as only 1005 (out of 19077 were in the csv file - wtf?)
-    ## will need to update. GDrive
-    sim$weatherData <- Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
-                              archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
-                              fun = "data.table::fread",
-                              destinationPath = dPath,
-                              url = extractURL("weatherData", sim),
-                              userTags = c(cacheTags, "weatherData"),
-                              omitArgs = "userTags")
+    ## only loads if file is < 4Gb
+    ## TODO: THIS IS CRASHING
+    # Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
+    #       archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
+    #       fun = NULL,
+    #       destinationPath = dPath,
+    #       url = extractURL("weatherData", sim),
+    #       userTags = c(cacheTags, "weatherData"),
+    #       omitArgs = "userTags")
 
-    ## change column names, convert to sf
-    colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
-                  "relativeHumidity", "windSpeed", "precipitation")
-    setnames(sim$weatherData,
-             old = c("Longitude", "Latitude", "Month", "Day", "Air Temperature",
-                     "Relative Humidity", "Wind Speed at 10 meters", "Total Precipitation"),
-             new = colsKeep)
-    sim$weatherData <- sim$weatherData[, ..colsKeep]
-    sim$weatherData <- st_as_sf(sim$weatherData, coords = c("longitude", "latitude"),
-                                 crs = sim$weatherDataCRS, agr = "constant")
+    if (file.exists(file.path(dPath, "Export (WeatherGeneration).csv")))
+      sim$loadWeatherInChunks <- file.size(file.path(dPath, "Export (WeatherGeneration).csv")) > 4e+9 else
+        warning("Could not check the size of weatherData file. Please make sure it's small enough to load into memory")
+
+    if (!sim$loadWeatherInChunks) {
+      sim$weatherData <- Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
+                               archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
+                               fun = "data.table::fread",
+                               destinationPath = dPath,
+                               url = extractURL("weatherData", sim),
+                               userTags = c(cacheTags, "weatherData"),
+                               omitArgs = "userTags")
+
+      ## change column names, convert to sf
+      colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
+                    "relativeHumidity", "windSpeed", "precipitation")
+      setnames(sim$weatherData,
+               old = c("Longitude", "Latitude", "Month", "Day", "Air Temperature",
+                       "Relative Humidity", "Wind Speed at 10 meters", "Total Precipitation"),
+               new = colsKeep)
+      sim$weatherData <- sim$weatherData[, ..colsKeep]
+      sim$weatherData <- st_as_sf(sim$weatherData, coords = c("longitude", "latitude"),
+                                  crs = sim$weatherDataCRS, agr = "constant")
+
+    } else
+      warning("weatherData file is too large to load into memory. Will be processed in chunks during init event")
   } else {
     if (!suppliedElsewhere("weatherDataCRS", sim))
       stop(red("'weatherData' appears to be supplied to Biomass_fireWeather,",
                "but not weatherDataCRS. Please provide 'weatherDataCRS' with the projection of 'weatherData'."))
   }
-
-  ## checks
-  if (isTRUE(getOption("LandR.assertions"))) {
-    if (any(is.na(sim$weatherData)))
-      warning("'weatherData' has missing values - NAs - please check.")
-
-    if (!any(class(sim$weatherData) == "sf"))
-      stop(red("'weatherData' has to be a simple features object with points (see ?sf)."))
-
-    colMissing <- setdiff(c("month", "day", "temperature",
-                            "relativeHumidity", "windSpeed", "precipitation", "geometry"),
-                          names(sim$weatherData))
-    if (length(colMissing))
-      stop(red(paste("The following columns are missing, or misnamed, in 'weatherData':",
-                     paste(colMissing, collapse = ", "))))
-  }
-
   return(invisible(sim))
 }
 
