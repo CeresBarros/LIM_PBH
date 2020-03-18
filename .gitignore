@@ -9,3 +9,4 @@ figs/*
 outputs/*
 analyses/FireEvents/*
 *.rds
+*.dat
