@@ -143,20 +143,22 @@ Init <- function(sim) {
     sim$weatherData <- sim$weatherData[toKeep,]
 
   } else {
-    browser()
     message(blue("Reading and processing weather data file in chunks..."))
     dataModel <- detect_dm_csv(file.path(dPath, "Export (WeatherGeneration).csv"),
                                header = TRUE)
     dataLaF <- laf_open(dataModel)
-    sim$weatherData <- Cache(process_blocks,
-                             x = dataLaF,
-                             fun = loadAndProcessWeatherData,
-                             projectWeatherData = projectWeatherData,
-                             crsProj = latLong,
-                             FWIthresh = P(sim)$FWIthresh,
-                             progress = TRUE,
-                             userTags = c("weatherData", "summarized"),
-                             omitArgs = "userTags")
+    sim$weatherData <- loadFromCache(cachePath(sim),
+                                     unique(showCache(cachePath(sim),
+                                               c("weatherData", "summarized"))$cacheId))
+    # sim$weatherData <- Cache(process_blocks,
+    #                          x = dataLaF,
+    #                          fun = loadAndProcessWeatherData,
+    #                          projectWeatherData = projectWeatherData,
+    #                          crsProj = latLong,
+    #                          FWIthresh = P(sim)$FWIthresh,
+    #                          progress = TRUE,
+    #                          userTags = c("weatherData", "summarized"),
+    #                          omitArgs = "userTags")
 
     ## change column names, convert to sf
     colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
