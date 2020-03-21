@@ -30,9 +30,10 @@ sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
 
 ## Make LIM spp equivalencies column
 sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
-                               Lari_lar = "Lari_lar",
+                               Lari_lar = "Lari_sp", Lari_lya = "Lari_sp",
                                Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
-                               Pinu_con = "Pinu_sp",
+                               Pinu_alb = "Pinu_sp", Pinu_ban = "Pinu_sp", Pinu_con = "Pinu_sp", Pinu_fle = "Pinu_sp", ## flammable pines
+                               Pinu_pon = "Pinu_pon", ## not so flammable pine
                                Popu_tre = "Popu_sp", Betu_pap = "Popu_sp", Popu_bal = "Popu_sp",
                                Pseu_men = "Pseu_men")[LandR]]
 
