@@ -17,7 +17,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "Biomass_fuelsPFG.Rmd"),
-  reqdPkgs = list("data.table", "dplyr", "sn",
+  reqdPkgs = list("data.table", "dplyr", "sn", "RColorBrewer",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
@@ -31,6 +31,8 @@ defineModule(sim, list(
                     desc = paste("Determines whether fire fuels will be calculated for non-forest pixels.",
                                  "If TRUE, the user should provide fuels table ('nonForestFuelsTable') for non forested",
                                  "land cover classes in accordance to the classes in 'rstLCC'")),
+    defineParameter(".plotMaps", "logical", TRUE, NA, NA,
+                    desc = "Controls whether maps should be plotted or not"),
     defineParameter("sppEquivCol", "character", "Boreal", NA, NA,
                     "The column in sim$specieEquivalency data.table to use as a naming convention"),
     defineParameter(".useCache", "logical", "init", NA, NA,
@@ -121,22 +123,113 @@ fuelsInit <- function(sim) {
 calcFuelTypes <- function(sim) {
   ## PIXEL FUEL TYPES TABLE ------------------------
   ## create pixelGroupFuelTypes table from cohorData
-  ## subset cohort data and non-na fuel types
   pixelGroupFuelTypes <- sim$cohortData[, .(speciesCode, pixelGroup, ecoregionGroup, age, B)]
-  tempFT <- na.omit(copy(sim$ForestFuelTypes[, -c("FuelTypeDesc"), with = FALSE]))  ## keep only complete lines with spp codes
 
-  ## merge the two tables
-  pixelGroupFuelTypes <- tempFT[pixelGroupFuelTypes, on = .(speciesCode),
-                                allow.cartesian = TRUE, nomatch = NA]
-  if (isTRUE(getOption("LandR.assertions"))) {
-    cols <- c("FuelTypeFBP", "FuelType", "BaseFuel", "minAge",
-              "maxAge", "speciesCode", "negSwitch")
-    if (any(is.na(pixelGroupFuelTypes[, ..cols]))) {
-      stop("speciesCodes do not match between cohortData and ForestFuelTypes table.")
+  ## calculate stand B before expanding
+  pixelGroupFuelTypes[, sumB := sum(B), by = pixelGroup]
+
+  ## add potential PFGs, and remove those that do not match the ages
+  pixelGroupFuelTypes <- sim$FirePFGs[pixelGroupFuelTypes, on = .(speciesCode), allow.cartesian = TRUE]
+  pixelGroupFuelTypes <- pixelGroupFuelTypes[age >= ageMin & age < ageMax,]
+
+  ## add biomass per candidate PFG
+  pixelGroupFuelTypes[, PFGsumB := sum(B), by = .(pixelGroup, PFGno)]
+  ## calculate relative abundance of each group
+  pixelGroupFuelTypes[, PFGrelAbund := PFGsumB/sumB]
+
+  colsKeep <- grep("PFG|pixelGroup", names(pixelGroupFuelTypes), value = TRUE)
+  pixelGroupFuelTypes <- sim$FirePFGs2Fuels[unique(pixelGroupFuelTypes[, ..colsKeep]),
+                                            on = .(PFGno), allow.cartesian = TRUE]
+
+  ## exclude candidate functional groups/fuel types that don't meet the minimum abundance threshold
+  pixelGroupFuelTypes <- pixelGroupFuelTypes[PFGrelAbund >= Threshold]
+
+  ## exclude fuel types that don't meet the minimum composition criteria
+  ## e.g.  mixed stands: need enough cover from deciduous AND coniferous species.
+  ## e.g. doug-fir/ponderosa stands need enough cover of doug-fir/ponderosa and a minimum amount of conifer cover.
+  specialFTs <- sim$FirePFGs2Fuels$FT[duplicated(sim$FirePFGs2Fuels$FT)]
+  if (length(specialFTs)) {
+    for (spFT in specialFTs) {
+      needPFGs <- sim$FirePFGs2Fuels[FT == spFT, PFGno]  ## list required PFGs for this fuel type (FT)
+      PGsWFT <- unique(pixelGroupFuelTypes[grepl(spFT, FT), pixelGroup])  ## list all pixelGroups where at least one PFG for the FT was found
+      PGsWFT2 <- pixelGroupFuelTypes[pixelGroup %in% PGsWFT, all(needPFGs %in% PFGno),
+                                     by = pixelGroup][which(V1), pixelGroup]    ## list pixelGroups that have all required PFGs
+      PGsWFT3 <- setdiff(PGsWFT, PGsWFT2)  ## pixelGroups that did not have all PFGs
+
+      pixelGroupFuelTypes <- pixelGroupFuelTypes[!(pixelGroup %in% PGsWFT3 & FT == spFT)]  ## exclude candidate FTs that didn't meet the requirementsin the
     }
   }
 
-  browser()
+  ## resolve pixelGroups that still have several candidate fuel types.
+  ## rules of thumb:
+  ## 1. if there are >= 2 fuel types, the one with more candidate PFGs wins (more support from spp composition)
+  ## 2. if there they have equal number of candidate PFGs, the one with highest threshold wins
+  dupPGs <- pixelGroupFuelTypes$pixelGroup[duplicated(pixelGroupFuelTypes$pixelGroup)]
+  pixelGroupFTDups <- pixelGroupFuelTypes[pixelGroup %in% dupPGs]
+  pixelGroupFTNotDups <- pixelGroupFuelTypes[!pixelGroup %in% dupPGs]
+
+  ## resolve FTs with more candidate PFGs
+  pixelGroupFTDups[, sumPFGs := length(PFGno), by = .(pixelGroup, FT)]   ## how many PFGs per candidate FT?
+  pixelGroupFTDups[, sumPFGs := sumPFGs == max(sumPFGs), by = pixelGroup]  ## keep winners maximum?
+  pixelGroupFTDups <- pixelGroupFTDups[as.logical(sumPFGs)]   ## remove losers
+
+  ## resolve FTs with higher PFG thresholds - this will also "resolve" pixelGroups that still have the same FT with its several PFGs
+  pixelGroupFTDups[, hiPFGs := as.logical(Threshold == max(Threshold)), by = pixelGroup]
+  pixelGroupFTDups <- pixelGroupFTDups[(hiPFGs)]
+
+  ## checks
+  ## any more duplicates? for now stop, as they'll need to be dealt with as they appear
+  if (any(duplicated(pixelGroupFTDups$pixelGroup)))
+    stop("There are still pixelGroups with several possible fuel types.")
+
+  if (any(pixelGroupFTDups$pixelGroup %in% pixelGroupFTNotDups$pixelGroup))
+    stop("Something went wrong in checking for pixelGroups with several candidate fuel types.
+         Please debug calcFuelTypes event function in Biomass_fuelsPFGs.")
+
+  ## re-bind tables after filtering unnecessary columns
+  pixelGroupFuelTypes <- rbind(pixelGroupFTDups[, .(FT, pixelGroup)], pixelGroupFTNotDups[, .(FT, pixelGroup)])
+
+  ## calculate % conifers in mixed fuel types.
+  notMixedPixelGroup <- pixelGroupFuelTypes[!grepl("M", FT)]
+  mixedPixelGroup <- pixelGroupFuelTypes[grepl("M", FT)]
+
+  noPGs <- length(unique(mixedPixelGroup$pixelGroup))  ## to check losses of PFGs later
+
+  cols <- c("speciesCode", "B", "pixelGroup")
+  mixedPixelGroup <- sim$cohortData[, ..cols][mixedPixelGroup, on = .(pixelGroup)]
+  mixedPixelGroup[, Type := equivalentName(speciesCode, sim$sppEquiv, "Type")]
+
+  mixedPixelGroup[, sumB := sum(B), by = pixelGroup]
+  mixedPixelGroup[Type == "Conifer", coniferDom := sum(B)/sumB, by = pixelGroup]
+
+  ## remove unnecessary columns and NAs that came from deciduous stands
+  mixedPixelGroup <- unique(mixedPixelGroup[, .(pixelGroup, FT, coniferDom)])
+  mixedPixelGroup <- mixedPixelGroup[!is.na(coniferDom)]
+
+  ## checks
+  if (getOption("LandR.verbose", TRUE) > 0) {
+    if (any(mixedPixelGroup$coniferDom == 1, na.rm = TRUE) |
+        any(mixedPixelGroup$coniferDom == 0, na.rm = TRUE))
+      stop("Something went wrong some pixelGroups of mixed fuel type have 0 or 100% conifer cover.
+            Please debug calcFuelTypes event function in Biomass_fuelsPFGs.")
+
+    if (length(unique(mixedPixelGroup$pixelGroup)) != noPGs)
+      stop("Something went wrong and some pixelGroups were lost when calculating conifer dominance.
+            Please debug calcFuelTypes event function in Biomass_fuelsPFGs.")
+  }
+
+  ## bind again
+  pixelGroupFuelTypes <- rbind(mixedPixelGroup, notMixedPixelGroup, use.names = TRUE, fill = TRUE)
+
+  ## make a numeric column of fuel type
+  pixelGroupFuelTypes[, finalFuelType := as.numeric(as.factor(FT))]
+  ## change names
+  setnames(pixelGroupFuelTypes, old = "FT", new = "FuelTypeFBP")
+
+  ## rasterize forests fuel types table
+  fuelTypesMaps <- rasterizeReduced(pixelGroupFuelTypes, sim$pixelGroupMap,
+                                    newRasterCols = c("finalFuelType" , "coniferDom"),
+                                    mapcode = "pixelGroup")
 
   ## ADD FUEL TYPES IN NON-FORESTED PIXELS ---------------------------
   if (P(sim)$nonForestFire) {
@@ -151,7 +244,6 @@ calcFuelTypes <- function(sim) {
       stop("'rstLCCRTM' does not match 'fuelTypesMaps' rasters")
 
     # fuelTypesMaps$finalFuefuelTypesMaps[nonForestPix] <- sim$rstLCCRTM[nonForestPix]
-
     LC2FuelsTable <- data.table(LC = getValues(sim$rstLCCRTM)[nonForestPix],
                                 pixID = nonForestPix)
     LC2FuelsTable <- sim$nonForestFuelsTable[LC2FuelsTable, on = "LC"]
@@ -170,9 +262,21 @@ calcFuelTypes <- function(sim) {
 
     LC2FuelsTable[which(fixedCuring), finalCuring := curingMean]
 
+    ## convert fuel type numbers to existing ones, add if necessary
+    LC2FuelsTable <- unique(pixelGroupFuelTypes[, .(FuelTypeFBP, finalFuelType)])[LC2FuelsTable, on = .(FuelTypeFBP)]
+    LC2FuelsTableNAs <- LC2FuelsTable[is.na(finalFuelType)]
+    LC2FuelsTableNAs <- LC2FuelsTableNAs[, finalFuelType := NULL]
+
+    newFTs <- unique(LC2FuelsTableNAs$FuelTypeFBP)
+    newFTTable <- data.table(FuelTypeFBP = newFTs,
+                             finalFuelType = max(pixelGroupFuelTypes$finalFuelType) + 1:length(newFTs))
+    LC2FuelsTableNAs <- newFTTable[LC2FuelsTableNAs, on = .(FuelTypeFBP)]
+
+    ## bind
+    LC2FuelsTable <- rbind(LC2FuelsTable[!is.na(finalFuelType)], LC2FuelsTableNAs, use.names = TRUE)
 
     ## add non-forest fuels to map and attribute 0 conifer dominance values
-    fuelTypesMaps$finalFuelType[LC2FuelsTable$pixID] <- as.numeric(LC2FuelsTable$FuelType)
+    fuelTypesMaps$finalFuelType[LC2FuelsTable$pixID] <- as.numeric(LC2FuelsTable$finalFuelType)
     fuelTypesMaps$coniferDom[LC2FuelsTable$pixID] <- 0
 
     ## add make rasters of curing, etc due to projections (pixIds are not trackable)
@@ -181,7 +285,7 @@ calcFuelTypes <- function(sim) {
     fuelTypesMaps$curing[LC2FuelsTable$pixID] <-  LC2FuelsTable$finalCuring
 
     ## export to sim
-    sim$pixelNonForestFuels <- LC2FuelsTable[, .(pixID, FuelTypeFBP, FuelType, finalCuring)]
+    sim$pixelNonForestFuels <- LC2FuelsTable[, .(pixID, FuelTypeFBP, finalFuelType, finalCuring)]
   } else {
     ## if not running fires in non-forested pixel export an empty object
     sim$pixelNonForestFuels <- NULL
@@ -189,8 +293,28 @@ calcFuelTypes <- function(sim) {
     fuelTypesMaps$curing[] <- NA
   }
 
+  ##  add levels to fuel types raster
+  fuelTypesMaps$finalFuelType <- ratify(fuelTypesMaps$finalFuelType)
+  levs <- as.data.table(raster::levels(fuelTypesMaps$finalFuelType)[[1]])
+  levs2 <- rbind(unique(pixelGroupFuelTypes[, .(finalFuelType, FuelTypeFBP)]),
+                 unique(sim$pixelNonForestFuels[, .(finalFuelType, FuelTypeFBP)]),
+                 use.names = TRUE) %>%
+    unique(.)
+  setnames(levs2, "finalFuelType", "ID")
+  levs <- levs2[levs, on = "ID"]
+  levels(fuelTypesMaps$finalFuelType) <- levs
+  fuelTypesMaps$finalFuelType <- setColors(fuelTypesMaps$finalFuelType, brewer.pal(n = nrow(levs), "Accent"))
+
+  browser()
   ## export to sim
   sim$fuelTypesMaps <- fuelTypesMaps
+
+  ## TODO: add plotting options, here on in a separate event
+  ## how: have Biomass_core export the map/stats plot windows
+  ## to sim, so they can be used here.
+  if (P(sim)$.plotMaps) {
+
+  }
 
   return(invisible(sim))
 }
@@ -221,13 +345,19 @@ calcFuelTypes <- function(sim) {
                                destinationPath = dPath,
                                fun = "data.table::fread",
                                header = TRUE)
+
+    ## convert species names and exclude spp that are not in the simulation (if they have been excluded from sppEquiv already)
+    sim$FirePFGs$speciesCodeLong <- sub("_", " ", sim$FirePFGs$speciesCodeLong)
+    sim$FirePFGs$speciesCode <- equivalentName(sim$FirePFGs$speciesCodeLong, sim$sppEquiv, column = P(sim)$sppEquivCol)
+    sim$FirePFGs <- sim$FirePFGs[!is.na(speciesCode), .(PFGno, PFGName, speciesCode, ageMin, ageMax)]
+    sim$FirePFGs <- unique(sim$FirePFGs)
   }
 
   if (!suppliedElsewhere("FirePFGs2Fuels", sim)) {
     sim$FirePFGs2Fuels <- prepInputs(targetFile = "FirePFGs2Fuels.csv",
-                               destinationPath = dPath,
-                               fun = "data.table::fread",
-                               header = TRUE)
+                                     destinationPath = dPath,
+                                     fun = "data.table::fread",
+                                     header = TRUE)
   }
 
   ## FUEL TYPES FOR NON-FOREST LAND-COVER CLASSES ------
