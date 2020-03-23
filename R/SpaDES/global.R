@@ -71,6 +71,13 @@ source("R/SpaDES/1_simObjects.R")
 ## Run Biomass_speciesData to get species layers
 source("R/SpaDES/2_speciesLayers.R")
 
+## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
+plot(simOutSpeciesLayers$speciesLayers)
+keepSpp <- setdiff(names(simOutSpeciesLayers$speciesLayers), c("Pice_mar", "Pinu_pon"))
+simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
+sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
+sppColorVect <- sppColorVect[keepSpp]
+
 source("R/SpaDES/3_fireWeather.R")
 
 ## Define simulation params --------------------
