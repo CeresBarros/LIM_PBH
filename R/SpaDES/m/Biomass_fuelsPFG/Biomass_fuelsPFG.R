@@ -300,8 +300,8 @@ calcFuelTypes <- function(sim) {
     unique(.)
   setnames(levs2, "finalFuelType", "ID")
   levs <- levs2[levs, on = "ID"]
-  levels(fuelTypesMaps$finalFuelType) <- levs
-  fuelTypesMaps$finalFuelType <- setColors(fuelTypesMaps$finalFuelType, brewer.pal(n = nrow(levs), "Accent"))
+  levels(fuelTypesMaps$finalFuelType) <- as.data.frame(levs)
+  setColors(fuelTypesMaps$finalFuelType, n = nrow(levs)) <- brewer.pal(n = nrow(levs), "Accent")
 
   browser()
   ## export to sim
