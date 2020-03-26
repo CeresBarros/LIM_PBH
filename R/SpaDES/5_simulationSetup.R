@@ -23,6 +23,7 @@ if (grepl("noPM", runName)) {
     Biomass_borealDataPrep = list(
       "sppEquivCol" = sppEquivCol
       , "forestedLCCClasses" = c(1:15, 34:36)
+      , "LCCClassesToReplaceNN" = c(34:36)
       # next two are used when assigning pixelGroup membership; what resolution for
       #   age and biomass
       , "pixelGroupAgeClass" = successionTimestep * 10L
@@ -92,6 +93,7 @@ if (grepl("noPM", runName)) {
     Biomass_borealDataPrep = list(
       "sppEquivCol" = sppEquivCol
       , "forestedLCCClasses" = c(1:15, 34:36)
+      , "exportModels" = "modelBiomass"
       # next two are used when assigning pixelGroup membership; what resolution for
       #   age and biomass
       , "pixelGroupAgeClass" = successionTimestep * 10L
@@ -149,15 +151,15 @@ if (grepl("noPM", runName)) {
   )
 }
 
-## add LandR_speciesParameters module if need be
-if (grepl("newSppParam", runName)) {
-  simModules <- c("LandR_speciesParameters", simModules)
-
-  simParams[["LandR_speciesParameters"]] <- list(
-    "sppEquivCol" = sppEquivCol
-    , ".useCache" = eventCaching
-    )
-}
+## add LandR_speciesParameters module if need be - not necessary when running pre-sims
+# if (grepl("newSppParam", runName)) {
+#   simModules <- c("LandR_speciesParameters", simModules)
+#
+#   simParams[["LandR_speciesParameters"]] <- list(
+#     "sppEquivCol" = sppEquivCol
+#     , ".useCache" = eventCaching
+#     )
+# }
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
@@ -182,7 +184,8 @@ if (grepl("newSppParams", runName)) {
 
 ## add fake fire map if need be
 if (grepl("oneFire", runName)) {
-  rstCurrentBurn <- raster("R/SpaDES/cache/LIM_tests/blogSep2019_noPM_oneFire/rasterToMatch.tif")
+  rstCurrentBurn <- raster(list.files("R/SpaDES/cache/LIM_tests", recursive = TRUE,
+                                      pattern = "rasterToMatch.tif", full.names = TRUE)[1])
   IDs <- which(!is.na(rstCurrentBurn[]))
   rstCurrentBurn[IDs] <- 1
   rstCurrentBurn[IDs[1:round(length(IDs)/2)]] <- NA
