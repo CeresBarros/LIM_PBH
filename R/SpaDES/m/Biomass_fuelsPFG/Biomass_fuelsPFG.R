@@ -303,7 +303,6 @@ calcFuelTypes <- function(sim) {
   levels(fuelTypesMaps$finalFuelType) <- as.data.frame(levs)
   setColors(fuelTypesMaps$finalFuelType, n = nrow(levs)) <- brewer.pal(n = nrow(levs), "Accent")
 
-  browser()
   ## export to sim
   sim$fuelTypesMaps <- fuelTypesMaps
 
@@ -311,7 +310,7 @@ calcFuelTypes <- function(sim) {
   ## how: have Biomass_core export the map/stats plot windows
   ## to sim, so they can be used here.
   if (P(sim)$.plotMaps) {
-
+  browser()
   }
 
   return(invisible(sim))
