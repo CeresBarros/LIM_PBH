@@ -13,7 +13,7 @@ if (grepl("noPM", runName)) {
   simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
                      , "Biomass_core"
-                     , "Biomass_fuels"
+                     , "Biomass_fuelsPFG"
                      , "fireSpread"
                      , "Biomass_regeneration"
                      , "fireSeverity"
@@ -46,7 +46,7 @@ if (grepl("noPM", runName)) {
       , ".useCache" = eventCaching # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
-    , Biomass_fuels = list(
+    , Biomass_fuelsPFG = list(
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE
@@ -82,7 +82,7 @@ if (grepl("noPM", runName)) {
   simModules <- list("Biomass_borealDataPrep"
                      , "Biomass_fireProperties"
                      , "Biomass_core"
-                     , "Biomass_fuels"
+                     , "Biomass_fuelsPFG"
                      , "fireSpread"
                      , "Biomass_regenerationPM"
                      , "fireSeverity"
@@ -115,7 +115,7 @@ if (grepl("noPM", runName)) {
       , ".useCache" = eventCaching # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
-    , Biomass_fuels = list(
+    , Biomass_fuelsPFG = list(
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE

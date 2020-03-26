@@ -10,51 +10,30 @@ rm(list=ls()); amc::.gc()
 
 ## Get packages ----------------------
 ## requires as of Jan 2nd 2020
-# loading reproducible     1.0.0.9007
+# loading reproducible     1.0.0.9009
 # loading quickPlot        0.1.6.9000
 # loading SpaDES.core      1.0.0.9
 # loading SpaDES.tools     0.3.4.9000
 # loading SpaDES.addins    0.1.2
-# loading LandR            0.0.3.9000
-# loading LandR.CS         0.0.1
+# loading LandR            0.0.3.9006
+# loading LandR.CS         0.0.1.0001
 
-# devtools::install_github("PredictiveEcology/reproducible@development", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/reproducible@messagingOverhaul", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/pemisc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/map@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/LandR@ecoregion", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/LandR@reworkCohorts", dependencies = FALSE)
 # devtools::install_github("ianmseddy/LandR.CS", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.core@development", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/SpaDES.core@lowMemory", dependencies = FALSE)
+
+## test packages
+# devtools::install_local("../LandR", dependencies = FALSE, force = TRUE)
+# devtools::install_local("../reproducible", dependencies = FALSE, force = TRUE)
 library(SpaDES)
 library(LandR)
 
-## testing packages
-# try(detach("package:LandR", unload = TRUE))
-# try(detach("package:pemisc", unload = TRUE))
-# try(detach("package:amc", unload = TRUE))
-# try(detach("package:map", unload = TRUE))
-# try(detach("package:SpaDES", unload = TRUE))
-# try(detach("package:SpaDES.addins", unload = TRUE))
-# try(detach("package:pemisc", unload = TRUE))
-# try(detach("package:amc", unload = TRUE))
-# try(detach("package:map", unload = TRUE))
-# try(detach("package:SpaDES.core", unload = TRUE))
-# try(detach("package:SpaDES.tools", unload = TRUE))
-# try(detach("package:pemisc", unload = TRUE))
-# try(detach("package:amc", unload = TRUE))
-# try(detach("package:map", unload = TRUE))
-# try(detach("package:reproducible", unload = TRUE))
-# devtools::load_all("../reproducible")
-# devtools::load_all("../SpaDES.tools")
-# library(SpaDES.addins)
-# library(logging)
-# devtools::load_all("../SpaDES.core")
-# library(map)
-# library(amc)
-# library(pemisc)
-# devtools::load_all("../LandR")
 
 options("reproducible.useNewDigestAlgorithm" = TRUE)
 options("spades.moduleCodeChecks" = FALSE)
@@ -91,6 +70,13 @@ source("R/SpaDES/1_simObjects.R")
 
 ## Run Biomass_speciesData to get species layers
 source("R/SpaDES/2_speciesLayers.R")
+
+## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
+plot(simOutSpeciesLayers$speciesLayers)
+keepSpp <- setdiff(names(simOutSpeciesLayers$speciesLayers), c("Pice_mar", "Pinu_pon"))
+simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
+sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
+sppColorVect <- sppColorVect[keepSpp]
 
 source("R/SpaDES/3_fireWeather.R")
 

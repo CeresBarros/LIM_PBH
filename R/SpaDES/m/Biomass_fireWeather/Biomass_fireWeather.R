@@ -88,7 +88,7 @@ Init <- function(sim) {
 
   tempRas <- raster(crs = latLong)
   tempRas2 <- raster(crs = sim$weatherDataCRS)
-  projectWeatherData <- if (!compareRaster(tempRas, tempRas2, stopiffalse = FALSE)) {
+  projectWeatherData <- if (!compareCRS(tempRas, tempRas2)) {
     warning("'weatherDataCRS' is not compatible with cffdrs::fbp. Reprojecting to lat/long, WGS84")
     TRUE
   } else FALSE
@@ -155,6 +155,7 @@ Init <- function(sim) {
     #                          fun = loadAndProcessWeatherData,
     #                          projectWeatherData = projectWeatherData,
     #                          crsProj = latLong,
+    #                          origCrsProj = sim$weatherDataCRS,
     #                          FWIthresh = P(sim)$FWIthresh,
     #                          progress = TRUE,
     #                          userTags = c("weatherData", "summarized"),
