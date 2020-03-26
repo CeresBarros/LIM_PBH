@@ -155,6 +155,7 @@ Init <- function(sim) {
     #                          fun = loadAndProcessWeatherData,
     #                          projectWeatherData = projectWeatherData,
     #                          crsProj = latLong,
+    #                          origCrsProj = sim$weatherDataCRS,
     #                          FWIthresh = P(sim)$FWIthresh,
     #                          progress = TRUE,
     #                          userTags = c("weatherData", "summarized"),
