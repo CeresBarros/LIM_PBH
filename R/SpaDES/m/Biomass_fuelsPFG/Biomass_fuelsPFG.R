@@ -80,9 +80,7 @@ defineModule(sim, list(
                   desc = "List of RasterLayers of fuel types and coniferDominance per pixel."),
     createsOutput(objectName = "pixelNonForestFuels", objectClass = "data.table",
                   desc = paste("Table of non forest fuel attributes (pixel ID, land cover, fuel type",
-                               "name and code, and degree of curing) for each pixel with non-forest fuels")),
-    createsOutput(objectName = "rstLCCRTM", objectClass = "RasterLayer",
-                  desc = "Same as rstLCC, but masked to rasterToMatch")
+                               "name and code, and degree of curing) for each pixel with non-forest fuels"))
   )
 ))
 
