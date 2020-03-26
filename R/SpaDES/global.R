@@ -34,7 +34,6 @@ rm(list=ls()); amc::.gc()
 library(SpaDES)
 library(LandR)
 
-
 options("reproducible.useNewDigestAlgorithm" = TRUE)
 options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
@@ -121,18 +120,55 @@ graphics.off()
 # saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
 # simTimes$end <- 21
 
-Biomass_core_testSim <- simInitAndSpades(times = simTimes
-                                 , params = simParams
-                                 , modules = simModules[c(1:5, 7)]
-                                 , objects = simObjects
-                                 , paths = simPaths
-                                 , outputs = outputs
-                                 , debug = TRUE
-                                 # , .plotInitialTime = NA
+Biomass_core_testSimInit <- simInitAndSpades(times = simTimes
+                                             , params = simParams
+                                             , modules = simModules[c(1:5, 7)]
+                                             , objects = simObjects
+                                             , paths = simPaths
+                                             , outputs = outputs
+                                             , debug = TRUE
+                                             # , .plotInitialTime = NA
 )
 
-saveSimList(Biomass_core_testSim,
+## CHECK CONVERGENCE OF MODELBIOMASS
+## allFit is taking too long (>12h and didn't even with first optimizer)
+modBiomass <- Biomass_core_testSimInit$modelBiomass$mod
+
+pars <- unlist(getME(modBiomass, c("theta")))
+grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
+hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
+sc_grad <- solve(hess, grad)
+
+if (length(modBiomass@optinfo$conv$lme4$messages) &
+    max(pmin(abs(sc_grad), abs(grad))) > 0.001) {
+  ## Nelder and L-BFGS-B methods didn't converge
+  # , REML = FALSE,
+  # control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))
+  # ss <- getME(modBiomass, c("theta","fixef"))
+  # modBiomass <- update(modBiomass, start = ss, data = modBiomass@frame,
+  #                            control = lmerControl(calc.derivs = FALSE,  ## it's faster
+  #                                                  optimizer = "optimx",
+  #                                                  optCtrl = list(method='nlminb', maxit = 1e5)))  ## keeps hitting maxit...
+  ncores <- detectCores()
+  library(dfoptim)
+  .specialData <<- modBiomass@frame
+  diff_optims <- allFit(modBiomass$mod, parallel = 'multicore', ncpus = ncores)
+  is.OK <- sapply(diff_optims, is, "merMod")  ## nlopt NELDERMEAD failed, others succeeded
+  aa.OK <- diff_optims[is.OK]
+  lapply(aa.OK,function(x) x@optinfo$conv$lme4$messages)
+
+  pars <- unlist(getME(modBiomass, c("theta")))
+  grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
+  hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
+  sc_grad <- solve(hess, grad)
+  max(pmin(abs(sc_grad),abs(grad)))
+}
+
+
+
+saveSimList(Biomass_core_testSimOut,
             file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".RData")))
-dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
-          res = 300, units = "in")
+if (!is.na(plotInitialTime))
+  dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
+            res = 300, units = "in")
 
