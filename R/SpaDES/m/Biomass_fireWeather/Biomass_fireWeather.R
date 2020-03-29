@@ -28,6 +28,12 @@ defineModule(sim, list(
                     paste("The fire weather index (FWI) minimum threshold value to classify a day as fire-day.",
                           "Defaults to 19, a value commonly used across Canada for fire simulation",
                           "(e.g. Wang et al 2016 Int. J. Wildl. Fire, Podur & Wotton 2011 Int. J. Wildl. Fire)")),
+    defineParameter("timePeriod", "numeric", 1960:1990, NA, NA,
+                    paste("The time period used for 'weatherDataMCD'. Refers to the period on which the fire frequency",
+                          "(i.e. ignition) model - see Marchal et al 2017 - will be fitted.",
+                          "Defaults to 1960 to 1990")),
+    defineParameter("weatherDataLastYear", "numeric", 1990, NA, NA,
+                    "The last calendar year of the weather data. Defaults to 1990"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
     defineParameter(".useCache", "logical", "init", NA, NA,
                     desc = "use caching for the spinup simulation?")
@@ -52,7 +58,10 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "weatherData", objectClass = "sf",
-                  desc = paste("Weather point data subset to fire days, according to the FWIthresh parameter."))
+                  desc = paste("Weather point data subset to fire days, according to the FWIthresh parameter.")),
+    createsOutput(objectName = "weatherDataMDC", objectClass = "sf",
+                  desc = paste("Weather point data  with average drought code (DC) for July, per year,",
+                               "calculated using  Canadian Forest Fire Weather Index (FWI) System (see ?cffdrs::fwi)."))
   )
 ))
 
@@ -117,6 +126,7 @@ Init <- function(sim) {
     FWIinputs <- data.frame(id = 1:nrow(coords),
                             lat = coords[, "Y"],
                             long = coords[, "X"],
+                            yr = sim$weatherData$year,
                             mon = sim$weatherData$month,
                             day = sim$weatherData$day,
                             temp = sim$weatherData$temperature,
@@ -135,43 +145,56 @@ Init <- function(sim) {
     })
     FWIoutputs <- data.table(FWIoutputs)
 
-    ## subset to fire days
-    FWIoutputs <- FWIoutputs[FWI >= P(sim)$FWIthresh]
-
     ## subset weatherData
-    toKeep <- FWIoutputs$ID
+    toKeep <- FWIoutputs$FWI >= FWIthresh
     sim$weatherData <- sim$weatherData[toKeep,]
+
+    ## get all monthly drought codes for fireSense
+    ## average July DC per year
+    sim$weatherDataMDC <- FWIoutputs[, list(julMDC = mean(DC)), by = .(LAT, LONG, YR)]
 
   } else {
     message(blue("Reading and processing weather data file in chunks..."))
     dataModel <- detect_dm_csv(file.path(dPath, "Export (WeatherGeneration).csv"),
                                header = TRUE)
     dataLaF <- laf_open(dataModel)
-    sim$weatherData <- loadFromCache(cachePath(sim),
-                                     unique(showCache(cachePath(sim),
-                                               c("weatherData", "summarized"))$cacheId))
-    # sim$weatherData <- Cache(process_blocks,
-    #                          x = dataLaF,
-    #                          fun = loadAndProcessWeatherData,
-    #                          projectWeatherData = projectWeatherData,
-    #                          crsProj = latLong,
-    #                          origCrsProj = sim$weatherDataCRS,
-    #                          FWIthresh = P(sim)$FWIthresh,
-    #                          progress = TRUE,
-    #                          userTags = c("weatherData", "summarized"),
-    #                          omitArgs = "userTags")
+    # sim$weatherData <- loadFromCache(cachePath(sim),
+    #                                  unique(showCache(cachePath(sim),
+    #                                            c("weatherData", "summarized"))$cacheId))
+    weatherDataList <- Cache(process_blocks,
+                             x = dataLaF,
+                             fun = loadAndProcessWeatherData,
+                             projectWeatherData = projectWeatherData,
+                             crsProj = latLong,
+                             origCrsProj = sim$weatherDataCRS,
+                             FWIthresh = P(sim)$FWIthresh,
+                             timePeriod = P(sim)$timePeriod,
+                             weatherDataLastYear = P(sim)$weatherDataLastYear,
+                             progress = FALSE,
+                             userTags = c("weatherData", "summarized"),
+                             omitArgs = "userTags")
 
-    ## change column names, convert to sf
-    colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
-                  "relativeHumidity", "windSpeed", "precipitation")
-    setnames(sim$weatherData,
-             old = c("Longitude", "Latitude", "Month", "Day", "Air.Temperature",
-                     "Relative.Humidity", "Wind.Speed.at.10.meters", "Total.Precipitation"),
-             new = colsKeep)
-    sim$weatherData <- sim$weatherData[, ..colsKeep]
-    sim$weatherData <- st_as_sf(sim$weatherData, coords = c("longitude", "latitude"),
-                                crs = latLong, agr = "constant")
+    sim$weatherData <- weatherDataList$weatherData
+    sim$weatherDataDMC <- weatherDataList$weatherDataDMC
   }
+
+  ## change column names, convert to sf
+  colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
+                "relativeHumidity", "windSpeed", "precipitation")
+  setnames(sim$weatherData,
+           old = c("Longitude", "Latitude", "Month", "Day", "Air.Temperature",
+                   "Relative.Humidity", "Wind.Speed.at.10.meters", "Total.Precipitation"),
+           new = colsKeep)
+  sim$weatherData <- sim$weatherData[, ..colsKeep]
+
+  setnames(sim$weatherDataDMC, c("LAT", "LONG", "YR"),
+           c("latitude", "longitude", "year"))
+
+  sim$weatherData <- st_as_sf(sim$weatherData, coords = c("longitude", "latitude"),
+                              crs = latLong, agr = "constant")
+  sim$weatherDataDMC <- st_as_sf(sim$weatherDataDMC, coords = c("longitude", "latitude"),
+                                 crs = latLong, agr = "constant")
+
   return(invisible(sim))
 }
 
@@ -205,16 +228,6 @@ Init <- function(sim) {
     }
 
     ## get weather data generated by BioSIM - note that BioSIM saves data in lat/long proj
-    ## only loads if file is < 4Gb
-    ## TODO: THIS IS CRASHING
-    # Cache(prepInputs, targetFile = "Export (WeatherGeneration).csv",
-    #       archive = "DailyClimatic_CA-USnormals_1961-1990.zip",
-    #       fun = NULL,
-    #       destinationPath = dPath,
-    #       url = extractURL("weatherData", sim),
-    #       userTags = c(cacheTags, "weatherData"),
-    #       omitArgs = "userTags")
-
     if (file.exists(file.path(dPath, "Export (WeatherGeneration).csv")))
       sim$loadWeatherInChunks <- file.size(file.path(dPath, "Export (WeatherGeneration).csv")) > 4e+9 else
         warning("Could not check the size of weatherData file. Please make sure it's small enough to load into memory")
@@ -229,10 +242,10 @@ Init <- function(sim) {
                                omitArgs = "userTags")
 
       ## change column names, convert to sf
-      colsKeep <- c("longitude", "latitude", "month", "day", "temperature",
+      colsKeep <- c("longitude", "latitude", "year", "month", "day", "temperature",
                     "relativeHumidity", "windSpeed", "precipitation")
       setnames(sim$weatherData,
-               old = c("Longitude", "Latitude", "Month", "Day", "Air Temperature",
+               old = c("Longitude", "Latitude", "Year", "Month", "Day", "Air Temperature",
                        "Relative Humidity", "Wind Speed at 10 meters", "Total Precipitation"),
                new = colsKeep)
       sim$weatherData <- sim$weatherData[, ..colsKeep]

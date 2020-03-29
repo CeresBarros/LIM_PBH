@@ -23,7 +23,7 @@
 #' @importFrom sf st_as_sf st_coordinates st_transform
 
 loadAndProcessWeatherData <- function (d, prevBlock, projectWeatherData, crsProj,
-                                       origCrsProj, FWIthresh) {
+                                       origCrsProj, FWIthresh, timePeriod, weatherDataLastYear) {
   if (!nrow(d))
     return(prevBlock)
 
@@ -48,6 +48,7 @@ loadAndProcessWeatherData <- function (d, prevBlock, projectWeatherData, crsProj
   FWIinputs <- data.frame(id = 1:nrow(prevData),
                           lat = prevData$Latitude,
                           long = prevData$Longitude,
+                          yr = prevData$Year,
                           mon = prevData$Month,
                           day = prevData$Day,
                           temp = prevData$Air.Temperature,
@@ -68,11 +69,20 @@ loadAndProcessWeatherData <- function (d, prevBlock, projectWeatherData, crsProj
 
   ## subset weatherData to fire days
   toKeep <- FWIoutputs$FWI >= FWIthresh
-  prevData <- prevData[toKeep,]
+  weatherData <- prevData[toKeep,]
 
-  if (is.null(prevBlock))
-    prevBlock <- prevData else
-      prevBlock <- rbind(prevBlock, prevData, use.names = TRUE)
+  ## reduce weather data to appropriate time period for MDC
+  timePeriod <- timePeriod - weatherDataLastYear
+  FWIoutputs <- FWIoutputs[YR %in% timePeriod & MON == 7]
 
+  ## average July DC per year to make weatherDataMDC
+  weatherDataMDC <- FWIoutputs[, list(julMDC = mean(DC)), by = .(LAT, LONG, YR)]
+
+  if (is.null(prevBlock)) {
+    prevBlock <- list("weatherData" = weatherData, "weatherDataMDC" = weatherDataMDC)
+  } else {
+      prevBlock$weatherData <- rbind(prevBlock$weatherData, weatherData, use.names = TRUE)
+      prevBlock$weatherDataMDC <- rbind(prevBlock$weatherDataMDC, weatherDataMDC, use.names = TRUE)
+    }
   return(prevBlock)
 }
