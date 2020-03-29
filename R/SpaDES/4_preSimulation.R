@@ -48,8 +48,8 @@ preSimParams <- list(
     , ".useParallel" = useParallel
   )
   , Biomass_fuelsPFG = list(
-    "fireInitialTime" = fireInitialTime
-    , "fireTimestep" = fireTimestep
+    "fireInitialTime" = 0
+    , "fireTimestep" = 1
     , "nonForestFire" = TRUE
     , "sppEquivCol" = sppEquivCol
     , ".plotMaps" = FALSE
