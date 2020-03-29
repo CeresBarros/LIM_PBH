@@ -12,8 +12,11 @@
 
 ## SIM PARAMS ------------------------------------------------
 preSimModules <- list("Biomass_borealDataPrep"
-                   , "Biomass_core"
-                   , "Biomass_fuelsPFG"
+                      , "Biomass_core"
+                      , "Biomass_fuelsPFG"
+                      , "fireSense_DataPrep"
+                      , "fireSense_IgnitionFit"
+                      , "fireSense_IgnitionPredict"
 )
 
 preSimParams <- list(
@@ -51,6 +54,17 @@ preSimParams <- list(
     , "sppEquivCol" = sppEquivCol
     , ".plotMaps" = FALSE
     , ".useCache" = eventCaching
+  )
+  , fireSense_IgnitionFit = list(
+    formula = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
+                        M2:julMDC + O1b:julMDC + NF:julMDC - 1),
+    family = poisson(link = "identity"),
+    ub = list(coef = 1),
+    data = "dataFireSense_IgnitionFit",
+    trace = 1,
+    iterDEoptim = 60,
+    iterNlminb = 100,
+    cores = 50
   )
 )
 
