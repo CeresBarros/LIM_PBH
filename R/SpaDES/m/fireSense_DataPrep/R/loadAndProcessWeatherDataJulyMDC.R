@@ -47,10 +47,9 @@ loadAndProcessWeatherDataJulyMDC <- function (d, prevBlock, projectWeatherData, 
   FWIoutputs <- data.table(FWIoutputs)
 
   ## average July DC per year
-  FWIoutputs <- FWIoutputs[, mDC := mean(DC), by = .(YR)]
-  prevData <- unique(FWIoutputs[, .(LAT, LONG, mDC, YR)])
-  setnames(prevData, c("LAT", "LONG", "YR", "mDC"),
-           c("latitude", "longitude", "year", "julMDC"))
+  prevData <- FWIoutputs[, list(julMDC = mean(DC)), by = .(LAT, LONG, YR)]
+  setnames(prevData, c("LAT", "LONG", "YR"),
+           c("latitude", "longitude", "year"))
 
   if (is.null(prevBlock))
     prevBlock <- prevData else

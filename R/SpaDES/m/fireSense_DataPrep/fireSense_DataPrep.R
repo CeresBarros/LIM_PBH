@@ -435,12 +435,11 @@ Init <- function(sim) {
       FWIoutputs <- data.table(FWIoutputs)
 
       ## average July DC per year
-      FWIoutputs <- FWIoutputs[, mDC := mean(DC), by = .(YR)]
-      weatherDataMDC <- unique(FWIoutputs[, .(LAT, LONG, mDC, YR)])
+      weatherDataMDC <- FWIoutputs[, list(julMDC = mean(DC)), by = .(LAT, LONG, YR)]
 
       ## change column names, convert to sf
-      setnames(weatherDataMDC, c("LAT", "LONG", "YR", "mDC"),
-               c("latitude", "longitude", "year", "julMDC"))
+      setnames(weatherDataMDC, c("LAT", "LONG", "YR"),
+               c("latitude", "longitude", "year"))
       sim$weatherDataMDC <- st_as_sf(weatherDataMDC, coords = c("longitude", "latitude"),
                                      crs = latLong, agr = "constant")
     } else {
