@@ -10,7 +10,7 @@ rm(list=ls()); amc::.gc()
 
 ## Get packages ----------------------
 ## requires as of Jan 2nd 2020
-# loading reproducible     1.0.0.9009
+# loading reproducible     1.0.0.9010
 # loading quickPlot        0.1.6.9000
 # loading SpaDES.core      1.0.0.9
 # loading SpaDES.tools     0.3.4.9000
