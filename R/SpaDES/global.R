@@ -77,19 +77,24 @@ simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, k
 sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
 sppColorVect <- sppColorVect[keepSpp]
 
+## Prepare fire weather tables --------------------
 source("R/SpaDES/3_fireWeather.R")
 
-## Define simulation params --------------------
-simTimes <- list(start = 0, end = 65)
+## Run more data prep -----------------------------
+# Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
+## to prepare objects for simulation and FireSense ignition/fire frquency fits
+## Define simulation params
+simTimes <- list(start = 1, end = 65)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireInitialTime <- 5L
 fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
 successionTimestep <- 1L
+source("R/SpaDES/4_preSimulation.R")
 
-## Make simulation module list, parameters objects, objects and outputs accoding to run
+## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run
 ## name and the parameters above
-source("R/SpaDES/4_simulationSetup.R")
+source("R/SpaDES/5_simulationSetup.R")
 
 ## -----------------------------------------------
 ## SIMULATION RUN
