@@ -99,17 +99,17 @@ if (grepl("newSppParams", runName)) {
 
 ## SIM OUTPUTS ------------------------------------------------
 
-  ## on the first year save after init events, but before mortalityAndGrowth
-  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = 0,
-                                    eventPriority = 5.5,
-                                    stringsAsFactors = FALSE))
-  outputs <- rbind(outputs, data.frame(objectName = "fuelTypesMaps",
-                                       saveTime = 5.5,
-                                       eventPriority = 1))
-  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = 5.5,
-                                       eventPriority = 1))
+## on the first year save after init events, but before mortalityAndGrowth
+outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+                                  saveTime = 0,
+                                  eventPriority = 5.5,
+                                  stringsAsFactors = FALSE))
+outputs <- rbind(outputs, data.frame(objectName = "fuelTypesMaps",
+                                     saveTime = 0,
+                                     eventPriority = 5.5))
+outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                     saveTime = 0,
+                                     eventPriority = 5.5))
 
 simOutPreSim <- Cache(simInitAndSpades
                       , times = list(start = 0, end = 0)
