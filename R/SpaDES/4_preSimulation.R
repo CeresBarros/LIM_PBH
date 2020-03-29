@@ -69,7 +69,7 @@ preSimParams <- list(
 )
 
 if (grepl("newSppParam", runName)) {
-  preSimModules <- c("LandR_speciesParameters", simModules)
+  preSimModules <- c("LandR_speciesParameters", preSimModules)
 
   preSimParams[["LandR_speciesParameters"]] <- list(
     "sppEquivCol" = sppEquivCol
