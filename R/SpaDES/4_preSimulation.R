@@ -80,13 +80,13 @@ if (grepl("newSppParam", runName)) {
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
 preSimObjects <- list("studyArea" = foothillsSMALL
-                   , "studyAreaLarge" = foothillsMED
-                   , "sppEquiv" = sppEquivalencies_CA
-                   , "sppColorVect" = sppColorVect
-                   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
-                   , "treed" =  simOutSpeciesLayers$treed
-                   , "numTreed" =  simOutSpeciesLayers$numTreed
-                   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+                      , "studyAreaLarge" = foothillsMED
+                      , "sppEquiv" = sppEquivalencies_CA
+                      , "sppColorVect" = sppColorVect
+                      , "speciesLayers" = simOutSpeciesLayers$speciesLayers
+                      , "treed" =  simOutSpeciesLayers$treed
+                      , "numTreed" =  simOutSpeciesLayers$numTreed
+                      , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
 )
 
 ## add PSP data if need be
@@ -111,17 +111,24 @@ if (grepl("newSppParams", runName)) {
                                        saveTime = 5.5,
                                        eventPriority = 1))
 
-  simOutPreSim <- Cache(simInitAndSpades
-                             , times = list(start = 0, end = 1)
-                             , params = preSimParams
-                             , modules = preSimModules
-                             , paths = simPaths
-                             , debug = TRUE
-                             , .plotInitialTime = NA
-                             # , useCache = "overwrite"
-                             , cacheRepo = simPaths$cachePath
-                             , userTags = "preSim"
-                             , omitArgs = c("userTags"))
+simOutPreSim <- Cache(simInitAndSpades
+                      , times = list(start = 0, end = 0)
+                      , params = preSimParams
+                      , modules = preSimModules
+                      , paths = simPaths
+                      , objects = preSimObjects
+                      , outputs = outputs
+                      , debug = TRUE
+                      , .plotInitialTime = NA
+                      # , useCache = "overwrite"
+                      , cacheRepo = simPaths$cachePath
+                      , userTags = "preSim"
+                      , omitArgs = c("userTags"))
 
+## this is not loading properly:
+# saveSimList(simOutPreSim,
+#             file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".RData")))
 
+saveRDS(simOutPreSim,
+            file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".rds")))
 
