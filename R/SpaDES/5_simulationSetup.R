@@ -39,6 +39,7 @@ if (grepl("noPM", runName)) {
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
+      , ".plotMaps" = FALSE
       , ".useCache" = eventCaching
     )
     , Biomass_regeneration = list(
@@ -96,6 +97,7 @@ if (grepl("noPM", runName)) {
       , "fireTimestep" = fireTimestep
       , "nonForestFire" = TRUE
       , "sppEquivCol" = sppEquivCol
+      , ".plotMaps" = FALSE
       , ".useCache" = eventCaching
     )
     , Biomass_regenerationPM = list(
