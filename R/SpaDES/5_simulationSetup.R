@@ -139,23 +139,27 @@ if (grepl("noPM", runName)) {
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-simObjects <- list("studyArea" = foothillsSMALL
-                   , "studyAreaLarge" = foothillsMED
-                   , "sppEquiv" = sppEquivalencies_CA
-                   , "sppColorVect" = sppColorVect
-                   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
-                   , "treed" =  simOutSpeciesLayers$treed
-                   , "numTreed" =  simOutSpeciesLayers$numTreed
-                   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
-                   , "weatherData" = simOutFireWeather$weatherData
-                   , "weatherDataCRS" = simOutFireWeather$weatherDataCRS
+
+simObjects <- lapply(ls(simOutPreSim@.xData), FUN = function(x) {
+  get(x, envir = simOutPreSim@.xData)
+})
+
+names(simObjects) <- ls(simOutPreSim@.xData)
+
+simObjects <- c(simObjects,
+                list("weatherData" = simOutFireWeather$weatherData
+                     , "weatherDataCRS" = simOutFireWeather$weatherDataCRS
+                )
 )
 
 ## add PSP data if need be
 if (grepl("newSppParams", runName)) {
-  simObjects$PSPgis <- PSPgis
-  simObjects$PSPmeasure <- PSPmeasure
-  simObjects$PSPplot <- PSPplot
+  simObjects <- c(simObjects,
+                  list("PSPgis" = PSPgis
+                       , "PSPmeasure" = PSPmeasure
+                       , "PSPplot" = PSPplot
+                  )
+  )
 }
 
 ## add fake fire map if need be
