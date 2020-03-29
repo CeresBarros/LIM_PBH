@@ -10,8 +10,7 @@
 ## SIM PARAMS ------------------------------------------------
 
 if (grepl("noPM", runName)) {
-  simModules <- list("Biomass_borealDataPrep"
-                     , "Biomass_fireProperties"
+  simModules <- list("Biomass_fireProperties"
                      , "Biomass_core"
                      , "Biomass_fuelsPFG"
                      , "fireSpread"
@@ -20,19 +19,7 @@ if (grepl("noPM", runName)) {
   )
 
   simParams <- list(
-    Biomass_borealDataPrep = list(
-      "sppEquivCol" = sppEquivCol
-      , "forestedLCCClasses" = c(1:15, 34:36)
-      , "LCCClassesToReplaceNN" = c(34:36)
-      # next two are used when assigning pixelGroup membership; what resolution for
-      #   age and biomass
-      , "pixelGroupAgeClass" = successionTimestep * 10L
-      , "pixelGroupBiomassClass" = 100
-      , "useCloudCacheForStats" = FALSE
-      , "cloudFolderID" = NA
-      , ".useCache" = eventCaching
-    )
-    , Biomass_core = list(
+    Biomass_core = list(
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
@@ -80,8 +67,7 @@ if (grepl("noPM", runName)) {
     )
   )
 } else {
-  simModules <- list("Biomass_borealDataPrep"
-                     , "Biomass_fireProperties"
+  simModules <- list("Biomass_fireProperties"
                      , "Biomass_core"
                      , "Biomass_fuelsPFG"
                      , "fireSpread"
@@ -90,19 +76,7 @@ if (grepl("noPM", runName)) {
   )
 
   simParams <- list(
-    Biomass_borealDataPrep = list(
-      "sppEquivCol" = sppEquivCol
-      , "forestedLCCClasses" = c(1:15, 34:36)
-      , "exportModels" = "modelBiomass"
-      # next two are used when assigning pixelGroup membership; what resolution for
-      #   age and biomass
-      , "pixelGroupAgeClass" = successionTimestep * 10L
-      , "pixelGroupBiomassClass" = 100
-      , "useCloudCacheForStats" = FALSE
-      , "cloudFolderID" = NA
-      , ".useCache" = eventCaching
-    )
-    , Biomass_core = list(
+    Biomass_core = list(
       "calcSummaryBGM" = c("start")
       , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
       , ".plotInitialTime" = simTimes$start
