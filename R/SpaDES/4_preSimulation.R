@@ -14,7 +14,7 @@
 preSimModules <- list("Biomass_borealDataPrep"
                       , "Biomass_core"
                       , "Biomass_fuelsPFG"
-                      , "fireSense_DataPrep"
+                      , "fireSense_dataPrep"
                       , "fireSense_IgnitionFit"
                       , "fireSense_IgnitionPredict"
 )

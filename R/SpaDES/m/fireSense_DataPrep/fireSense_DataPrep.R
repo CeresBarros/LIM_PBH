@@ -5,19 +5,25 @@
 ## just like functions in R packages.
 ## If exact location is required, functions will be: `sim$<moduleName>$FunctionName`.
 defineModule(sim, list(
-  name = "fireSense_DataPrep",
-  description = "",
-  keywords = "",
-  authors = structure(list(list(given = c("First", "Middle"), family = "Last", role = c("aut", "cre"), email = "email@example.com", comment = NULL)), class = "person"),
+  name = "fireSense_dataPrep",
+  description = "A module that prepares weather, fire and fuel data to run fireSense modules",
+  keywords = c("fireSense", "weather data", "fire data", "fire fuels", "fire frequency prediction"),
+  authors = structure(list(list(given = "Ceres", family = "Barros",
+                                role = c("aut", "cre"), email = "cbarros@mail.ubc.ca")), class = "person"),
   childModules = character(0),
-  version = list(SpaDES.core = "1.0.0.9004", fireSense_DataPrep = "0.0.0.9000"),
+  version = list(SpaDES.core = "1.0.0.9004", fireSense_dataPrep = "0.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = deparse(list("README.txt", "fireSense_DataPrep.Rmd")),
+  documentation = deparse(list("README.txt", "fireSense_dataPrep.Rmd")),
   reqdPkgs = list("sf", "raster", "quickPlot", "data.table",
-                  "future", "future.apply"),
+                  "gstat", "future", "future.apply", "exactextractr",
+                  "crayon"),
   parameters = rbind(
+    defineParameter("fireInitialTime", "numeric", 1,
+                    desc = "The event time that the first fire disturbance event occurs"),
+    defineParameter("fireTimestep", "numeric", NA,
+                    desc = "The number of time units between successive fire events in a fire module"),
     defineParameter("fitRes", "numeric", 1000, NA, NA,
                     paste("Resolution at which fire frequency (i.e. ignition) model - see Marchal et al 2017",
                           "Ecography - will be fitted. Needs to be larger than the resolution of",
@@ -82,20 +88,38 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "dataFireSense_IgnitionFit", objectClass = "data.frame",
-                  desc = paste("One or more objects of class data.frame in which to look for",
-                               "variables present in the model formula.")),
-    createsOutput(objectName = "weatherDataDMCStk", objectClass = "RasterStack",
+                  desc = paste("Data.frame containing the variables used by the fireSense_IgnitionFit module,",
+                               "to fit the fire frequency (i.e. ignition probability) model. Columns names",
+                               "must match the varible names in the model formula passed to fireSense_IgnitionFit.")),
+    createsOutput(objectName = "fuelTypesCoverStk", objectClass = "RasterStack",
+                  desc = paste("A stack of abundance of fire fuels upscaled from 'fuelTypesMaps'.",
+                               "Fuel abundances are calculated as the proportion of pixels of each fuel type,",
+                               "at the original scale, in each larger pixel of resolution 'fitRes'.",
+                               "Note that fuel type names must follow the CF Fire Behaviour Prediction System (2nd Ed.)",
+                               "letter and number classification. Also, different conifer fuel types are collapsed into a single one.")),
+    createsOutput(objectName = "weatherDataMDCStk", objectClass = "RasterStack",
                   desc = paste("A stack of interpolated monthly drought code data (from 'weatherDataMDC')",
                                "per year, in 'studyAreaLarge'."))
   )
 ))
 
-doEvent.fireSense_DataPrep = function(sim, eventTime, eventType) {
+doEvent.fireSense_dataPrep = function(sim, eventTime, eventType) {
   switch(
     eventType,
     init = {
       # do stuff for this event
-      sim <- Init(sim)
+      sim <- dataPrepInit(sim)
+
+      sim <- scheduleEvent(sim, P(sim)$fireInitialTime,
+                           "fireSense_dataPrep", "prepFireSenseData", eventPriority = 1)
+    },
+    prepFireSenseData = {
+      # do stuff for this event
+      sim <- prepData(sim)
+
+      # schedule future event
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$fireTimestep,
+                           "fireSense_dataPrep", "prepFireSenseData",  eventPriority = 1)
     },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
@@ -104,8 +128,16 @@ doEvent.fireSense_DataPrep = function(sim, eventTime, eventType) {
 }
 
 
-### template initialization
-Init <- function(sim) {
+### initialization
+dataPrepInit <- function(sim) {
+  ## checks
+  if (start(sim) == P(sim)$fireInitialTime)
+    warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
+
+  return(invisible(sim))
+}
+
+prepData <- function(sim) {
   ## STUDY AREA PREP -----------------------------------------
   ## reduce resolution of rasterToMatchLarge and make a polygon grid
   RTMLLowRes <- projectRaster(sim$rasterToMatchLarge,
@@ -114,32 +146,30 @@ Init <- function(sim) {
   RTMLLowRes[!is.na(RTMLLowRes[])] <- seq_len(sum(!is.na(RTMLLowRes[])))
   RTMLLowResPolyGrid <- st_as_sf(rasterToPolygons(RTMLLowRes))
 
-
   ## WEATHER DATA PREP --------------------------------------
-  ## project to foothills 1Km scale and rasterize/interpolate
-  weatherDataMDC <- st_transform(weatherDataMDC, crs = as.character(crs(RTMLLowRes)))
+  ## reproject to RTM and rasterize/interpolate at a coarser scale
+  weatherDataMDC <- st_transform(sim$weatherDataMDC, crs = as.character(crs(RTMLLowRes)))
 
-  weatherDataDMCStk <- lapply(unique(weatherDataMDC$Year), FUN = function(yr) {
-    weatherSPDF <- as_Spatial(weatherDataMDC[weatherDataMDC$Year == yr,])
-    form <- as.formula("julMDC ~ 1")
-    interpModel <- gstat(formula = form, data = weatherSPDF, set = list(idp = 0),
-                         nmax = 8)   ## using 8 nearest neighbours
-    weatherRas <- interpolate(object = RTMLLowRes, model = interpModel)  ## interpolate on RTM
-    mask(weatherRas, RTMLLowRes)
-  }) %>% raster::stack(.)
+  sim$weatherDataMDCStk <- Cache(weatherInterpolationWrapper,
+                                 weatherDataMDC = weatherDataMDC,
+                                 cacheRepo = cachePath(sim),
+                                 userTags = c(current(sim), "weatherDataMDCStk"),
+                                 omitArgs = "userTags")
 
   ## FUELS DATA PREP --------------------------------------
-  rasLevels <- as.data.table(levels(sim$fuelTypesMaps$finalFuelType)[[1]])
+  rasLevels <- as.data.table(raster::levels(sim$fuelTypesMaps$finalFuelType)[[1]])
   fuelTypesStk <- mapply(makeFuelsStk, FT = rasLevels$FuelTypeFBP,
-                         FTcode = rasLevels$ID, SIMPLIFY = FALSE)
+                         FTcode = rasLevels$ID,
+                         MoreArgs = list(fuelTypesRas = sim$fuelTypesMaps$finalFuelType),
+                         SIMPLIFY = FALSE)
   fuelTypesStk <- stack(fuelTypesStk)
 
-  ## add NAs to non-fuels
+  ## re-do non-fuels (NF) to add NAs
   fuelTypesStk$NF <- deratify(sim$fuelTypesMaps$finalFuelType)
   fuelTypesStk$NF[!fuelTypesStk$NF[] %in% rasLevels[FuelTypeFBP != "NF"]$ID] <- 99  ## everything that is not a fuel (even NAs) gets 99, so that the proportions can sum to 1.
   fuelTypesStk$NF[fuelTypesStk$NF[] %in% rasLevels[FuelTypeFBP != "NF"]$ID] <- NA   ## fuels get NA
 
-  ## convert to mask:
+  ## convert to "binary" mask:
   fuelTypesStk <- lapply(unstack(fuelTypesStk), FUN = function(ras) {
     ras[!is.na(ras)] <- 1
     ras
@@ -147,11 +177,12 @@ Init <- function(sim) {
 
   ## calculate proportion of each fuel at lower resolution
   ## first count no. of pixels
-  plan(multiprocess, gc = TRUE)
-  fuelTypesCover <- future_lapply(unstack(fuelTypesStk), FUN = function(ras) {
-    exact_extract(ras, RTMLLowResPolyGrid, "count")
-  })
-  future:::ClusterRegistry("stop")
+  fuelTypesCover <- Cache(calcFuelCoverWrapper,
+                          fuelTypesStk = fuelTypesStk,
+                          RTMLLowResPolyGrid = RTMLLowResPolyGrid,
+                          cacheRepo = cachePath(sim),
+                          userTags = c(current(sim), "fuelTypesCover"),
+                          omitArgs = "userTags")
 
   names(fuelTypesCover) <- names(fuelTypesStk)
   fuelTypesCover <- as.data.table(fuelTypesCover)
@@ -167,12 +198,26 @@ Init <- function(sim) {
   fuelTypesCoverStk <- lapply(fuelTypesCover[, ..cols], FUN = function(x, ras) {
     ras[!is.na(ras)][] <- x
     ras
-  }, ras = RTMLLowRes) %>% stack(.)
+  }, ras = RTMLLowRes) %>% raster::stack(.)
+
+  ## collapse coniferous fuels
+  fuelTypesCoverStk$coniferous = sum(fuelTypesCoverStk$C2,
+                                     fuelTypesCoverStk$C3,
+                                     fuelTypesCoverStk$C4,
+                                     fuelTypesCoverStk$C7)
+  ## export to sim
+  sim$fuelTypesCoverStk <- fuelTypesCoverStk
 
   ## STATISTICAL MODEL DATA PREP --------------------------------------
-  # Converting the above into data.table
+  ## Joining all the data into data.table
   sim$fireLocations <- as(as_Spatial(sim$fireLocations[, "ID"]), "SpatialPoints")
-  weatherDT <- raster::extract(weatherDataDMCStk, fireLocations, cellnumbers = TRUE)
+
+  if (!compareCRS(sim$fireLocations, sim$weatherDataMDCStk)) {
+    message(blue("Reprojecting 'fireLocations' to rasterToMatch projection"))
+    sim$fireLocations <- spTransform(sim$fireLocations, CRSobj = crs(sim$weatherDataMDCStk))
+  }
+
+  weatherDT <- raster::extract(sim$weatherDataMDCStk, sim$fireLocations, cellnumbers = TRUE)
   weatherDT <- unique(as.data.table(weatherDT))
   setnames(weatherDT, old = grep("var1.pred", names(weatherDT), value = TRUE),
            new = sub("var1.pred.", "julMDC_yr",
@@ -182,17 +227,15 @@ Init <- function(sim) {
   weatherDT <- melt(weatherDT, id.vars = "cells", value.name = "julMDC", variable.name = "year")
   weatherDT[, year :=  sub("julMDC_yr", "", year)]
 
-  fuelTypesDT <- raster::extract(fuelTypesCoverStk, fireLocations, cellnumbers = TRUE)
+  fuelTypesDT <- raster::extract(fuelTypesCoverStk, sim$fireLocations, cellnumbers = TRUE)
   fuelTypesDT <- unique(as.data.table(fuelTypesDT))
   fuelTypesDT[, n_fires := .N, by = cells]
 
-  ## join fuel and weather data and export to sim
+  ## join fuel and weather data, convert NAs in no. fires to 0s, and export to sim
   sim$dataFireSense_IgnitionFit <- weatherDT[fuelTypesDT, on = "cells"]
   sim$dataFireSense_IgnitionFit[is.na(n_fires), n_fires := 0]
 
-  ## collapse coniferous
-  sim$dataFireSense_IgnitionFit[, coniferous := rowSums(.SD),
-                            .SDcols = c("C2", "C3", "C4", "C7")]
+  return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
@@ -331,36 +374,39 @@ Init <- function(sim) {
   }
 
   ## FIRE DATA ----------------------------------------------------
-  fireLocations <- Cache(prepInputs,
-                         targetFile = "NFDB_point_20190801.shp",
-                         archive = "NFDB_point.zip",
-                         alsoExtract = "similar",
-                         url = extractURL("fireLocations"),
-                         destinationPath = dPath,
-                         fun = "sf::read_sf",
-                         studyArea = sim$studyArealarge,
-                         useSAcrs = TRUE,
-                         filename2 = TRUE, overwrite = TRUE,
-                         userTags = c(cacheTags, "prepInputsfireLocations"), # use at least 1 unique userTag
-                         omitArgs = c("destinationPath", "targetFile", "userTags"))
+  if (!suppliedElsewhere("fireLocations", sim)) {
+    fireLocations <- Cache(prepInputs,
+                           targetFile = "NFDB_point_20190801.shp",
+                           archive = "NFDB_point.zip",
+                           alsoExtract = "similar",
+                           url = extractURL("fireLocations"),
+                           destinationPath = dPath,
+                           fun = "sf::read_sf",
+                           studyArea = sim$studyArealarge,
+                           useSAcrs = TRUE,
+                           filename2 = TRUE, overwrite = TRUE,
+                           userTags = c(cacheTags, "prepInputsfireLocations"), # use at least 1 unique userTag
+                           omitArgs = c("destinationPath", "targetFile", "userTags"))
 
-  ## filter by lightning caused fires
-  fireLocations <- fireLocations[fireLocations$CAUSE == "L",]
-  ## filter remove fires after 1990
-  fireLocations <- fireLocations[fireLocations$YEAR <= 1990,]
+    ## filter by lightning caused fires
+    fireLocations <- fireLocations[fireLocations$CAUSE == "L",]
+    ## filter remove fires after 1990
+    fireLocations <- fireLocations[fireLocations$YEAR <= 1990,]
 
-  ## check if any fires are duplicated
-  fireLocationsDT <- as.data.table(st_drop_geometry(fireLocations))
-  fireDups <- duplicated(fireLocationsDT[, .(FIRE_ID, LATITUDE, LONGITUDE, REP_DATE)])
+    ## check if any fires are duplicated
+    fireLocationsDT <- as.data.table(st_drop_geometry(fireLocations))
+    fireDups <- duplicated(fireLocationsDT[, .(FIRE_ID, LATITUDE, LONGITUDE, REP_DATE)])
 
-  if (sum(fireDups)) {
-    fireLocations <- fireLocations[!fireDups,]
+    if (sum(fireDups)) {
+      fireLocations <- fireLocations[!fireDups,]
+    }
+
+    ## make unique IDs (fireIDS can have duplicates)
+    fireLocations$ID <- 1:nrow(fireLocations)
+
+    ## export to sim
+    sim$fireLocations <- fireLocations
   }
-
-  ## make unique IDs (fireIDS can have duplicates)
-  fireLocations$ID <- 1:nrow(fireLocations)
-
-
 
   ## WEATHER DATA -------------------------------------------------
   if (!suppliedElsewhere("weatherDataMDC", sim)) {
@@ -386,7 +432,7 @@ Init <- function(sim) {
 
     ## get weather data generated by BioSIM - note that BioSIM saves data in lat/long proj
     if (file.exists(file.path(dPath, "Export (WeatherGeneration).csv")))
-      params(sim)$fireSense_DataPrep$loadWeatherInChunks <- file.size(file.path(dPath, "Export (WeatherGeneration).csv")) > 4e+9 else
+      params(sim)$fireSense_dataPrep$loadWeatherInChunks <- file.size(file.path(dPath, "Export (WeatherGeneration).csv")) > 4e+9 else
         warning("Could not check the size of weatherDataMDC file. Please make sure it's small enough to load into memory")
 
     if (!P(sim)$loadWeatherInChunks) {
@@ -443,7 +489,7 @@ Init <- function(sim) {
       sim$weatherDataMDC <- st_as_sf(weatherDataMDC, coords = c("longitude", "latitude"),
                                      crs = latLong, agr = "constant")
     } else {
-      warning("weatherDataMDC file is too large to load into memory. Will be processed in chunks")
+      message("weatherDataMDC file is too large to load into memory. Will be processed in chunks")
 
       dataModel <- detect_dm_csv(file.path(dPath, "Export (WeatherGeneration).csv"),
                                  header = TRUE)
