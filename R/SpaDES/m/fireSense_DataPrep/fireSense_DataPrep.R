@@ -366,7 +366,7 @@ Init <- function(sim) {
   if (!suppliedElsewhere("weatherDataMDC", sim)) {
     ## get the original CRS
     if (suppliedElsewhere("weatherDataMDCCRS", sim)) {
-      warning("'weatherDataMDC' does not appear to be supplied to Biomass_fireWeather,",
+      warning("'weatherDataMDC' does not appear to be supplied to fireWeather,",
               "but 'weatherDataMDCCRS' does. Make sure it corresponds to 'weatherDataMDC's CRS projection.")
     } else {
       ## get the shp from BioSIM to obtain projection
@@ -464,7 +464,7 @@ Init <- function(sim) {
     }
   } else {
     if (!suppliedElsewhere("weatherDataMDCCRS", sim))
-      stop(red("'weatherDataMDC' appears to be supplied to Biomass_fireWeather,",
+      stop(red("'weatherDataMDC' appears to be supplied to fireWeather,",
                "but not weatherDataMDCCRS. Please provide 'weatherDataMDCCRS' with the projection of 'weatherDataMDC'."))
   }
   return(invisible(sim))

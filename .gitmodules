@@ -30,3 +30,6 @@
 [submodule "R/SpaDES/m/fireSense_IgnitionPredict"]
 	path = R/SpaDES/m/fireSense_IgnitionPredict
 	url = https://github.com/CeresBarros/fireSense_IgnitionPredict.git
+[submodule "R/SpaDES/m/fireWeather"]
+	path = R/SpaDES/m/fireWeather
+	url = https://github.com/CeresBarros/fireWeather.git
