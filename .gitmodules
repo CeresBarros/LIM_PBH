@@ -36,3 +36,6 @@
 [submodule "R/SpaDES/m/Biomass_speciesParameters"]
 	path = R/SpaDES/m/Biomass_speciesParameters
 	url = https://github.com/CeresBarros/Biomass_speciesParameters.git
+[submodule "R/SpaDES/m/fireSense_dataPrep"]
+	path = R/SpaDES/m/fireSense_dataPrep
+	url = https://github.com/CeresBarros/fireSense_dataPrep.git
