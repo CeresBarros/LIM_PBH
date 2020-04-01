@@ -61,14 +61,15 @@ preSimParams <- list(
   )
   , fireSense_IgnitionFit = list(
     formula = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
-                        M2:julMDC + O1b:julMDC + NF:julMDC - 1),
-    family = poisson(link = "identity"),
-    ub = list(coef = 1),
-    data = "dataFireSense_IgnitionFit",
-    trace = 1,
-    iterDEoptim = 60,
-    iterNlminb = 100,
+                        M2:julMDC + O1b:julMDC + NF:julMDC - 1)
+    , family = poisson(link = "identity")
+    , ub = list(coef = 1)
+    , data = "dataFireSense_IgnitionFit"
+    , trace = 1
+    , iterDEoptim = 60
+    , iterNlminb = 100
     , cores = 4
+    , ".useCache" = eventCaching
   )
 )
 
