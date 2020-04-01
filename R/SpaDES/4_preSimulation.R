@@ -64,7 +64,7 @@ preSimParams <- list(
     trace = 1,
     iterDEoptim = 60,
     iterNlminb = 100,
-    cores = 50
+    , cores = 4
   )
 )
 
