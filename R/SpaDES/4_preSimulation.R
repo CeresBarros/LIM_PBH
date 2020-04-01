@@ -79,9 +79,9 @@ preSimParams <- list(
 )
 
 if (grepl("newSppParam", runName)) {
-  preSimModules <- c("LandR_speciesParameters", preSimModules)
+  preSimModules <- c("Biomass_speciesParameters", preSimModules)
 
-  preSimParams[["LandR_speciesParameters"]] <- list(
+  preSimParams[["Biomass_speciesParameters"]] <- list(
     "sppEquivCol" = sppEquivCol
     , ".useCache" = eventCaching
   )

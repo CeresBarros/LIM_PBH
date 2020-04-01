@@ -127,11 +127,11 @@ if (grepl("noPM", runName)) {
   )
 }
 
-## add LandR_speciesParameters module if need be - not necessary when running pre-sims
+## add Biomass_speciesParameters module if need be - not necessary when running pre-sims
 # if (grepl("newSppParam", runName)) {
-#   simModules <- c("LandR_speciesParameters", simModules)
+#   simModules <- c("Biomass_speciesParameters", simModules)
 #
-#   simParams[["LandR_speciesParameters"]] <- list(
+#   simParams[["Biomass_speciesParameters"]] <- list(
 #     "sppEquivCol" = sppEquivCol
 #     , ".useCache" = eventCaching
 #     )

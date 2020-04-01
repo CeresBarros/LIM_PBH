@@ -70,10 +70,10 @@ sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
                           newVals = "Mixed", palette = "Accent")
 
 ## PSP DATA ------------------------------------------------------------------
-## Set up PSP data for LandR_speciesParameters
+## Set up PSP data for Biomass_speciesParameters
 PSPmeasure <- Cache(prepInputs,
                     targetFile = "PSPmeasure.Rdat",
-                    archive = "randomized_LandR_speciesParameters_Inputs.zip",
+                    archive = "randomized_Biomass_speciesParameters_Inputs.zip",
                     url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                     fun = "readRDS",
                     destinationPath = simPaths$inputPath,
