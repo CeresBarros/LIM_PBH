@@ -11,6 +11,11 @@
 ## fire frequency using FireSense
 
 ## SIM PARAMS ------------------------------------------------
+preSimPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests/preSim"),
+                    modulePath = file.path("R/SpaDES/m"),
+                    inputPath = file.path("R/SpaDES/inputs"),
+                    outputPath = file.path("R/SpaDES/outputs/preSim"))
+
 preSimModules <- list("Biomass_borealDataPrep"
                       , "Biomass_core"
                       , "Biomass_fuelsPFG"
@@ -114,19 +119,21 @@ simOutPreSim <- Cache(simInitAndSpades
                       , times = list(start = 0, end = 0)
                       , params = preSimParams
                       , modules = preSimModules
-                      , paths = simPaths
+                      , paths = preSimPaths
                       , objects = preSimObjects
                       , outputs = outputs
                       , debug = TRUE
                       , .plotInitialTime = NA
                       # , useCache = "overwrite"
-                      , cacheRepo = simPaths$cachePath
+                      , cacheRepo = preSimPaths$cachePath
                       , userTags = "preSim"
                       , omitArgs = c("userTags"))
 
 ## this is not loading properly:
-# saveSimList(simOutPreSim,
-#             file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".RData")))
+saveSimList(simOutPreSim,
+            file.path(preSimPaths$outputPath, "preSimList.qs"))
+# saveRDS(simOutPreSim,
+#             file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".rds")))
 
 ## ESTIMATE FIRE FREQUENCY------------------------------------------------
 ## fireSenseIgnitionPredict needs to be run separately as the objects can't
