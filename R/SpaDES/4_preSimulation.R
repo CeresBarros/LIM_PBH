@@ -16,7 +16,6 @@ preSimModules <- list("Biomass_borealDataPrep"
                       , "Biomass_fuelsPFG"
                       , "fireSense_dataPrep"
                       , "fireSense_IgnitionFit"
-                      , "fireSense_IgnitionPredict"
 )
 
 preSimParams <- list(
@@ -129,6 +128,51 @@ simOutPreSim <- Cache(simInitAndSpades
 # saveSimList(simOutPreSim,
 #             file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".RData")))
 
-saveRDS(simOutPreSim,
-            file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".rds")))
+## ESTIMATE FIRE FREQUENCY------------------------------------------------
+## fireSenseIgnitionPredict needs to be run separately as the objects can't
+## be directly passed between modules
 
+## Define fireSense_IgnitionPredict module inputs
+## we will use an average MDC across the years and output a raster that will not change
+## in time
+objects <- list(
+  fireSense_IgnitionFitted = simOutPreSim$fireSense_IgnitionFitted
+  , D2 = simOutPreSim$fuelTypesCoverStk$D2
+  , M2 = simOutPreSim$fuelTypesCoverStk$M2
+  , coniferous = simOutPreSim$fuelTypesCoverStk$coniferous
+  , O1b = simOutPreSim$fuelTypesCoverStk$O1b
+  , NF = simOutPreSim$fuelTypesCoverStk$NF
+  , julMDC = mean(simOutPreSim$weatherDataMDCStk)
+)
+
+# Define fireSense_IgnitionPredict module outputs
+outputs <- rbind(
+  data.frame(
+    file = paste0("fireSense_IgnitionPredicted.tif"),
+    fun = "writeRaster",
+    objectName = "fireSense_IgnitionPredicted",
+    package = "raster",
+    saveTime = 1
+  )
+)
+
+# Define fireSense_IgnitionPredict module parameters
+parameters <- list(
+  fireSense_IgnitionPredict = list(
+    data = c("D2", "M2", "coniferous", "O1b", "NF", "julMDC"),
+    modelObjName = "fireSense_IgnitionFitted" # This is the default
+  )
+)
+
+# Run the simulation
+simOutFireFreq <- Cache(simInitAndSpades
+                        , times = list(start = 0, end = 0)
+                        , modules = "fireSense_IgnitionPredict"
+                        , paths = preSimPaths
+                        , objects = objects
+                        , outputs = outputs
+                        , params = parameters
+                        , cacheRepo = preSimPaths$cachePath
+                        , userTags = "preSim"
+                        , omitArgs = c("userTags")
+)
