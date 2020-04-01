@@ -36,3 +36,6 @@
 [submodule "R/SpaDES/m/fireSense_dataPrep"]
 	path = R/SpaDES/m/fireSense_dataPrep
 	url = https://github.com/CeresBarros/fireSense_dataPrep.git
+[submodule "R/SpaDES/m/Biomass_fuelsPFG"]
+	path = R/SpaDES/m/Biomass_fuelsPFG
+	url = https://github.com/CeresBarros/Biomass_fuelsPFG.git
