@@ -59,6 +59,11 @@ preSimParams <- list(
     , ".plotMaps" = FALSE
     , ".useCache" = eventCaching
   )
+  , fireSense_dataPrep = list(
+    "fireInitialTime" = 0
+    , "fireTimestep" = 1
+    , ".useCache" = eventCaching
+  )
   , fireSense_IgnitionFit = list(
     formula = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
                         M2:julMDC + O1b:julMDC + NF:julMDC - 1)
@@ -92,6 +97,9 @@ preSimObjects <- list("studyArea" = foothillsSMALL
                       , "treed" =  simOutSpeciesLayers$treed
                       , "numTreed" =  simOutSpeciesLayers$numTreed
                       , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+                      , "weatherData" = simOutFireWeather$weatherData
+                      , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
+                      , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
 )
 
 ## add PSP data if need be
