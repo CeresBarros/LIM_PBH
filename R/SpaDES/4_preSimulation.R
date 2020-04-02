@@ -111,7 +111,6 @@ if (grepl("newSppParams", runName)) {
 
 
 ## SIM OUTPUTS ------------------------------------------------
-
 ## on the first year save after init events, but before mortalityAndGrowth
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   saveTime = 0,
