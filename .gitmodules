@@ -1,11 +1,9 @@
 [submodule "R/SpaDES/m/Biomass_core"]
 	path = R/SpaDES/m/Biomass_core
 	url = https://github.com/CeresBarros/Biomass_core.git
-	branch = development
 [submodule "R/SpaDES/m/Biomass_borealDataPrep"]
 	path = R/SpaDES/m/Biomass_borealDataPrep
 	url = https://github.com/CeresBarros/Biomass_borealDataPrep.git
-	branch = development
 [submodule "R/SpaDES/m/Biomass_speciesData"]
 	path = R/SpaDES/m/Biomass_speciesData
 	url = https://github.com/CeresBarros/Biomass_speciesData.git
