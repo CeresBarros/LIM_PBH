@@ -191,7 +191,7 @@ simOutFireFreq <- Cache(simInitAndSpades
                         , userTags = "preSim"
                         , omitArgs = c("userTags")
 )
-saveSimList(simOutPreSim,
+saveSimList(simOutFireFreq,
             file.path(preSimPaths$outputPath, "preSimList_FireSense_IgnitionPredict.qs"))
 
 
