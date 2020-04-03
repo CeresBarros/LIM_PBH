@@ -73,8 +73,8 @@ preSimParams <- list(
     , trace = 1
     , iterDEoptim = 60
     , iterNlminb = 100
-    , cores = 4
-    , ".useCache" = eventCaching
+    , cores = 1
+    , ".useCache" = c(eventCaching, "run")
   )
 )
 
