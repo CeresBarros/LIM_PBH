@@ -195,3 +195,10 @@ saveSimList(simOutFireFreq,
             file.path(preSimPaths$outputPath, "preSimList_FireSense_IgnitionPredict.qs"))
 
 
+
+## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
+simOutPreSim$fireSense_IgnitionFitted
+ignitModel <- quote(0.4029029 * coniferous * julMDC + 1 * D2 * julMDC +
+                      0.8431114 * M2 * julMDC + 0.5835485 * O1b * julMDC + 0.4943392 * NF * julMDC)
+
+simOutPreSim$dataFireSense_IgnitionFit
