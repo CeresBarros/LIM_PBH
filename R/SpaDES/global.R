@@ -54,7 +54,9 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "blogSep2019_noPM_oneFire"
 
 # runName <- "PM_oneFire_newSppParams"
-runName <- "noPM_oneFire_newSppParams"
+# runName <- "noPM_oneFire_newSppParams"
+runName <- "PM_newSppParams"
+runName <- "noPM_newSppParams"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
@@ -84,11 +86,11 @@ source("R/SpaDES/3_fireWeather.R")
 # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
 ## to prepare objects for simulation and FireSense ignition/fire frquency fits
 ## Define simulation params
-simTimes <- list(start = 1, end = 65)
+simTimes <- list(start = 1, end = 100)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireInitialTime <- 5L
-fireTimestep <- if (grepl("oneFire", runName)) 100L else 2L
+fireTimestep <- if (grepl("oneFire", runName)) 100L else 1L
 successionTimestep <- 1L
 source("R/SpaDES/4_preSimulation.R")
 
@@ -113,31 +115,20 @@ graphics.off()
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
 # reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-# Biomass_core_testSim <- simInitAndSpades(times = simTimes
-#                                  , params = simParams
-#                                  , modules = simModules[1:6]
-#                                  , objects = simObjects
-#                                  , paths = simPaths
-#                                  , outputs = outputs
-#                                  , debug = TRUE
-#                                  , .plotInitialTime = NA
-# )
-# saveRDS(Biomass_core_testSim, file.path(simPaths$outputPath, paste0("simList_", runName, ".rds")))
-# simTimes$end <- 21
 
-Biomass_core_testSimInit <- simInitAndSpades(times = simTimes
-                                             , params = simParams
-                                             , modules = simModules[c(1:5, 7)]
-                                             , objects = simObjects
-                                             , paths = simPaths
-                                             , outputs = outputs
-                                             , debug = TRUE
-                                             # , .plotInitialTime = NA
+simOut <- simInitAndSpades(times = simTimes
+                           , params = simParams
+                           , modules = simModules[c(1:5)]
+                           , objects = simObjects
+                           , paths = simPaths
+                           , outputs = outputs
+                           , debug = TRUE
+                           # , .plotInitialTime = NA
 )
 
 ## CHECK CONVERGENCE OF MODELBIOMASS
 ## allFit is taking too long (>12h and didn't even with first optimizer)
-modBiomass <- Biomass_core_testSimInit$modelBiomass$mod
+modBiomass <- simOutPreSim$modelBiomass$mod
 
 pars <- unlist(getME(modBiomass, c("theta")))
 grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
