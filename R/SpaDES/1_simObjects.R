@@ -38,28 +38,35 @@ sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_
                                Pseu_men = "Pseu_men")[LandR]]
 
 sppEquivalencies_CA[, EN_generic_short := c(Abie_sp = "Fir",
-                                            Lari_lar = "Larch",
+                                            Lari_sp = "Tamarack",
                                             Pice_mar = "Bl spruce", Pice_gla = "Wh spruce", Pice_eng = "Eng spruce",
                                             Pinu_sp = "Pine",
+                                            Pinu_pon = "Pd pine",
                                             Popu_sp = "Decid",
                                             Pseu_men = "Doug-fir")[LIM]]
 sppEquivalencies_CA[, EN_generic_full := c(Abie_sp = "Fir",
-                                           Lari_lar = "Larch",
+                                           Lari_sp = "Tamarack",
                                            Pice_mar = "Black spruce", Pice_gla = "White spruce", Pice_eng = "Engelmann spruce",
                                            Pinu_sp = "Pine",
+                                           Pinu_pon = "Ponderosa pine",
                                            Popu_sp = "Deciduous",
-                                           Pseu_men = "Doug-fir")[LIM]]
+                                           Pseu_men = "Douglas-fir")[LIM]]
 
 sppEquivalencies_CA[, FI_layers := c(Abie_sp = "Fir",
-                                     Lari_lar = "",
+                                     Lari_sp = "",
                                      Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
                                      Pinu_sp = "Pine",
+                                     Pinu_pon = "Pine",
                                      Popu_sp = "Deciduous",
                                      Pseu_men = "")[LIM]]
 
-sppEquivalencies_CA[LIM == "Abie_sp", Leading := "Fir leading"]
-sppEquivalencies_CA[LIM == "Popu_sp", Leading := "Deciduous leading"]
-sppEquivalencies_CA[LIM == "Pinu_sp", Leading := "Pine leading"]
+sppEquivalencies_CA[, Leading := c(Abie_sp = "Fir leading",
+                                     Lari_sp = "Tamarack Leading",
+                                     Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
+                                     Pinu_sp = "Pine leading",
+                                     Pinu_pon = "Pd pine leadinng",
+                                     Popu_sp = "Deciduous leading",
+                                     Pseu_men = "Doug-fir leading")[LIM]]
 
 ## define spp column to use for model
 sppEquivCol <- "LIM"
