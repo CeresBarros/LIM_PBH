@@ -127,19 +127,8 @@ if (grepl("noPM", runName)) {
   )
 }
 
-## add Biomass_speciesParameters module if need be - not necessary when running pre-sims
-# if (grepl("newSppParam", runName)) {
-#   simModules <- c("Biomass_speciesParameters", simModules)
-#
-#   simParams[["Biomass_speciesParameters"]] <- list(
-#     "sppEquivCol" = sppEquivCol
-#     , ".useCache" = eventCaching
-#     )
-# }
-
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-
 simObjects <- lapply(ls(simOutPreSim@.xData), FUN = function(x) {
   get(x, envir = simOutPreSim@.xData)
 })
@@ -149,18 +138,10 @@ names(simObjects) <- ls(simOutPreSim@.xData)
 simObjects <- c(simObjects,
                 list("weatherData" = simOutFireWeather$weatherData
                      , "weatherDataCRS" = simOutFireWeather$weatherDataCRS
+                     , "fireIgnitionProb" = simOutFireFreq$fireSense_IgnitionPredicted
                 )
 )
 
-## add PSP data if need be
-if (grepl("newSppParams", runName)) {
-  simObjects <- c(simObjects,
-                  list("PSPgis" = PSPgis
-                       , "PSPmeasure" = PSPmeasure
-                       , "PSPplot" = PSPplot
-                  )
-  )
-}
 
 ## add fake fire map if need be
 if (grepl("oneFire", runName)) {
@@ -175,51 +156,26 @@ if (grepl("oneFire", runName)) {
 
 
 ## SIM OUTPUTS ------------------------------------------------
-if (grepl("oneFire", runName)) {
-  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                             by = 5))),
-                                    eventPriority = 10,
-                                    stringsAsFactors = FALSE))
-  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                                by = 5))),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                                by = 5))),
-                                       eventPriority = 10))
-  ## on the first year save after init events, but before mortalityAndGrowth
-  outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
-} else {
-  outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                    saveTime = seq(simTimes$start, simTimes$end,
-                                                   by = simParams$fireSpread$fireTimestep),
-                                    eventPriority = 10,
-                                    stringsAsFactors = FALSE))
-  outputs[1, "eventPriority"] <- 5.5  ## after init events, before mortalityAndGrowth
-  outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                       saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                      simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = simParams$fireSpread$fireTimestep),
-                                       eventPriority = 10))
-  outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                       saveTime = seq(simTimes$start, simTimes$end,
-                                                      by = 5),
-                                       eventPriority = 10))
-}
+outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+                                  saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                           by = 5))),
+                                  eventPriority = 10,
+                                  stringsAsFactors = FALSE))
+outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
+                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
+                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                     saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                              by = 5))),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                     saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
+                                                              by = 5))),
+                                     eventPriority = 10))
+## on the first year save after init events, but before mortalityAndGrowth
+outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
