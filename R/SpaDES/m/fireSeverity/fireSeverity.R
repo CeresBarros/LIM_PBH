@@ -35,9 +35,9 @@ defineModule(sim, list(
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("Polygon to use as the study area.",
                               "Defaults to  an area in Southwestern Alberta, Canada."),
-                 sourceURL = ""),
+                 sourceURL = NA),
     expectsInput(objectName = "studyAreaFBP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = "")
+                 desc = "same as studyArea,  but on FBP-compatible projection", sourceURL = NA)
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "biomassMapPreFire", objectClass = "RasterLayer",

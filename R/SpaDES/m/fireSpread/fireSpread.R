@@ -35,6 +35,8 @@ defineModule(sim, list(
                  desc = "Raster of crown fraction burnt"),
     expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium head fire intensity [kW/m]"),
+    expectsInput(objectName = "fireIgnitionProb", objectClass = "RasterLayer",
+                 desc = "Raster ignition probabilities"),
     expectsInput(objectName = "fireROSRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium rate of spread [m/min]"),
     expectsInput(objectName = "fireRSORas", objectClass = "RasterLayer",
@@ -53,7 +55,7 @@ defineModule(sim, list(
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = paste("Polygon to use as the study area.",
                               "Defaults to  an area in Southwestern Alberta, Canada."),
-                 sourceURL = "")
+                 sourceURL = NA)
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
@@ -168,22 +170,22 @@ doFireSpread <- function(sim) {
   vals <- vals[B <= 0, B := NA]
   burnableAreas[] <- vals$B
 
-  ## MAKE RASTER OF SPREAD PROABILITIES
+  ## MAKE RASTER OF SPREAD PROBABILITIES
   ## spread probability is the combination of ROS and intensity, which have an multiplicative effect
-  ## and their product is centred is scaled to 0.15-0.25
+  ## and their product is centred and scaled around 0.23 (a suggested value for realistic spread)
   ## TODO: ROS and intensity should be combined differently
   spreadProb_map <- sim$fireROSRas * sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
   # vals[!is.na(spreadP), spreadP := scale(spreadP, scale = FALSE) + 0.20]
-  vals[!is.na(spreadP), spreadP := rescale(spreadP, to = c(0.21, 0.5))]
+  vals[!is.na(spreadP), spreadP := scales::rescale(spreadP, to = c(0.21, 0.25))]
   spreadProb_map[] <- vals$spreadP
 
   ## NAs get 0 probability - not necessary
   # spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
 
-  ## MAKE RASTER OF PERSISTENCE PROABILITIES
+  ## MAKE RASTER OF PERSISTENCE PROBABILITIES
   ## persistence probability is the combination of TFC and intensity, as a ratio
   ## (higher intensity fires should a same amount of biomass for less time tan a low intensity fire)
   ## Note that 0 denominator will create NAs, so these need to be zeroed
@@ -194,7 +196,7 @@ doFireSpread <- function(sim) {
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(persisP), persisP := rescale(persisP, to = c(0,1))]
+  vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisP
 
   ## check if NAs match
@@ -215,14 +217,19 @@ doFireSpread <- function(sim) {
   while (class(rstCurrentBurn) != "RasterLayer" &
          i < 5) {
     i <- i + 1
-    sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
+    ## draw from runif to get fire ignitions, first make a raster
+    sim$startPix <- burnableAreas
+    sim$startPix[!is.na(sim$startPix[])] <- runif(sum(!is.na(sim$startPix[])))
+    sim$startPix <- sim$fireIgnitionProb - sim$startPix
+
+    ## assess "winnders" and convert to vector
+    sim$startPix <- which(getValues(sim$startPix) >= 0) ## winners are 0 or larger.
     rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
                                        spreadProb = spreadProb_map,
                                        persistProb = persistProb_map,
                                        start = sim$startPix,
                                        maxSize =  P(sim)$fireSize,
                                        plot.it = FALSE), error = function(e) e)
-
   }
   if (class(rstCurrentBurn) != "RasterLayer")
     stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
@@ -333,9 +340,10 @@ doNoFire <- function(sim) {
           !suppliedElsewhere("fireROSRas", sim),
           !suppliedElsewhere("fireIntRas", sim),
           !suppliedElsewhere("fireTFCRas", sim),
-          !suppliedElsewhere("fireCFBRas", sim))) {
+          !suppliedElsewhere("fireCFBRas", sim),
+          !suppliedElsewhere("fireIgnitionProb", sim))) {
     message(crayon::red(paste0("fireSpread is missing one/several of the following rasters:\n",
-                               "  fireRSORas, fireROSRas, fireIntRas, fireTFCRas and fireCFBRas.\n",
+                               "  fireRSORas, fireROSRas, fireIntRas, fireTFCRas, fireCFBRas or fireIgnitionProb.\n",
                                "  DUMMY RASTERS will be used - if this is not intended, please \n",
                                "  use a fire module that provides them (e.g. fireSpread)")))
     vals <- getValues(sim$rasterToMatch)
@@ -349,8 +357,10 @@ doNoFire <- function(sim) {
 
     valsInt[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
     valsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
+    valvalsIgnitsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
 
     sim$fireCFBRas <- setValues(sim$rasterToMatch, valsCFB)
+    sim$fireIgnitionProb <- setValues(sim$rasterToMatch, valsIgnit)
     sim$fireIntRas <- setValues(sim$rasterToMatch, valsInt)
     sim$fireROSRas <- setValues(sim$rasterToMatch, valsROS)
     sim$fireRSORas <- setValues(sim$rasterToMatch, valsRSO)
