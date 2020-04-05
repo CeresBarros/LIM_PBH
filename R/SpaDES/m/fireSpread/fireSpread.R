@@ -204,12 +204,9 @@ doFireSpread <- function(sim) {
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
 
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
-  # vals[!is.na(spreadP), spreadP := scale(spreadP, scale = FALSE) + 0.20]
-  vals[!is.na(spreadP), spreadP := scales::rescale(spreadP, to = c(0.21, 0.25))]
-  spreadProb_map[] <- vals$spreadP
-
-  ## NAs get 0 probability - not necessary
-  # spreadProb_map[is.na(getValues(spreadProb_map))] <- 0
+  vals[!is.na(spreadP) & spreadP > 0, spreadPsc := scales::rescale(spreadP, to = c(0.21, 0.25))]
+  vals[!is.na(spreadP) & is.na(spreadPsc), spreadPsc := 0]
+  spreadProb_map[] <- vals$spreadPsc
 
   ## MAKE RASTER OF PERSISTENCE PROBABILITIES
   ## persistence probability is the combination of TFC and intensity, as a ratio
@@ -222,8 +219,9 @@ doFireSpread <- function(sim) {
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(persisP), persisP := scales::rescale(persisP, to = c(0,1))]
-  persistProb_map[] <- vals$persisP
+  vals[!is.na(persisP) & persisP > 0, persisPsc := scales::rescale(persisP, to = c(0,1))]
+  vals[!is.na(persisP) & is.na(persisP), persisPsc := 0]
+  persistProb_map[] <- vals$persisPsc
 
   ## check if NAs match
   if (getOption("LandR.assertions"))
