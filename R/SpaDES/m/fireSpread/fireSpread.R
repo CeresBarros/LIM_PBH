@@ -254,6 +254,11 @@ doFireSpread <- function(sim) {
                                        start = sim$startPix,
                                        maxSize =  P(sim)$fireSize,
                                        plot.it = FALSE), error = function(e) e)
+
+    ## remove fires that only burned one pixel - these didn't really spread
+    noSpreadFires <- as.data.table(table(rstCurrentBurn[]))
+    noSpreadFires <- noSpreadFires[N == 1]
+    rstCurrentBurn[rstCurrentBurn[] %in% noSpreadFires$V1] <- NA
   }
   if (class(rstCurrentBurn) != "RasterLayer")
     stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
