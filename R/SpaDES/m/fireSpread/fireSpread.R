@@ -242,12 +242,12 @@ doFireSpread <- function(sim) {
          i < 5) {
     i <- i + 1
     ## draw from runif to get fire ignitions, first make a raster
-    sim$startPix <- burnableAreas
-    sim$startPix[!is.na(sim$startPix[])] <- runif(sum(!is.na(sim$startPix[])))
-    sim$startPix <- sim$fireIgnitionProb - sim$startPix
+    startPix <- burnableAreas
+    startPix[!is.na(startPix[])] <- runif(sum(!is.na(startPix[])))
+    startPix <- sim$fireIgnitionProb - startPix
 
-    ## assess "winnders" and convert to vector
-    sim$startPix <- which(getValues(sim$startPix) >= 0) ## winners are 0 or larger.
+    ## assess "winners" and convert to vector (also export to sim)
+    sim$startPix <- which(getValues(startPix) >= 0) ## winners are 0 or larger.
     rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
                                        spreadProb = spreadProb_map,
                                        persistProb = persistProb_map,
