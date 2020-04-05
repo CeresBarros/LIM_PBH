@@ -117,11 +117,37 @@ Init <- function(sim) {
   if (start(sim) == P(sim)$fireInitialTime)
     warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
 
+  ## check if ignition raster matches RTM
+  ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
+  if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
+    message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
+                       "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
+    sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
+                                        rasterToMatch = sim$rasterToMatch,
+                                        maskWithRTM = TRUE,
+                                        method = "bilinear",
+                                        filename2 = NULL, ## don't save
+                                        useCache = FALSE)  ## don't cache
+  }
+
   return(invisible(sim))
 }
 
 ## Fire spread event in fire years - rasters should be back in LandR Biomass projection
 doFireSpread <- function(sim) {
+  ## check if ignition raster matches RTM
+  ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
+  if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
+    message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
+                       "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
+    sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
+                                        rasterToMatch = sim$rasterToMatch,
+                                        maskWithRTM = TRUE,
+                                        method = "bilinear",
+                                        filename2 = NULL, ## don't save
+                                        useCache = FALSE)  ## don't cache
+  }
+
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
   ## if no simulatedBiomassMap is supplied then generate one from raw data
