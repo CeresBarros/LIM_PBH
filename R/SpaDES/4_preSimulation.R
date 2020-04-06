@@ -89,8 +89,10 @@ if (grepl("newSppParam", runName)) {
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-preSimObjects <- list("studyArea" = foothillsSMALL
-                      , "studyAreaLarge" = foothillsMED
+preSimObjects <- list(# "studyArea" = foothillsSMALL
+                      # , "studyAreaLarge" = foothillsMED
+		      studyArea = foothills
+		      , studyAreaLarge = foothills
                       , "sppEquiv" = sppEquivalencies_CA
                       , "sppColorVect" = sppColorVect
                       , "speciesLayers" = simOutSpeciesLayers$speciesLayers

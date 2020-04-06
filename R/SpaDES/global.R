@@ -56,7 +56,11 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "PM_oneFire_newSppParams"
 # runName <- "noPM_oneFire_newSppParams"
 # runName <- "PM_newSppParams"
-runName <- "noPM_newSppParams"
+# runName <- "noPM_newSppParams"
+# runName <- "PM_newSppParams_fullSA"
+runName <- "noPM_newSppParams_fullSA"
+
+
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
