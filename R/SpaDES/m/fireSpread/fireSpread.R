@@ -219,8 +219,7 @@ doFireSpread <- function(sim) {
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(persisP) & persisP > 0, persisPsc := scales::rescale(persisP, to = c(0,1))]
-  vals[!is.na(persisP) & is.na(persisP), persisPsc := 0]
+  vals[!is.na(persisP), persisPsc := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisPsc
 
   ## check if NAs match
