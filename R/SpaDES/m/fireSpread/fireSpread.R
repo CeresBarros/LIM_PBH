@@ -20,7 +20,8 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development"),
   parameters = rbind(
     defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
-    defineParameter("noStartPix", "integer", 100L, NA, NA, desc = "Number of fire events"),
+    defineParameter("noStartPix", "integer", 100L, 0L, NA,
+                    desc = paste("Number of fire events. Only used if fireIgnitionProb is not available")),
     defineParameter(name = "fireInitialTime", class = "numeric", default = 2L,
                     desc = "The event time that the first fire disturbance event occurs"),
     defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
@@ -36,7 +37,8 @@ defineModule(sim, list(
     expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium head fire intensity [kW/m]"),
     expectsInput(objectName = "fireIgnitionProb", objectClass = "RasterLayer",
-                 desc = "Raster ignition probabilities"),
+                 desc = paste("Raster ignition probabilities. Optional. If not present, will use 'noStartPix' to",
+                              "randomly start a given number of fires in the landscape")),
     expectsInput(objectName = "fireROSRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium rate of spread [m/min]"),
     expectsInput(objectName = "fireRSORas", objectClass = "RasterLayer",
@@ -241,9 +243,15 @@ doFireSpread <- function(sim) {
          i < 5) {
     i <- i + 1
     ## draw from runif to get fire ignitions, first make a raster
-    startPix <- burnableAreas
-    startPix[!is.na(startPix[])] <- runif(sum(!is.na(startPix[])))
-    startPix <- sim$fireIgnitionProb - startPix
+    if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+      message(blue(paste("'fireIgnitionProb' raster was not supplied. Igniting fires",
+                         "randomly across the landscape, in number = to 'noStartPix'")))
+      sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
+    } else {
+      startPix <- burnableAreas
+      startPix[!is.na(startPix[])] <- runif(sum(!is.na(startPix[])))
+      startPix <- sim$fireIgnitionProb - startPix
+    }
 
     ## assess "winners" and convert to vector (also export to sim)
     sim$startPix <- which(getValues(startPix) >= 0) ## winners are 0 or larger.
@@ -368,8 +376,7 @@ doNoFire <- function(sim) {
           !suppliedElsewhere("fireROSRas", sim),
           !suppliedElsewhere("fireIntRas", sim),
           !suppliedElsewhere("fireTFCRas", sim),
-          !suppliedElsewhere("fireCFBRas", sim),
-          !suppliedElsewhere("fireIgnitionProb", sim))) {
+          !suppliedElsewhere("fireCFBRas", sim))) {
     message(crayon::red(paste0("fireSpread is missing one/several of the following rasters:\n",
                                "  fireRSORas, fireROSRas, fireIntRas, fireTFCRas, fireCFBRas or fireIgnitionProb.\n",
                                "  DUMMY RASTERS will be used - if this is not intended, please \n",
@@ -388,11 +395,16 @@ doNoFire <- function(sim) {
     valvalsIgnitsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
 
     sim$fireCFBRas <- setValues(sim$rasterToMatch, valsCFB)
-    sim$fireIgnitionProb <- setValues(sim$rasterToMatch, valsIgnit)
     sim$fireIntRas <- setValues(sim$rasterToMatch, valsInt)
     sim$fireROSRas <- setValues(sim$rasterToMatch, valsROS)
     sim$fireRSORas <- setValues(sim$rasterToMatch, valsRSO)
     sim$fireTFCRas <- setValues(sim$rasterToMatch, valsTFC)
   }
+
+  if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+    message(blue(paste("'fireIgnitionProb' raster was not supplied. Fires will be ignited",
+                       "randomly across the landscape, in number = to 'noStartPix'")))
+  }
+
   return(invisible(sim))
 }
