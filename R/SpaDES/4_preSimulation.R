@@ -151,13 +151,13 @@ saveSimList(simOutPreSim,
 ## we will use an average MDC across the years and output a raster that will not change
 ## in time
 objects <- list(
-  fireSense_IgnitionFitted = simOutPreSim$fireSense_IgnitionFitted
-  , D2 = simOutPreSim$fuelTypesCoverStk$D2
-  , M2 = simOutPreSim$fuelTypesCoverStk$M2
-  , coniferous = simOutPreSim$fuelTypesCoverStk$coniferous
-  , O1b = simOutPreSim$fuelTypesCoverStk$O1b
-  , NF = simOutPreSim$fuelTypesCoverStk$NF
-  , julMDC = mean(simOutPreSim$weatherDataMDCStk)
+  "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
+  , "D2" = simOutPreSim$fuelTypesCoverStk$D2
+  , "M2" = simOutPreSim$fuelTypesCoverStk$M2
+  , "coniferous" = simOutPreSim$fuelTypesCoverStk$coniferous
+  , "O1b" = simOutPreSim$fuelTypesCoverStk$O1b
+  , "NF" = simOutPreSim$fuelTypesCoverStk$NF
+  , "julMDC" = mean(simOutPreSim$weatherDataMDCStk)
 )
 
 # Define fireSense_IgnitionPredict module outputs
@@ -174,8 +174,8 @@ outputs <- rbind(
 # Define fireSense_IgnitionPredict module parameters
 parameters <- list(
   fireSense_IgnitionPredict = list(
-    data = c("D2", "M2", "coniferous", "O1b", "NF", "julMDC"),
-    modelObjName = "fireSense_IgnitionFitted" # This is the default
+    "data" = c("D2", "M2", "coniferous", "O1b", "NF", "julMDC"),
+    "modelObjName" = "fireSense_IgnitionFitted" # This is the default
   )
 )
 
