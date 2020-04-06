@@ -57,7 +57,7 @@ if (grepl("noPM", runName)) {
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
-      , "noStartPix" = 10
+      , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
       , ".useCache" = eventCaching
     )
     , fireSeverity = list(
@@ -115,7 +115,7 @@ if (grepl("noPM", runName)) {
       "fireInitialTime" = fireInitialTime
       , "fireTimestep" = fireTimestep
       , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
-      , "noStartPix" = 10
+      , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
       , ".useCache" = eventCaching
     )
     , fireSeverity = list(
