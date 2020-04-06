@@ -4,6 +4,7 @@
 .Ruserdata
 .httr-oauth
 
+*.pdf
 *.RData
 figs/*
 outputs/*
