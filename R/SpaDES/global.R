@@ -115,7 +115,7 @@ graphics.off()
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
 # reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-
+plotInitialTime <- NA
 simOut <- simInitAndSpades(times = simTimes
                            , params = simParams
                            , modules = simModules[c(1:5)]
@@ -123,7 +123,7 @@ simOut <- simInitAndSpades(times = simTimes
                            , paths = simPaths
                            , outputs = outputs
                            , debug = TRUE
-                           # , .plotInitialTime = NA
+                           , .plotInitialTime = plotInitialTime
 )
 
 ## CHECK CONVERGENCE OF MODELBIOMASS
