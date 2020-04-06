@@ -197,8 +197,33 @@ saveSimList(simOutFireFreq,
 
 
 ## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
-simOutPreSim$fireSense_IgnitionFitted
-ignitModel <- quote(0.4029029 * coniferous * julMDC + 1 * D2 * julMDC +
-                      0.8431114 * M2 * julMDC + 0.5835485 * O1b * julMDC + 0.4943392 * NF * julMDC)
+## to get predicted values we re-run the IgnitionPredict with the original data
+objects <- list(
+  "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
+  , "dataFireSense_IgnitionFit" = simOutPreSim$dataFireSense_IgnitionFit
+)
 
-simOutPreSim$dataFireSense_IgnitionFit
+parameters <- list(
+  fireSense_IgnitionPredict = list(
+    "data" = "dataFireSense_IgnitionFit",
+    "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+  )
+)
+simOutFireFreqPredVals <- Cache(simInitAndSpades
+                        , times = list(start = 0, end = 0)
+                        , modules = "fireSense_IgnitionPredict"
+                        , paths = preSimPaths
+                        , objects = objects
+                        , params = parameters
+                        , cacheRepo = preSimPaths$cachePath
+                        , userTags = "preSim"
+                        , omitArgs = c("userTags")
+)
+
+## plot predicted and fitted values
+ignitionsData <- na.omit(simOutPreSim$dataFireSense_IgnitionFit)
+ignitionsData[, fittedVals := simOutFireFreqPredVals$fireSense_IgnitionPredicted]
+
+ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires, col = year)) +
+  geom_point()
+
