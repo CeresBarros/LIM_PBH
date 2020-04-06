@@ -126,6 +126,12 @@ simOut <- simInitAndSpades(times = simTimes
                            , .plotInitialTime = plotInitialTime
 )
 
+saveSimList(simOut,
+            file.path(simPaths$outputPath, paste0("simList_", runName, ".RData")))
+if (!is.na(plotInitialTime))
+  dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
+            res = 300, units = "in")
+
 ## CHECK CONVERGENCE OF MODELBIOMASS
 ## allFit is taking too long (>12h and didn't even with first optimizer)
 modBiomass <- simOutPreSim$modelBiomass$mod
@@ -162,9 +168,4 @@ if (length(modBiomass@optinfo$conv$lme4$messages) &
 
 
 
-saveSimList(Biomass_core_testSimOut,
-            file.path(simPaths$outputPath, paste0("simList_fakeRstCurrentBurn", runName, ".RData")))
-if (!is.na(plotInitialTime))
-  dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
-            res = 300, units = "in")
 
