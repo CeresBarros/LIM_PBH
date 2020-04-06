@@ -55,7 +55,7 @@ source("R/R_tools/Useful_functions.R")
 
 # runName <- "PM_oneFire_newSppParams"
 # runName <- "noPM_oneFire_newSppParams"
-runName <- "PM_newSppParams"
+# runName <- "PM_newSppParams"
 runName <- "noPM_newSppParams"
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
@@ -126,8 +126,7 @@ simOut <- simInitAndSpades(times = simTimes
                            , .plotInitialTime = plotInitialTime
 )
 
-saveSimList(simOut,
-            file.path(simPaths$outputPath, paste0("simList_", runName, ".RData")))
+saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".RData")))
 if (!is.na(plotInitialTime))
   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
             res = 300, units = "in")
