@@ -78,7 +78,12 @@ source("R/SpaDES/2_speciesLayers.R")
 
 ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
 plot(simOutSpeciesLayers$speciesLayers)
-keepSpp <- setdiff(names(simOutSpeciesLayers$speciesLayers), c("Pice_mar", "Pinu_pon"))
+keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
+  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(simOutSpeciesLayers$speciesLayers[[2]][]))
+  propPres > 0.05  ## species need to be in at least 5% of the landscaoe
+})
+
+keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
 simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
 sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
 sppColorVect <- sppColorVect[keepSpp]
