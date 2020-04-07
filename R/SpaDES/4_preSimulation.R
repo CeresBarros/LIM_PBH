@@ -90,18 +90,18 @@ if (grepl("newSppParam", runName)) {
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
 preSimObjects <- list(# "studyArea" = foothillsSMALL
-                      # , "studyAreaLarge" = foothillsMED
-		      studyArea = foothills
-		      , studyAreaLarge = foothills
-                      , "sppEquiv" = sppEquivalencies_CA
-                      , "sppColorVect" = sppColorVect
-                      , "speciesLayers" = simOutSpeciesLayers$speciesLayers
-                      , "treed" =  simOutSpeciesLayers$treed
-                      , "numTreed" =  simOutSpeciesLayers$numTreed
-                      , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
-                      , "weatherData" = simOutFireWeather$weatherData
-                      , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
-                      , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
+  # , "studyAreaLarge" = foothillsMED
+  "studyArea" = foothills
+  , "studyAreaLarge" = foothills
+  , "sppEquiv" = sppEquivalencies_CA
+  , "sppColorVect" = sppColorVect
+  , "speciesLayers" = simOutSpeciesLayers$speciesLayers
+  , "treed" =  simOutSpeciesLayers$treed
+  , "numTreed" =  simOutSpeciesLayers$numTreed
+  , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+  , "weatherData" = simOutFireWeather$weatherData
+  , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
+  , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
 )
 
 ## add PSP data if need be
@@ -212,14 +212,14 @@ parameters <- list(
   )
 )
 simOutFireFreqPredVals <- Cache(simInitAndSpades
-                        , times = list(start = 0, end = 0)
-                        , modules = "fireSense_IgnitionPredict"
-                        , paths = preSimPaths
-                        , objects = objects
-                        , params = parameters
-                        , cacheRepo = preSimPaths$cachePath
-                        , userTags = "preSim"
-                        , omitArgs = c("userTags")
+                                , times = list(start = 0, end = 0)
+                                , modules = "fireSense_IgnitionPredict"
+                                , paths = preSimPaths
+                                , objects = objects
+                                , params = parameters
+                                , cacheRepo = preSimPaths$cachePath
+                                , userTags = "preSim"
+                                , omitArgs = c("userTags")
 )
 
 ## plot predicted and fitted values
