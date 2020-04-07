@@ -223,9 +223,9 @@ simOutFireFreqPredVals <- Cache(simInitAndSpades
 )
 
 ## plot predicted and fitted values
-ignitionsData <- na.omit(simOutPreSim$dataFireSense_IgnitionFit)
-ignitionsData[, fittedVals := simOutFireFreqPredVals$fireSense_IgnitionPredicted]
-
-ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires, col = year)) +
-  geom_point()
+# ignitionsData <- na.omit(simOutPreSim$dataFireSense_IgnitionFit)
+# ignitionsData[, fittedVals := simOutFireFreqPredVals$fireSense_IgnitionPredicted]
+#
+# ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires, col = year)) +
+#   geom_point()
 
