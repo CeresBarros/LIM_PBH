@@ -28,6 +28,7 @@ preSimParams <- list(
     "sppEquivCol" = sppEquivCol
     , "forestedLCCClasses" = c(1:15, 34:36)
     , "LCCClassesToReplaceNN" = c(34:36)
+    , "fitDeciduousCoverDiscount" = TRUE
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep * 10L
