@@ -201,32 +201,63 @@ saveSimList(simOutFireFreq,
 
 ## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
 ## to get predicted values we re-run the IgnitionPredict with the original data
-objects <- list(
-  "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
-  , "dataFireSense_IgnitionFit" = simOutPreSim$dataFireSense_IgnitionFit
-)
-
-parameters <- list(
-  fireSense_IgnitionPredict = list(
-    "data" = "dataFireSense_IgnitionFit",
-    "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+if (FALSE) {
+  objects <- list(
+    "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
+    , "dataFireSense_IgnitionFit" = simOutPreSim$dataFireSense_IgnitionFit
   )
-)
-simOutFireFreqPredVals <- Cache(simInitAndSpades
-                                , times = list(start = 0, end = 0)
-                                , modules = "fireSense_IgnitionPredict"
-                                , paths = preSimPaths
-                                , objects = objects
-                                , params = parameters
-                                , cacheRepo = preSimPaths$cachePath
-                                , userTags = "preSim"
-                                , omitArgs = c("userTags")
-)
 
-## plot predicted and fitted values
-# ignitionsData <- na.omit(simOutPreSim$dataFireSense_IgnitionFit)
-# ignitionsData[, fittedVals := simOutFireFreqPredVals$fireSense_IgnitionPredicted]
-#
-# ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires, col = year)) +
-#   geom_point()
+  parameters <- list(
+    fireSense_IgnitionPredict = list(
+      "data" = "dataFireSense_IgnitionFit",
+      "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+    )
+  )
+  simOutFireFreqPredVals <- Cache(simInitAndSpades
+                                  , times = list(start = 0, end = 0)
+                                  , modules = "fireSense_IgnitionPredict"
+                                  , paths = preSimPaths
+                                  , objects = objects
+                                  , params = parameters
+                                  , cacheRepo = preSimPaths$cachePath
+                                  , userTags = "preSim"
+                                  , omitArgs = c("userTags")
+  )
 
+  ## plot predicted and fitted values
+  ignitionsData <- simOutPreSim$dataFireSense_IgnitionFit
+  ignitionsData[,  rows := 1:nrow(ignitionsData)]
+  predVals <- data.table(rows = as.integer(names(simOutFireFreqPredVals$fireSense_IgnitionPredicted)),
+                         fittedVals = simOutFireFreqPredVals$fireSense_IgnitionPredicted)
+  ignitionsData <- predVals[ignitionsData, on = .(rows)]
+  ignitionsData[, n_firesPred := rpois(1, fittedVals)]
+
+
+  plot1 <- ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires)) +
+    geom_point() +
+    labs(y = "lambda", x = "observed no. fires")
+
+  plot2 <- ggplot(data = ignitionsData, aes(y = fittedVals, x = n_firesPred)) +
+    geom_point() +
+    labs(y = "lambda", x = "predicted (rpois) no. fires")
+
+  plot3 <- ggplot(data = ignitionsData, aes(y = n_firesPred, x = n_fires)) +
+    geom_point() +
+    labs(y = "predicted (rpois) no. fires", x = "observed no. fires")
+
+  plotData <- ignitionsData[, list(obsFires = sum(n_fires), predFires = sum(n_firesPred)),
+                            by = year]
+  plotData <- melt(plotData, id.var = "year")
+  plot4 <- ggplot(data = plotData, aes(y = value, x = year, colour = variable)) +
+    geom_line(size = 1) +
+    scale_color_discrete(labels = c("obsFires" = "observed no. fires",
+                                    "predFires" = "predicted (rpois) no. fires")) +
+    theme(legend.position = "bottom") +
+    labs(y = "no. fires", x = "year", colour = "")
+
+  gridExtra::grid.arrange(plot1, plot2, plot3, plot4)
+
+  plot(simOutFireFreq$fireSense_IgnitionPredicted)
+  plot(simOutPreSim$fireLocations, add = TRUE)
+
+}
