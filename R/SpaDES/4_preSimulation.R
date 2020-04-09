@@ -261,3 +261,42 @@ if (FALSE) {
   plot(simOutPreSim$fireLocations, add = TRUE)
 
 }
+
+
+
+## DIAGNOSE MODELBIOMASS ---------------------------------
+## allFit is taking too long (>12h and didn't even with first optimizer)
+if (FALSE) {
+  modBiomass <- simOutPreSim$modelBiomass$mod
+
+  pars <- unlist(getME(modBiomass, c("theta")))
+  grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
+  hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
+  sc_grad <- solve(hess, grad)
+
+  if (length(modBiomass@optinfo$conv$lme4$messages) &
+      max(pmin(abs(sc_grad), abs(grad))) > 0.001) {
+    ## Nelder and L-BFGS-B methods didn't converge
+    # , REML = FALSE,
+    # control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))
+    # ss <- getME(modBiomass, c("theta","fixef"))
+    # modBiomass <- update(modBiomass, start = ss, data = modBiomass@frame,
+    #                            control = lmerControl(calc.derivs = FALSE,  ## it's faster
+    #                                                  optimizer = "optimx",
+    #                                                  optCtrl = list(method='nlminb', maxit = 1e5)))  ## keeps hitting maxit...
+    ncores <- detectCores()
+    library(dfoptim)
+    .specialData <<- modBiomass@frame
+    diff_optims <- allFit(modBiomass$mod, parallel = 'multicore', ncpus = ncores)
+    is.OK <- sapply(diff_optims, is, "merMod")  ## nlopt NELDERMEAD failed, others succeeded
+    aa.OK <- diff_optims[is.OK]
+    lapply(aa.OK,function(x) x@optinfo$conv$lme4$messages)
+
+    pars <- unlist(getME(modBiomass, c("theta")))
+    grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
+    hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
+    sc_grad <- solve(hess, grad)
+    max(pmin(abs(sc_grad),abs(grad)))
+  }
+
+}
