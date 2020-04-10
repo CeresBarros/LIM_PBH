@@ -206,10 +206,11 @@ saveSimList(simOutFireFreq,
             file.path(preSimPaths$outputPath, "preSimList_FireSense_IgnitionPredict.qs"))
 
 
-
 ## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
 ## to get predicted values we re-run the IgnitionPredict with the original data
 if (FALSE) {
+  library(data.table)
+  library(ggplot2)
   objects <- list(
     "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
     , "dataFireSense_IgnitionFit" = simOutPreSim$dataFireSense_IgnitionFit
