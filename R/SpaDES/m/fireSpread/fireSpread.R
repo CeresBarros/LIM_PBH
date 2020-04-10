@@ -36,9 +36,10 @@ defineModule(sim, list(
                  desc = "Raster of crown fraction burnt"),
     expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium head fire intensity [kW/m]"),
-    expectsInput(objectName = "fireIgnitionProb", objectClass = "RasterLayer",
-                 desc = paste("Raster ignition probabilities. Optional. If not present, will use 'noStartPix' to",
-                              "randomly start a given number of fires in the landscape")),
+    expectsInput(objectName = "fireIgnitions", objectClass = "RasterLayer",
+                 desc = paste("Raster of expected no. of ignitions (lambda in a poisson ditribution). Optional.",
+                              "If not present, will use 'noStartPix' to randomly start a given number of fires",
+                              "in the landscape")),
     expectsInput(objectName = "fireROSRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium rate of spread [m/min]"),
     expectsInput(objectName = "fireRSORas", objectClass = "RasterLayer",
@@ -121,15 +122,15 @@ Init <- function(sim) {
 
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
-  if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
-    message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
-                       "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
-    sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
-                                        rasterToMatch = sim$rasterToMatch,
-                                        maskWithRTM = TRUE,
-                                        method = "bilinear",
-                                        filename2 = NULL, ## don't save
-                                        useCache = FALSE)  ## don't cache
+  if (!compareRaster(sim$fireIgnitions, sim$rasterToMatch, stopiffalse = FALSE)) {
+    message(blue(paste("Properties of 'fireIgnitions' and 'rasterToMatch' differ.",
+                       "Projecing/masking 'fireIgnitions' to 'rasterToMatch")))
+    sim$fireIgnitions <- postProcess(sim$fireIgnitions,
+                                     rasterToMatch = sim$rasterToMatch,
+                                     maskWithRTM = TRUE,
+                                     method = "bilinear",
+                                     filename2 = NULL, ## don't save
+                                     useCache = FALSE)  ## don't cache
   }
 
   return(invisible(sim))
@@ -142,12 +143,20 @@ doFireSpread <- function(sim) {
   if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
     message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
                        "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
-    sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
+    origRes <- res(sim$fireIgnitions)[1]
+    finalRes <- res(sim$rasterToMatch)[1]
+    sim$fireIgnitions <- postProcess(sim$fireIgnitions,
                                         rasterToMatch = sim$rasterToMatch,
                                         maskWithRTM = TRUE,
                                         method = "bilinear",
                                         filename2 = NULL, ## don't save
                                         useCache = FALSE)  ## don't cache
+
+    if (origRes != finalRes) {
+      message(blue(paste("Resolution of 'fireIgnitions' and 'rasterToMatch' differed.",
+                         "Rescaling values in fireIgnitions")))
+      sim$fireIgnitions[] <- sim$fireIgnitions[] * (finalRes/origRes ^ 2)
+    }
   }
 
   ## MAKE BURNABLE AREAS RASTER -------------------------------
@@ -248,13 +257,13 @@ doFireSpread <- function(sim) {
                          "randomly across the landscape, in number = to 'noStartPix'")))
       sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
     } else {
-      startPix <- burnableAreas
-      startPix[!is.na(startPix[])] <- runif(sum(!is.na(startPix[])))
-      startPix <- sim$fireIgnitionProb - startPix
+      browser()
+      startPix <- mask(sim$fireIgnitionProb, burnableAreas)
+      startPix[] <- rpois(ncell(sim$fireIgnitionProb), sim$fireIgnitionProb[])
+      ## assess "winners" and convert to vector (also export to sim)
+      sim$startPix <- which(getValues(startPix) >= 1) ## winners are 1 or larger.
     }
 
-    ## assess "winners" and convert to vector (also export to sim)
-    sim$startPix <- which(getValues(startPix) >= 0) ## winners are 0 or larger.
     rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
                                        spreadProb = spreadProb_map,
                                        persistProb = persistProb_map,
