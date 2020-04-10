@@ -184,8 +184,9 @@ outputs <- rbind(
 # Define fireSense_IgnitionPredict module parameters
 parameters <- list(
   fireSense_IgnitionPredict = list(
-    "data" = c("D2", "M2", "coniferous", "O1b", "NF", "julMDC"),
-    "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+    "data" = c("D2", "M2", "coniferous", "O1b", "NF", "julMDC")
+    , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+    , "rescaleFactor" = res(fuelTypesCoverStkHR)[1]/res(simOutPreSim$fuelTypesCoverStk)[1] ^ 2
   )
 )
 
@@ -216,8 +217,9 @@ if (FALSE) {
 
   parameters <- list(
     fireSense_IgnitionPredict = list(
-      "data" = "dataFireSense_IgnitionFit",
-      "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+      "data" = "dataFireSense_IgnitionFit"
+      , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+      , "rescaleFactor" = 1
     )
   )
   simOutFireFreqPredVals <- Cache(simInitAndSpades
