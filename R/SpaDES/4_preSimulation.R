@@ -240,8 +240,7 @@ if (FALSE) {
   predVals <- data.table(rows = as.integer(names(simOutFireFreqPredVals$fireSense_IgnitionPredicted)),
                          fittedVals = simOutFireFreqPredVals$fireSense_IgnitionPredicted)
   ignitionsData <- predVals[ignitionsData, on = .(rows)]
-  ignitionsData[, n_firesPred := rpois(1, fittedVals)]
-
+  ignitionsData[, n_firesPred := rpois(.N, fittedVals)]
 
   plot1 <- ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires)) +
     geom_point() +
