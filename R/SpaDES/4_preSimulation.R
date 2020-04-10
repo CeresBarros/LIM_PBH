@@ -254,13 +254,16 @@ if (FALSE) {
     geom_point() +
     labs(y = "predicted (rpois) no. fires", x = "observed no. fires")
 
-  plotData <- ignitionsData[, list(obsFires = sum(n_fires), predFires = sum(n_firesPred)),
+  # plotData <- ignitionsData[, list(obsFires = sum(n_fires), predFires = sum(n_firesPred)),
+  #                           by = year]
+  plotData <- ignitionsData[, list(obsFires = sum(n_fires, na.rm = TRUE),
+                                   predFires = sum(fittedVals, na.rm = TRUE)),
                             by = year]
   plotData <- melt(plotData, id.var = "year")
   plot4 <- ggplot(data = plotData, aes(y = value, x = year, colour = variable)) +
     geom_line(size = 1) +
-    scale_color_discrete(labels = c("obsFires" = "observed no. fires",
-                                    "predFires" = "predicted (rpois) no. fires")) +
+    scale_color_discrete(labels = c("obsFires" = "sum of observed no. fires",
+                                    "predFires" = "sum of predicted (lambda) no. fires")) +
     theme(legend.position = "bottom") +
     labs(y = "no. fires", x = "year", colour = "")
 
