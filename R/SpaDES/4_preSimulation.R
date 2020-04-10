@@ -151,17 +151,23 @@ saveSimList(simOutPreSim,
 ## fireSenseIgnitionPredict needs to be run separately as the objects can't
 ## be directly passed between modules
 
+## IgnitionPredict can use finer scale rasters, as long as predictions are rescaled (P(sim$rescaleFactor)
+fuelTypesCoverStkHR <- projectRaster(simOutPreSim$fuelTypesCoverStk, simOutPreSim$rasterToMatch,
+                                     method = "bilinear")
+weatherDataMDCStkHR <- projectRaster(simOutPreSim$weatherDataMDCStk, simOutPreSim$rasterToMatch,
+                                     method = "bilinear")
+
 ## Define fireSense_IgnitionPredict module inputs
 ## we will use an average MDC across the years and output a raster that will not change
 ## in time
 objects <- list(
   "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
-  , "D2" = simOutPreSim$fuelTypesCoverStk$D2
-  , "M2" = simOutPreSim$fuelTypesCoverStk$M2
-  , "coniferous" = simOutPreSim$fuelTypesCoverStk$coniferous
-  , "O1b" = simOutPreSim$fuelTypesCoverStk$O1b
-  , "NF" = simOutPreSim$fuelTypesCoverStk$NF
-  , "julMDC" = mean(simOutPreSim$weatherDataMDCStk)
+  , "D2" = fuelTypesCoverStkHR$D2
+  , "M2" = fuelTypesCoverStkHR$M2
+  , "coniferous" = fuelTypesCoverStkHR$coniferous
+  , "O1b" = fuelTypesCoverStkHR$O1b
+  , "NF" = fuelTypesCoverStkHR$NF
+  , "julMDC" = mean(weatherDataMDCStkHR)
 )
 
 # Define fireSense_IgnitionPredict module outputs
