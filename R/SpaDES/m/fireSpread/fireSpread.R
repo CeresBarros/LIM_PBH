@@ -216,7 +216,7 @@ doFireSpread <- function(sim) {
 
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
   vals[!is.na(spreadP) & spreadP > 0, spreadPsc := scales::rescale(spreadP, to = c(0.20, 0.25))]
-  vals[!is.na(spreadP) & is.na(spreadPsc), spreadPsc := 0]
+  vals[spreadP == 0, spreadPsc := 0]
   spreadProb_map[] <- vals$spreadPsc
 
   ## MAKE RASTER OF PERSISTENCE PROBABILITIES
