@@ -257,7 +257,6 @@ doFireSpread <- function(sim) {
                          "randomly across the landscape, in number = to 'noStartPix'")))
       sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
     } else {
-      browser()
       startPix <- mask(sim$fireIgnitionProb, burnableAreas)
       startPix[] <- rpois(ncell(sim$fireIgnitionProb), sim$fireIgnitionProb[])
       ## assess "winners" and convert to vector (also export to sim)
