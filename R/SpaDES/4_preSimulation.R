@@ -271,16 +271,16 @@ if (FALSE) {
 
 }
 
-
-
 ## DIAGNOSE MODELBIOMASS ---------------------------------
 ## allFit is taking too long (>12h and didn't even with first optimizer)
 if (FALSE) {
+  library(lme4)
   modBiomass <- simOutPreSim$modelBiomass$mod
 
   pars <- unlist(getME(modBiomass, c("theta")))
-  grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
-  hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
+  updateModBiomass <- update(modBiomass, devFunOnly = TRUE, data = modBiomass@frame)
+  grad <- numDeriv::grad(updateModBiomass, pars)
+  hess <- numDeriv::hessian(updateModBiomass, pars)
   sc_grad <- solve(hess, grad)
 
   if (length(modBiomass@optinfo$conv$lme4$messages) &
