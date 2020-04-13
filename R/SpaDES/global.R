@@ -135,7 +135,7 @@ simOut <- simInitAndSpades(times = simTimes
                            , .plotInitialTime = plotInitialTime
 )
 
-saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".RData")))
+saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
 if (!is.na(plotInitialTime))
   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
             res = 300, units = "in")
