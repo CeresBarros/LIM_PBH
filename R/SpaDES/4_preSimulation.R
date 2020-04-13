@@ -211,6 +211,8 @@ saveSimList(simOutFireFreq,
 if (FALSE) {
   library(data.table)
   library(ggplot2)
+  library(ggspatial)
+  library(ggpubr)
   objects <- list(
     "fireSense_IgnitionFitted" = simOutPreSim$fireSense_IgnitionFitted
     , "dataFireSense_IgnitionFit" = simOutPreSim$dataFireSense_IgnitionFit
@@ -264,14 +266,25 @@ if (FALSE) {
     geom_line(size = 1) +
     scale_color_discrete(labels = c("obsFires" = "sum of observed no. fires",
                                     "predFires" = "sum of predicted (lambda) no. fires")) +
+    theme_pubr(margin = FALSE, base_size = 14) +
     theme(legend.position = "bottom") +
     labs(y = "no. fires", x = "year", colour = "")
 
   gridExtra::grid.arrange(plot1, plot2, plot3, plot4)
 
-  plot(simOutFireFreq$fireSense_IgnitionPredicted)
-  plot(simOutPreSim$fireLocations, add = TRUE)
+  plot5 <- ggplot() +
+    layer_spatial(data = simOutFireFreq$fireSense_IgnitionPredicted) +
+    layer_spatial(data = simOutPreSim$fireLocations, colour = "darkred") +
+    annotation_north_arrow(style = north_arrow_minimal,
+                           location = "tr", which_north = "true") +
+    scale_fill_distiller(palette = "Greys", na.value = "transparent", direction = 1) +
+    theme_pubr(margin = FALSE, legend = "right", base_size = 14) +
+    labs(x = "longitude", y = "latitude", fill = expression(lambda))
 
+  plot6 <- ggarrange(plot4, plot5, widths = c(0.6,0.4),
+                     labels = "auto", font.label = list(size = 20))
+  ggsave("C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/fireOcurrencesModDiagn.tiff",
+         plot6, width = 12, height = 7, dpi = 300)
 }
 
 ## DIAGNOSE MODELBIOMASS ---------------------------------
