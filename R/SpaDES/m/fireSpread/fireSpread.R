@@ -146,11 +146,11 @@ doFireSpread <- function(sim) {
     origRes <- res(sim$fireIgnitions)[1]
     finalRes <- res(sim$rasterToMatch)[1]
     sim$fireIgnitions <- postProcess(sim$fireIgnitions,
-                                        rasterToMatch = sim$rasterToMatch,
-                                        maskWithRTM = TRUE,
-                                        method = "bilinear",
-                                        filename2 = NULL, ## don't save
-                                        useCache = FALSE)  ## don't cache
+                                     rasterToMatch = sim$rasterToMatch,
+                                     maskWithRTM = TRUE,
+                                     method = "bilinear",
+                                     filename2 = NULL, ## don't save
+                                     useCache = FALSE)  ## don't cache
 
     if (origRes != finalRes) {
       message(blue(paste("Resolution of 'fireIgnitions' and 'rasterToMatch' differed.",
@@ -331,33 +331,39 @@ doNoFire <- function(sim) {
   }
 
   if (needRTM) {
-    if(!suppliedElsewhere("rawBiomassMap", sim)) {
-      rawBiomassMapFilename <- file.path(dPath, "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.tif")
+    ## if rawBiomassMap exists, it needs to match SALarge, if it doesn't make it
+    if (!suppliedElsewhere("rawBiomassMap", sim) ||
+        !compareRaster(sim$rawBiomassMap, sim$studyArea, stopiffalse = FALSE)) {
+      rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                                 "canada-forests-attributes_attributs-forests-canada/",
+                                 "2001-attributes_attributs-2001/",
+                                 "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif")
+      rawBiomassMapFilename <- "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif"
       rawBiomassMap <- Cache(prepInputs,
-                             targetFile = asPath(basename(rawBiomassMapFilename)),
-                             archive = asPath(c("kNN-StructureBiomass.tar",
-                                                "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
-                             url = extractURL("rawBiomassMap"),
+                             targetFile = rawBiomassMapFilename,
+                             url = rawBiomassMapURL,
                              destinationPath = dPath,
                              studyArea = sim$studyArea,
-                             rasterToMatch = if (!needRTM) sim$rasterToMatch else NULL,
-                             maskWithRTM = if (!needRTM) TRUE else FALSE,
-                             useSAcrs = FALSE,     ## never use SA CRS
-                             method = "bilinear",
-                             datatype = "INT2U",
-                             filename2 = TRUE, overwrite = TRUE, userTags = cacheTags,
-                             omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
-
-    } else {
-      rawBiomassMap <- Cache(postProcess,
-                             x = sim$rawBiomassMap,
-                             studyArea - sim$studyArea,
+                             rasterToMatch = NULL,
                              maskWithRTM = FALSE,
                              useSAcrs = FALSE,     ## never use SA CRS
                              method = "bilinear",
                              datatype = "INT2U",
-                             filename2 = TRUE, overwrite = TRUE, userTags = cacheTags,
-                             omitArgs = c("destinationPath", "userTags"))
+                             filename2 = NULL,
+                             userTags = c(cacheTags, "rawBiomassMap"),
+                             omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
+    } else {
+      rawBiomassMap <- Cache(postProcess,
+                             x = sim$rawBiomassMap,
+                             studyArea = sim$studyArea,
+                             useSAcrs = FALSE,
+                             maskWithRTM = FALSE,   ## mask with SA
+                             method = "bilinear",
+                             datatype = "INT2U",
+                             filename2 = NULL,
+                             overwrite = TRUE,
+                             userTags = cacheTags,
+                             omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
     }
 
     ## if we need rasterToMatch, that means a) we don't have it, but b) we will have rawBiomassMap

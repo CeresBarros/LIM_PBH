@@ -43,14 +43,14 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       ## Initialise module
       sim <- fireInit(sim)
-      
+
       ## schedule events
       if(!is.null(sim$fireSpreadRas)) {   ## only if fire module is "active"
         sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "calcSeverity", eventPriority = 8)
-        
+
         if(P(sim)$.plotMaps)
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart, "fireSeverity", "severityPlot", eventPriority = 8.5)
-        
+
         if(!any(is.na(P(sim)$.saveInitialTime)))
           sim <- scheduleEvent(sim, params(sim)$fireSpread$fireStart,
                                "fireSeverity", "saveSeverity", eventPriority = 8.75)
@@ -60,7 +60,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## calculate severity
         sim <- doSeverity(sim)
-        
+
         ## schedule future events
         sim <- scheduleEvent(sim, eventTime = sim$fireYear, moduleName = "fireSeverity", eventType = "calcSeverity", eventPriority = 8)
       }
@@ -69,7 +69,7 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## Plot severity and vegetation changes
         sim <- doSeverityPlot(sim)
-        
+
         ## schedule next plot
         sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "severityPlot", eventPriority = 8.5)
       }
@@ -78,16 +78,16 @@ doEvent.fireSeverity = function(sim, eventTime, eventType, debug = FALSE) {
       if(!all(is.na(sim$fireSpreadRas[[time(sim)]][]))) {
         ## Plot severity and vegetation changes
         sim <- doSaveSeverity(sim)
-        
+
         ## schedule next plot
         sim <- scheduleEvent(sim, sim$fireYear, "fireSeverity", "saveSeverity", eventPriority = 8.75)
       }
     },
-    
+
     warning(paste("Undefined event type: '", current(sim)[1, "eventType", with = FALSE],
                   "' in module '", current(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-        )
-        return(invisible(sim))
+  )
+  return(invisible(sim))
 }
 
 ### module initialization - part of this may pass to another module of data prep
@@ -100,21 +100,21 @@ doSeverity <- function(sim){
   ## convert fire spread raster to a mask
   fireMask <- sim$fireSpreadRas[[time(sim)]]
   fireMask[!is.na(fireMask)] <- 1
-  
+
   ## fire severity in % mortality ((pre - post)/pre)
   sim$severityMap <- (sim$biomassMapPreFire - sim$biomassMap)/sim$biomassMapPreFire
   sim$severityMap <- setValues(sim$severityMap, values = round(getValues(sim$severityMap)))
   sim$severityMap <- raster::mask(sim$severityMap, mask = fireMask)
-  
+
   return(invisible(sim))
 }
 
 ### Plot fire severity and vegetation
-doSeverityPlot <- function(sim) {  
+doSeverityPlot <- function(sim) {
   Plot(sim$severityMap, new = TRUE,
        title = "Fire severity",
        cols = heat.colors(10))
-  
+
   return(invisible(sim))
 }
 
@@ -128,21 +128,21 @@ doSaveSeverity = function(sim) {
 
 ## OTHER INPUTS AND FUNCTIONS --------------------------------
 .inputObjects = function(sim) {
-  
+
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
-  
+
   if (!suppliedElsewhere("ecoregionMap", sim )) {
     # load ecoregion map
     sim$ecoregionMap <- raster(file.path(dPath, "ecoregions.gis"))
   }
-  
+
   # if(!suppliedElsewhere("biomassMap", sim)) {
   #   sim$biomassMap <- Cache(prepInputs,
   #                           targetFile = biomassMapFilename,
   #                           archive = asPath(c("kNN-StructureBiomass.tar",
   #                                              "NFI_MODIS250m_kNN_Structure_Biomass_TotalLiveAboveGround_v0.zip")),
-  #                           url = extractURL("biomassMap", sim), 
+  #                           url = extractURL("biomassMap", sim),
   #                           destinationPath = dPath,
   #                           studyArea = sim$shpStudySubRegion,
   #                           useSAcrs = TRUE,
@@ -150,7 +150,7 @@ doSaveSeverity = function(sim) {
   #                           datatype = "INT2U",
   #                           filename2 = TRUE,
   #                           userTags = cacheTags)
-  # } 
-  
+  # }
+
   return(invisible(sim))
 }
