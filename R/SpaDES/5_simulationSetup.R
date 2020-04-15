@@ -157,8 +157,8 @@ if (grepl("oneFire", runName)) {
 
 ## SIM OUTPUTS ------------------------------------------------
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                           by = 5))),
+                                  saveTime = unique(sort(c(1, seq(simTimes$start, simTimes$end,
+                                                           by = 1)))),
                                   eventPriority = 10,
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
@@ -170,12 +170,12 @@ outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
                                                     simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                              by = 5))),
+                                     saveTime = unique(sort(c(1, seq(simTimes$start, simTimes$end,
+                                                                     by = 1)))),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
                                      saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                              by = 5))),
+                                                              by = 1))),
                                      eventPriority = 10))
 ## on the first year save after init events, but before mortalityAndGrowth
 outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
