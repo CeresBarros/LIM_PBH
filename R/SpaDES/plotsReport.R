@@ -175,3 +175,41 @@ plot5 <- ggarrange(plotlist = plotList, ncol = 3, nrow = 2,
 
 ggsave(file.path(figOutputPath, "Species_cover.tiff"), plot5,
        width = 9, height = 10, dpi = 300)
+
+
+## ECODISTRICTS ---------------------------
+
+## ecodistricts
+## https://www.statcan.gc.ca/eng/subjects/standard/environment/elc/12-607-x2018001-eng.pdf
+
+ecoDistSF <- sf::st_as_sf(simList_noPM$ecoDistrict)
+ecoDistSF$ECODISTRIC <- factor(ecoDistSF$ECODISTRIC,
+                               levels = c(798, 800, 801, 799, 793, 750, 631, 1018, 1017, 1019))
+canada <- sf::st_as_sf(shapefile("data/CA_admin/gpr_000a11a_e.shp"))
+canada <- sf::st_transform(canada, crs = crs(ecoDistSF))
+alberta <- canada[canada$PRENAME %in% "Alberta",]
+
+ggplot(ecoDistSF) +
+  geom_sf(data = alberta) +
+  geom_sf(data = ecoDistSF, aes(fill = as.factor(ECODISTRIC))) +
+  scale_fill_brewer(palette = "Paired",
+                    labels = c("631" = "W AB upland - Foothills",
+                               "750" = "Aspen parkland - Upland",
+                               "793" = "Moist mixed grassland - Plain",
+                               "798" = "Fescue grassland - Plain",
+                               "799" = "Fescue grassland - Upland",
+                               "800" = "Fescue grassland - Plain",
+                               "801" = "Fescue grassland - Foothills",
+                               "1017" = "N Cont. Divide - Mountains",
+                               "1018" = "N Cont. Divide - Foothills",
+                               "1019" = "N Cont. Divide - Mountains")) +
+  theme_void() +
+  theme(text = element_text(colour = "white"),
+        plot.background = element_rect(fill = "black")) +
+  labs(fill = "Ecoregion - ecodistrict") +
+  coord_sf()
+
+plot(sf::st_as_sf(simList_noPM$ecoDistrict["ECODISTRIC"]))
+
+
+save(list = grep("model", ls(), value = TRUE), file = "E:/GitHub/LandscapesInMotion/analyses/modelsGAMLSS_0-3Days_goodSample_Nov1_v2.RData")
