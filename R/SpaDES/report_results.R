@@ -12,6 +12,9 @@ library(purrr)
 library(magick)
 library(LandR)
 
+## path to figure folder
+figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/"
+
 ## GET SIM LISTS
 simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppParams_fullSA.qs")
 simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
@@ -84,7 +87,7 @@ vegTypeSubset <- intersect(names(vegTypeMapStk_noPM), names(pixelGroupMapStk_noP
 vegTypeData_noPM <- lapply(vegTypeSubset, FUN = function(x) {
   data.table(pixelIndex = seq_len(ncell(vegTypeMapStk_noPM[[x]])),
              pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
-             vegType = as.integer(!is.na(vegTypeMapStk_noPM[[x]][])),
+             vegType = vegTypeMapStk_noPM[[x]][],
              year = as.integer(sub("year", "", x)))
 }) %>%
   rbindlist(.)
@@ -94,7 +97,7 @@ vegTypeSubset <- intersect(names(vegTypeMapStk_PM), names(pixelGroupMapStk_PM))
 vegTypeData_PM <- lapply(vegTypeSubset, FUN = function(x) {
   data.table(pixelIndex = seq_len(ncell(vegTypeMapStk_PM[[x]])),
              pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
-             vegType = as.integer(!is.na(vegTypeMapStk_PM[[x]][])),
+             vegType = vegTypeMapStk_PM[[x]][],
              year  = as.integer(sub("year", "", x)))
 })  %>%
   rbindlist(.)
@@ -123,19 +126,66 @@ pixelBurnData_PM <- pixelBurnData_PM[!is.na(pixelGroup)]
 
 rm(fireSubset, vegTypeSubset)
 
-## join tables, add scenario col and rbind
-pixelCohortData_noPM <- vegTypeData_noPM[pixelCohortData_noPM, on = .(pixelIndex, pixelGroup, year)]
-pixelCohortData_noPM <- pixelBurnData_noPM[pixelCohortData_noPM, on = .(pixelIndex, pixelGroup, year)]
+## join tables, add scenario col and rbind.
+## note that vegTypeData and pixelBurnData have more pixels because PGs of 0 are there, but not on cohortData
+## so join by keeping all pixels
+pixelCohortData_noPM <- merge(pixelCohortData_noPM, vegTypeData_noPM,
+                              by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
+pixelCohortData_noPM <- merge(pixelCohortData_noPM, pixelBurnData_noPM,
+                              by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
 pixelCohortData_noPM[is.na(burnt), burnt := 0]
 pixelCohortData_noPM[, scenario := "noPM"]
 
-pixelCohortData_PM <- vegTypeData_PM[pixelCohortData_PM, on = .(pixelIndex, pixelGroup, year)]
-pixelCohortData_PM <- pixelBurnData_PM[pixelCohortData_PM, on = .(pixelIndex, pixelGroup, year)]
+pixelCohortData_PM <- merge(vegTypeData_PM, pixelCohortData_PM,
+                            by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
+pixelCohortData_PM <- merge(pixelBurnData_PM, pixelCohortData_PM,
+                            by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
 pixelCohortData_PM[is.na(burnt), burnt := 0]
 pixelCohortData_PM[, scenario := "PM"]
 
 allPixelCohortData <- rbind(pixelCohortData_noPM, pixelCohortData_PM, use.names = TRUE)
 rm(list = grep("^[pixel|vegType].*Data", ls(), value = TRUE))
+
+## ADD MISSING SPECIES IN YEAR/SCENARIO/PIXEL COMBINATION
+## cohortData doens't track absent cohorts, so they need to ba added back
+## for now pixels from the 0s pixelGroup  have one entry with NAs for speciesCode
+## they will be ignored for now and removed later, after adding one species entry for each of these pixels.
+## for reporting consistency add to show losses in B
+combinations <- unique(allPixelCohortData[, .(scenario, year, pixelIndex, pixelGroup, burnt)])
+spp <- as.character(na.omit(unique(allPixelCohortData$speciesCode)))
+combinations <- lapply(spp, FUN = function(x) {
+  data.table(combinations,
+             speciesCode = x)
+}) %>%
+  rbindlist(., use.names = TRUE)
+rm(spp); amc::.gc()
+
+## join while keeping all combos, NA species will now disappear.
+allPixelCohortData <- allPixelCohortData[combinations,
+                                         on = .(scenario, year, pixelIndex,
+                                                pixelGroup, burnt, speciesCode)]
+amc::.gc()
+
+test <- length(unique(allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, year)]$V1)) == 1
+test2 <- length(unique(allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, year, pixelIndex)]$V1)) == 1
+test3 <- any(is.na(allPixelCohortData$speciesCode))
+
+if (!test | !test2 | test3)
+  stop("something's wrong")
+
+## add ecoregion group where it's missing
+allPixelCohortData[, ecoregionGroup := unique(na.omit(ecoregionGroup)),
+                   by = .(scenario, year, pixelGroup)]
+
+
+## replace NAs of cohortData by 0s and add missing spp.
+cols <- c("age", "B", "mortality", "aNPPAct", "vegType")
+replaceNAs <- function(x, val = 0) {
+  x[is.na(x)] <- val
+  x
+}
+
+allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 
 ## TABLE OF VEG TYPE LABELS -----------------------------------
 vegTypeTable <- as.data.table(levels(vegTypeMapStk_noPM[[1]]))
@@ -144,39 +194,56 @@ setnames(allPixelCohortData, old = c("ID", "VALUE"),
          new = c("vegTypeID", "vegType"))
 
 
-## SUMMARY ACROSS LANDSCAPE -----------------------------------
-## remember that biomass is multiplied by 100 in *boreal*
+## add no. pixels per pixel group
 ## also, B needs to be rescaled, to avoid integer overflow
-allPixelCohortData[, noPixels := length(pixelIndex), by = pixelGroup]
+allPixelCohortData[, noPixels := length(unique(pixelIndex)),
+                   by = .(scenario, year, pixelGroup)]
 
-summaryBurnCohortData <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100) * noPixels, na.rm = TRUE)),
-                                                   MortalityBySpecies = as.numeric(sum((mortality/100) * noPixels, na.rm = TRUE)),
-                                                   aNPPBySpecies = as.numeric(sum((aNPPAct/100) * noPixels, na.rm = TRUE)),
-                                                   AgeBySppWeighted = as.numeric(sum(age * (B/100) * noPixels, na.rm = TRUE) /
-                                                                                   sum((B/100) * noPixels, na.rm = TRUE)),
-                                                   noCohorts = as.numeric(length(unique(age)))),
-                                            by = .(scenario, year, burnt, speciesCode)]
+## add no. fires per pixel
+## how many times did each pixel burn?
+noFiresPixel <- unique(allPixelCohortData[, .(pixelIndex, scenario, year, burnt)])
+noFiresPixel[, noFires := sum(burnt), by = .(pixelIndex, scenario)]
+noFiresPixel <- unique(noFiresPixel[, .(pixelIndex, scenario, noFires)])
+
+test <- sapply(unique(noFiresPixel$scenario), FUN = function(x){
+  any(duplicated(noFiresPixel[scenario == x, pixelIndex]))
+})
+if (any(test))
+  stop("Each pixel should only have one record of no. fires per scenario")
+
+allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario)]
+
+## SUMMARY ACROSS LANDSCAPE -----------------------------------
+## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
+summaryBurnCohortData <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
+                                                   MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                   aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+                                                   AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                   sum((B/100), na.rm = TRUE))),
+                                            by = .(scenario, year, noFires, speciesCode)]
 ## missing species in an EXISTING year, scenario, burn combo are of B == 0,
-## add them to show losses in B
-combinations <- lapply(as.character(unique(summaryBurnCohortData$speciesCode)),
-                       FUN = function(x) {
-                         combinations <- unique(summaryBurnCohortData[, .(year, scenario, burnt)])
-                         combinations[, speciesCode := x]
-                         return(combinations)
-                       }) %>%
-  rbindlist(., use.names = TRUE)
+# ## add them to show losses in B
+# combinations <- lapply(as.character(unique(summaryBurnCohortData$speciesCode)),
+#                        FUN = function(x) {
+#                          combinations <- unique(summaryBurnCohortData[, .(year, scenario, noFires)])
+#                          combinations[, speciesCode := x]
+#                          return(combinations)
+#                        }) %>%
+#   rbindlist(., use.names = TRUE)
 
 ## join while keeping all combos
-summaryBurnCohortData <- summaryBurnCohortData[combinations,
-                                      on = c("year", "scenario", "burnt", "speciesCode")]
+# summaryBurnCohortData <- summaryBurnCohortData[combinations,
+#                                                on = .(year, scenario, noFires, speciesCode)]
 ## replace NA's to 0s by converting to matrix
-summaryBurnCohortData <- as.matrix(summaryBurnCohortData)
-summaryBurnCohortData[is.na(summaryBurnCohortData)] <- 0
-summaryBurnCohortData <- as.data.table(summaryBurnCohortData)
-cols <- grep("scenario|species", names(summaryBurnCohortData), invert = TRUE, value = TRUE)
-summaryBurnCohortData <- summaryBurnCohortData[, (cols) := lapply(.SD, as.numeric),
-                                               .SDcols = cols]
-summaryBurnCohortData <- unique(summaryBurnCohortData)
+# summaryBurnCohortData <- as.matrix(summaryBurnCohortData)
+# summaryBurnCohortData[is.na(summaryBurnCohortData)] <- 0
+# summaryBurnCohortData <- as.data.table(summaryBurnCohortData)
+# cols <- grep("scenario|species", names(summaryBurnCohortData), invert = TRUE, value = TRUE)
+# summaryBurnCohortData <- summaryBurnCohortData[, (cols) := lapply(.SD, as.numeric),
+#                                                .SDcols = cols]
+# summaryBurnCohortData <- unique(summaryBurnCohortData)
+# summaryBurnCohortData[, firePresAbs := as.integer(noFires != 0)]
+
 
 ## make species labels/colours
 speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortData$speciesCode), column = "EN_generic_full",
@@ -188,72 +255,131 @@ names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
 
 
 fireYears <- as.numeric(sub("year", "", names(rstCurrentBurnStk_PM)))
-plot1 <- ggplot(data = summaryBurnCohortData,
-                aes(x = year, y = log(BiomassBySpecies/100 + 0.000001), colour = speciesCode)) +
+
+plotData <- summaryBurnCohortData[, list(BiomassBySpecies = sum(BiomassBySpecies)),
+                                  by = .(scenario, year, speciesCode, firePresAbs)]
+plot1 <- ggplot(data = plotData,
+                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
-  theme_pubr(base_size = 16, legend = "right") +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_colour_manual(values = speciesColours,
-                      labels = speciesLabels) +
-  labs(title = "Total landscape biomass", y = expression(paste("log-Biomass"~~"(g/m"^2, ")"))) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Total landscape biomass", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "presence/absence of fire") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ burnt,
-             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot2 <- ggplot(data = summaryBurnCohortData,
-                aes(x = year, y = log(MortalityBySpecies), colour = speciesCode)) +
-  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
-  geom_line(size = 1.5) +
-  theme_classic() +
-  theme(text = element_text(size = 16),
-        legend.title = element_blank()) +
-  scale_colour_manual(values = speciesColours,
-                      labels = speciesLabels) +
-  facet_grid(burnt ~ scenario,
-             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Total landscape biomass", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
 
-plot3 <- ggplot(data = allPixelCohortData,
-                aes(x = year, fill = vegType)) +
-  geom_area(stat = "count", position = "fill") +
-  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
-  scale_fill_manual(values = speciesColours,
-                    labels = speciesLabels) +
-  theme_classic() +
-  theme(text = element_text(size = 16),
-        legend.title = element_blank()) +
-  labs(title = "No. pixels per vegetation type", y = "g/m^2") +
-  facet_grid(burnt ~ scenario,
-             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+plotData <- summaryBurnCohortData[, list(MortalityBySpecies = sum(MortalityBySpecies)),
+                                  by = .(scenario, year, speciesCode, firePresAbs)]
+plot3 <- ggplot(data = plotData,
+                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Total landscape mortality", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot4 <- ggplot(data = summaryBurnCohortData,
+                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Total landscape mortality", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
+
+plotData <- allPixelCohortData
+plotData[, firePresAbs := as.integer(sum(noFires) != 0), by = .(pixelIndex, scenario)]
+plotData <- plotData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                            sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, year, firePresAbs, speciesCode)]
+
+plot5 <- ggplot(data = plotData,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
-  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
-  geom_line(size = 1.5) +
-  theme_classic() +
-  theme(text = element_text(size = 16),
-        legend.title = element_blank()) +
-  scale_colour_manual(values = speciesColours,
-                      labels = speciesLabels) +
-  facet_grid(burnt ~ scenario,
-             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Avg. age across landscape (biomass-weighted)", y = "years",
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot5 <- ggplot(data = summaryBurnCohortData,
-                aes(x = year, y = noCohorts, colour = speciesCode)) +
-  geom_vline(xintercept = 5, size = 1.5, linetype = "dashed", colour = "red") +
-  geom_line(size = 1.5) +
-  theme_classic() +
-  theme(text = element_text(size = 16),
-        legend.title = element_blank()) +
-  scale_colour_manual(values = speciesColours,
-                      labels = speciesLabels) +
-  facet_grid(burnt ~ scenario,
-             labeller = labeller(burnt = c("0" = "no fire", "1" = "fire")))
+plot6 <- ggplot(data = summaryBurnCohortData,
+                aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Age (biomass-weighted)", y = "years",
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
 
-ggpubr::ggarrange(plot1, plot2, plot3, nrow = 3,
-                  legend = "right", common.legend = TRUE)
-ggsave(filename = "R/SpaDES/outputs/blogSep2019_noPM_PM_BMortVegType.tiff",
-       width = 10, height = 15)
+plotData <- allPixelCohortData
+plotData[, firePresAbs := as.integer(sum(noFires) != 0), by = .(pixelIndex, scenario)]
+plot7 <- ggplot(data = plotData,
+                aes(x = year, fill = vegType)) +
+  geom_bar() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Dominant species", y = "no. pixels",
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot6 <- ggplot(data = summaryBurnCohortData,
+                aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Age (biomass-weighted)", y = "years",
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
+
+
+
+
+
+
+ggpubr::ggarrange(plot1, plot2, legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_landscapeB.tiff"),
+       width = 14, height = 7)
+
+ggpubr::ggarrange(plot3, plot4, legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_landscapeMort.tiff"),
+       width = 14, height = 7)
+
+ggpubr::ggarrange(plot5, plot6, legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
+       width = 14, height = 7)
+
+
 
 ## GIFS ------------------------------------------------------
 ## make GIFs of vegetation maps
@@ -315,77 +441,3 @@ makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif",
         gifPrefix = "vegTypeMapStk_PM",
         fps = 2)
 
-## OTHER PLOTS --------------------------------------------------------
-## topo and climate examples
-slopeRas <- projectRaster(simList_noPM$slopeRas, foothillsMask)
-topoPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "BrBG"))
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-plot(slopeRas, col = topoPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-temperatureRas <- projectRaster(simList_noPM$temperatureRas, foothillsMask)
-tempPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "RdBu"))
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-plot(temperatureRas, col = tempPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-precipitationRas <- projectRaster(simList_noPM$precipitationRas, foothillsMask)
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-plot(precipitationRas, col = tempPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-## spp cover, age and biomass examples
-sppPal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Blues"))
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-plot(simList_noPM$speciesLayers[[1]], col = sppPal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-plot(simList_noPM$rawBiomassMap, axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-plot(foothillsMask, col = "grey90", axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE)
-agePal <- colorRampPalette(RColorBrewer::brewer.pal(n = 9, name = "Greens"))
-plot(simList_noPM$standAgeMap, col = agePal(20), axes = FALSE,
-     bg = "transparent", box = FALSE, legend = FALSE, add = TRUE)
-
-## ecodistricts
-## https://www.statcan.gc.ca/eng/subjects/standard/environment/elc/12-607-x2018001-eng.pdf
-
-ecoDistSF <- sf::st_as_sf(simList_noPM$ecoDistrict)
-ecoDistSF$ECODISTRIC <- factor(ecoDistSF$ECODISTRIC,
-                               levels = c(798, 800, 801, 799, 793, 750, 631, 1018, 1017, 1019))
-canada <- sf::st_as_sf(shapefile("data/CA_admin/gpr_000a11a_e.shp"))
-canada <- sf::st_transform(canada, crs = crs(ecoDistSF))
-alberta <- canada[canada$PRENAME %in% "Alberta",]
-
-ggplot(ecoDistSF) +
-  geom_sf(data = alberta) +
-  geom_sf(data = ecoDistSF, aes(fill = as.factor(ECODISTRIC))) +
-  scale_fill_brewer(palette = "Paired",
-                    labels = c("631" = "W AB upland - Foothills",
-                               "750" = "Aspen parkland - Upland",
-                               "793" = "Moist mixed grassland - Plain",
-                               "798" = "Fescue grassland - Plain",
-                               "799" = "Fescue grassland - Upland",
-                               "800" = "Fescue grassland - Plain",
-                               "801" = "Fescue grassland - Foothills",
-                               "1017" = "N Cont. Divide - Mountains",
-                               "1018" = "N Cont. Divide - Foothills",
-                               "1019" = "N Cont. Divide - Mountains")) +
-  theme_void() +
-  theme(text = element_text(colour = "white"),
-        plot.background = element_rect(fill = "black")) +
-  labs(fill = "Ecoregion - ecodistrict") +
-  coord_sf()
-
-plot(sf::st_as_sf(simList_noPM$ecoDistrict["ECODISTRIC"]))
-
-
-save(list = grep("model", ls(), value = TRUE), file = "E:/GitHub/LandscapesInMotion/analyses/modelsGAMLSS_0-3Days_goodSample_Nov1_v2.RData")
