@@ -28,7 +28,7 @@ if (length(runName) > 1) {
 
 ## FIRE LOCATIONS -------------------------
 plot1 <- ggplot() +
-  layer_spatial(data = simOutPreSim$studyArea, fill = "grey") +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "grey", colour = "black") +
   layer_spatial(data = simOutPreSim$fireLocations, colour = "darkred") +
   annotation_north_arrow(style = north_arrow_minimal,
                          location = "tr", which_north = "true") +
@@ -44,8 +44,8 @@ FTlabs <- raster::levels(simOutPreSim$fuelTypesMaps$finalFuelType)[[1]][,2]
 names(FTlabs) <- raster::levels(simOutPreSim$fuelTypesMaps$finalFuelType)[[1]][,1]
 
 plot2 <- ggplot() +
-  layer_spatial(data = simOutPreSim$studyArea, fill = "grey") +
   layer_spatial(rasFuels, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "transparent", colour = "black") +
   annotation_north_arrow(style = north_arrow_minimal,
                          location = "tr", which_north = "true") +
   theme_pubr(legend = "bottom", margin = FALSE) +
