@@ -209,8 +209,8 @@ if (any(test))
 allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario)]
 
 ## add presence/absence of fire across simulation per pixel/scenario
+amc::.gc()
 allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
-
 rm(noFiresPixel)
 amc::.gc()
 
@@ -224,7 +224,7 @@ summaryBurnCohortData <- allPixelCohortData[, list(BiomassBySpecies = as.numeric
                                             by = .(scenario, year, noFires, speciesCode)]
 summaryBurnCohortData[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortData[, firePresAbs := as.integer(noFires != 0)]
-amc::.gc()
+amc::.gc(); amc::.gc()
 
 ## make species labels/colours
 speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortData$speciesCode), column = "EN_generic_full",
@@ -301,8 +301,8 @@ plot4 <- ggplot(data = summaryBurnCohortData,
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
-plotData <- allPixelCohortData
-plotData <- plotData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+amc::.gc()
+plotData <- allPixelCohortData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                             sum((B/100), na.rm = TRUE))),
                      by = .(scenario, year, firePresAbs, speciesCode)]
 
@@ -324,11 +324,12 @@ plot6 <- ggplot(data = summaryBurnCohortData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Age (biomass-weighted)", y = "years",
+  labs(title = "Avg. age across landscape (biomass-weighted)", y = "years",
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
+amc::.gc()
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, firePresAbs, vegType)]
 plot7 <- ggplot(data = plotData,
@@ -353,6 +354,7 @@ plot7.2 <- ggplot(data = plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
+amc::.gc()
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, noFires, vegType)]
 plot8 <- ggplot(data = plotData,
@@ -379,90 +381,39 @@ plot8.2 <- ggplot(data = plotData,
 
 ## SAVE PLOTS
 ggpubr::ggarrange(plot1,
-                  plot2 + theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
+                  plot2 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeB.tiff"),
        width = 14, height = 7)
 
 ggpubr::ggarrange(plot3,
-                  plot4 + theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
+                  plot4 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeMort.tiff"),
        width = 14, height = 7)
 
 ggpubr::ggarrange(plot5,
-                  plot6 + theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
+                  plot6 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
        width = 14, height = 7)
 
 ggpubr::ggarrange(plot7.2,
-                  plot8.2 + theme(axis.title.y = element_blank(), axis.text.y = element_blank()),
+                  plot8.2 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
-## GIFS ------------------------------------------------------
-## make GIFs of vegetation maps
-## individual pics first
-speciesLabels <- c("Fir", "Larch", "En. spruce", "Wh. spruce",
-                   "Bl. spruce", "Lo. pine", "Aspen","Douglas-fir")
-names(speciesLabels) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
-speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
-names(speciesColours) <-  levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
-
-foothillsMask <- simList_noPM$rawBiomassMap
-foothillsMask[!is.na(foothillsMask)] <- 1
-foothillsMaskDF <- as.data.frame(as(foothillsMask, "SpatialPixelsDataFrame"))
-names(foothillsMaskDF) <- c("value", "x", "y")
-
-makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
-  suppressWarnings(dir.create(gif.dir, recursive = TRUE))
-  cat("Making ", id, "\n")
-  rasterVis::gplot(rasterStack[[id]],
-                   maxpixels = ncell(rasterStack[[id]])) +
-    geom_tile(data = foothillsMaskDF,
-              aes(x = x, y = y), fill = "grey95") +
-    geom_tile(aes(fill = as.factor(value))) +
-    scale_fill_manual(values = speciesColours,
-                      labels = speciesLabels) +
-    theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
-    labs(title = sub("year", "year ", names(rasterStack)[id])) +
-    coord_equal()
-  ggsave(file.path(gif.dir, paste0(filePrefix, id, ".png")),
-         device = "png", width=5, height=10, dpi = 300, units = "in")
-}
-
-map_df(.x = 1:nlayers(vegTypeMapStk_noPM), .f = makePNGs,
-       rasterStack = vegTypeMapStk_noPM,
-       filePrefix = "vegTypeMapStk_noPM",
-       gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif")
-map_df(.x = 1:nlayers(vegTypeMapStk_PM), .f = makePNGs,
-       rasterStack = vegTypeMapStk_PM,
-       filePrefix = "vegTypeMapStk_PM",
-       gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif")
-
-makeGIF <- function(gif.dir, gifPrefix, ...) {
-  ## get file list and the file numbers (to sort numerically, rather than alphabetically)
-  PNGlist <- list.files(path = gif.dir, pattern = "*.png")
-  fileNos <- as.numeric(sub("\\.png", "", sub("^\\D*(\\d)", "\\1", PNGlist)))
-
-  ## make GIF
-  file.path(gif.dir, PNGlist[order(fileNos)]) %>%
-    map(image_read) %>% # reads each path file
-    image_join() %>% # joins image
-    image_animate(...) %>% # animates, can opt for number of loops
-    image_write(file.path(gif.dir, paste0(gifPrefix, ".gif")))
-}
-
-makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif",
-        gifPrefix = "vegTypeMapStk_noPM",
-        fps = 2)
-makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif",
-        gifPrefix = "vegTypeMapStk_PM",
-        fps = 2)
 
