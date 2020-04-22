@@ -392,7 +392,38 @@ plot8.2 <- ggplot(data = plotData,
        subtitle = "no. fires") +
   facet_grid(scenario ~ noFires)
 
+
+plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
+                               by = .(scenario, year, firePresAbs, vegType)]
+plot9 <- ggplot(data = plotData,
+                aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Avg. no. cohorts by dominant species", y = "no. cohorts",
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
+                               by = .(scenario, year, noFires, vegType)]
+
+plot10 <- ggplot(data = plotData,
+                aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Avg. no. cohorts by dominant species", y = "no. cohorts",
+       subtitle = "no. fires") +
+  facet_grid(scenario ~ noFires)
+
+
 ## SAVE PLOTS
+amc::.gc()
 ggpubr::ggarrange(plot1,
                   plot2 +
                     theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
@@ -427,6 +458,15 @@ ggpubr::ggarrange(plot7.2,
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
+       width = 14, height = 7)
+
+ggpubr::ggarrange(plot9,
+                  plot10 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
+                  widths = c(0.4, 0.6),
+                  legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_noCohorts.tiff"),
        width = 14, height = 7)
 
 
