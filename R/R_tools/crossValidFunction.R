@@ -90,7 +90,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
 
   ## predict using rBEINF
   ## tried generating many values and averaging, but doing that results in the same value
-  predictionsDT[, predSEV_PROP := mean(rBEINF(1000, mu, sigma, nu, tau)),
+  predictionsDT[, predSEV_PROP := mean(rBEINF(10, mu, sigma, nu, tau)),
                 by = row.names(predictionsDT)]
 
   ## add severity classes
