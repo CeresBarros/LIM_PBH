@@ -166,6 +166,34 @@ allPixelCohortData <- allPixelCohortData[combinations,
 rm(spp, combinations)
 amc::.gc()
 
+
+## NO. FIRES ---------------------------------------
+## add no. fires per pixel
+## how many times did each pixel burn?
+noFiresPixel <- unique(allPixelCohortData[, .(pixelIndex, scenario, year, burnt)])
+noFiresPixel[, noFires := sum(burnt), by = .(pixelIndex, scenario)]
+noFiresPixel <- unique(noFiresPixel[, .(pixelIndex, scenario, noFires)])
+
+test <- sapply(unique(noFiresPixel$scenario), FUN = function(x){
+  any(duplicated(noFiresPixel[scenario == x, pixelIndex]))
+})
+if (any(test))
+  stop("Each pixel should only have one record of no. fires per scenario")
+
+allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario)]
+
+## add presence/absence of fire across simulation per pixel/scenario
+amc::.gc()
+allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
+rm(noFiresPixel)
+amc::.gc()
+
+## SUBSET A FEW YEARS ------------------------------
+subsetYrs <- c(seq(range(allPixelCohortData$year)[1], range(allPixelCohortData$year)[2],
+                   5), range(allPixelCohortData$year)[2])
+allPixelCohortData <- allPixelCohortData[year %in% subsetYrs]
+amc::.gc()
+
 test <- length(unique(allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, year)]$V1)) == 1
 test2 <- length(unique(allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, year, pixelIndex)]$V1)) == 1
 test3 <- any(is.na(allPixelCohortData$speciesCode))
@@ -193,25 +221,10 @@ replaceNAs <- function(x, val = 0) {
 allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 amc::.gc()
 
-## NO. FIRES ---------------------------------------
-## add no. fires per pixel
-## how many times did each pixel burn?
-noFiresPixel <- unique(allPixelCohortData[, .(pixelIndex, scenario, year, burnt)])
-noFiresPixel[, noFires := sum(burnt), by = .(pixelIndex, scenario)]
-noFiresPixel <- unique(noFiresPixel[, .(pixelIndex, scenario, noFires)])
-
-test <- sapply(unique(noFiresPixel$scenario), FUN = function(x){
-  any(duplicated(noFiresPixel[scenario == x, pixelIndex]))
-})
-if (any(test))
-  stop("Each pixel should only have one record of no. fires per scenario")
-
-allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario)]
-
-## add presence/absence of fire across simulation per pixel/scenario
-amc::.gc()
-allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
-rm(noFiresPixel)
+## add no. cohorts per pixel(group)
+allPixelCohortData[B > 0, noCohorts := length(unique(paste(speciesCode, age))), by = .(scenario, year, pixelGroup)]
+allPixelCohortData[, noCohorts := max(noCohorts, na.rm = TRUE), by = .(scenario, year, pixelGroup)]
+allPixelCohortData[is.na(noCohorts), noCohorts := 0]
 amc::.gc()
 
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
