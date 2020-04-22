@@ -98,7 +98,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
   predictionsDT <- fullDT[, .(pixID, SEV_CLASS)][predictionsDT, on = "pixID"]
 
   ## convert to classes, using the quantiles corresponding to the observed class proportions
-  ## treat accumulate proportions to get probabilities
+  ## accumulate proportions to get probabilities
   quantProbs <- cumsum(table(predictionsDT$SEV_CLASS)/nrow(predictionsDT))
   classRanges <- c(0, quantile(predictionsDT$predSEV_PROP, probs = quantProbs))
 
