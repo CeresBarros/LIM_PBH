@@ -78,7 +78,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
   testData <- testData[, ..cols]
 
   ## refit model on training sample - this is failing due to singularity
-  trainModel <- update(dots$object, data = trainData)
+  ## then predict
+  trainModel <- update(statsModel, data = trainData)
   predictionsDT <- predictAll(trainModel,
                               newdata = testData, data = trainData,
                               type = "response", output = "matrix")
@@ -89,7 +90,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
 
   ## predict using rBEINF
   ## tried generating many values and averaging, but doing that results in the same value
-  predictionsDT[, predSEV_PROP := mean(rBEINF(1000, mu, sigma, nu, tau)),
+  predictionsDT[, predSEV_PROP := mean(rBEINF(10, mu, sigma, nu, tau)),
                 by = row.names(predictionsDT)]
 
   ## add severity classes
@@ -97,7 +98,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
   predictionsDT <- fullDT[, .(pixID, SEV_CLASS)][predictionsDT, on = "pixID"]
 
   ## convert to classes, using the quantiles corresponding to the observed class proportions
-  ## treat accumulate proportions to get probabilities
+  ## accumulate proportions to get probabilities
   quantProbs <- cumsum(table(predictionsDT$SEV_CLASS)/nrow(predictionsDT))
   classRanges <- c(0, quantile(predictionsDT$predSEV_PROP, probs = quantProbs))
 
