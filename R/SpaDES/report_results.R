@@ -202,12 +202,9 @@ if (!test | !test2 | test3)
   stop("something's wrong")
 
 ## add ecoregion group where it's missing
-allPixelCohortData[, ecoregionGroup := unique(na.omit(ecoregionGroup)),
-                   by = .(scenario, year, pixelGroup)]
-amc::.gc()
-
 ## add vegType where it's missing, but it's a pixel with some veg
-allPixelCohortData[, vegType := max(vegType, na.rm = TRUE),
+allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
+                          vegType = max(vegType, na.rm = TRUE)),
                    by = .(scenario, year, pixelGroup)]
 amc::.gc()
 
