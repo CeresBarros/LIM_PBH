@@ -78,7 +78,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
   testData <- testData[, ..cols]
 
   ## refit model on training sample - this is failing due to singularity
-  trainModel <- update(dots$object, data = trainData)
+  ## then predict
+  trainModel <- update(statsModel, data = trainData)
   predictionsDT <- predictAll(trainModel,
                               newdata = testData, data = trainData,
                               type = "response", output = "matrix")
