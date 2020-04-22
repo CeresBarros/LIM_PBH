@@ -98,6 +98,7 @@ preSimObjects <- list(# "studyArea" = foothillsSMALL
   , "sppEquiv" = sppEquivalencies_CA
   , "sppColorVect" = sppColorVect
   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
+  , "ecoregionLayer" = ecoregionLayer
   , "treed" =  simOutSpeciesLayers$treed
   , "numTreed" =  simOutSpeciesLayers$numTreed
   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
