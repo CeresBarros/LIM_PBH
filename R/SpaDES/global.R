@@ -87,6 +87,8 @@ keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
 simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
 sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
 sppColorVect <- sppColorVect[keepSpp]
+plot(simOutSpeciesLayers$speciesLayers)
+
 
 ## Prepare fire weather tables --------------------
 source("R/SpaDES/3_fireWeather.R")
