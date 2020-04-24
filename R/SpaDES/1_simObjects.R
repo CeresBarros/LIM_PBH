@@ -27,11 +27,12 @@ ecoregionLayer <- Cache(prepInputs,
                         archive = asPath("natural_regions_subregions_of_alberta.zip"),
                         url = "https://www.albertaparks.ca/media/429607/natural_regions_subregions_of_alberta.zip",
                         alsoExtract = "similar",
-                        destinationPath = simPaths$inputPath,
                         studyArea = foothills,
+                        fun = "raster::shapefile",
+                        destinationPath = simPaths$inputPath,
                         overwrite = TRUE,
                         useSAcrs = TRUE,
-                        fun = "raster::shapefile",
+                        cacheRepo = "data/cache",
                         userTags = c("prepInputsNatSubRegionsAB_SA"))
 
 ## SPECIES LISTS ---------------------------------------
