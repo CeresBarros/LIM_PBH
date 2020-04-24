@@ -225,21 +225,34 @@ allPixelCohortData[is.na(noCohorts), noCohorts := 0]
 amc::.gc()
 
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
+## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
-summaryBurnCohortData <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
+summaryBurnCohortDataSpp <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
                                                    MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
                                                    aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
                                                    AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                                    sum((B/100), na.rm = TRUE))),
                                             by = .(scenario, year, noFires, speciesCode)]
-summaryBurnCohortData[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
-summaryBurnCohortData[, firePresAbs := as.integer(noFires != 0)]
-amc::.gc(); amc::.gc()
+summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
+summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
+amc::.gc()
+
+## BY FOREST TYPE (def. as dominant species)
+## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
+summaryBurnCohortDataVegType <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
+                                                          MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                          aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+                                                          AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                          sum((B/100), na.rm = TRUE))),
+                                                   by = .(scenario, year, noFires, vegType)]
+summaryBurnCohortDataVegType[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
+summaryBurnCohortDataVegType[, firePresAbs := as.integer(noFires != 0)]
+amc::.gc()
 
 ## make species labels/colours
-speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortData$speciesCode), column = "EN_generic_full",
+speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortDataSpp$speciesCode), column = "EN_generic_full",
                                        df = simList_noPM$sppEquiv)
-names(speciesLabels) <- unique(summaryBurnCohortData$speciesCode)
+names(speciesLabels) <- unique(summaryBurnCohortDataSpp$speciesCode)
 
 speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
 names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
@@ -259,7 +272,7 @@ names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 ## PLOTS -----------------------------------------------
 fireYears <- as.numeric(sub("year", "", names(rstCurrentBurnStk_PM)))
 
-plotData <- summaryBurnCohortData[, list(BiomassBySpecies = sum(BiomassBySpecies)),
+plotData <- summaryBurnCohortDataSpp[, list(BiomassBySpecies = sum(BiomassBySpecies)),
                                   by = .(scenario, year, speciesCode, firePresAbs)]
 plot1 <- ggplot(data = plotData,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
@@ -268,25 +281,25 @@ plot1 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape biomass", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+  labs(title = "Total landscape biomass by species", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
        subtitle = "presence/absence of fire") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot2 <- ggplot(data = summaryBurnCohortData,
+plot2 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape biomass", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+  labs(title = "Total landscape biomass by species", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
-plotData <- summaryBurnCohortData[, list(MortalityBySpecies = sum(MortalityBySpecies)),
+plotData <- summaryBurnCohortDataSpp[, list(MortalityBySpecies = sum(MortalityBySpecies)),
                                   by = .(scenario, year, speciesCode, firePresAbs)]
 plot3 <- ggplot(data = plotData,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
@@ -294,19 +307,19 @@ plot3 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape mortality", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+  labs(title = "Total landscape mortality by species", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot4 <- ggplot(data = summaryBurnCohortData,
+plot4 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape mortality", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+  labs(title = "Total landscape mortality by species", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
@@ -322,19 +335,19 @@ plot5 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age across landscape (biomass-weighted)", y = "years",
+  labs(title = "Avg. species age across landscape (biomass-weighted)", y = "years",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot6 <- ggplot(data = summaryBurnCohortData,
+plot6 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age across landscape (biomass-weighted)", y = "years",
+  labs(title = "Avg. species age across landscape (biomass-weighted)", y = "years",
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
@@ -418,6 +431,59 @@ plot10 <- ggplot(data = plotData,
        subtitle = "no. fires") +
   facet_grid(scenario ~ noFires)
 
+plotData <- summaryBurnCohortDataVegType[, list(BiomassBySpecies = sum(BiomassBySpecies)),
+                                         by = .(scenario, year, vegType, firePresAbs)]
+plot11 <- ggplot(data = plotData,
+                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Total landscape biomass by forest type", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "presence/absence of fire") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot12 <- ggplot(data = summaryBurnCohortDataVegType,
+                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Total landscape biomass by forest type", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
+
+plotData <- summaryBurnCohortDataVegType[, list(MortalityBySpecies = sum(MortalityBySpecies)),
+                                     by = .(scenario, year, vegType, firePresAbs)]
+plot13 <- ggplot(data = plotData,
+                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Total landscape mortality by forest type", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot14 <- ggplot(data = summaryBurnCohortDataVegType,
+                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Total landscape mortality by forest type", y = expression(paste("log-Biomass"~~"(g/m"^2, ")")),
+       subtitle = "no. fires") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ noFires)
+
+
 
 ## SAVE PLOTS
 amc::.gc()
@@ -428,6 +494,15 @@ ggpubr::ggarrange(plot1,
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_landscapeB.tiff"),
+       width = 14, height = 7)
+
+ggpubr::ggarrange(plot11,
+                  plot12 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
+                  widths = c(0.4, 0.6),
+                  legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_landscapeBVegType.tiff"),
        width = 14, height = 7)
 
 ggpubr::ggarrange(plot3,
