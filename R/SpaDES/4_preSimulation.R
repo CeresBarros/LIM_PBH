@@ -10,6 +10,15 @@
 ## pre-simulations are used to prepare objects necessary to estimate
 ## fire frequency using FireSense
 
+## CUSTOMIZE SPECIES TRAIT VALUES -------
+speciesTableUpdateLIM <- function(species) {
+  species[speciesCode == "Abie_sp", shadetolerance := 2.5]
+  species[speciesCode == "Pice_eng", shadetolerance := 2.3]
+  species[speciesCode == "Pseu_men", shadetolerance := 2.1]
+  species[speciesCode == "Pice_gla", shadetolerance := 1.5]
+  species[speciesCode %in% c("Pinu_sp", "Popu_sp"), shadetolerance := 1]
+}
+
 ## SIM PARAMS ------------------------------------------------
 preSimPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests/preSim"),
                     modulePath = file.path("R/SpaDES/m"),
