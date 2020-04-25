@@ -35,7 +35,7 @@ ecoregionLayer <- Cache(prepInputs,
                         cacheRepo = "data/cache",
                         userTags = c("prepInputsNatSubRegionsAB_SA"))
 
-## SPECIES LISTS ---------------------------------------
+## SPECIES LISTS ------------------------
 ## Set up sppEquiV
 data("sppEquivalencies_CA", package = "LandR")
 sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
