@@ -31,7 +31,7 @@ if (grepl("noPM", runName)) {
       , ".plotInterval" = 1
       , ".plotMaps" = FALSE
       , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching # seems slower to use Cache for both
+      , ".useCache" = eventCaching[1] # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
     , Biomass_fuelsPFG = list(
