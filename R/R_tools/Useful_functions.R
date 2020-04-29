@@ -504,8 +504,8 @@ prepKMZ2shapefile <- function(url, archive, destinationPath) {
 
 
 ## CALCULATE NEIGHBOURHOOD SEVERITY -----------------------
-## Calcualtes the average severity of neighbours according
-## within a given distance or set of distances
+## Calculates the average severity of neighbours according
+## to a given distance or set of distances
 
 ## dist is a vector of distances in meters - note that sevPoints much be in a meter-based projection
 ## sevPoints is an sf object of points and severity
