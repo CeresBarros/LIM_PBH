@@ -567,11 +567,79 @@ calculateNgbSevWrapper <- function(dists, sevPoints, sevColID, parallel = TRUE) 
 }
 
 
-    ## change col name for generality
-    names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
+## CALCULATE NEIGHBOURHOOD NO. BURNT PIXELS -----------------------
+## Calculates the proportion of burnt neighbours according
+## to a given distance or set of distances. Points with 0 severity are assumed to not be burnt.
+
+## dist is a vector of distances in meters - note that sevPoints much be in a meter-based projection
+## sevPoints is an sf object of points and severity
+## sevColID is the columns name of the severity column
+
+calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
+                                     resolution = resolution, parallel = TRUE) {
+  browser()
+  ## make a list of combinations of fire ID and buffer distance
+  fireBufferCombos <- expand.grid(unique(sevPoints[[fireColID]]), dists)
+  names(fireBufferCombos) <- c("fireID", "dists")
+  if (nrow(fireBufferCombos) > 1) {
+    if (parallel) {
+      message("Starting parallelization...")
+      require(future.apply)
+      plan(multiprocess(gc = TRUE))
+      ngbSEVList <- future_mapply(FUN = .calculateNgbBurns, dist = fireBufferCombos$dists,
+                                  fireID = fireBufferCombos$fireID,
+                                  MoreArgs = list(sevPoints = sevPoints, sevColID = sevColID,
+                                                  fireColID = fireColID, resolution = resolution))
+
+    } else {
+      ngbSEVList <- mapply(FUN = .calculateNgbBurns, dist = fireBufferCombos$dists,
+                           fireID = fireBufferCombos$fireID,
+                           MoreArgs = list(sevPoints = sevPoints, sevColID = sevColID,
+                                           fireColID = fireColID, resolution = resolution))
+    }
+    ngbSEVDT <- Reduce(function(x, y) merge(x, y, by = "pixID", all = TRUE),
+                       ngbSEVList)
+  } else
+    ngbSEVDT <- .calculateNgbBurns(fireBufferCombos$dists, fireBufferCombos$fireID,
+                                   sevPoints, sevColID, fireColID, resolution)
+
+  return(ngbSEVDT)
+}
+
+.calculateNgbBurns <- function(dist, fireID, sevPoints, sevColID, fireColID, resolution) {
+  browser()
+  if (sum(names(sevPoints) %in% sevColID) > 1)
+    stop("Several column names match 'sevColID")
+  if (!sum(names(sevPoints) %in% sevColID))
+    stop("No column names match 'sevColID")
+
+  ## change col name for generality
+  names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
+
+  ## do one fire at a time
+  lapply(unique(sevPoints[[fireColID]]), FUN = function(fire) {
+    browser()
+    i <- which(sevPoints[[fireColID]] == fire)
+    firePoints <-
+      fireRas <- raster(as_Spatial(sevPoints[i,]), resolution = resolution, crs = crs(sevPoints))
+    fireRas[] <- 1:ncell(fireRas)
+    fireRas <- rasterize(as_Spatial(sevPoints[i,]), fireRas, field = "pixID")
 
     ## draw buffers
-    message(paste0("Drawing ", dist, "m buffers and detecting neighbours"))
+    message(paste0("Drawing ", dist, "m buffers and counting burnt neighbours"))
+    w <- focalWeight(fireRas, d = dist*3, type = "circle")
+    w[w > 0] <- 1
+    w[w == 0] <- NA
+    w[ceiling(nrow(w)/2), ceiling(ncol(w)/2)] <- 0  ## exclude focal cell
+
+    ## find neighbours
+    ngbhoodBurns <- data.table(adjacent(fireRas, cells = which(!is.na(getValues(fireRas))),
+                                        directions = w))
+    if (length(unique(ngbhoodBurns$from)) != length(i))
+      stop("Not all points in fire perimeter were converted to raster pixels.")
+
+    ngbhoodBurns[, sev := getValues(fireRas)[to]]
+
     bufferSf <- st_buffer(sevPoints, dist = dist) ## keep all columns so that the join identifies .x and .y columns
 
     ## join to find with pixels are within another's buffer
@@ -587,10 +655,11 @@ calculateNgbSevWrapper <- function(dists, sevPoints, sevColID, parallel = TRUE) 
              new = c("pixID", "pixIDneigh", "sevngb"))
 
     message(paste0("Calculating average severity across neighbours"))
-    ngbhoodSEV <- pointsWithinBufferDT[, list(sevngbhood = mean(sevngb, na.rm = TRUE)),
-                                       by = pixID]
-    setnames(ngbhoodSEV, old = "sevngbhood",
-             new = paste0("meanngb", sevColID, "_", dist, "m"))
+    ngbhoodBurns <- pointsWithinBufferDT[, list(noBurns = sum(sevngb > 0, na.rm = TRUE)),
+                                         by = pixID]
+    setnames(ngbhoodBurns, old = "noBurns",
+             new = paste0("ngbPropBurns", sevColID, "_", dist, "m"))
     message(paste0("Done!"))
     return(ngbhoodSEV)
+  })
 }
