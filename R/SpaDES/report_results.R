@@ -16,36 +16,36 @@ library(LandR)
 figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/"
 
 ## GET SIM LISTS
-# simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppParams_fullSA.qs")
-# simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
-#
-# outputs_PM <- as.data.table(outputs(simList_PM))
-# outputs_noPM <- as.data.table(outputs(simList_noPM))
+simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppParams_fullSA.qs")
+simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
+
+outputs_PM <- as.data.table(outputs(simList_PM))
+outputs_noPM <- as.data.table(outputs(simList_noPM))
 
 ## GET FILE NAMES
-# cohortDataFiles <- c(outputs_noPM[objectName == "cohortData", file],
-#                      outputs_PM[objectName == "cohortData", file]) %>%
-#   unique(.)
-cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE))
+cohortDataFiles <- c(outputs_noPM[objectName == "cohortData", file],
+                     outputs_PM[objectName == "cohortData", file]) %>%
+  unique(.)
+# cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE))
 
-# rstCurrentBurnFiles <- c(outputs_noPM[objectName == "rstCurrentBurn", file],
-#                          outputs_PM[objectName == "rstCurrentBurn", file]) %>%
-#   unique(.)
-rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE))
+rstCurrentBurnFiles <- c(outputs_noPM[objectName == "rstCurrentBurn", file],
+                         outputs_PM[objectName == "rstCurrentBurn", file]) %>%
+  unique(.)
+# rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE))
 
-# pixelGroupMapFiles <- c(outputs_noPM[objectName == "pixelGroupMap", file],
-#                         outputs_PM[objectName == "pixelGroupMap", file]) %>%
-#   unique(.)
-pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE))
+pixelGroupMapFiles <- c(outputs_noPM[objectName == "pixelGroupMap", file],
+                        outputs_PM[objectName == "pixelGroupMap", file]) %>%
+  unique(.)
+# pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE),
+#                          list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE))
 
-# vegTypeMapFiles <- c(outputs_noPM[objectName == "vegTypeMap", file],
-#                      outputs_PM[objectName == "vegTypeMap", file]) %>%
-#   unique(.)
-vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE),
-                        list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE))
+vegTypeMapFiles <- c(outputs_noPM[objectName == "vegTypeMap", file],
+                     outputs_PM[objectName == "vegTypeMap", file]) %>%
+  unique(.)
+# vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE),
+#                         list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE))
 
 ## load rasters as stacks
 rstCurrentBurnStk_noPM <- lapply(grep("noPM", rstCurrentBurnFiles, value = TRUE), readRDS) %>%
@@ -276,8 +276,7 @@ amc::.gc()
 
 ## make species labels/colours
 speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortDataSpp$speciesCode), column = "EN_generic_full",
-                                       # df = simList_noPM$sppEquiv)
-                                       df = LandR::sppEquivalencies_CA)
+                                       df = simList_noPM$sppEquiv)
 names(speciesLabels) <- unique(summaryBurnCohortDataSpp$speciesCode)
 
 speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
@@ -286,8 +285,7 @@ names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
 ## make vegType labels/colours
 vegTypeLabels <- as.character(levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE)
 vegTypeLabels <- LandR::equivalentName(value = vegTypeLabels, column = "EN_generic_full",
-                                       # df = simList_noPM$sppEquiv)
-                                       df = LandR::sppEquivalencies_CA)
+                                       df = simList_noPM$sppEquiv)
 vegTypeLabels[length(vegTypeLabels) + 1] <- "No veg."
 names(vegTypeLabels) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 
@@ -297,6 +295,8 @@ names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 
 
 ## PLOTS -----------------------------------------------
+
+## BY SPECIES ------------
 fireYears <- as.numeric(sub("year", "", names(rstCurrentBurnStk_PM)))
 
 plotData <- summaryBurnCohortDataSpp[, list(BiomassBySpecies = sum(BiomassBySpecies)),
@@ -362,7 +362,7 @@ plot5 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. species age across landscape (biomass-weighted)", y = "years",
+  labs(title = "Avg. species age across landscape", y = "years",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -374,72 +374,101 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. species age across landscape (biomass-weighted)", y = "years",
+  labs(title = "Avg. species age across landscape", y = "years",
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
-amc::.gc()
-plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, firePresAbs, vegType)]
+plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
+                               by = .(scenario, year, firePresAbs, speciesCode)]
 plot7 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
-  geom_area(stat = "identity", position = "stack") +
+                aes(x = year, y = avgNoCohorts, colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Dominant species", y = "no. pixels",
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Avg. no. cohorts by species", y = "no. cohorts",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
-
-plot7.2 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
-  geom_area(stat = "identity", position = "fill") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Dominant species", y = "prop. pixels",
-       subtitle = "presence/absence of fire") +
-  facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
-
-amc::.gc()
-plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, noFires, vegType)]
-plot8 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
-  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
-  geom_area(stat = "identity", position = "stack") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Dominant species", y = "no. pixels",
-       subtitle = "no. fires") +
-  facet_grid(scenario ~ noFires)
-
-plot8.2 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
-  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
-  geom_area(stat = "identity", position = "fill") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Dominant species", y = "prop. pixels",
-       subtitle = "no. fires") +
-  facet_grid(scenario ~ noFires)
-
 
 plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
+                               by = .(scenario, year, noFires, speciesCode)]
+plot8 <- ggplot(data = plotData,
+                 aes(x = year, y = avgNoCohorts, colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Avg. no. cohorts by species", y = "no. cohorts",
+       subtitle = "no. fires") +
+  facet_grid(scenario ~ noFires)
+
+
+## BY FOREST TYPE (DOMINANT SPECIES) ------------
+amc::.gc()
+plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, firePresAbs, vegType)]
 plot9 <- ggplot(data = plotData,
+                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  geom_area(stat = "identity", position = "stack") +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dominant species)", y = "no. pixels",
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot9.2 <- ggplot(data = plotData,
+                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  geom_area(stat = "identity", position = "fill") +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dominant species)", y = "prop. pixels",
+       subtitle = "presence/absence of fire") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+amc::.gc()
+plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
+                               by = .(scenario, year, noFires, vegType)]
+plot10 <- ggplot(data = plotData,
+                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_area(stat = "identity", position = "stack") +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dominant species)", y = "no. pixels",
+       subtitle = "no. fires") +
+  facet_grid(scenario ~ noFires)
+
+plot10.2 <- ggplot(data = plotData,
+                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_area(stat = "identity", position = "fill") +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dominant species)", y = "prop. pixels",
+       subtitle = "no. fires") +
+  facet_grid(scenario ~ noFires)
+
+
+plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
+                               by = .(scenario, year, firePresAbs, vegType)]
+plot11 <- ggplot(data = plotData,
                 aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts by dominant species", y = "no. cohorts",
+  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -447,20 +476,20 @@ plot9 <- ggplot(data = plotData,
 plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
                                by = .(scenario, year, noFires, vegType)]
 
-plot10 <- ggplot(data = plotData,
+plot12 <- ggplot(data = plotData,
                 aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts by dominant species", y = "no. cohorts",
+  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
        subtitle = "no. fires") +
   facet_grid(scenario ~ noFires)
 
 plotData <- summaryBurnCohortDataVegType[, list(BiomassBySpecies = sum(BiomassBySpecies)),
                                          by = .(scenario, year, vegType, firePresAbs)]
-plot11 <- ggplot(data = plotData,
+plot13 <- ggplot(data = plotData,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
@@ -473,7 +502,7 @@ plot11 <- ggplot(data = plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot12 <- ggplot(data = summaryBurnCohortDataVegType,
+plot14 <- ggplot(data = summaryBurnCohortDataVegType,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
@@ -522,8 +551,8 @@ ggpubr::ggarrange(plot1,
 ggsave(filename = file.path(figOutputPath, "results_landscapeB.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot11,
-                  plot12 +
+ggpubr::ggarrange(plot13,
+                  plot14 +
                     theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                     labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
@@ -549,8 +578,8 @@ ggpubr::ggarrange(plot5,
 ggsave(filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot7.2,
-                  plot8.2 +
+ggpubr::ggarrange(plot9.2,
+                  plot10.2 +
                     theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                     labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
@@ -558,13 +587,21 @@ ggpubr::ggarrange(plot7.2,
 ggsave(filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot9,
-                  plot10 +
+ggpubr::ggarrange(plot7,
+                  plot8 +
                     theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                     labs(title = "", subtitle = ""),
                   widths = c(0.4, 0.6),
                   legend = "bottom", common.legend = TRUE)
 ggsave(filename = file.path(figOutputPath, "results_noCohorts.tiff"),
+       width = 14, height = 7)
+ggpubr::ggarrange(plot11,
+                  plot12 +
+                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                    labs(title = "", subtitle = ""),
+                  widths = c(0.4, 0.6),
+                  legend = "bottom", common.legend = TRUE)
+ggsave(filename = file.path(figOutputPath, "results_noCohortsVegType.tiff"),
        width = 14, height = 7)
 
 
