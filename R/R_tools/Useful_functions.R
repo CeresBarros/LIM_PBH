@@ -533,10 +533,39 @@ calculateNgbSevWrapper <- function(dists, sevPoints, sevColID, parallel = TRUE) 
 }
 
 .calculateNgbSev <- function(dist, sevPoints, sevColID) {
-    if (sum(names(sevPoints) %in% sevColID) > 1)
-      stop("Several column names match 'sevColID")
-    if (!sum(names(sevPoints) %in% sevColID))
-      stop("No column names match 'sevColID")
+  if (sum(names(sevPoints) %in% sevColID) > 1)
+    stop("Several column names match 'sevColID")
+  if (!sum(names(sevPoints) %in% sevColID))
+    stop("No column names match 'sevColID")
+
+  ## change col name for generality
+  names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
+
+  ## draw buffers
+  message(paste0("Drawing ", dist, "m buffers and detecting neighbours"))
+  bufferSf <- st_buffer(sevPoints, dist = dist) ## keep all columns so that the join identifies .x and .y columns
+
+  ## join to find with pixels are within another's buffer
+  ## st_touches avoids "self" joins, so pixels are not joined with their own buffer
+  pointsWithinBuffer <- st_join(bufferSf, sevPoints, join = st_touches)
+  names(pointsWithinBuffer) <- sub("\\.x", "buffer", names(pointsWithinBuffer))
+  names(pointsWithinBuffer) <- sub("\\.y", "points", names(pointsWithinBuffer))
+
+  pointsWithinBufferDT <- data.table(st_drop_geometry(pointsWithinBuffer))
+  pointsWithinBufferDT[, sevbuffer := NULL] ## keep track of neighbour sev only
+
+  setnames(pointsWithinBufferDT, old = c("pixIDbuffer", "pixIDpoints", "sevpoints"),
+           new = c("pixID", "pixIDneigh", "sevngb"))
+
+  message(paste0("Calculating average severity across neighbours"))
+  ngbhoodSEV <- pointsWithinBufferDT[, list(sevngbhood = mean(sevngb, na.rm = TRUE)),
+                                     by = pixID]
+  setnames(ngbhoodSEV, old = "sevngbhood",
+           new = paste0("meanngb", sevColID, "_", dist, "m"))
+  message(paste0("Done!"))
+  return(ngbhoodSEV)
+}
+
 
     ## change col name for generality
     names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
