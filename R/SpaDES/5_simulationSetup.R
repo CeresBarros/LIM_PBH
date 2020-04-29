@@ -142,6 +142,10 @@ simObjects <- c(simObjects,
                 )
 )
 
+## change the site shade level relative biomass.
+simObjects$minRelativeB[, X1 := 0.1]
+simObjects$minRelativeB[, X2 := 0.2]
+
 
 ## add fake fire map if need be
 if (grepl("oneFire", runName)) {
