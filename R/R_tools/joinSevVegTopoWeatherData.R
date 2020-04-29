@@ -154,7 +154,16 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
   vegDataPoints <- data.table(st_set_geometry(vegDataPoints, NULL))
   setkey(vegDataPoints, pixID)
   setkey(dataDT, pixID)
-  dataDT <- vegDataPoints[dataDT, allow.cartesian = TRUE, nomatch = 0]
+  dataDT <- vegDataPoints[dataDT, nomatch = 0]
+
+  ## JOIN WEATHER DATA
+  message("... joining weather data")
+  dataDT[FIRE_NAME == "Alfred", FIRE_NAME := "Alfred Lake"]
+  dataDT[, FIRE_NAME := toupper(FIRE_NAME)]
+
+  setkey(weatherDataDt, FIRE_NAME)
+  setkey(dataDT, FIRE_NAME)
+  dataDT <- weatherDataDt[dataDT, allow.cartesian = TRUE, nomatch = 0]
 
   message("... saving temp file")
   tempFile <- paste0("dataTable_",
