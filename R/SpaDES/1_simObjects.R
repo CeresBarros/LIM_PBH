@@ -21,7 +21,21 @@ foothills <- spTransform(foothills,
 foothillsSMALL <- raster::buffer(foothills, width = -30000)
 foothillsMED <- raster::buffer(foothills, width = -15000)
 
-## SPECIES LISTS ---------------------------------------
+## ECOREGION LAYER --------------------
+ecoregionLayer <- Cache(prepInputs,
+                        targetFile = "Natural_Regions_Subregions_of_Alberta.shp",
+                        archive = asPath("natural_regions_subregions_of_alberta.zip"),
+                        url = "https://www.albertaparks.ca/media/429607/natural_regions_subregions_of_alberta.zip",
+                        alsoExtract = "similar",
+                        studyArea = foothills,
+                        fun = "raster::shapefile",
+                        destinationPath = simPaths$inputPath,
+                        overwrite = TRUE,
+                        useSAcrs = TRUE,
+                        cacheRepo = "data/cache",
+                        userTags = c("prepInputsNatSubRegionsAB_SA"))
+
+## SPECIES LISTS ------------------------
 ## Set up sppEquiV
 data("sppEquivalencies_CA", package = "LandR")
 sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",

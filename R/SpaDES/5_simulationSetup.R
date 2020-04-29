@@ -31,7 +31,7 @@ if (grepl("noPM", runName)) {
       , ".plotInterval" = 1
       , ".plotMaps" = FALSE
       , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching # seems slower to use Cache for both
+      , ".useCache" = eventCaching[1] # seems slower to use Cache for both
       , ".useParallel" = useParallel
     )
     , Biomass_fuelsPFG = list(
@@ -157,25 +157,26 @@ if (grepl("oneFire", runName)) {
 
 ## SIM OUTPUTS ------------------------------------------------
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = unique(sort(c(1, seq(simTimes$start, simTimes$end,
-                                                           by = 1)))),
+                                  saveTime = unique(sort(c(1, simTimes$end,
+                                                           seq(simTimes$start, simTimes$end, by = 5)))),
                                   eventPriority = 10,
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
                                                     simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
-outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
-                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
-                                     eventPriority = 10))
+# outputs <- rbind(outputs, data.frame(objectName = "fireCFBRas",
+#                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
+#                                                     simTimes$end, by = simParams$fireSpread$fireTimestep),
+#                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = unique(sort(c(1, seq(simTimes$start, simTimes$end,
-                                                                     by = 1)))),
+                                     saveTime = unique(sort(c(1, simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = sort(c(1, seq(simTimes$start, simTimes$end,
-                                                              by = 1))),
+                                     saveTime = unique(sort(c(1, simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
                                      eventPriority = 10))
 ## on the first year save after init events, but before mortalityAndGrowth
 outputs[outputs$saveTime == 0, "eventPriority"] <- 5.5
+

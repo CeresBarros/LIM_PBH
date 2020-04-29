@@ -27,6 +27,7 @@ rm(list=ls()); amc::.gc()
 # devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.core@lowMemory", dependencies = FALSE)
+# devtools::install_github("CeresBarros/LandWebUtils@development", dependencies = FALSE)
 
 ## test packages
 # devtools::install_local("../LandR", dependencies = FALSE, force = TRUE)
@@ -57,8 +58,8 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "noPM_oneFire_newSppParams"
 # runName <- "PM_newSppParams"
 # runName <- "noPM_newSppParams"
-# runName <- "PM_newSppParams_fullSA"
-runName <- "noPM_newSppParams_fullSA"
+runName <- "PM_newSppParams_fullSA"
+# runName <- "noPM_newSppParams_fullSA"
 
 
 eventCaching <- c(".inputObjects", "init")
@@ -87,6 +88,8 @@ keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
 simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
 sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
 sppColorVect <- sppColorVect[keepSpp]
+plot(simOutSpeciesLayers$speciesLayers)
+
 
 ## Prepare fire weather tables --------------------
 source("R/SpaDES/3_fireWeather.R")

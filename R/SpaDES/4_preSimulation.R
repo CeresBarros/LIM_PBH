@@ -10,6 +10,18 @@
 ## pre-simulations are used to prepare objects necessary to estimate
 ## fire frequency using FireSense
 
+## CUSTOMIZE SPECIES TRAIT VALUES -------
+## pass a list of species traits parameter values to LandWebUtils::updateSpeciesTable
+speciesParams <- list(
+  "shadetolerance" = list(
+    Abie_sp = 2.3,
+    Pice_eng = 2.1,
+    Pseu_men = 2.0,
+    Pice_gla = 1.3,
+    Pinu_sp = 1, Popu_sp = 1
+    )
+)
+
 ## SIM PARAMS ------------------------------------------------
 preSimPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests/preSim"),
                     modulePath = file.path("R/SpaDES/m"),
@@ -22,7 +34,6 @@ preSimModules <- list("Biomass_borealDataPrep"
                       , "fireSense_dataPrep"
                       , "fireSense_IgnitionFit"
 )
-
 preSimParams <- list(
   Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
@@ -30,6 +41,9 @@ preSimParams <- list(
     , "LCCClassesToReplaceNN" = c(34:36)
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
+    ,"speciesUpdateFunction" = list(
+      quote(LandR::speciesTableUpdate(sim$species, sim$speciesTable, sim$sppEquiv, P(sim)$sppEquivCol)),
+      quote(LandWebUtils::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep * 10L
@@ -98,6 +112,8 @@ preSimObjects <- list(# "studyArea" = foothillsSMALL
   , "sppEquiv" = sppEquivalencies_CA
   , "sppColorVect" = sppColorVect
   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
+  , "speciesParams" = speciesParams
+  , "ecoregionLayer" = ecoregionLayer
   , "treed" =  simOutSpeciesLayers$treed
   , "numTreed" =  simOutSpeciesLayers$numTreed
   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
