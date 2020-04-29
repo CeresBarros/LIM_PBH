@@ -378,7 +378,7 @@ doNoFire <- function(sim) {
                                datatype = "INT2U", overwrite = TRUE)
   }
 
-  if (!identical(crs(sim$studyArea), crs(sim$rasterToMatch))) {
+  if (!compareCRS(sim$studyArea, sim$rasterToMatch)) {
     warning(paste0("studyArea and rasterToMatch projections differ.\n",
                    "studyArea will be projected to match rasterToMatch"))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))

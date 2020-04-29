@@ -430,11 +430,11 @@ doNoFire <- function(sim) {
   }
 
   ## if necessary reproject to lat/long - for compatibility with FBP
-  if (!identical(latLong, crs(sim$shpStudyRegionFullFBP))) {
+  if (!compareCRS(latLong, crs(sim$shpStudyRegionFullFBP))) {
     sim$shpStudyRegionFullFBP <- spTransform(sim$shpStudyRegionFullFBP, latLong) #faster without Cache
   }
 
-  if (!identical(latLong, crs(sim$shpStudySubRegionFBP))) {
+  if (!compareCRS(latLong, crs(sim$shpStudySubRegionFBP))) {
     sim$shpStudySubRegionFBP <- spTransform(sim$shpStudySubRegionFBP, latLong) #faster without Cache
   }
 
