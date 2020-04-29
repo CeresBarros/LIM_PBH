@@ -207,7 +207,7 @@ doBiomassPreFire <- function(sim){
   }
 
   ## if necessary reproject to lat/long - for compatibility with FBP
-  if (!identical(latLong, crs(sim$studyAreaFBP))) {
+  if (!compareCRS(latLong, crs(sim$studyAreaFBP))) {
     sim$studyAreaFBP <- spTransform(sim$studyAreaFBP, latLong) #faster without Cache
   }
 
