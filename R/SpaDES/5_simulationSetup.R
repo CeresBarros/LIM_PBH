@@ -143,11 +143,11 @@ simObjects <- c(simObjects,
 )
 
 ## change the site shade level relative biomass.
-simObjects$minRelativeB[, X1 := 0.1]
-simObjects$minRelativeB[, X2 := 0.2]
-simObjects$minRelativeB[, X3 := 0.3]  ## this and next were added in second round
-simObjects$minRelativeB[, X4 := 0.5]
-simObjects$minRelativeB[, X5 := 0.7]
+simObjects$minRelativeB[, X1 := 0.15]
+simObjects$minRelativeB[, X2 := 0.25]
+simObjects$minRelativeB[, X3 := 0.5]
+simObjects$minRelativeB[, X4 := 0.75]
+simObjects$minRelativeB[, X5 := 0.85]
 
 
 ## add fake fire map if need be
