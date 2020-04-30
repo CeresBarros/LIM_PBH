@@ -240,10 +240,10 @@ allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 amc::.gc()
 
 ## add no. cohorts per pixel(group)
-allPixelCohortData[B > 0, noCohorts := length(unique(paste(speciesCode, age))), by = .(scenario, year, pixelGroup)]
-allPixelCohortData[, noCohorts := max(noCohorts, na.rm = TRUE), by = .(scenario, year, pixelGroup)]
-allPixelCohortData[is.na(noCohorts), noCohorts := 0]
-amc::.gc()
+# allPixelCohortData[B > 0, noCohorts := length(unique(paste(speciesCode, age))), by = .(scenario, year, pixelGroup)]
+# allPixelCohortData[, noCohorts := max(noCohorts, na.rm = TRUE), by = .(scenario, year, pixelGroup)]
+# allPixelCohortData[is.na(noCohorts), noCohorts := 0]
+# amc::.gc()
 
 ## add presence/absence of fire across simulation per pixel/scenario
 allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
@@ -253,11 +253,11 @@ amc::.gc()
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
 summaryBurnCohortDataSpp <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                   MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                   aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                   AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                   sum((B/100), na.rm = TRUE))),
-                                            by = .(scenario, year, noFires, speciesCode)]
+                                                      MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                      aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+                                                      AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                      sum((B/100), na.rm = TRUE))),
+                                               by = .(scenario, year, noFires, speciesCode)]
 summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
 amc::.gc()
@@ -300,7 +300,7 @@ names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 fireYears <- as.numeric(sub("year", "", names(rstCurrentBurnStk_PM)))
 
 plotData <- summaryBurnCohortDataSpp[, list(BiomassBySpecies = sum(BiomassBySpecies)),
-                                  by = .(scenario, year, speciesCode, firePresAbs)]
+                                     by = .(scenario, year, speciesCode, firePresAbs)]
 plot1 <- ggplot(data = plotData,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
@@ -327,7 +327,7 @@ plot2 <- ggplot(data = summaryBurnCohortDataSpp,
   facet_grid(scenario ~ noFires)
 
 plotData <- summaryBurnCohortDataSpp[, list(MortalityBySpecies = sum(MortalityBySpecies)),
-                                  by = .(scenario, year, speciesCode, firePresAbs)]
+                                     by = .(scenario, year, speciesCode, firePresAbs)]
 plot3 <- ggplot(data = plotData,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
   geom_line(size = 1) +
@@ -353,8 +353,8 @@ plot4 <- ggplot(data = summaryBurnCohortDataSpp,
 
 amc::.gc()
 plotData <- allPixelCohortData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                            sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, year, firePresAbs, speciesCode)]
+                                                                      sum((B/100), na.rm = TRUE))),
+                               by = .(scenario, year, firePresAbs, speciesCode)]
 
 plot5 <- ggplot(data = plotData,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
@@ -379,10 +379,12 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
-plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
-                               by = .(scenario, year, firePresAbs, speciesCode)]
-plot7 <- ggplot(data = plotData,
-                aes(x = year, y = avgNoCohorts, colour = speciesCode)) +
+
+plotData <- allPixelCohortData[B > 0, list(noCohorts = length(unique(age))),
+                               by = .(scenario, year, pixelIndex, firePresAbs, noFires, speciesCode)]
+plot7 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
+                                by = .(scenario, year, firePresAbs, speciesCode)],
+                aes(x = year, y = noCohorts, colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -393,10 +395,9 @@ plot7 <- ggplot(data = plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
-                               by = .(scenario, year, noFires, speciesCode)]
-plot8 <- ggplot(data = plotData,
-                 aes(x = year, y = avgNoCohorts, colour = speciesCode)) +
+plot8 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
+                                by = .(scenario, year, noFires, speciesCode)],
+                aes(x = year, y = noCohorts, colour = speciesCode)) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -423,7 +424,7 @@ plot9 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot9.2 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                  aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   geom_area(stat = "identity", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -437,7 +438,7 @@ amc::.gc()
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, noFires, vegType)]
 plot10 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_area(stat = "identity", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -448,7 +449,7 @@ plot10 <- ggplot(data = plotData,
   facet_grid(scenario ~ noFires)
 
 plot10.2 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_area(stat = "identity", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -459,10 +460,11 @@ plot10.2 <- ggplot(data = plotData,
   facet_grid(scenario ~ noFires)
 
 
-plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
-                               by = .(scenario, year, firePresAbs, vegType)]
-plot11 <- ggplot(data = plotData,
-                aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
+plotData <- allPixelCohortData[B > 0, list(noCohorts = length(unique(age))),
+                               by = .(scenario, year, pixelIndex, firePresAbs, noFires, vegType)]
+plot11 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
+                                 by = .(scenario, year, firePresAbs, vegType)],
+                 aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -473,11 +475,9 @@ plot11 <- ggplot(data = plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plotData <- allPixelCohortData[, list(avgNoCohorts = mean(noCohorts)),
-                               by = .(scenario, year, noFires, vegType)]
-
-plot12 <- ggplot(data = plotData,
-                aes(x = year, y = avgNoCohorts, colour = as.factor(vegType))) +
+plot12 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
+                                 by = .(scenario, year, noFires, vegType)],
+                 aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -490,7 +490,7 @@ plot12 <- ggplot(data = plotData,
 plotData <- summaryBurnCohortDataVegType[, list(BiomassBySpecies = sum(BiomassBySpecies)),
                                          by = .(scenario, year, vegType, firePresAbs)]
 plot13 <- ggplot(data = plotData,
-                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -503,7 +503,7 @@ plot13 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot14 <- ggplot(data = summaryBurnCohortDataVegType,
-                aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -515,9 +515,9 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
   facet_grid(scenario ~ noFires)
 
 plotData <- summaryBurnCohortDataVegType[, list(MortalityBySpecies = sum(MortalityBySpecies)),
-                                     by = .(scenario, year, vegType, firePresAbs)]
+                                         by = .(scenario, year, vegType, firePresAbs)]
 plot13 <- ggplot(data = plotData,
-                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -528,7 +528,7 @@ plot13 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot14 <- ggplot(data = summaryBurnCohortDataVegType,
-                aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
