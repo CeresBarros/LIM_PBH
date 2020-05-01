@@ -66,7 +66,7 @@ eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
 ## paths define simulation paths
-simPaths <- list(cachePath = file.path("R/SpaDES/cache/LIM_tests", runName),
+simPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report", runName),
                  modulePath = file.path("R/SpaDES/m"),
                  inputPath = file.path("R/SpaDES/inputs"),
                  outputPath = file.path("R/SpaDES/outputs", runName))

@@ -152,7 +152,7 @@ simObjects$minRelativeB[, X5 := 0.85]
 
 ## add fake fire map if need be
 if (grepl("oneFire", runName)) {
-  rstCurrentBurn <- raster(list.files("R/SpaDES/cache/LIM_tests", recursive = TRUE,
+  rstCurrentBurn <- raster(list.files("R/SpaDES/cache/AI_report", recursive = TRUE,
                                       pattern = "rasterToMatch.tif", full.names = TRUE)[1])
   IDs <- which(!is.na(rstCurrentBurn[]))
   rstCurrentBurn[IDs] <- 1

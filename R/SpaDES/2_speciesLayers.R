@@ -9,7 +9,7 @@
 ## or other modules). That's why caching is kept separate from the rest
 ## of the simulation
 
-speciesPaths <-list(cachePath = file.path("R/SpaDES/cache/LIM_tests", "speciesLayers"),
+speciesPaths <-list(cachePath = file.path("R/SpaDES/cache/AI_report", "speciesLayers"),
                     modulePath = file.path("R/SpaDES/m"),
                     inputPath = file.path("R/SpaDES/inputs"))
 
