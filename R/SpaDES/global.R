@@ -58,8 +58,8 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "noPM_oneFire_newSppParams"
 # runName <- "PM_newSppParams"
 # runName <- "noPM_newSppParams"
-runName <- "PM_newSppParams_fullSA"
-# runName <- "noPM_newSppParams_fullSA"
+# runName <- "PM_newSppParams_fullSA"
+runName <- "noPM_newSppParams_fullSA"
 
 
 eventCaching <- c(".inputObjects", "init")
