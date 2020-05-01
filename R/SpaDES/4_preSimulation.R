@@ -17,7 +17,7 @@ speciesParams <- list(
     Abie_sp = 2.3,
     Pice_eng = 2.1,
     Pseu_men = 2.0,
-    Pice_gla = 1.3,
+    Pice_gla = 1.6,
     Pinu_sp = 1, Popu_sp = 1
     )
 )
