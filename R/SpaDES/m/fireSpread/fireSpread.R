@@ -28,6 +28,8 @@ defineModule(sim, list(
                     desc = "The number of time units between successive fire events in a fire module"),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
+    defineParameter(".studyAreaName", "character", NA, NA, NA,
+                    "Human-readable name for the study area used. If NA, a hash of studyArea will be used."),
     defineParameter(".useCache", "logical", "init", NA, NA,
                     desc = "use caching for the spinup simulation?")
   ),
@@ -374,7 +376,8 @@ doNoFire <- function(sim) {
     sim$rasterToMatch[!is.na(RTMvals)] <- 1
 
     sim$rasterToMatch <- Cache(writeOutputs, sim$rasterToMatch,
-                               filename2 = file.path(cachePath(sim), "rasters", "rasterToMatch.tif"),
+                               filename2 = .suffix(file.path(dPath, "rasterToMatch.tif"),
+                                                   paste0("_", P(sim)$.studyAreaName)),
                                datatype = "INT2U", overwrite = TRUE)
   }
 
