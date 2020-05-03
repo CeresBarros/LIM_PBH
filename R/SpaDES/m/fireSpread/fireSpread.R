@@ -177,7 +177,7 @@ doFireSpread <- function(sim) {
                                    "canada-forests-attributes_attributs-forests-canada/",
                                    "2001-attributes_attributs-2001/",
                                    "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif")
-
+        rawBiomassMapFilename <- "NFI_MODIS250m_2001_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif"
         rawBiomassMap <- Cache(prepInputs,
                                targetFile = rawBiomassMapFilename,
                                url = rawBiomassMapURL,
@@ -188,7 +188,7 @@ doFireSpread <- function(sim) {
                                useSAcrs = FALSE,
                                method = "bilinear",
                                datatype = "INT2U",
-                               filename2 = TRUE, overwrite = TRUE,
+                               filename2 = NULL,
                                userTags = c(cacheTags, "rawBiomassMap"),
                                omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
 
