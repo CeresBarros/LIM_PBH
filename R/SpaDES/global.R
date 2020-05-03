@@ -18,7 +18,7 @@ rm(list=ls()); amc::.gc()
 # loading LandR            0.0.3.9006
 # loading LandR.CS         0.0.1.0001
 
-# devtools::install_github("PredictiveEcology/reproducible@messagingOverhaul", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/reproducible@139-spatial-updates", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/pemisc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/map@development", dependencies = FALSE)
