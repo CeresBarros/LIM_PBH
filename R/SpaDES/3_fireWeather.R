@@ -11,7 +11,8 @@
 
 fireWeatherPaths <-list(cachePath = file.path("R/SpaDES/cache/AI_report", "fireWeather"),
                         modulePath = file.path("R/SpaDES/m"),
-                        inputPath = file.path("R/SpaDES/inputs"))
+                        inputPath = file.path("R/SpaDES/inputs"),
+                        outputPath = file.path("R/SpaDES/outputs", "fireWeather"))
 
 fireWeatherParameters <- list(
   fireWeather = list(

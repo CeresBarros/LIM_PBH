@@ -11,7 +11,8 @@
 
 speciesPaths <-list(cachePath = file.path("R/SpaDES/cache/AI_report", "speciesLayers"),
                     modulePath = file.path("R/SpaDES/m"),
-                    inputPath = file.path("R/SpaDES/inputs"))
+                    inputPath = file.path("R/SpaDES/inputs"),
+                    outputPath = file.path("R/SpaDES/outputs", "speciesLayers"))
 
 speciesParameters <- list(
   Biomass_speciesData = list(
