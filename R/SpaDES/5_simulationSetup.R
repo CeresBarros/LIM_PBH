@@ -7,125 +7,79 @@
 ## the run name defined in global.R. Run names can differ in their
 ## parametrisation, modules used and necessary objects
 
+## to run using experiment, parameters for all modules will be put in the list
+## and two simLists will be made using different module lists.
+
 ## SIM PARAMS ------------------------------------------------
-
-if (grepl("noPM", runName)) {
-  simModules <- list("Biomass_fireProperties"
-                     , "Biomass_core"
-                     , "Biomass_fuelsPFG"
-                     , "fireSpread"
-                     , "Biomass_regeneration"
-                     , "fireSeverity"
-  )
-
-  simParams <- list(
-    Biomass_core = list(
-      "calcSummaryBGM" = c("start")
-      , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-      , ".plotInitialTime" = simTimes$start
-      , "plotOverstory" = TRUE
-      , "seedingAlgorithm" = "wardDispersal"
-      , "sppEquivCol" = sppEquivCol
-      , "successionTimestep" = successionTimestep * 10L
-      , "vegLeadingProportion" = vegLeadingProportion
-      , ".plotInterval" = 1
-      , ".plotMaps" = FALSE
-      , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching[1] # seems slower to use Cache for both
-      , ".useParallel" = useParallel
-    )
-    , Biomass_fuelsPFG = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "nonForestFire" = TRUE
-      , "sppEquivCol" = sppEquivCol
-      , ".plotMaps" = FALSE
-      , ".useCache" = eventCaching
-    )
-    , Biomass_regeneration = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "successionTimestep" = successionTimestep
-    )
-    , Biomass_fireProperties = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "vegFeedback" = TRUE
-      , ".useCache" = eventCaching
-    )
-    , fireSpread = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
-      , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
-      , ".useCache" = eventCaching
-    )
-    , fireSeverity = list(
-      "fireTimestep" = fireTimestep
-      , ".plotMaps" = TRUE
-      , ".saveInitialTime" = 1
-      , ".useCache" = eventCaching
-    )
-  )
-} else {
-  simModules <- list("Biomass_fireProperties"
+simModulesNoPM <- list("Biomass_fireProperties"
+                       , "Biomass_core"
+                       , "Biomass_fuelsPFG"
+                       , "fireSpread"
+                       , "Biomass_regeneration"
+                       # , "fireSeverity"
+)
+simModulesPM <- list("Biomass_fireProperties"
                      , "Biomass_core"
                      , "Biomass_fuelsPFG"
                      , "fireSpread"
                      , "Biomass_regenerationPM"
-                     , "fireSeverity"
-  )
+                     # , "fireSeverity"
+)
 
-  simParams <- list(
-    Biomass_core = list(
-      "calcSummaryBGM" = c("start")
-      , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-      , ".plotInitialTime" = simTimes$start
-      , "plotOverstory" = TRUE
-      , "seedingAlgorithm" = "wardDispersal"
-      , "sppEquivCol" = sppEquivCol
-      , "successionTimestep" = successionTimestep * 10L
-      , "vegLeadingProportion" = vegLeadingProportion
-      , ".plotInterval" = 1
-      , ".plotMaps" = FALSE
-      , ".saveInitialTime" = NA
-      , ".useCache" = eventCaching # seems slower to use Cache for both
-      , ".useParallel" = useParallel
-    )
-    , Biomass_fuelsPFG = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "nonForestFire" = TRUE
-      , "sppEquivCol" = sppEquivCol
-      , ".plotMaps" = FALSE
-      , ".useCache" = eventCaching
-    )
-    , Biomass_regenerationPM = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "successionTimestep" = successionTimestep
-    )
-    , Biomass_fireProperties = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "vegFeedback" = TRUE
-      , ".useCache" = eventCaching
-    )
-    , fireSpread = list(
-      "fireInitialTime" = fireInitialTime
-      , "fireTimestep" = fireTimestep
-      , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)  ## try allowing fires to spread to the whole SA
-      , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
-      , ".useCache" = eventCaching
-    )
-    , fireSeverity = list(
-      "fireTimestep" = fireInitialTime
-      , ".plotMaps" = TRUE
-      , ".saveInitialTime" = 1
-      , ".useCache" = eventCaching
-    )
+simParams <- list(
+  Biomass_core = list(
+    "calcSummaryBGM" = c("start")
+    , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
+    , ".plotInitialTime" = simTimes$start
+    , "plotOverstory" = TRUE
+    , "seedingAlgorithm" = "wardDispersal"
+    , "sppEquivCol" = sppEquivCol
+    , "successionTimestep" = successionTimestep * 10L
+    , "vegLeadingProportion" = vegLeadingProportion
+    , ".plotInterval" = 1
+    , ".plotMaps" = FALSE
+    , ".saveInitialTime" = NA
+    , ".useCache" = eventCaching[1] # seems slower to use Cache for both
+    , ".useParallel" = useParallel
   )
-}
+  , Biomass_fuelsPFG = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "nonForestFire" = TRUE
+    , "sppEquivCol" = sppEquivCol
+    , ".plotMaps" = FALSE
+    , ".useCache" = eventCaching
+  )
+  , Biomass_regeneration = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = successionTimestep
+  )
+  , Biomass_regenerationPM = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = successionTimestep
+  )
+  , Biomass_fireProperties = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "vegFeedback" = TRUE
+    , ".useCache" = eventCaching
+  )
+  , fireSpread = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
+    , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
+    , ".useCache" = eventCaching
+  )
+  # , fireSeverity = list(
+  #   "fireTimestep" = fireTimestep
+  #   , ".plotMaps" = TRUE
+  #   , ".saveInitialTime" = 1
+  #   , ".useCache" = eventCaching
+  # )
+)
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
@@ -143,7 +97,7 @@ simObjects <- c(simObjects,
 )
 
 ## add fake fire map if need be
-if (grepl("oneFire", runName)) {
+if (sum(grepl("oneFire", runName))) {
   rstCurrentBurn <- raster(list.files("R/SpaDES/cache/AI_report", recursive = TRUE,
                                       pattern = "rasterToMatch.tif", full.names = TRUE)[1])
   IDs <- which(!is.na(rstCurrentBurn[]))

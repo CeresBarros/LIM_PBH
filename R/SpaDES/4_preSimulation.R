@@ -106,7 +106,7 @@ preSimParams <- list(
   )
 )
 
-if (grepl("newSppParam", runName)) {
+if (sum(grepl("newSppParam", runName))) {
   preSimModules <- c("Biomass_speciesParameters", preSimModules)
 
   preSimParams[["Biomass_speciesParameters"]] <- list(
@@ -135,7 +135,7 @@ preSimObjects <- list(# "studyArea" = foothillsSMALL
 )
 
 ## add PSP data if need be
-if (grepl("newSppParams", runName)) {
+if (sum(grepl("newSppParams", runName))) {
   preSimObjects$PSPgis <- PSPgis
   preSimObjects$PSPmeasure <- PSPmeasure
   preSimObjects$PSPplot <- PSPplot
