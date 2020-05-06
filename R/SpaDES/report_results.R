@@ -12,6 +12,8 @@ library(purrr)
 library(magick)
 library(LandR)
 
+source("R/R_tools/convertToCNVegType.R")
+
 ## path to figure folder
 figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/"
 
@@ -248,6 +250,23 @@ amc::.gc()
 ## add presence/absence of fire across simulation per pixel/scenario
 allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
 amc::.gc()
+
+## USING CAMERON'S CLASSIFICATION/SUMMARY ---------------------
+## Cameron uses relative basal area to classify stand structure, we can use relative Biomass.
+allPixelCohortData[, sumB := sum(B), by = .(scenario, year, pixelIndex)]
+allPixelCohortData[, relB := sum(B)/sumB, by = .(scenario, year, pixelIndex, speciesCode)]
+allPixelCohortData[is.na(relB) & sumB == 0, relB := 0]
+
+if (any(is.na(relB)))
+  stop("Missing values in relative biomass")
+
+## subset to a smaller DT and join Cameron's species names
+vegTypesCN <- unique(allPixelCohortData[, .(scenario, year, pixelIndex, speciesCode, relB)])
+vegTypesCN <- unique(na.omit(sppEquivalencies_CA[, .(Cameron, LIM)]))[vegTypesCN, on = "LIM==speciesCode",
+                                                                      allow.cartesian = TRUE]
+
+vegTypesCN[, vegTypeCN := convertToCNVegType(Cameron = Cameron, speciesCode = LIM, relB = relB),
+           by = .(scenario, year, pixelIndex)]
 
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 ## BY SPECIES
