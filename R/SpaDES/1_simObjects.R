@@ -42,7 +42,7 @@ sppEquivalencies_CA[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
                                              EN_generic_full = "Pine",
                                              Leading = "Pine leading")]
 
-## Make LIM spp equivalencies column
+## Make LIM spp equivalencies column and add correspondences to other columns.
 sppEquivalencies_CA[, LIM := c(Abie_bal = "Abie_sp", Abie_las = "Abie_sp", Abie_sp = "Abie_sp",
                                Lari_lar = "Lari_sp", Lari_lya = "Lari_sp",
                                Pice_mar = "Pice_mar", Pice_gla = "Pice_gla", Pice_eng = "Pice_eng",
@@ -75,12 +75,20 @@ sppEquivalencies_CA[, FI_layers := c(Abie_sp = "Fir",
                                      Pseu_men = "")[LIM]]
 
 sppEquivalencies_CA[, Leading := c(Abie_sp = "Fir leading",
-                                     Lari_sp = "Tamarack Leading",
-                                     Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
-                                     Pinu_sp = "Pine leading",
-                                     Pinu_pon = "Pd pine leadinng",
-                                     Popu_sp = "Deciduous leading",
-                                     Pseu_men = "Doug-fir leading")[LIM]]
+                                   Lari_sp = "Tamarack Leading",
+                                   Pice_mar = "Black.Spruce", Pice_gla = "White.Spruce", Pice_eng = "",
+                                   Pinu_sp = "Pine leading",
+                                   Pinu_pon = "Pd pine leadinng",
+                                   Popu_sp = "Deciduous leading",
+                                   Pseu_men = "Doug-fir leading")[LIM]]
+
+## Make Cameron's spp equivalencies column for species used in LIM.
+sppEquivalencies_CA[, Cameron := c(Abie_las = "ABLA", Abie_sp = "ABLA",
+                                   Pice_gla = "PIGL", Pice_eng = "PIEN",
+                                   Pinu_con = "PICO", Pinu_fle = "PIFL", ## flammable pines
+                                   Pinu_pon = "PIPO", ## not so flammable pine
+                                   Popu_tre = "POTR", Betu_pap = "BEPA", Popu_bal = "POBA",
+                                   Pseu_men = "PSME")[LandR]]
 
 ## define spp column to use for model
 sppEquivCol <- "LIM"
