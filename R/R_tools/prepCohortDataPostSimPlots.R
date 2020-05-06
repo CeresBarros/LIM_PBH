@@ -80,8 +80,9 @@ vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
 names(vegTypeColours) <- c(levels(vegTypeMap[[1]])[[1]]$ID, "0")
 
 ## Step 7. Plots
+## NO. PIXELS PER VEG TYPE
 plotData <- pixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, firePresAbs, vegType)]
+                               by = .(year, vegType)]
 plot1 <- ggplot(data = plotData,
                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   geom_area(stat = "identity", position = "stack") +
@@ -99,4 +100,16 @@ plot2 <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Dominant species", y = "prop. pixels")
 
+## NO. COHORTS PER VEG SPECIES
+plotData <- pixelCohortData[B > 0, list(noCohorts = length(unique(age))),
+                               by = .(year, pixelIndex, speciesCode)]
+plot3 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
+                                by = .(year, speciesCode)],
+                aes(x = year, y = noCohorts, colour = speciesCode)) +
+  # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
+  geom_line(size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
+  labs(title = "Avg. no. cohorts by species", y = "no. cohorts")
 
