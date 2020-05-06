@@ -20,10 +20,10 @@ joinSevVegTopoWeatherData <- function(sevDataSf, vegDataSf, topoDataSf, weatherD
   ## note that IDs run 1:ncell(templateRas)
   ## not enought memory to rasterize the full extent to 10x10res
   rasterToMatch <- raster(sevDataSf, resolution = resolution,
-                          crs = st_crs(sevDataSf)$proj4string)
-  if(!compareCRS(st_crs(sevDataSf)$proj4string, crs(rasterToMatch))) {
-    crs(rasterToMatch) <- st_crs(sevDataSf)$proj4string
-    rasterToMatch <- projectRaster(rasterToMatch, crs = st_crs(sevDataSf)$proj4string)
+                          crs = crs(sevDataSf))
+  if(!compareCRS(crs(sevDataSf), crs(rasterToMatch))) {
+    crs(rasterToMatch) <- crs(sevDataSf)
+    rasterToMatch <- projectRaster(rasterToMatch, crs = crs(sevDataSf))
   }
   rasterToMatch <- fasterize(sf = sevDataSf, raster = rasterToMatch)
   rasterToMatch <- setValues(rasterToMatch, values = 1:ncell(rasterToMatch))
@@ -94,7 +94,7 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
   ## convert templateRas to points, provide CRS
   templatePoints <- st_as_sf(dataDT, coords = c("Long", "Lat"))
 
-  if(!compareCRS(st_crs(templatePoints)$proj4string, crs(templateRas))) {
+  if(!compareCRS(crs(templatePoints), crs(templateRas))) {
     st_crs(templatePoints) <- as.character(crs(templateRas))
     templatePoints <- st_transform(templatePoints, crs =  as.character(crs(templateRas)))
   }
@@ -105,7 +105,7 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
   smallSevDataSf <- st_cast(smallSevDataSf, "POLYGON")
 
   ## make sure CRS is the same
-  if(!compareCRS(st_crs(templatePoints)$proj4string, st_crs(smallSevDataSf)$proj4string))
+  if(!compareCRS(crs(templatePoints), crs(smallSevDataSf)))
     smallSevDataSf <- st_transform(smallSevDataSf, crs = st_crs(templatePoints))
 
   ## extract polygon info per point
@@ -119,7 +119,7 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
 
   ## JOIN TOPOGRAPHY DATA
   message("... joining topographic data")
-  if(!compareCRS(st_crs(topoDataSf)$proj4string, st_crs(smallSevDataSf)$proj4string))
+  if(!compareCRS(crs(topoDataSf), crs(smallSevDataSf)))
     topoDataSf <- st_transform(topoDataSf, crs = st_crs(smallSevDataSf))
 
   ## use velox to extract raster IDs per point
@@ -143,7 +143,7 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
   ## JOIN VEGETATION DATA
   message("... joining pre-fire vegetation data")
 
-  if(!compareCRS(st_crs(templatePoints)$proj4string, st_crs(vegDataSf)$proj4string))
+  if(!compareCRS(crs(templatePoints), crs(vegDataSf)))
     vegDataSf <- st_transform(vegDataSf, crs = st_crs(templatePoints))
 
   vegDataSf <- st_cast(vegDataSf, "POLYGON")
