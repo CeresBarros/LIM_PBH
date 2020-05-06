@@ -22,17 +22,6 @@ speciesParams <- list(
     )
 )
 
-## CUSTOMIZE MIN REALTIVE B VALUES
-makeMinRelativeBLIM <- function(pixelCohortData) {
-  pixelData <- unique(pixelCohortData, by = "pixelIndex")
-  pixelData[, ecoregionGroup := factor(as.character(ecoregionGroup))] # resorts them in order
-
-  minRelativeB <- data.frame(ecoregionGroup = levels(pixelData$ecoregionGroup),
-                             X1 = 0.15, X2 = 0.25, X3 = 0.5,
-                             X4 = 0.75, X5 = 0.85)
-  return(minRelativeB)
-}
-
 ## SIM PARAMS ------------------------------------------------
 preSimPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report/preSim"),
                     modulePath = file.path("R/SpaDES/m"),
