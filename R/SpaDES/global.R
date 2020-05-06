@@ -126,17 +126,19 @@ graphics.off()
 ## TODO: implement LANDIS pixel fire severity calculation:
 ## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
 # reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-plotInitialTime <- NA
+# plotInitialTime <- NA
+# simPaths$cachePath <- file.path(simPaths$cachePath, runName)
 # simInitOut <- simInit(times = simTimes
 #                       , params = simParams
-#                       , modules = simModules[c(1:5)]
+#                       , modules = simModulesNoPM
+#                       # , modules = simModulesPM
 #                       , objects = simObjects
 #                       , paths = simPaths
 #                       , outputs = outputs
 #                       , debug = TRUE
 #                       , .plotInitialTime = plotInitialTime
 # )
-#
+
 # saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
 # if (!is.na(plotInitialTime))
 #   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
@@ -145,7 +147,7 @@ plotInitialTime <- NA
 ## using experiment:
 simInitList <- mapply(function(modList, pathSim) {
   simPaths$cachePath <- file.path(simPaths$cachePath, pathSim)
-  simInit(times = list(start = 1, end = 10)
+  simInit(times = simTimes
           , params = simParams
           , modules = modList
           , objects = simObjects
