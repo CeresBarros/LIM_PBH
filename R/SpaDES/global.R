@@ -158,7 +158,10 @@ modList = list(simModulesNoPM, simModulesPM),
 pathSim = runName, SIMPLIFY = FALSE)
 
 amc::.gc()
+library(future)
+plan("multiprocess", workers = 3)
 simExperimentOut <- experiment2(noPM = simInitList[[1]], PM = simInitList[[2]],
+                                clearSimEnv = TRUE,
                                 replicates = 5)
 lapply(names(simExperimentOut), FUN = function(simName) {
   saveSimList(simExperimentOut[[simName]],
