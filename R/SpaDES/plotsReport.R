@@ -9,7 +9,7 @@ library(SpaDES)
 library(raster)
 
 ## path to figure folder
-figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/"
+figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper"
 
 ## run name(s)
 runName <- c("noPM_newSppParams_fullSA", "PM_newSppParams_fullSA")

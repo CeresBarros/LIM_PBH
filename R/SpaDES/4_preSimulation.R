@@ -300,7 +300,7 @@ if (FALSE) {
 
   plot6 <- ggarrange(plot4, plot5, widths = c(0.6,0.4),
                      labels = "auto", font.label = list(size = 20))
-  ggsave("C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/fireOcurrencesModDiagn.tiff",
+  ggsave("C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper",
          plot6, width = 12, height = 7, dpi = 300)
 }
 

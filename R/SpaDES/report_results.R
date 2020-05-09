@@ -19,6 +19,7 @@ simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppPa
 simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
 
 ## path to figure folder and cache folder
+figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper"
 cPath <- file.path(dirname(cachePath(simList_noPM)), "postSimAnalyses")
 
 outputs_PM <- as.data.table(outputs(simList_PM))
