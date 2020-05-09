@@ -39,6 +39,7 @@ preSimParams <- list(
     "sppEquivCol" = sppEquivCol
     , "forestedLCCClasses" = c(1:15, 34:36)
     , "LCCClassesToReplaceNN" = c(34:36)
+    , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
     ,"speciesUpdateFunction" = list(

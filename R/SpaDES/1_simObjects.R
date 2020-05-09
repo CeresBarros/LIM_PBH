@@ -34,6 +34,7 @@ ecoregionLayer <- Cache(prepInputs,
                         useSAcrs = TRUE,
                         cacheRepo = "data/cache",
                         userTags = c("prepInputsNatSubRegionsAB_SA"))
+ecoregionLayer$ecozoneCode <- as.numeric(factor(paste(ecoregionLayer$NRNAME, ecoregionLayer$NSRNAME)))
 
 ## SPECIES LISTS ------------------------
 ## Set up sppEquiV
