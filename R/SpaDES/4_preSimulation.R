@@ -45,7 +45,6 @@ preSimParams <- list(
     ,"speciesUpdateFunction" = list(
       quote(LandR::speciesTableUpdate(sim$species, sim$speciesTable, sim$sppEquiv, P(sim)$sppEquivCol)),
       quote(LandWebUtils::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
-    , "minRelativeBFunction" = quote(makeMinRelativeBLIM(pixelCohortData))
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep * 10L
