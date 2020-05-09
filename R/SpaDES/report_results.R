@@ -14,12 +14,12 @@ library(LandR)
 
 source("R/R_tools/convertToCNVegType.R")
 
-## path to figure folder
-figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/Landscapes In Motion/ModellingTeam/reportFigs/"
-
 ## GET SIM LISTS
 simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppParams_fullSA.qs")
 simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
+
+## path to figure folder and cache folder
+cPath <- file.path(dirname(cachePath(simList_noPM)), "postSimAnalyses")
 
 outputs_PM <- as.data.table(outputs(simList_PM))
 outputs_noPM <- as.data.table(outputs(simList_noPM))
@@ -261,13 +261,21 @@ if (any(is.na(relB)))
   stop("Missing values in relative biomass")
 
 ## subset to a smaller DT and join Cameron's species names
-vegTypesCN <- unique(allPixelCohortData[, .(scenario, year, pixelIndex, speciesCode, relB)])
+vegTypesCN <- unique(allPixelCohortData[, .(scenario, year, pixelGroup, speciesCode, relB)])
 vegTypesCN <- unique(na.omit(sppEquivalencies_CA[, .(Cameron, LIM)]))[vegTypesCN, on = "LIM==speciesCode",
                                                                       allow.cartesian = TRUE]
+setnames(vegTypesCN, "LIM", "speciesCode")
 
-vegTypesCN[, vegTypeCN := convertToCNVegType(Cameron = Cameron, speciesCode = LIM, relB = relB),
-           by = .(scenario, year, pixelIndex)]
-
+set.seed(123)
+tempArg <- sample(unique(paste(vegTypesCN$year, vegTypesCN$pixelGroup)), 10)
+vegTypesCN <- Cache(convertToCNVegType,
+                    DT = vegTypesCN,
+                    groupingCols = c("scenario", "year", "pixelGroup"),
+                    cachingArg = tempArg,
+                    omitArgs = c("DT"),
+                    cacheRepo = cPath)
+rm(tempArg)
+amc::.gc()
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
