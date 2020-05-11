@@ -380,7 +380,6 @@ plot(simList_noPM$standAgeMap, col = agePal(20), axes = FALSE,
 
 ## ecodistricts
 ## https://www.statcan.gc.ca/eng/subjects/standard/environment/elc/12-607-x2018001-eng.pdf
-
 ecoDistSF <- sf::st_as_sf(simList_noPM$ecoDistrict)
 ecoDistSF$ECODISTRIC <- factor(ecoDistSF$ECODISTRIC,
                                levels = c(798, 800, 801, 799, 793, 750, 631, 1018, 1017, 1019))
