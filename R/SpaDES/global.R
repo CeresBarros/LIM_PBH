@@ -148,13 +148,15 @@ pathSim = runName, SIMPLIFY = FALSE)
 
 amc::.gc()
 library(future)
-plan("multiprocess", workers = 3)
+plan("multiprocess", workers = 2)
 simExperimentOut <- experiment2(noPM = simInitList[[1]], PM = simInitList[[2]],
                                 clearSimEnv = TRUE,
-                                replicates = 5)
+                                replicates = 1)
 lapply(names(simExperimentOut), FUN = function(simName) {
   saveSimList(simExperimentOut[[simName]],
               filename = file.path(outputPath(simExperimentOut[[simName]]), paste0("simList_", simName, ".qs")))
 })
 
+future:::ClusterRegistry("stop")
 
+q("no")
