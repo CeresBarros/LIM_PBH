@@ -105,32 +105,18 @@ fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 successionTimestep <- 1L
 source("R/SpaDES/4_preSimulation.R")
 
-## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run
-## name and the parameters above
-source("R/SpaDES/5_simulationSetup.R")
-
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
 # plotInitialTime <- simTimes$start
 plotInitialTime <- NA
 
-# showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
-# reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Biomass_borealDataPrep"))
+## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run
+## name and the parameters above
 source("R/SpaDES/5_simulationSetup.R")
 
-## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
-graphics.off()
-
-# reproducible::clearCache(simPaths$cachePath, userTags = c("^Biomass_core$", "init"), ask = FALSE)
-## TODO RUN SIMUALTIONS W/ AND W/O PM for blog
-# set.seed(524326)
-
-## TODO: implement LANDIS pixel fire severity calculation:
-## Each fire event has an associated mean fire severity which is the average of the severities at all of the event’s sites. (LANDIS-II DNFS v3)
-# reproducible::clearCache(simPaths$cachePath, userTags = c("statsModel"))
-# plotInitialTime <- NA
 # simPaths$cachePath <- file.path(simPaths$cachePath, runName[1])
+graphics.off()
 # simInitOut <- simInitAndSpades(times = simTimes
 #                                , params = simParams
 #                                , modules = simModulesNoPM
