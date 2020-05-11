@@ -177,49 +177,99 @@ ggsave(file.path(figOutputPath, "Species_cover.tiff"), plot5,
        width = 9, height = 10, dpi = 300)
 
 
-## ECODISTRICTS ---------------------------
-
-## ecodistricts
-## https://www.statcan.gc.ca/eng/subjects/standard/environment/elc/12-607-x2018001-eng.pdf
-
-ecoDistSF <- sf::st_as_sf(simOutPreSim$ecoregionLayer)
-ecoDistSF$ECODISTRIC <- factor(ecoDistSF$ECODISTRIC,
-                               levels = sort(unique(ecoDistSF$ECODISTRIC)))
+## ECOREGIONS ---------------------------
+## ecological zones
+ecoDistSF <- sf::st_as_sf(simList_noPM$ecoregionLayer)
+ecoDistSF$ecozoneCode2 <- factor(paste(ecoregionLayer$NRNAME, ecoregionLayer$NSRNAME))
 canada <- sf::st_as_sf(shapefile("data/CA_admin/gpr_000a11a_e.shp"))
 canada <- sf::st_transform(canada, crs = crs(ecoDistSF))
 alberta <- canada[canada$PRENAME %in% "Alberta",]
 
-colPalette <- colorRampPalette(RColorBrewer::brewer.pal(11, name = "Paired"))
-
-plot6 <- ggplot(ecoDistSF) +
+ecoDistPlot <- ggplot(ecoDistSF) +
   # geom_sf(data = alberta) +
-  geom_sf(data = ecoDistSF, aes(fill = as.factor(ECODISTRIC))) +
+  geom_sf(data = ecoDistSF, aes(fill = ecozoneCode2)) +
   layer_spatial(data = simOutPreSim$studyArea, fill = "transparent", colour = "black") +
-  scale_fill_manual(values = colPalette(13),
-                    labels = c("631" = "W AB Upland - Foothills",
-                               "750" = "Aspen Parkland - Upland",
-                               "793" = "Moist Mixed Grassland - Plain",
-                               "798" = "Fescue Grassland - Plain",
-                               "799" = "Fescue Grassland - Upland",
-                               "800" = "Fescue Grassland - Plain",
-                               "801" = "Fescue Grassland - Foothills",
-                               "995" = "W Cont. Ranges - Park Ranges",
-                               "999" = "E Cont. Ranges - Mountains",
-                               "1016" = "N Cont. Divide - Foothills",
-                               "1017" = "N Cont. Divide - Mountains",
-                               "1018" = "N Cont. Divide - Foothills",
-                               "1019" = "N Cont. Divide - Mountains")) +
+  scale_fill_brewer(palette = "Paired") +
   annotation_north_arrow(style = north_arrow_minimal,
                          height = unit(1, "cm"), width = unit(1, "cm"),
                          location = "tr", which_north = "true") +
   theme_pubr(legend = "right") +
   theme(plot.background = element_rect(fill = "transparent")) +
   labs(x = "longitude", y = "latitude", fill = "",
-       title = "Ecoregion - ecodistrict")
+       title = "Natural Regions and Subregions of Alberta")
 
-ggsave(file.path(figOutputPath, "Ecoreg_ecodis.tiff"), plot6,
-       width = 6, height = 7, dpi = 300)
+# ggsave(file.path(figOutputPath, "natRegSubRegAB.tiff"), plot6,
+#        width = 6, height = 7, dpi = 300)
 
+## landcover
+if (!inMemory(simOut_noPM_newSppParams_fullSA$rstLCC)) {
+  lccPlot <- sub(".*LandscapesInMotion/", "",
+                filename(simOut_noPM_newSppParams_fullSA$rstLCC))
+  lccPlot <- raster(lccPlot)
+} else
+  lccPlot <- simOut_noPM_newSppParams_fullSA$rstLCC
+
+colourPal <- colorRampPalette(colors = RColorBrewer::brewer.pal(name = "Paired", n = 11))
+
+lccLabels <- c("Temperate/subpolar needle-leaved evergreen, closed canopy",
+               "Cold deciduous closed canopy",
+               "Mixed needle-leaved evergreen > deciduous closed canopy",
+               "Mixed needle-leaved evergreen > deciduous closed young canopy",
+               "Mixed cold deciduous > needle-leaved evergreen closed canopy",
+               "Temperate/subpolar needle-leaved evergreen medium density, moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen medium density, lichen-shrub",
+               "Temperate/subpolar needle-leaved evergreen low density, moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen low density, lichen-rock",
+               "Temperate/subpolar needle-leaved evergreen low density, poorly drained",
+               "Cold deciduous broadleaved, low-medium density",
+               "Cold deciduous broadleaved, medium density, young regenerating",
+               "Mixed needle-leaved evergreen > deciduous, low-medium density",
+               "Mixed needle-leaved deciduous > evergreen, low-medium density",
+               "Low regenerating young mixed cover",
+               "High-low shrub dominated",
+               "Grassland",
+               "Herb-shrub-bare cover",
+               "Wetlands",
+               "Sparse needle-leaved evergreen, herb-shrub cover",
+               "Polar grassland, herb-shrub",
+               "Shrub-herb-lichen-bare",
+               "Herb-shrub poorly drained",
+               "Lichen-shrub-herb-bare soil",
+               "Low vegetation cover",
+               "Cropland-woodland",
+               "High biomass cropland",
+               "Medium biomass cropland",
+               "Low biomass cropland",
+               "Lichen barren",
+               "Lichen-sedge-moss-low shrub wetland",
+               "Lichen-spruce bog",
+               "Rock outcrops",
+               "Recent burns",
+               "Old burns",
+               "Urban and built-up",
+               "Water bodies",
+               "Mixes of water and land",
+               "Snow/ice")
+names(lccLabels) <- as.charater(seq_along(lccLabels))
+
+lccPlot <- ggplot() +
+  layer_spatial(lccPlot, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "transparent") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  scale_fill_manual(values = colourPal(length(unique(lccPlot[]))),
+                    labels = lccLabels) +
+  theme_pubr(legend = "right") +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "Greens", na.value = "transparent",
+                       direction = 1) +
+  labs(x = "longitude", y = "latitude", fill = "years",
+       title = "Land cover")
+
+plot3 <- ggarrange(plotlist = plotList, ncol = 3, nrow = 3,
+                   legend = "bottom", common.legend = TRUE)
 
 ## STUDY AREA IN ALBERTA ---------------------------
 plot7 <- ggplot() +
