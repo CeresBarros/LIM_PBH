@@ -14,41 +14,37 @@ library(LandR)
 
 source("R/R_tools/convertToCNVegType.R")
 
-## GET SIM LISTS
-simList_PM <- qread("R/SpaDES/outputs/PM_newSppParams_fullSA/simList_PM_newSppParams_fullSA.qs")
-simList_noPM <- qread("R/SpaDES/outputs/noPM_newSppParams_fullSA/simList_noPM_newSppParams_fullSA.qs")
+simPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report")
+                 , modulePath = file.path("R/SpaDES/m")
+                 , inputPath = file.path("R/SpaDES/inputs")
+                 , outputPath = file.path("R/SpaDES/outputs"))
 
 ## path to figure folder and cache folder
 figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper"
-cPath <- file.path(dirname(cachePath(simList_noPM)), "postSimAnalyses")
+cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 
-outputs_PM <- as.data.table(outputs(simList_PM))
-outputs_noPM <- as.data.table(outputs(simList_noPM))
+## GET OUTPUTS FOLDERS FOR EACH SCENARIO
+outputs_PM <- list.dirs(simPaths$outputPath, full.names = TRUE, recursive = FALSE) %>%
+  grep("/PM_rep", ., value = TRUE)
+outputs_noPM <- list.dirs(simPaths$outputPath, full.names = TRUE, recursive = FALSE) %>%
+  grep("/noPM_rep", ., value = TRUE)
 
 ## GET FILE NAMES
-cohortDataFiles <- c(outputs_noPM[objectName == "cohortData", file],
-                     outputs_PM[objectName == "cohortData", file]) %>%
+cohortDataFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "cohortData", full.names = TRUE)),
+                     sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "cohortData", full.names = TRUE))) %>%
   unique(.)
-# cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE),
-#                      list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "cohortData", full.names = TRUE))
 
-rstCurrentBurnFiles <- c(outputs_noPM[objectName == "rstCurrentBurn", file],
-                         outputs_PM[objectName == "rstCurrentBurn", file]) %>%
+rstCurrentBurnFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "rstCurrentBurn", full.names = TRUE)),
+                          sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "rstCurrentBurn", full.names = TRUE))) %>%
   unique(.)
-# rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE),
-#                      list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "rstCurrentBurn", full.names = TRUE))
 
-pixelGroupMapFiles <- c(outputs_noPM[objectName == "pixelGroupMap", file],
-                        outputs_PM[objectName == "pixelGroupMap", file]) %>%
+pixelGroupMapFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "pixelGroupMap", full.names = TRUE)),
+                        sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "pixelGroupMap", full.names = TRUE))) %>%
   unique(.)
-# pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE),
-#                          list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "pixelGroupMap", full.names = TRUE))
 
-vegTypeMapFiles <- c(outputs_noPM[objectName == "vegTypeMap", file],
-                     outputs_PM[objectName == "vegTypeMap", file]) %>%
+vegTypeMapFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE)),
+                     sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE))) %>%
   unique(.)
-# vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE),
-#                         list.files("R/SpaDES/outputs/PM_newSppParams_fullSA/", pattern = "vegTypeMap", full.names = TRUE))
 
 ## load rasters as stacks
 rstCurrentBurnStk_noPM <- lapply(grep("noPM", rstCurrentBurnFiles, value = TRUE), readRDS) %>%
@@ -64,12 +60,20 @@ vegTypeMapStk_noPM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE), readRD
 vegTypeMapStk_PM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE), readRDS) %>%
   stack(.)
 
-names(rstCurrentBurnStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", rstCurrentBurnFiles, value = TRUE)))
-names(rstCurrentBurnStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", rstCurrentBurnFiles, value = TRUE, invert = TRUE)))
-names(pixelGroupMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE)))
-names(pixelGroupMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE, invert = TRUE)))
-names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE)))
-names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE)))
+names(rstCurrentBurnStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", rstCurrentBurnFiles, value = TRUE))),
+                                       sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", rstCurrentBurnFiles, value = TRUE)), sep = "_")
+names(rstCurrentBurnStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", rstCurrentBurnFiles, value = TRUE, invert = TRUE))),
+                                     sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", rstCurrentBurnFiles, value = TRUE, invert = TRUE)), sep = "_")
+
+names(pixelGroupMapStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE))),
+                                       sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", pixelGroupMapFiles, value = TRUE)), sep = "_")
+names(pixelGroupMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE, invert = TRUE))),
+                                     sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", pixelGroupMapFiles, value = TRUE, invert = TRUE)), sep = "_")
+
+names(vegTypeMapStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE))),
+                                       sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE)), sep = "_")
+names(vegTypeMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE))),
+                                     sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE)), sep = "_")
 
 ## BUILD TABLES OF RESULTS ------------------------
 ## pixelCohortData tables
@@ -77,9 +81,11 @@ files <- grep("noPM", cohortDataFiles, value = TRUE)
 pixelCohortData_noPM <- lapply(files, FUN = function(ff, pixelGroupMapStk) {
   cohortData <- readRDS(ff)
   yr <- sub(".*year", "",  sub(".rds", "", ff))
-  pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+  r <- sub(".*(rep)([0-9]+)/.*", "\\2", ff)
+  pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr, "_rep", r)]]
   cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
   cohortData[, year := as.integer(yr)]
+  cohortData[, rep := as.integer(r)]
   return(cohortData)
 }, pixelGroupMapStk = pixelGroupMapStk_noPM) %>%
   rbindlist(fill = TRUE, l = .)
@@ -88,9 +94,11 @@ files <- grep("noPM", cohortDataFiles, value = TRUE, invert = TRUE)
 pixelCohortData_PM <- lapply(files, FUN = function(ff, pixelGroupMapStk) {
   cohortData <- readRDS(ff)
   yr <- sub(".*year", "",  sub(".rds", "", ff))
-  pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr)]]
+  r <- sub(".*(rep)([0-9]+)/.*", "\\2", ff)
+  pixelGroupMap <- pixelGroupMapStk[[paste0("year", yr, "_rep", r)]]
   cohortData <- addPixels2CohortData(cohortData, pixelGroupMap)
   cohortData[, year := as.integer(yr)]
+  cohortData[, rep := as.integer(r)]
   return(cohortData)
 }, pixelGroupMapStk = pixelGroupMapStk_PM) %>%
   rbindlist(fill = TRUE, l = .)
@@ -98,65 +106,67 @@ pixelCohortData_PM <- lapply(files, FUN = function(ff, pixelGroupMapStk) {
 ## vegTypeData tables
 vegTypeSubset <- intersect(names(vegTypeMapStk_noPM), names(pixelGroupMapStk_noPM))
 vegTypeData_noPM <- lapply(vegTypeSubset, FUN = function(x) {
+  yr <- grep("year", unlist(strsplit(x, split = "_")), value = TRUE)
+  r <- grep("rep", unlist(strsplit(x, split = "_")), value = TRUE)
   data.table(pixelIndex = seq_len(ncell(vegTypeMapStk_noPM[[x]])),
              pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
              vegType = vegTypeMapStk_noPM[[x]][],
-             year = as.integer(sub("year", "", x)))
+             year = as.integer(sub("year", "", yr)),
+             rep = as.integer(sub("rep", "", r)))
 }) %>%
   rbindlist(.)
 vegTypeData_noPM <- vegTypeData_noPM[!is.na(pixelGroup)]
 
 vegTypeSubset <- intersect(names(vegTypeMapStk_PM), names(pixelGroupMapStk_PM))
 vegTypeData_PM <- lapply(vegTypeSubset, FUN = function(x) {
+  yr <- grep("year", unlist(strsplit(x, split = "_")), value = TRUE)
+  r <- grep("rep", unlist(strsplit(x, split = "_")), value = TRUE)
   data.table(pixelIndex = seq_len(ncell(vegTypeMapStk_PM[[x]])),
              pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
              vegType = vegTypeMapStk_PM[[x]][],
-             year  = as.integer(sub("year", "", x)))
+             year = as.integer(sub("year", "", yr)),
+             rep = as.integer(sub("rep", "", r)))
 })  %>%
   rbindlist(.)
 vegTypeData_PM <- vegTypeData_PM[!is.na(pixelGroup)]
 
-## pixelBurnData tables
-# fireSubset <- intersect(names(rstCurrentBurnStk_noPM), names(pixelGroupMapStk_noPM))
-# pixelBurnData_noPM <- lapply(fireSubset, FUN = function(x) {
-pixelBurnData_noPM <- lapply(1:nlayers(rstCurrentBurnStk_noPM), FUN = function(x) {
-  data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_noPM[[x]])),
-             # pixelGroup = getValues(pixelGroupMapStk_noPM[[x]]),
-             burnt = as.integer(!is.na(rstCurrentBurnStk_noPM[[x]][])),
-             year = as.integer(sub("year", "", x)))
+## pixelBurnData tables - all rasters
+pixelBurnData_noPM <- lapply(unstack(rstCurrentBurnStk_noPM), FUN = function(ras) {
+  yr <- grep("year", unlist(strsplit(names(ras), split = "_")), value = TRUE)
+  r <- grep("rep", unlist(strsplit(names(ras), split = "_")), value = TRUE)
+  data.table(pixelIndex = seq_len(ncell(ras)),
+             burnt = as.integer(!is.na(getValues(ras))),
+             year = as.integer(sub("year", "", yr)),
+             rep = as.integer(sub("rep", "", r)))
 }) %>%
   rbindlist(.)
-# pixelBurnData_noPM <- pixelBurnData_noPM[!is.na(pixelGroup)]
 
-# fireSubset <- intersect(names(rstCurrentBurnStk_PM), names(pixelGroupMapStk_PM))
-# pixelBurnData_PM <- lapply(fireSubset, FUN = function(x) {
-pixelBurnData_PM <- lapply(1:nlayers(rstCurrentBurnStk_PM), FUN = function(x) {
-  data.table(pixelIndex = seq_len(ncell(rstCurrentBurnStk_PM[[x]])),
-             # pixelGroup = getValues(pixelGroupMapStk_PM[[x]]),
-             burnt = as.integer(!is.na(rstCurrentBurnStk_PM[[x]][])),
-             year = as.integer(sub("year", "", x)))
+pixelBurnData_PM <- lapply(unstack(rstCurrentBurnStk_PM), FUN = function(ras) {
+  yr <- grep("year", unlist(strsplit(names(ras), split = "_")), value = TRUE)
+  r <- grep("rep", unlist(strsplit(names(ras), split = "_")), value = TRUE)
+  data.table(pixelIndex = seq_len(ncell(ras)),
+             burnt = as.integer(!is.na(getValues(ras))),
+             year = as.integer(sub("year", "", yr)),
+             rep = as.integer(sub("rep", "", r)))
 })  %>%
   rbindlist(.)
-# pixelBurnData_PM <- pixelBurnData_PM[!is.na(pixelGroup)]
 
-rm(fireSubset, vegTypeSubset)
+rm(files,vegTypeSubset)
 
 ## join tables, add scenario col and rbind.
 ## note that vegTypeData and pixelBurnData have more pixels because PGs of 0 are there, but not on cohortData
 ## so join by keeping all pixels
-pixelCohortData_noPM <- merge(pixelCohortData_noPM, vegTypeData_noPM,
-                              by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
+pixelCohortData_noPM <- merge(vegTypeData_noPM, pixelCohortData_noPM,
+                            by = c("pixelIndex", "pixelGroup", "year", "rep"), all = TRUE)
 pixelCohortData_noPM <- merge(pixelCohortData_noPM, pixelBurnData_noPM,
-                              # by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
-                              by = c("pixelIndex", "year"), all = TRUE)
+                            by = c("pixelIndex", "year", "rep"), all = TRUE)
 pixelCohortData_noPM[is.na(burnt), burnt := 0]
 pixelCohortData_noPM[, scenario := "noPM"]
 
 pixelCohortData_PM <- merge(vegTypeData_PM, pixelCohortData_PM,
-                            by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
+                            by = c("pixelIndex", "pixelGroup", "year", "rep"), all = TRUE)
 pixelCohortData_PM <- merge(pixelCohortData_PM, pixelBurnData_PM,
-                            # by = c("pixelIndex", "pixelGroup", "year"), all = TRUE)
-                            by = c("pixelIndex", "year"), all = TRUE)
+                            by = c("pixelIndex", "year", "rep"), all = TRUE)
 pixelCohortData_PM[is.na(burnt), burnt := 0]
 pixelCohortData_PM[, scenario := "PM"]
 
@@ -164,12 +174,28 @@ allPixelCohortData <- rbind(pixelCohortData_noPM, pixelCohortData_PM, use.names 
 rm(list = grep("^[pixel|vegType].*Data", ls(), value = TRUE))
 amc::.gc()
 
+## ECOLOGICAL ZONATION -----------------------------
+preSimList <- qread(file.path(simPaths$outputPath, "preSim", "preSimList.qs"))
+ecoregionLayerRas <- rasterize(preSimList$ecoregionLayer, preSimList$rasterToMatch, field = "ecozoneCode")
+ecoregionLayerDT <- data.table(ecozoneCode = getValues(ecoregionLayerRas),
+                               pixelIndex = seq_len(ncell(ecoregionLayerRas)))
+ecoregionLayerDT <- ecoregionLayerDT[!is.na(ecozoneCode)]
+
+ecoregionLayerLabels <- data.table(ecozoneCode = preSimList$ecoregionLayer$ecozoneCode,
+                                   ecozoneName = paste(preSimList$ecoregionLayer$NRNAME,
+                                                       preSimList$ecoregionLayer$NSRNAME, sep = " - ")) %>%
+  unique(.)
+
+ecoregionLayerDT <- ecoregionLayerLabels[ecoregionLayerDT, on = .(ecozoneCode)]
+allPixelCohortData <- ecoregionLayerDT[allPixelCohortData, on = .(pixelIndex)]
+amc::.gc()
+
 ## NO. FIRES ---------------------------------------
 ## add no. fires per pixel, then remove lines with NA pixelGroup (not recorded)
 ## how many times did each pixel burn?
-noFiresPixel <- unique(allPixelCohortData[, .(pixelIndex, scenario, year, burnt)])
-noFiresPixel[, noFires := sum(burnt), by = .(pixelIndex, scenario)]
-noFiresPixel <- unique(noFiresPixel[, .(pixelIndex, scenario, noFires)])
+noFiresPixel <- unique(allPixelCohortData[, .(pixelIndex, scenario, year, rep, burnt)])
+noFiresPixel[, noFires := sum(burnt), by = .(pixelIndex, scenario, rep)]
+noFiresPixel <- unique(noFiresPixel[, .(pixelIndex, scenario, rep, noFires)])
 
 test <- sapply(unique(noFiresPixel$scenario), FUN = function(x){
   any(duplicated(noFiresPixel[scenario == x, pixelIndex]))
@@ -177,10 +203,10 @@ test <- sapply(unique(noFiresPixel$scenario), FUN = function(x){
 if (any(test))
   stop("Each pixel should only have one record of no. fires per scenario")
 
-allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario)]
+allPixelCohortData <- noFiresPixel[allPixelCohortData, on = .(pixelIndex, scenario, rep)]
 allPixelCohortData[, burnt := NULL] ## no longer necessary
 allPixelCohortData <- allPixelCohortData[!is.na(pixelGroup),]
-rm(noFiresPixel)
+rm(noFiresPixel, test)
 amc::.gc()
 
 ## ADD MISSING SPECIES IN YEAR/SCENARIO/PIXEL COMBINATION
@@ -188,7 +214,7 @@ amc::.gc()
 ## for now pixels from the 0s pixelGroup  have one entry with NAs for speciesCode
 ## they will be ignored for now and removed later, after adding one species entry for each of these pixels.
 ## for reporting consistency add to show losses in B
-combinations <- unique(allPixelCohortData[, .(scenario, year, pixelIndex, pixelGroup)])
+combinations <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, pixelGroup)])
 spp <- as.character(na.omit(unique(allPixelCohortData$speciesCode)))
 combinations <- lapply(spp, FUN = function(x) {
   data.table(combinations,
@@ -198,25 +224,20 @@ combinations <- lapply(spp, FUN = function(x) {
 
 ## join while keeping all combos, NA species will now disappear.
 allPixelCohortData <- allPixelCohortData[combinations,
-                                         on = .(scenario, year, pixelIndex,
+                                         on = .(scenario, rep, year, pixelIndex,
                                                 pixelGroup, speciesCode)]
 rm(spp, combinations)
 amc::.gc()
 
-## SUBSET A FEW YEARS ------------------------------
-# subsetYrs <- c(seq(range(allPixelCohortData$year)[1], range(allPixelCohortData$year)[2],
-#                    5), range(allPixelCohortData$year)[2])
-# allPixelCohortData <- allPixelCohortData[year %in% subsetYrs]
-# amc::.gc()
-
-test <- length(unique(allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, year)]$V1)) == 1
-test2 <- length(unique(allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, year, pixelIndex)]$V1)) == 1
+## checks
+test <- length(unique(allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, rep, year)]$V1)) == 1
+test2 <- length(unique(allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, rep, year, pixelIndex)]$V1)) == 1
 test3 <- any(is.na(allPixelCohortData$speciesCode))
 
 if (!test)
-  stop("No. pixels should be the same across years, for a given scenario")
+  stop("No. pixels should be the same across years, for a given scenario/rep")
 if (!test2)
-  stop("No. species per pixel should be the same across pixels, for a given scenario/year")
+  stop("No. species per pixel should be the same across pixels, for a given scenario/rep/year")
 if (test3)
   stop("There are NA speciesCodes")
 
@@ -224,12 +245,12 @@ if (test3)
 ## add vegType where it's missing, but it's a pixel with some veg
 allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
                           vegType = max(vegType, na.rm = TRUE)),
-                   by = .(scenario, year, pixelGroup)]
+                   by = .(scenario, rep, year, pixelGroup)]
 amc::.gc()
 
 ## add noFires where it's missing
 allPixelCohortData[, noFires := max(noFires, na.rm = TRUE),
-                   by = .(scenario, pixelIndex)]
+                   by = .(scenario, rep, pixelIndex)]
 amc::.gc()
 
 ## replace NAs of cohortData by 0s
@@ -242,36 +263,33 @@ cols <- c("age", "B", "mortality", "aNPPAct", "vegType", "noFires")
 allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 amc::.gc()
 
-## add no. cohorts per pixel(group)
-# allPixelCohortData[B > 0, noCohorts := length(unique(paste(speciesCode, age))), by = .(scenario, year, pixelGroup)]
-# allPixelCohortData[, noCohorts := max(noCohorts, na.rm = TRUE), by = .(scenario, year, pixelGroup)]
-# allPixelCohortData[is.na(noCohorts), noCohorts := 0]
-# amc::.gc()
-
 ## add presence/absence of fire across simulation per pixel/scenario
-allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, pixelIndex)]
+allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, rep, pixelIndex)]
 amc::.gc()
 
 ## USING CAMERON'S CLASSIFICATION/SUMMARY ---------------------
 ## Cameron uses relative basal area to classify stand structure, we can use relative Biomass.
-allPixelCohortData[, sumB := sum(B), by = .(scenario, year, pixelIndex)]
-allPixelCohortData[, relB := sum(B)/sumB, by = .(scenario, year, pixelIndex, speciesCode)]
-allPixelCohortData[is.na(relB) & sumB == 0, relB := 0]
+## we subset to the montane ecological zone, from where Cameron's data comes from
+allPixelCohortDataMnt <- allPixelCohortData[grep("Montane", ecozoneName)]
+allPixelCohortDataMnt[, sumB := sum(B), by = .(scenario, year, rep, pixelIndex)]
+allPixelCohortDataMnt[, relB := sum(B)/sumB, by = .(scenario, rep, year, pixelIndex, speciesCode)]
+allPixelCohortDataMnt[is.na(relB) & sumB == 0, relB := 0]
 
-if (any(is.na(relB)))
+if (any(is.na(allPixelCohortDataMnt$relB)))
   stop("Missing values in relative biomass")
 
 ## subset to a smaller DT and join Cameron's species names
-vegTypesCN <- unique(allPixelCohortData[, .(scenario, year, pixelGroup, speciesCode, relB)])
-vegTypesCN <- unique(na.omit(sppEquivalencies_CA[, .(Cameron, LIM)]))[vegTypesCN, on = "LIM==speciesCode",
+vegTypesCN <- unique(allPixelCohortDataMnt[, .(scenario, rep, year, pixelGroup, speciesCode, relB)])
+vegTypesCN <- unique(na.omit(preSimList$sppEquiv[, .(Cameron, LIM)]))[vegTypesCN, on = "LIM==speciesCode",
                                                                       allow.cartesian = TRUE]
 setnames(vegTypesCN, "LIM", "speciesCode")
 
 set.seed(123)
-tempArg <- sample(unique(paste(vegTypesCN$year, vegTypesCN$pixelGroup)), 10)
+tempArg <- sample(1:nrow(vegTypesCN), 100, replace = FALSE)
+tempArg <- vegTypesCN[tempArg,]
 vegTypesCN <- Cache(convertToCNVegType,
                     DT = vegTypesCN,
-                    groupingCols = c("scenario", "year", "pixelGroup"),
+                    groupingCols = c("scenario", "rep", "year", "pixelGroup"),
                     cachingArg = tempArg,
                     omitArgs = c("DT"),
                     cacheRepo = cPath)
@@ -321,6 +339,8 @@ vegTypeColours <- as.character(levels(vegTypeMapStk_noPM[[1]])[[1]]$colors)
 vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
 names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 
+## remove rasters to save memory
+rm(list = grep("Stk", ls(), value = TRUE))
 
 ## PLOTS -----------------------------------------------
 
