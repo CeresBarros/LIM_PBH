@@ -112,9 +112,12 @@ source("R/SpaDES/5_simulationSetup.R")
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
+# plotInitialTime <- simTimes$start
+plotInitialTime <- NA
 
 # showCache(simPaths$cachePath, after = "2018-09-26 00:00:00")
 # reproducible::clearCache(simPaths$cachePath, userTags = c("prepInputsLCC2005_rtm", "Biomass_borealDataPrep"))
+source("R/SpaDES/5_simulationSetup.R")
 
 ## TODO CHANGE FIRE MODULES TO USE COHORT DATA RATHER THAN SUMMARY BMG OUTPUTS, LIKE BIOMASSMAP
 graphics.off()

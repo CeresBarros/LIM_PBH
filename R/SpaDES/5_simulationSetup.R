@@ -30,7 +30,7 @@ simParams <- list(
   Biomass_core = list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-    , ".plotInitialTime" = simTimes$start
+    , ".plotInitialTime" = plotInitialTime
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
