@@ -91,9 +91,10 @@ convertToCNVegType <- function (DT, groupingCols = c("pixelGroup"), pureCutoff =
                         .sumRelBs(c('POTR', 'POTR5', 'POBA', 'BEPA'), .SD) >= 0.25),
      by = groupingCols, .SDcols = cols]
 
+  ## MMC if all others are false
   cols <- setdiff(names(DT), c("speciesCode", "Cameron", "relB", groupingCols))
   DT[, (cols) := lapply(.SD, as.integer), .SDcols = cols]
-  DT[, MMC := sum(.SD) == 0, .SDcols = cols]
+  DT[, MMC := rowSums(.SD) == 0, .SDcols = cols]
 
   toResolve <- DT[MMC != TRUE]
   resolved <- DT[MMC == TRUE]
