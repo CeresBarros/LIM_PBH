@@ -293,7 +293,8 @@ vegTypesCN <- Cache(convertToCNVegType,
                     groupingCols = c("scenario", "rep", "year", "pixelGroup"),
                     cachingArg = tempArg,
                     omitArgs = c("DT"),
-                    cacheRepo = cPath)
+                    cacheRepo = cPath,
+                    userTags = c("reportResults"))
 rm(tempArg)
 amc::.gc()
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
