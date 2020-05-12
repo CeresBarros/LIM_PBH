@@ -287,6 +287,7 @@ setnames(vegTypesCN, "LIM", "speciesCode")
 set.seed(123)
 tempArg <- sample(1:nrow(vegTypesCN), 100, replace = FALSE)
 tempArg <- vegTypesCN[tempArg,]
+setkey(vegTypesCN, scenario, rep, year, pixelGroup)
 vegTypesCN <- Cache(convertToCNVegType,
                     DT = vegTypesCN,
                     groupingCols = c("scenario", "rep", "year", "pixelGroup"),
