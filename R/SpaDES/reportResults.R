@@ -11,6 +11,8 @@ library(qs)
 library(purrr)
 library(magick)
 library(LandR)
+library(future)
+library(future.apply)
 
 source("R/R_tools/convertToCNVegType.R")
 
@@ -271,8 +273,8 @@ amc::.gc()
 ## Cameron uses relative basal area to classify stand structure, we can use relative Biomass.
 ## we subset to the montane ecological zone, from where Cameron's data comes from
 allPixelCohortDataMnt <- allPixelCohortData[grep("Montane", ecozoneName)]
-allPixelCohortDataMnt[, sumB := sum(B), by = .(scenario, year, rep, pixelIndex)]
-allPixelCohortDataMnt[, relB := sum(B)/sumB, by = .(scenario, rep, year, pixelIndex, speciesCode)]
+allPixelCohortDataMnt[, sumB := sum(B), by = .(scenario, year, rep, pixelGroup)]
+allPixelCohortDataMnt[, relB := sum(B)/sumB, by = .(scenario, rep, year, pixelGroup, speciesCode)]
 allPixelCohortDataMnt[is.na(relB) & sumB == 0, relB := 0]
 
 if (any(is.na(allPixelCohortDataMnt$relB)))
@@ -284,19 +286,26 @@ vegTypesCN <- unique(na.omit(preSimList$sppEquiv[, .(Cameron, LIM)]))[vegTypesCN
                                                                       allow.cartesian = TRUE]
 setnames(vegTypesCN, "LIM", "speciesCode")
 
-set.seed(123)
-tempArg <- sample(1:nrow(vegTypesCN), 100, replace = FALSE)
-tempArg <- vegTypesCN[tempArg,]
-setkey(vegTypesCN, scenario, rep, year, pixelGroup)
-vegTypesCN <- Cache(convertToCNVegType,
-                    DT = vegTypesCN,
-                    groupingCols = c("scenario", "rep", "year", "pixelGroup"),
-                    cachingArg = tempArg,
-                    omitArgs = c("DT"),
-                    cacheRepo = cPath,
-                    userTags = c("reportResults"))
-rm(tempArg)
+parallelFUN <- function(DT) {
+  set.seed(123)
+  tempArg <- sample(1:nrow(DT), 100, replace = FALSE)
+  tempArg <- DT[tempArg,]
+  setkey(DT, scenario, rep, year, pixelGroup)
+  out <- Cache(convertToCNVegType,
+               DT = DT,
+               groupingCols = c("scenario", "rep", "year", "pixelGroup"),
+               cachingArg = tempArg,
+               omitArgs = c("DT"),
+               cacheRepo = cPath,
+               userTags = c("reportResults"))
+  out
+}
+
+plan("multiprocess", workers = 5)
+vegTypesCN <- future_lapply(split(vegTypesCN, "rep"), FUN = parallelFUN)
+future:::ClusterRegistry("stop")
 amc::.gc()
+
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
@@ -312,9 +321,9 @@ amc::.gc()
 
 ## BY FOREST TYPE (def. as dominant species)
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
-summaryBurnCohortDataVegType <- allPixelCohortData[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                          MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                          aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+summaryBurnCohortDataVegType <- allPixelCohortData[, list(BiomassByVegType = as.numeric(sum((B/100), na.rm = TRUE)),
+                                                          MortalityByVegType = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                          aNPPByVegType = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
                                                           AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                                           sum((B/100), na.rm = TRUE))),
                                                    by = .(scenario, year, noFires, vegType)]
@@ -537,10 +546,10 @@ plot12 <- ggplot(data = plotData[, list(noCohorts = mean(noCohorts)),
        subtitle = "no. fires") +
   facet_grid(scenario ~ noFires)
 
-plotData <- summaryBurnCohortDataVegType[, list(BiomassBySpecies = sum(BiomassBySpecies)),
+plotData <- summaryBurnCohortDataVegType[, list(BiomassByVegType = sum(BiomassByVegType)),
                                          by = .(scenario, year, vegType, firePresAbs)]
 plot13 <- ggplot(data = plotData,
-                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -553,7 +562,7 @@ plot13 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot14 <- ggplot(data = summaryBurnCohortDataVegType,
-                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -564,10 +573,10 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
-plotData <- summaryBurnCohortDataVegType[, list(MortalityBySpecies = sum(MortalityBySpecies)),
+plotData <- summaryBurnCohortDataVegType[, list(MortalityByVegType = sum(MortalityByVegType)),
                                          by = .(scenario, year, vegType, firePresAbs)]
 plot13 <- ggplot(data = plotData,
-                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegType))) +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -578,7 +587,7 @@ plot13 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot14 <- ggplot(data = summaryBurnCohortDataVegType,
-                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = as.factor(vegType))) +
+                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegType))) +
   # geom_vline(xintercept = fireYears, size = 1, linetype = "dashed", colour = "grey") +
   geom_line(size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
