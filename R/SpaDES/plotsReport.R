@@ -8,6 +8,8 @@ library(ggspatial)
 library(SpaDES)
 library(raster)
 
+source("R/R_tools/plotFunction.R")
+
 ## path to figure folder
 figOutputPath <- "C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper"
 
