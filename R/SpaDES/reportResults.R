@@ -27,6 +27,7 @@ figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 dir.create(figOutputPath)
 cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 
+## DATA SOURCING ---------------------------------------------------
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES
 ageDataCN <- fread("data/CameronsAgeData/treelist_outputs_for Ceres.csv")
 patchVegTypeCN <- fread("data/CameronsAgeData/patch outputs_for Ceres.csv")
@@ -495,7 +496,7 @@ plotTest2 <- ggplot(plotData) +
   theme(legend.title = element_blank()) +
   labs(y = "biomass-weighted age (years)", x = "")
 
-## ALPHA DIVERSITY ------------------
+## SCENARIO EFFECTS ON ALPHA DIVERSITY ------------------
 ## scenario effects on alpha-div across landscape
 ## inverse Simpson concentration (Whittaker 1972)
 plotData <- allPixelCohortData[year == max(year)]
@@ -535,7 +536,7 @@ plotTest3 <- ggplot(plotData) +
   theme(legend.title = element_blank()) +
   labs(y = "alpha-div.", x = "")
 
-## BETA DIVERSITY ------------------
+## SCENARIO EFFECTS ON BETA DIVERSITY ------------------
 ## scenario effects on beta-div across landscape
 ## from multiplicative decomposition where both alpha
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
