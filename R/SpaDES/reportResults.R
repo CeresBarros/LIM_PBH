@@ -331,6 +331,10 @@ amc::.gc()
 
 vegTypesCN <- rbindlist(vegTypesCN, use.names = TRUE)
 
+## test:
+# vegTypesCN <- unique(showCache(cPath, userTags = c("reportResults"))$cacheId) %>%
+#   loadFromCache(cPath, cacheId = .)
+
 ## add Cameron's veg types and get rid of useless columns
 cols <- c("scenario", "rep", "year", "pixelGroup", "vegTypeCN")
 allPixelCohortDataMnt <- unique(vegTypesCN[, ..cols])[allPixelCohortDataMnt,
