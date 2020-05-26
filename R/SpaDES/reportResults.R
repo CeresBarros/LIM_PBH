@@ -260,11 +260,15 @@ if (!test2)
 if (test3)
   stop("There are NA speciesCodes")
 
-## add ecoregion group where it's missing
+## add ecoregion group/ecozone code/name where they're missing
 ## add vegType where it's missing, but it's a pixel with some veg
-allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
-                          vegType = max(vegType, na.rm = TRUE)),
+allPixelCohortData[, `:=`(vegType = max(vegType, na.rm = TRUE)),
                    by = .(scenario, rep, year, pixelGroup)]
+
+allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
+                          ecozoneCode = unique(na.omit(ecozoneCode)),
+                          ecozoneName = unique(na.omit(ecozoneName))),
+                   by = .(pixelIndex)]
 amc::.gc()
 
 ## add noFires where it's missing
@@ -298,7 +302,7 @@ if (any(is.na(allPixelCohortDataMnt$relB)))
   stop("Missing values in relative biomass")
 
 ## subset to a smaller DT and join Cameron's species names
-vegTypesCN <- unique(allPixelCohortDataMnt[, .(scenario, rep, year, pixelGroup, speciesCode, relB)])
+vegTypesCN <- unique(allPixelCohortDataMnt[B > 0, .(scenario, rep, year, pixelGroup, speciesCode, relB)])
 vegTypesCN <- unique(na.omit(preSimList$sppEquiv[, .(Cameron, LIM)]))[vegTypesCN, on = "LIM==speciesCode",
                                                                       allow.cartesian = TRUE]
 setnames(vegTypesCN, "LIM", "speciesCode")
