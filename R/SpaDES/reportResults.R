@@ -409,7 +409,188 @@ vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNColours), name = "A
 rm(list = grep("Stk", ls(), value = TRUE))
 amc::.gc()
 
+
+## STAT TESTS ------------------------------------------
+## AGE SIM VS OBS ----
+## difference between simulated and observed ages - end of sim
+plotData <- allPixelCohortDataMnt[year == max(year) & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+
+plotData2 <- ageDataCN[, list(avgAgeBySppWeightedObs = mean(Reconstructed.age)),
+                       by = .(Cover.dendro)]
+plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
+setnames(plotData, "Cover.dendro", "vegTypeCN")
+
+plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppWeightedObs]
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData[, vegTypeCN := as.factor(vegTypeCN)]
+plotData[, vegTypeCN := relevel(vegTypeCN, "PICO")]
+
+ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
+  lme4::lmer(abs(ageDiffSimObs) ~ scenario + (scenario | vegTypeCN), data = DT)
+})
+summary(ageDiffLMList$`0`)
+
+plotData[firePresAbs == 0, predVals := predict(ageDiffLMList$`0`, type = "response")]
+plotData[firePresAbs == 1, predVals := predict(ageDiffLMList$`1`, type = "response")]
+
+plotTest1 <- ggplot(plotData) +
+  geom_boxplot(aes(x = firePresAbs, y = abs(ageDiffSimObs), fill = scenario)) +
+  geom_point(aes(x = firePresAbs, y = predVals, colour = scenario),
+             position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(title = "Age differences between sim. and obs. data",
+       y = expression(bgroup("|", "sim." - bar("obs."), "|")),
+       x = "") +
+  facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
+
+## SCENARIO EFFECTS ON STAND AGE------
+## scenario effects on stand age across landscape
+plotData <- allPixelCohortData[year == max(year),
+                               list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                    sum((B/100), na.rm = TRUE))),
+                               by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData[, ecoregionGroup := as.factor(ecoregionGroup)]
+plotData <- plotData[!is.na(ecoregionGroup) & !is.na(AgeBySppWeighted)]
+
+## some ecoregionGroups only have one observation, leading to signular fit
+ageEffectsLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
+  lme4::lmer(AgeBySppWeighted ~ scenario + (scenario | ecoregionGroup), data = DT)
+})
+summary(ageEffectsLMList$`1`)
+
+## fitted values vector is shorter than nrow, prob. due to signularity. predict using the same data.
+plotData[firePresAbs == 0, predVals := predict(ageEffectsLMList$`0`, type = "response",
+                                               re.form = NA,
+                                               newdata = plotData[firePresAbs == 0])]
+plotData[firePresAbs == 1, predVals := predict(ageEffectsLMList$`1`, type = "response",
+                                               re.form = NA,
+                                               newdata = plotData[firePresAbs == 1])]
+
+plotTest2 <- ggplot(plotData) +
+  geom_boxplot(aes(x = firePresAbs, y = AgeBySppWeighted, fill = scenario)) +
+  geom_point(aes(x = firePresAbs, y = predVals, colour = scenario),
+             position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(y = "biomass-weighted age (years)", x = "")
+
+## ALPHA DIVERSITY ------------------
+## scenario effects on alpha-div across landscape
+## inverse Simpson concentration (Whittaker 1972)
+plotData <- allPixelCohortData[year == max(year)]
+plotData[, sumB := sum(B, na.rm = TRUE),
+         by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, pixelIndex, speciesCode, firePresAbs, ecoregionGroup)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData[, ecoregionGroup := as.factor(ecoregionGroup)]
+plotData <- plotData[!is.na(ecoregionGroup) & !is.na(alphaDiv)]
+
+## some ecoregionGroups only have one observation, leading to signular fit
+alphaEffectsLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
+  lme4::lmer(alphaDiv ~ scenario + (scenario | ecoregionGroup), data = DT)
+})
+summary(alphaEffectsLMList$`1`)
+
+## fitted values vector is shorter than nrow, prob. due to signularity. predict using the same data.
+plotData[firePresAbs == 0, predVals := predict(alphaEffectsLMList$`0`, type = "response",
+                                               re.form = NA,
+                                               newdata = plotData[firePresAbs == 0])]
+plotData[firePresAbs == 1, predVals := predict(alphaEffectsLMList$`1`, type = "response",
+                                               re.form = NA,
+                                               newdata = plotData[firePresAbs == 1])]
+
+plotTest3 <- ggplot(plotData) +
+  geom_boxplot(aes(x = firePresAbs, y = alphaDiv, fill = scenario)) +
+  geom_point(aes(x = firePresAbs, y = predVals, colour = scenario),
+             position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(y = "alpha-div.", x = "")
+
+## BETA DIVERSITY ------------------
+## scenario effects on beta-div across landscape
+## from multiplicative decomposition where both alpha
+## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
+# alpha-div
+plotData <- allPixelCohortData[year == max(year)]
+plotData[, sumB := sum(B, na.rm = TRUE),
+         by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, pixelIndex, speciesCode, firePresAbs, ecoregionGroup)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+
+## gamma-div
+plotData2 <- allPixelCohortData[year == max(year),
+                                list(BiomassBySpecies = sum(B, na.rm = TRUE)),
+                                by = .(scenario, rep, firePresAbs, speciesCode, ecoregionGroup)]
+plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
+          .(scenario, rep, firePresAbs, ecoregionGroup)]
+plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
+                       by = .(scenario, rep, firePresAbs, speciesCode, ecoregionGroup)]
+plotData2 <- plotData2[, list(gammaDiv = 1/sum(relB^2)),
+                       by = .(scenario, rep, firePresAbs, ecoregionGroup)]
+
+## beta-div
+plotData2 <- plotData2[plotData, on = .(scenario, rep, firePresAbs, ecoregionGroup)]
+plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na.rm = TRUE)),
+                       by = .(scenario, rep, firePresAbs, ecoregionGroup)]
+
+plotData2[, firePresAbs := as.factor(firePresAbs)]
+plotData2[, ecoregionGroup := as.factor(ecoregionGroup)]
+plotData2 <- unique(plotData2[!is.na(ecoregionGroup) & !is.na(betaDiv)])
+
+## some ecoregionGroups only have one observation, leading to signular fit
+betaEffectsLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
+  lme4::lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = DT)
+})
+summary(betaEffectsLMList$`1`)
+
+## fitted values vector is shorter than nrow, prob. due to signularity. predict using the same data.
+plotData2[firePresAbs == 0, predVals := predict(betaEffectsLMList$`0`, type = "response",
+                                                re.form = NA,
+                                                newdata = plotData2[firePresAbs == 0])]
+plotData2[firePresAbs == 1, predVals := predict(betaEffectsLMList$`1`, type = "response",
+                                                re.form = NA,
+                                                newdata = plotData2[firePresAbs == 1])]
+
+plotTest4 <- ggplot(plotData2) +
+  geom_boxplot(aes(x = firePresAbs, y = betaDiv, fill = scenario)) +
+  geom_point(aes(x = firePresAbs, y = predVals, colour = scenario),
+             position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(y = "beta-div.", x = "")
+
+saveRDS(ageDiffLMList, file = file.path(simPaths$outputPath, "ageDiffModel.rds"))
+saveRDS(ageEffectsLMList, file = file.path(simPaths$outputPath, "ageEffectsModel.rds"))
+saveRDS(alphaEffectsLMList, file = file.path(simPaths$outputPath, "alphaEffectsModel.rds"))
+saveRDS(betaEffectsLMList, file = file.path(simPaths$outputPath, "betaEffectsModel.rds"))
+
 ## PLOTS -----------------------------------------------
+## MODELLED PROPERTIES ---------------------------------
 ## BY SPECIES ------------
 ## total biomass
 plotData <- summaryBurnCohortDataSpp[, list(BiomassBySpecies = sum(BiomassBySpecies)),
@@ -958,8 +1139,137 @@ plot32 <- ggplot(plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
+## BIODIVERSITY METRICS --------------------------------
+## ALPHA DIVERSITY --------------
+## inverse Simpson concentration (Whittaker 1972)
+plotData <- copy(allPixelCohortData)
+plotData[, sumB := sum(B, na.rm = TRUE),
+         by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 
-## VARIABILITY ACROSS REPS --------
+plot33 <- ggplot(data = plotData,
+                 aes(x = year, y = alphaDiv, colour = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  labs(y = "mean alpha-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot34 <- ggplot(data = plotData,
+                 aes(x = year, y = alphaDiv, colour = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  labs(y = "mean alpha-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(~ noFires)
+
+## map of alpha - avg across reps
+plotData2 <- plotData[year == 100, list(alphaDiv = mean(alphaDiv)),
+                      by = .(scenario, pixelIndex)]
+alphaStk <- lapply(split(plotData2, by = "scenario"), function(DT, RTM) {
+  rasAlpha <- RTM
+  rasAlpha[] <- NA
+  rasAlpha[DT$pixelIndex] <- DT$alphaDiv
+  rasAlpha
+}, RTM = preSimList$rasterToMatch)
+alphaStk <- stack(alphaStk)
+
+rasData <- data.table(vals = getValues(alphaStk), coordinates(alphaStk))
+rasData <- melt(rasData, id.vars = c("x", "y"))
+rasData$variable <- sub("vals.", "", rasData$variable)
+
+plotMap1 <- ggplot() +
+  layer_spatial(data = preSimList$studyArea, col = "black",
+                fill = "transparent") +
+  geom_raster(data = rasData,
+              mapping = aes(x, y, fill = value)) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(base_size = 16) +
+  scale_fill_distiller(palette = "YlGnBu", direction = 1,
+                       breaks = c(0:length(unique(allPixelCohortData$speciesCode))),
+                       labels = c(0:length(unique(allPixelCohortData$speciesCode))),
+                       limits = c(0, length(unique(allPixelCohortData$speciesCode))),
+                       na.value = "transparent") +
+  labs(x = "longitude", y = "latitude", fill = "alpha-div.") +
+  facet_wrap(~ variable)
+
+plotMap1hist <- ggplot(rasData[!is.na(value)]) +
+  geom_density(aes(x = value, fill = variable, alpha = variable)) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
+  labs(y = "density", x = "mean alpha-div (years)")
+
+
+## BETA DIVERSITY --------------
+## from multiplicative decomposition where both alpha
+## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
+## alpha-div
+plotData <- copy(allPixelCohortData)
+plotData[, sumB := sum(B, na.rm = TRUE),
+         by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
+
+## gamma-div - firePresAbs
+plotData2 <- copy(summaryBurnCohortDataSpp)
+plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
+          .(scenario, rep, year, firePresAbs)]
+plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
+                       by = .(scenario, rep, year, firePresAbs, speciesCode)]
+plotData2 <- plotData2[, list(gammaDiv = 1/sum(relB^2)),
+                       by = .(scenario, rep, year, firePresAbs)]
+
+## beta-div  - firePresAbs
+plotData2 <- plotData2[plotData, on = .(scenario, rep, year, firePresAbs)]
+plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na.rm = TRUE)),
+                       by = .(scenario, rep, year, firePresAbs)]
+
+plot35 <- ggplot(data = plotData2,
+                 aes(x = year, y = betaDiv, colour = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  labs(y = "mean beta-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+
+## gamma-div - no fires
+plotData2 <- copy(summaryBurnCohortDataSpp)
+plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
+          .(scenario, rep, year, noFires)]
+plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
+                       by = .(scenario, rep, year, noFires, speciesCode)]
+plotData2 <- plotData2[, list(gammaDiv = 1/sum(relB^2)),
+                       by = .(scenario, rep, year, noFires)]
+## beta-div
+plotData2 <- plotData2[plotData, on = .(scenario, rep, year, noFires)]
+plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na.rm = TRUE)),
+                       by = .(scenario, rep, year, noFires)]
+
+plot36 <- ggplot(data = plotData2,
+                 aes(x = year, y = betaDiv, colour = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  labs(y = "mean beta-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(~ noFires)
+
+
+## VARIABILITY ACROSS REPS -----------------------------
 ## BY SPECIES ---------------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataSpp[year == 100, list(BiomassBySpecies = sum(BiomassBySpecies)),
@@ -1271,7 +1581,99 @@ plot17var <- ggplot(data = plotData,
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-## SAVE PLOTS ---------------------
+
+## MAPS ------------------------
+## dominant species - to deal with reps we need to reclassify the stands after averaging across reps.
+plotData <- allPixelCohortData[year == 100, list(B = mean(B, na.rm = TRUE),
+                                                 age =  as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                     sum((B/100), na.rm = TRUE))),
+                               by = .(scenario, pixelIndex, speciesCode, firePresAbs)]
+
+plotData <- lapply(split(plotData[B > 0], by = "scenario"), vegTypeGenerator,
+                   vegLeadingProportion = 0, sppEquiv = preSimList$sppEquiv,
+                   sppEquivCol = P(preSimList)$Biomass_borealDataPrep$sppEquivCol,
+                   pixelGroupColName = "pixelIndex", doAssertion = FALSE)  ## turn assertions off so that the algorythm choice is based on table size
+plotData <- rbindlist(plotData, use.names = TRUE)
+setnames(plotData, "leading", "vegType")
+
+plotData[, vegType := as.numeric(factor(vegType))]
+
+vegTypeStk <- lapply(split(plotData, by = "scenario"), function(DT, RTM) {
+  rasVeg <- RTM
+  rasVeg[] <- NA
+  rasVeg[DT$pixelIndex] <- DT$vegType
+  rasVeg
+}, RTM = preSimList$rasterToMatch)
+vegTypeStk <- stack(vegTypeStk)
+
+ageStk <- lapply(split(plotData, by = "scenario"), function(DT, RTM) {
+  rasVeg <- RTM
+  rasVeg[] <- NA
+  rasVeg[DT$pixelIndex] <- DT$age
+  rasVeg
+}, RTM = preSimList$rasterToMatch)
+ageStk <- stack(ageStk)
+
+rasData <- data.table(vals = getValues(vegTypeStk), coordinates(vegTypeStk))
+rasData <- melt(rasData, id.vars = c("x", "y"))
+rasData$variable <- sub("vals.", "", rasData$variable)
+
+plotMap2 <- ggplot() +
+  layer_spatial(data = preSimList$studyArea, col = "black",
+                fill = "transparent") +
+  geom_raster(data = rasData,
+              mapping = aes(x, y, fill = as.factor(value))) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(base_size = 16) +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm"), legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels,
+                    na.translate = FALSE) +
+  labs(x = "longitude", y = "latitude") +
+  facet_wrap(~ variable)
+
+plotMap2hist <- ggplot(rasData[!is.na(value)]) +
+  geom_bar(aes(x = as.factor(value), fill = as.factor(value),
+               alpha = variable == "PM"), position = "dodge") +
+  theme_pubr(base_size = 16, x.text.angle = 45) +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm"), legend.title = element_blank(),
+        axis.title.x = element_blank()) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels,
+                    na.translate = FALSE) +
+  scale_alpha_manual(labels = c("TRUE" = "PM", "FALSE" = "noPM"),
+                     values = c("TRUE" = 1, "FALSE" = 0.6)) +
+  scale_x_discrete(labels = vegTypeLabels) +
+  guides(alpha = guide_legend(nrow = 2)) +
+  labs(y = "no. pixels")
+
+rasData <- data.table(vals = getValues(ageStk), coordinates(ageStk))
+rasData <- melt(rasData, id.vars = c("x", "y"))
+rasData$variable <- sub("vals.", "", rasData$variable)
+
+plotMap3 <- ggplot() +
+  layer_spatial(data = preSimList$studyArea, col = "black",
+                fill = "transparent") +
+  geom_raster(data = rasData,
+              mapping = aes(x, y, fill = value)) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(base_size = 16) +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "Greens", na.value = "transparent",
+                       direction = 1) +
+  labs(x = "longitude", y = "latitude", fill = "age") +
+  facet_wrap(~ variable)
+
+plotMap3hist <- ggplot(rasData[!is.na(value)]) +
+  geom_density(aes(x = value, fill = variable, alpha = variable)) +
+  theme_pubr(base_size = 16) +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm"), legend.title = element_blank()) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
+  labs(y = "density", x = "age (years)")
+
+## SAVE PLOTS ------------------------------------------
 amc::.gc()
 ggpubr::ggarrange(plot1,
                   plot2 +
