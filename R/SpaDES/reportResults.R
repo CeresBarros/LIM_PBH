@@ -1916,3 +1916,4 @@ plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageAlphaBetaDivEffectsTestBP.tiff"),
        width = 12, height = 7)
 
+q("no")
