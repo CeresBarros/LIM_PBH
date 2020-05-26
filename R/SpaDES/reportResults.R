@@ -601,8 +601,8 @@ plot1 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape biomass by species", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -613,8 +613,8 @@ plot2 <- ggplot(data = summaryBurnCohortDataSpp,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape biomass by species", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -627,8 +627,8 @@ plot3 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape mortality by species", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -638,8 +638,8 @@ plot4 <- ggplot(data = summaryBurnCohortDataSpp,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape mortality by species", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 amc::.gc()
@@ -654,8 +654,8 @@ plot5 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. species age across landscape", y = "biomass-weighted age",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. age across landscape", y = "biomass-weighted age",
+       subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -665,8 +665,8 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. species age across landscape", y = "biomass-weighted age",
-       subtitle = "no. fires") +
+  labs(title = "Avg. age across landscape", y = "biomass-weighted age",
+       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -679,8 +679,8 @@ plot7 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. no. cohorts by species", y = "no. cohorts",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
+       subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -691,7 +691,7 @@ plot8 <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. no. cohorts by species", y = "no. cohorts",
-       subtitle = "no. fires") +
+       subtitle = "by species") +
   facet_grid(scenario ~ noFires)
 amc::.gc()
 
@@ -701,24 +701,22 @@ amc::.gc()
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, firePresAbs, vegType)]
 plot9 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dominant species)", y = "no. pixels",
-       subtitle = "presence/absence of fire") +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dom. species)", y = "no. pixels") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot9.2 <- ggplot(data = plotData,
-                  aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                  aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dominant species)", y = "prop. pixels",
-       subtitle = "presence/absence of fire") +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dom. species)", y = "prop. pixels") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 amc::.gc()
@@ -726,23 +724,21 @@ amc::.gc()
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, noFires, vegType)]
 plot10 <- ggplot(data = plotData,
-                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                 aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dominant species)", y = "no. pixels",
-       subtitle = "no. fires") +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dom. species)", y = "no. pixels") +
   facet_grid(scenario ~ noFires)
 
 plot10.2 <- ggplot(data = plotData,
-                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+                   aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dominant species)", y = "prop. pixels",
-       subtitle = "no. fires") +
+  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  labs(title = "Forest type (dom. species)", y = "prop. pixels") +
   facet_grid(scenario ~ noFires)
 
 ## no. cohorts
@@ -754,8 +750,8 @@ plot11 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
+       subtitle = "by forest type (dom. species)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -765,8 +761,8 @@ plot12 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
-       subtitle = "no. fires") +
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
+       subtitle = "by forest type (dom. species)") +
   facet_grid(scenario ~ noFires)
 
 ## total biomass
@@ -778,8 +774,8 @@ plot13 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape biomass by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -790,8 +786,8 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape biomass by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -804,8 +800,8 @@ plot15 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape mortality by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type (dom. species)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -815,8 +811,8 @@ plot16 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape mortality by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -831,7 +827,7 @@ plot17 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. forest type age (dominant species)", y = "biomass-weighted age",
+  labs(title = "Avg. forest type age (dom. species)", y = "biomass-weighted age",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -842,7 +838,7 @@ plot18 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. forest type age (dominant species)", y = "biomass-weighted age",
+  labs(title = "Avg. forest type age (dom. species)", y = "biomass-weighted age",
        subtitle = "no. fires") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
@@ -866,7 +862,7 @@ plot19 <- ggplot(data = plotData,
 
 plot19.2 <- ggplot(data = plotData,
                    aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
-  geom_area(stat = "identity", position = "fill") +
+  stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
@@ -874,8 +870,8 @@ plot19.2 <- ggplot(data = plotData,
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
-
 amc::.gc()
+
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, noFires, vegTypeCN)]
 plot20 <- ggplot(data = plotData,
@@ -890,7 +886,7 @@ plot20 <- ggplot(data = plotData,
 
 plot20.2 <- ggplot(data = plotData,
                    aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
-  geom_area(stat = "identity", position = "fill") +
+  stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
@@ -907,8 +903,8 @@ plot21 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
+       subtitle = "by forest type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -918,8 +914,8 @@ plot22 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts",
-       subtitle = "no. fires") +
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
+       subtitle = "by forest type") +
   facet_grid(scenario ~ noFires)
 
 ## total biomass
@@ -931,8 +927,8 @@ plot23 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape biomass by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -943,8 +939,8 @@ plot24 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape biomass by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -957,8 +953,8 @@ plot25 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape mortality by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -968,8 +964,8 @@ plot26 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape mortality by forest type", y = "log-biomass (ton/ha)",
-       subtitle = "no. fires") +
+  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -1069,7 +1065,7 @@ plot30 <- ggplot(plotData,
 
 plot30.2 <- ggplot(plotData,
                    aes(x = vegTypeCN, y = avgAge, fill = vegTypeCN)) +
-  geom_violin(position = position_nudge(x = -0.15, show.legend = FALSE),
+  geom_violin(position = position_nudge(x = -0.15) , show.legend = FALSE,
               alpha = 0.7) +
   stat_summary(fun = "mean", geom = "point", colour = "black",
                position = position_nudge(x = -0.15), show.legend = FALSE) +
@@ -1118,8 +1114,8 @@ plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(AgeBySppWeighted - mean(avgAgeBySppWeightedObs))),
-                      by = .(scenario, rep, firePresAbs)]
-plotData <- plotData2[plotData, on = .(scenario, rep, firePresAbs)]
+                      by = .(scenario, firePresAbs)]
+plotData <- plotData2[plotData, on = .(scenario, firePresAbs)]
 rm(plotData2)
 
 plot32 <- ggplot(plotData,
@@ -1127,7 +1123,7 @@ plot32 <- ggplot(plotData,
                      y = AgeBySppWeighted - avgAgeBySppWeightedObs,
                      fill = vegTypeCN)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_hline(mapping = aes(yintercept = meanAbsDev), size = 1, colour = "red") +
+  geom_hline(mapping = aes(yintercept = meanAbsDevSimObs), size = 1, colour = "red") +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -1283,7 +1279,7 @@ plot1var <- ggplot(data = plotData,
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "", subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1292,7 +1288,7 @@ plot1var <- ggplot(data = plotData,
 plotData <- allPixelCohortData[year == 100, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
                                by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(avgBspp = mean(B, na.rm = TRUE)),    ## now average across landscape
-                               by = .(scenario, rep, firePresAbs, speciesCode)]
+                     by = .(scenario, rep, firePresAbs, speciesCode)]
 plot2var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = avgBspp, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
@@ -1301,7 +1297,7 @@ plot2var <- ggplot(data = plotData,
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1318,7 +1314,7 @@ plot3var <- ggplot(data = plotData,
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1338,7 +1334,7 @@ plot4var <- ggplot(data = plotData,
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1357,15 +1353,15 @@ plot5var <- ggplot(data = plotData,
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-## BY FOREST TYPE (DOMINANT SPECIES) ------------
+## (DOMINANT SPECIES) ------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegType[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
-                                     by = .(scenario, rep, vegType, firePresAbs)]
+                                         by = .(scenario, rep, vegType, firePresAbs)]
 plot6var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = log(BiomassBySpecies + 0.000001),
                        fill = as.factor(vegType))) +
@@ -1375,7 +1371,7 @@ plot6var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1393,7 +1389,7 @@ plot7var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1410,7 +1406,7 @@ plot8var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1430,7 +1426,7 @@ plot9var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1452,7 +1448,7 @@ plot10var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels, drop = FALSE) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1468,7 +1464,7 @@ plot11var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Forest type (year 100)", y = "no. pixels",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type (dom. species)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1476,35 +1472,35 @@ plot11var <- ggplot(data = plotData,
 ## BY CAMERON'S VEG TYPE ------------------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegTypeCN[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
-                                         by = .(scenario, rep, vegTypeCN, firePresAbs)]
+                                           by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plot12var <- ggplot(data = plotData,
-                   aes(x = as.factor(vegTypeCN), y = log(BiomassBySpecies + 0.000001),
-                       fill = as.factor(vegTypeCN))) +
+                    aes(x = as.factor(vegTypeCN), y = log(BiomassBySpecies + 0.000001),
+                        fill = as.factor(vegTypeCN))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand biomass
 plotData <- allPixelCohortDataMnt[year == 100, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
 plotData <- plotData[, list(avgBvegType = mean(B, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 plot13var <- ggplot(data = plotData,
-                   aes(x = vegTypeCN, y = avgBvegType, fill = vegTypeCN)) +
+                    aes(x = vegTypeCN, y = avgBvegType, fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1512,44 +1508,44 @@ plot13var <- ggplot(data = plotData,
 ## average age across landscape
 plotData <- allPixelCohortDataMnt[year == 100, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                                     sum((B/100), na.rm = TRUE))),
-                                 by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
+                                  by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
 plot14var <- ggplot(data = plotData,
-                   aes(x = vegTypeCN, y = AgeBySppWeighted, fill = vegTypeCN)) +
+                    aes(x = vegTypeCN, y = AgeBySppWeighted, fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand age
 plotData <- allPixelCohortDataMnt[year == 100,
-                               list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
 plotData <- plotData[, list(AgeBySppWeighted = mean(AgeBySppWeighted, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 plot15var <- ggplot(data = plotData,
-                   aes(x = vegTypeCN, y = AgeBySppWeighted, fill = vegTypeCN)) +
+                    aes(x = vegTypeCN, y = AgeBySppWeighted, fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## avg no. cohorts in stand
 plotData <- allPixelCohortDataMnt[year == 100 & B > 0,
-                               list(noCohorts = length(unique(age))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
+                                  list(noCohorts = length(unique(age))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegTypeCN)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 plot16var <- ggplot(data = plotData,
@@ -1560,14 +1556,14 @@ plot16var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## no. pixels
 plotData <- allPixelCohortDataMnt[year == 100, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
+                                  by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
 plot17var <- ggplot(data = plotData,
                     aes(x = vegTypeCN, y = noPixelsVeg, fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
@@ -1576,7 +1572,7 @@ plot17var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Forest type (year 100)", y = "no. pixels",
-       x = "" , subtitle = "presence/absence of fire") +
+       x = "" , subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1675,112 +1671,114 @@ plotMap3hist <- ggplot(rasData[!is.na(value)]) +
 
 ## SAVE PLOTS ------------------------------------------
 amc::.gc()
-ggpubr::ggarrange(plot1,
-                  plot2 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeB.tiff"),
+plotSave <- ggarrange(plot1,
+                      plot2 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeB.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot13,
-                  plot14 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeBVegType.tiff"),
+plotSave <- ggarrange(plot13 + theme(plot.title = element_text(size = 17)),
+                      plot14 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBVegType.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot23,
-                  plot24 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeBVegTypeCN.tiff"),
+plotSave <- ggarrange(plot23,
+                      plot24 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBVegTypeCN.tiff"),
        width = 14, height = 7)
 
-# ggpubr::ggarrange(plot3,
+# plotSave <- ggarrange(plot3,
 #                   plot4 +
 #                     theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
 #                     labs(title = "", subtitle = ""),
 #                   widths = c(0.4, 0.6),
 #                   legend = "bottom", common.legend = TRUE)
-# ggsave(filename = file.path(figOutputPath, "results_landscapeMort.tiff"),
+# ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeMort.tiff"),
 #        width = 14, height = 7)
 
-ggpubr::ggarrange(plot5,
-                  plot6 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
+plotSave <- ggarrange(plot5,
+                      plot6 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot17,
-                  plot18 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeAgeVegType.tiff"),
+plotSave <- ggarrange(plot17,
+                      plot18 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAgeVegType.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot27,
-                  plot28 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeAgeVegTypeCN.tiff"),
+plotSave <- ggarrange(plot27,
+                      plot28 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAgeVegTypeCN.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot9.2,
-                  plot10.2 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
+plotSave <- ggarrange(plot9.2,
+                      plot10.2 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot19.2,
-                  plot20.2 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeVegTypesCN.tiff"),
+plotSave <- ggarrange(plot19.2 + theme(plot.subtitle = element_blank()),
+                      plot20.2 +
+                        theme(plot.subtitle = element_blank(),
+                              axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypesCN.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot7,
-                  plot8 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_noCohorts.tiff"),
+plotSave <- ggarrange(plot7 + theme(plot.subtitle = element_blank()),
+                      plot8 +
+                        theme(plot.subtitle = element_blank(),
+                              axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohorts.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot11,
-                  plot12 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_noCohortsVegType.tiff"),
+plotSave <- ggarrange(plot11,
+                      plot12 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVegType.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot21,
-                  plot22 +
-                    theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  widths = c(0.4, 0.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_noCohortsVegTypeCN.tiff"),
+plotSave <- ggarrange(plot21,
+                      plot22 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
+                      widths = c(0.4, 0.7),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVegTypeCN.tiff"),
        width = 14, height = 7)
 
 ggsave(plot = plot29, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
@@ -1792,35 +1790,89 @@ ggsave(plot = plot32, filename = file.path(figOutputPath, "results_meanAgeDiff.t
 ggsave(plot = plot31, filename = file.path(figOutputPath, "results_noCohortsSimVsObs.tiff"),
        width = 14, height = 7)
 
-ggpubr::ggarrange(plot1var + theme(axis.title.x = element_blank(), axis.text.x = element_blank()),
-                  plot3var + theme(axis.title.x = element_blank(), axis.text.x = element_blank()) +
-                    labs(title = "", subtitle = ""),
-                  plot5var + labs(title = "", subtitle = ""), ncol = 1,
-                  heights = c(2.9, 2.9, 4),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVar.tiff"),
-       width = 7, height = 14)
+ggsave(plot = plot31.2, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
+       width = 14, height = 7)
 
-ggpubr::ggarrange(plot6var + theme(plot.subtitle = element_blank(),
-                                   axis.title.x = element_blank(), axis.text.x = element_blank()),
-                  plot8var + theme(plot.subtitle = element_blank(),
-                                   axis.title.x = element_blank(), axis.text.x = element_blank()),
-                  plot10var + theme(plot.subtitle = element_blank()),
-                  plot11var + theme(plot.subtitle = element_blank()),
-                  ncol = 2, nrow = 2,
-                  heights = c(1, 1.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegType.tiff"),
+plotSave <- ggarrange(plot1var +
+                        theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+                              plot.margin = margin(0,0,0,0)),
+                      plot3var +
+                        theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+                              plot.title = element_blank(), plot.margin = margin(0,0,0,0)) +
+                        labs(title = "", subtitle = ""),
+                      plot5var + theme(plot.title = element_blank(),
+                                       plot.margin = margin(0,0,0,5, unit = "mm")) +
+                        labs(title = "", subtitle = ""), ncol = 1,
+                      heights = c(1, 0.9, 1.3),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVar.tiff"),
+       width = 7, height = 12)
+
+plotSave <- ggarrange(plot6var + theme(plot.subtitle = element_blank(),
+                                       axis.title.x = element_blank(), axis.text.x = element_blank()),
+                      plot8var +
+                        theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
+                              axis.title.x = element_blank(), axis.text.x = element_blank()),
+                      plot10var +
+                        theme(plot.margin = margin(l = 9, unit = "mm"), plot.subtitle = element_blank()),
+                      plot11var + theme(plot.subtitle = element_blank()),
+                      ncol = 2, nrow = 2,
+                      heights = c(1, 1.6),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegType.tiff"),
        width = 14, height = 9)
 
-ggpubr::ggarrange(plot12var + theme(plot.subtitle = element_blank(),
-                                   axis.title.x = element_blank(), axis.text.x = element_blank()),
-                  plot14var + theme(plot.subtitle = element_blank(),
-                                   axis.title.x = element_blank(), axis.text.x = element_blank()),
-                  plot16var + theme(plot.subtitle = element_blank()),
-                  plot17var + theme(plot.subtitle = element_blank()),
-                  ncol = 2, nrow = 2,
-                  heights = c(1, 1.6),
-                  legend = "bottom", common.legend = TRUE)
-ggsave(filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegTypeCN.tiff"),
+plotSave <- ggarrange(plot12var +
+                        theme(plot.subtitle = element_blank(), plot.margin = margin(unit = "mm"),
+                              axis.title.x = element_blank(), axis.text.x = element_blank()),
+                      plot14var +
+                        theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
+                              axis.title.x = element_blank(), axis.text.x = element_blank()),
+                      plot16var +
+                        theme(plot.margin = margin(t = 6, l = 6, unit = "mm"), plot.subtitle = element_blank()),
+                      plot17var +
+                        theme(plot.margin = margin(t = 6, unit = "mm"), plot.subtitle = element_blank()),
+                      ncol = 2, nrow = 2,
+                      heights = c(1, 1.6),
+                      legend = "bottom", common.legend = TRUE)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegTypeCN.tiff"),
        width = 14, height = 9)
+
+plotSave <- ggarrange(plotMap1 + theme(legend.position = "right"),
+                      plotMap1hist +
+                        theme(legend.position = c(0.7, 0.95), legend.justification = c("left", "top")),
+                      ncol = 1, heights = c(2,1), widths = c(0.98, 1))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgAlphaDivMap.tiff"),
+       width = 8, height = 12)
+
+plotSave <- ggarrange(plotMap2 + theme(legend.position = "none"),
+                      plotMap3 +
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
+                              legend.position = "right"),
+                      plotMap2hist +
+                        theme(plot.margin = margin(b = 12, unit = "mm"),
+                              axis.text.x = element_blank(),
+                              legend.position = "none") +
+                        guides(fill = guide_legend(nrow = 2), alpha = guide_legend(nrow = 2)),
+                      plotMap3hist +
+                        theme(legend.position = c(0.95, 0.95),
+                              legend.justification = c("right", "top")),
+                      get_legend(plotMap2hist),
+                      ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgVegTypeAgeMap.tiff"),
+       width = 13, height = 12)
+
+plotSave <- ggarrange(plotTest1 +
+                        theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
+                              legend.key.size = unit(1.5, "cm")))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTestBP.tiff"),
+       width = 12, height = 7)
+
+plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
+                      plotTest3 + theme(legend.position = "none"),
+                      plotTest4 + theme(legend.position = "none"),
+                      get_legend(plotTest2 + theme(legend.key.size = unit(1.5, "cm"))),
+                      ncol = 2, nrow = 2)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageAlphaBetaDivEffectsTestBP.tiff"),
+       width = 12, height = 7)
+
