@@ -1101,12 +1101,43 @@ plot31 <- ggplot(data = plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. no. cohorts by forest type", y = "no. cohorts", x = "",
+  labs(title = "Avg. no. cohorts", y = "no. cohorts", x = "",
+       subtitle = "by forest type") +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## mean cohort differences
+## calculate the absolute difference of each stand to the observed average (per veg type) across reps
+plotData2 <- ageDataCN[, list(avgNoCohortsObs = mean(noCohorts)),
+                       by = .(Cover.dendro)]
+plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
+setnames(plotData, "Cover.dendro", "vegTypeCN")
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(noCohorts - mean(avgNoCohortsObs))),
+                      by = .(scenario, firePresAbs)]
+plotData <- plotData2[plotData, on = .(scenario, firePresAbs)]
+rm(plotData2)
+
+plot31.2 <- ggplot(plotData,
+                   aes(x = vegTypeCN,
+                       y = noCohorts - avgNoCohortsObs,
+                       fill = vegTypeCN)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  geom_hline(mapping = aes(yintercept = meanAbsDevSimObs), size = 1, colour = "red") +
+  geom_boxplot(show.legend = FALSE) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  labs(title = "Age differences between sim. and obs. data",
+       y = "mean age diff.", x = "",
        subtitle = "presence/absence of fire") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
+
 ## mean age differences
+## calculate avg weighted ages per stand first
+## then the absolute difference of each stand to the observed average (per veg type) across reps
 plotData <- allPixelCohortDataMnt[year == max(year) & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
                                   list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                        sum((B/100), na.rm = TRUE))),
