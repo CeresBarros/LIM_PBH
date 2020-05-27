@@ -1119,27 +1119,39 @@ plotData2 <- ageDataCN[, list(avgNoCohortsObs = mean(noCohorts)),
 plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(noCohorts - mean(avgNoCohortsObs)))),
-                      by = .(scenario, firePresAbs)]
-plotData <- plotData2[plotData, on = .(scenario, firePresAbs)]
+                      by = .(scenario, vegTypeCN, firePresAbs)]
+plotData <- plotData2[plotData, on = .(scenario, vegTypeCN, firePresAbs)]
 rm(plotData2)
 
+## differences
 plot31.2 <- ggplot(plotData,
-                   aes(x = vegTypeCN,
+                   aes(x = scenario,
                        y = noCohorts - avgNoCohortsObs,
                        fill = vegTypeCN)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_hline(mapping = aes(yintercept = meanAbsDevSimObs), size = 1, colour = "red") +
-  geom_boxplot(show.legend = FALSE) +
+  geom_boxplot() +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Age differences between sim. and obs. data",
-       y = "mean age diff.", x = "",
-       subtitle = "presence/absence of fire") +
-  facet_grid(scenario ~ firePresAbs,
+  labs(title = "Differences in no. cohorts between sim. and obs. data",
+       y = "mean no. cohort diff.", x = "") +
+  facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
+## mean absolute differences
+plot31.3 <- ggplot(plotData,
+                   aes(x = scenario, y = meanAbsDevSimObs,
+                       colour = vegTypeCN)) +
+  geom_point(size = 2) +
+  geom_line(aes(group = vegTypeCN), size = 1, show.legend = FALSE) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
+  labs(title = "Mean abs. deviation of no. cohorts between sim. and obs. data",
+       y = "mean absolute deviation no. cohorts", x = "") +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## mean age differences
 ## calculate avg weighted ages per stand first
@@ -1153,28 +1165,41 @@ plotData2 <- ageDataCN[, list(avgAgeBySppWeightedObs = mean(Reconstructed.age)),
                        by = .(Cover.dendro)]
 plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
-
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppWeightedObs)))),
-                      by = .(scenario, firePresAbs)]
-plotData <- plotData2[plotData, on = .(scenario, firePresAbs)]
+                      by = .(scenario, vegTypeCN, firePresAbs)]
+plotData <- plotData2[plotData, on = .(scenario, vegTypeCN, firePresAbs)]
 rm(plotData2)
 
+## differences
 plot32 <- ggplot(plotData,
-                 aes(x = vegTypeCN,
-                     y = AgeBySppWeighted - avgAgeBySppWeightedObs,
-                     fill = vegTypeCN)) +
+                   aes(x = scenario,
+                       y = AgeBySppWeighted - avgAgeBySppWeightedObs,
+                       fill = vegTypeCN)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_hline(mapping = aes(yintercept = meanAbsDevSimObs), size = 1, colour = "red") +
-  geom_boxplot(show.legend = FALSE) +
+  geom_boxplot() +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   labs(title = "Age differences between sim. and obs. data",
-       y = "mean age diff.", x = "",
-       subtitle = "presence/absence of fire") +
-  facet_grid(scenario ~ firePresAbs,
+       y = "mean age diff.", x = "") +
+  facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## mean absolute differences
+plot32.2 <- ggplot(plotData,
+                   aes(x = scenario, y = meanAbsDevSimObs,
+                       colour = vegTypeCN)) +
+  geom_point(size = 2) +
+  geom_line(aes(group = vegTypeCN), size = 1, show.legend = FALSE) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
+  labs(title = "Mean abs. age deviation between sim. and obs. data",
+       y = "mean absolute age deviation", x = "") +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
 
 ## BIODIVERSITY METRICS --------------------------------
 ## ALPHA DIVERSITY --------------
@@ -1218,7 +1243,9 @@ alphaStk <- lapply(split(plotData2, by = "scenario"), function(DT, RTM) {
 alphaStk <- stack(alphaStk)
 
 rasData <- data.table(vals = getValues(alphaStk), coordinates(alphaStk))
-rasData <- melt(rasData, id.vars = c("x", "y"))
+rasData <- rasData[!is.na(vals.noPM)]
+rasData[, delta := vals.noPM - vals.PM]
+rasData <- melt(rasData, id.vars = c("x", "y", "delta"))
 rasData$variable <- sub("vals.", "", rasData$variable)
 
 plotMap1 <- ggplot() +
@@ -1244,6 +1271,20 @@ plotMap1hist <- ggplot(rasData[!is.na(value)]) +
   theme(legend.title = element_blank()) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
   labs(y = "density", x = "mean alpha-div (years)")
+
+## delta plot
+plotMap1.2 <- ggplot() +
+  layer_spatial(data = preSimList$studyArea, col = "black",
+                fill = "grey85") +
+  geom_raster(data = rasData,
+              mapping = aes(x, y, fill = delta)) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(base_size = 16) +
+  scale_fill_distiller(palette = "RdBu", direction = 1,
+                       na.value = "transparent") +
+  labs(x = "longitude", y = "latitude", fill = expression(paste(Delta, "mean alpha-div.")))
 
 
 ## BETA DIVERSITY --------------
@@ -1651,6 +1692,7 @@ ageStk <- lapply(split(plotData, by = "scenario"), function(DT, RTM) {
 }, RTM = preSimList$rasterToMatch)
 ageStk <- stack(ageStk)
 
+## vegetation type
 rasData <- data.table(vals = getValues(vegTypeStk), coordinates(vegTypeStk))
 rasData <- melt(rasData, id.vars = c("x", "y"))
 rasData$variable <- sub("vals.", "", rasData$variable)
@@ -1684,8 +1726,11 @@ plotMap2hist <- ggplot(rasData[!is.na(value)]) +
   guides(alpha = guide_legend(nrow = 2)) +
   labs(y = "no. pixels")
 
+## age
 rasData <- data.table(vals = getValues(ageStk), coordinates(ageStk))
-rasData <- melt(rasData, id.vars = c("x", "y"))
+rasData <- rasData[!is.na(vals.noPM)]
+rasData[, delta := vals.noPM - vals.PM]
+rasData <- melt(rasData, id.vars = c("x", "y", "delta"))
 rasData$variable <- sub("vals.", "", rasData$variable)
 
 plotMap3 <- ggplot() +
@@ -1709,6 +1754,21 @@ plotMap3hist <- ggplot(rasData[!is.na(value)]) +
   theme(plot.margin = unit(c(0,0,0,0), units = "mm"), legend.title = element_blank()) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
   labs(y = "density", x = "age (years)")
+
+## delta plot
+plotMap3.2 <- ggplot() +
+  layer_spatial(data = preSimList$studyArea, col = "black",
+                fill = "grey85") +
+  geom_raster(data = rasData,
+              mapping = aes(x, y, fill = delta)) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(base_size = 16) +
+  scale_fill_distiller(palette = "RdBu", direction = 1,
+                       na.value = "transparent") +
+  labs(x = "longitude", y = "latitude", fill = expression(paste(Delta, "age")))
+
 
 ## SAVE PLOTS ------------------------------------------
 amc::.gc()
@@ -1825,13 +1885,23 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVe
 ggsave(plot = plot29, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
        width = 14, height = 7)
 
-ggsave(plot = plot32, filename = file.path(figOutputPath, "results_meanAgeDiff.tiff"),
+plotSave <- ggarrange(plot32 + theme(legend.position = "none"),
+                      get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
+                                   guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
+                      plot32.2 + theme(legend.position = "none"),
+                      widths = c(0.8, 0.2))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAgeDiff.tiff"),
        width = 14, height = 7)
 
 ggsave(plot = plot31, filename = file.path(figOutputPath, "results_noCohortsSimVsObs.tiff"),
        width = 14, height = 7)
 
-ggsave(plot = plot31.2, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
+plotSave <- ggarrange(plot31.2 + theme(legend.position = "none"),
+                      get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
+                                   guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
+                      plot31.3 + theme(legend.position = "none"),
+                      widths = c(0.8, 0.2))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
        width = 14, height = 7)
 
 plotSave <- ggarrange(plot1var +
@@ -1902,6 +1972,16 @@ plotSave <- ggarrange(plotMap2 + theme(legend.position = "none"),
                       ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgVegTypeAgeMap.tiff"),
        width = 13, height = 12)
+
+
+plotSave <- ggarrange(plotMap1.2 + theme(legend.position = "bottom") +
+                        guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
+                      plotMap3.2 + theme(legend.position = "bottom",
+                                         axis.text.y = element_blank(), axis.title.y = element_blank()) +
+                        guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
+                      ncol = 2, nrow = 1)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_deltaAvgAgeAlphaMap.tiff"),
+       width = 8, height = 8)
 
 plotSave <- ggarrange(plotTest1 +
                         theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
