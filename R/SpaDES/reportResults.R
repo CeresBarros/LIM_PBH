@@ -423,7 +423,7 @@ vegTypeCNLabels <- sub("^PSME$", "Douglas-fir", vegTypeCNLabels)
 vegTypeCNLabels <- sub("dryPSME", "Dry Douglas-fir", vegTypeCNLabels)
 
 vegTypeCNColours <- vegTypeCNLabels
-vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNColours), name = "Accent")
+vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNColours), name = "Set1")
 
 ## remove rasters to save memory
 rm(list = grep("Stk", ls(), value = TRUE))
@@ -445,7 +445,7 @@ setnames(plotData, "Cover.dendro", "vegTypeCN")
 
 plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppWeightedObs]
 plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData[, vegTypeCN := as.factor(vegTypeCN)]
+plotData[, vegTypeCN := vegTypeCN]
 plotData[, vegTypeCN := relevel(vegTypeCN, "PICO")]
 
 ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
@@ -874,7 +874,7 @@ amc::.gc()
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
 plot19 <- ggplot(data = plotData,
-                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
+                 aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -885,7 +885,7 @@ plot19 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot19.2 <- ggplot(data = plotData,
-                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
+                   aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -899,7 +899,7 @@ amc::.gc()
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, noFires, vegTypeCN)]
 plot20 <- ggplot(data = plotData,
-                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
+                 aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -909,7 +909,7 @@ plot20 <- ggplot(data = plotData,
   facet_grid(scenario ~ noFires)
 
 plot20.2 <- ggplot(data = plotData,
-                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegTypeCN))) +
+                   aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -922,7 +922,7 @@ plot20.2 <- ggplot(data = plotData,
 plotData <- allPixelCohortDataMnt[B > 0, list(noCohorts = length(unique(age))),
                                   by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, vegTypeCN)]
 plot21 <- ggplot(plotData,
-                 aes(x = year, y = noCohorts, colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = noCohorts, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -933,7 +933,7 @@ plot21 <- ggplot(plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot22 <- ggplot(data = plotData,
-                 aes(x = year, y = noCohorts, colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = noCohorts, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -946,7 +946,7 @@ plot22 <- ggplot(data = plotData,
 plotData <- summaryBurnCohortDataVegTypeCN[, list(BiomassByVegType = sum(BiomassByVegType)),
                                            by = .(scenario, year, rep, vegTypeCN, firePresAbs)]
 plot23 <- ggplot(data = plotData,
-                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -958,7 +958,7 @@ plot23 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot24 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
-                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = log(BiomassByVegType + 0.000001), colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -972,7 +972,7 @@ plot24 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
 plotData <- summaryBurnCohortDataVegTypeCN[, list(MortalityByVegType = sum(MortalityByVegType)),
                                            by = .(scenario, year, rep, vegTypeCN, firePresAbs)]
 plot25 <- ggplot(data = plotData,
-                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -983,7 +983,7 @@ plot25 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot26 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
-                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = log(MortalityByVegType + 0.000001), colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -998,7 +998,7 @@ plotData <- allPixelCohortDataMnt[, list(AgeBySppWeighted = as.numeric(sum(age *
                                                                          sum((B/100), na.rm = TRUE))),
                                   by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
 plot27 <- ggplot(data = plotData,
-                 aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = AgeBySppWeighted, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -1009,7 +1009,7 @@ plot27 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot28 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
-                 aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegTypeCN))) +
+                 aes(x = year, y = AgeBySppWeighted, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -1572,8 +1572,8 @@ plot11var <- ggplot(data = plotData,
 plotData <- summaryBurnCohortDataVegTypeCN[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
                                            by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plot12var <- ggplot(data = plotData,
-                    aes(x = as.factor(vegTypeCN), y = log(BiomassBySpecies + 0.000001),
-                        fill = as.factor(vegTypeCN))) +
+                    aes(x = vegTypeCN, y = log(BiomassBySpecies + 0.000001),
+                        fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
@@ -1860,11 +1860,10 @@ plotSave <- ggarrange(plot9.2,
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
-plotSave <- ggarrange(plot19.2 + theme(plot.subtitle = element_blank()),
+plotSave <- ggarrange(plot19.2,
                       plot20.2 +
-                        theme(plot.subtitle = element_blank(),
-                              axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = ""),
+                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+                        labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
                       legend = "bottom", common.legend = TRUE)
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypesCN.tiff"),
