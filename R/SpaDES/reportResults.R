@@ -664,7 +664,7 @@ plot5 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age across landscape", y = "biomass-weighted age",
+  labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -675,7 +675,7 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age across landscape", y = "biomass-weighted age",
+  labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
@@ -700,7 +700,7 @@ plot8 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. no. cohorts by species", y = "no. cohorts",
+  labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
   facet_grid(scenario ~ noFires)
 amc::.gc()
@@ -716,7 +716,8 @@ plot9 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dom. species)", y = "no. pixels") +
+  labs(title = "Abundance of cover type", y = "no. pixels",
+       subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -726,7 +727,8 @@ plot9.2 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dom. species)", y = "prop. pixels") +
+  labs(title = "Cover type abundance", y = "prop. pixels",
+       subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 amc::.gc()
@@ -739,7 +741,8 @@ plot10 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dom. species)", y = "no. pixels") +
+  labs(title = "Cover type abundance", y = "no. pixels",
+       subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ noFires)
 
 plot10.2 <- ggplot(data = plotData,
@@ -748,7 +751,8 @@ plot10.2 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Forest type (dom. species)", y = "prop. pixels") +
+  labs(title = "Cover type abundance", y = "prop. pixels",
+       subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ noFires)
 
 ## no. cohorts
@@ -760,8 +764,8 @@ plot11 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts", y = "no. cohorts",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
+       subtitle = "by dom. species cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -771,8 +775,8 @@ plot12 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. no. cohorts", y = "no. cohorts",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
+       subtitle = "by dom. species cover type") +
   facet_grid(scenario ~ noFires)
 
 ## total biomass
@@ -784,8 +788,8 @@ plot13 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -796,8 +800,8 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -810,8 +814,8 @@ plot15 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Total mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by dom. species cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -821,8 +825,8 @@ plot16 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type (dom. species)") +
+  labs(title = "Total mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -837,8 +841,8 @@ plot17 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. forest type age (dom. species)", y = "biomass-weighted age",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. age", y = "biomass-weighted age",
+       subtitle = "by dominant species cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -848,8 +852,8 @@ plot18 <- ggplot(data = summaryBurnCohortDataVegType,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
-  labs(title = "Avg. forest type age (dom. species)", y = "biomass-weighted age",
-       subtitle = "no. fires") +
+  labs(title = "Avg. age", y = "biomass-weighted age",
+       subtitle = "by dominant species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 amc::.gc()
@@ -865,8 +869,8 @@ plot19 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type", y = "no. pixels",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Cover type abundance", y = "no. pixels",
+       subtitle = "(functional cover type)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -876,8 +880,8 @@ plot19.2 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type", y = "prop. pixels",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Cover type abundance", y = "prop. pixels",
+       subtitle = "(functional cover type)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 amc::.gc()
@@ -890,8 +894,8 @@ plot20 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type", y = "no. pixels",
-       subtitle = "no. fires") +
+  labs(title = "Cover type abundance", y = "no. pixels",
+       subtitle = "(functional cover type)") +
   facet_grid(scenario ~ noFires)
 
 plot20.2 <- ggplot(data = plotData,
@@ -900,8 +904,8 @@ plot20.2 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type", y = "prop. pixels",
-       subtitle = "no. fires") +
+  labs(title = "Cover type abundance", y = "prop. pixels",
+       subtitle = "(functional cover type)") +
   facet_grid(scenario ~ noFires)
 
 ## no. cohorts
@@ -914,7 +918,7 @@ plot21 <- ggplot(plotData,
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
-       subtitle = "by forest type") +
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -925,7 +929,7 @@ plot22 <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
-       subtitle = "by forest type") +
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ noFires)
 
 ## total biomass
@@ -937,8 +941,8 @@ plot23 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type") +
+  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -949,8 +953,8 @@ plot24 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type") +
+  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
+       subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -963,8 +967,8 @@ plot25 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type") +
+  labs(title = "Total mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -974,8 +978,8 @@ plot26 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
-       subtitle = "by forest type") +
+  labs(title = "Total mortality", y = "log-biomass (ton/ha)",
+       subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -989,8 +993,8 @@ plot27 <- ggplot(data = plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. forest type age", y = "biomass-weighted age",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. age", y = "biomass-weighted age",
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1000,8 +1004,8 @@ plot28 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. forest type age", y = "biomass-weighted age",
-       subtitle = "no. fires") +
+  labs(title = "Avg. age", y = "biomass-weighted age",
+       subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ noFires)
 
@@ -1026,8 +1030,8 @@ plot29 <- ggplot(plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type age", y = "biomass-weighted age", x = "",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. stand age", y = "biomass-weighted age", x = "",
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1046,7 +1050,8 @@ plot29.2 <- ggplot(plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type age", y = "biomass-weighted age", x = "") +
+  labs(title = "Avg. stand age", y = "biomass-weighted age", x = "",
+       subtitle = "by functional cover type") +
   facet_grid(~ scenario)
 
 
@@ -1068,8 +1073,8 @@ plot30 <- ggplot(plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type age", y = "average age", x = "",
-       subtitle = "presence/absence of fire") +
+  labs(title = "Avg. stand age", y = "biomass-weighted age", x = "",
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1088,7 +1093,8 @@ plot30.2 <- ggplot(plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Forest type age", y = "average age", x = "") +
+  labs(title = "Avg. stand age", y = "biomass-weighted age", x = "",
+       subtitle = "by functional cover type") +
   facet_grid(~ scenario)
 
 ## no. cohorts at end of simulation vs cameron's - subset to common veg types
@@ -1107,8 +1113,8 @@ plot31 <- ggplot(data = plotData,
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Avg. no. cohorts", y = "no. cohorts", x = "",
-       subtitle = "by forest type") +
+  labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts", x = "",
+       subtitle = "by functional cover type") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1378,7 +1384,7 @@ plot2var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
-  labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
+  labs(title = "Avg. stand biomass (year 100)", y = "biomass (ton/ha)",
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
@@ -1395,7 +1401,7 @@ plot3var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
-  labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
+  labs(title = "Avg. age (year 100)", y = "biomass-weighted age",
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
@@ -1415,7 +1421,7 @@ plot4var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
-  labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
+  labs(title = "Avg. stand age (year 100)", y = "biomass-weighted age",
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
@@ -1453,7 +1459,7 @@ plot6var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
-       x = "" , subtitle = "by forest type (dom. species)") +
+       x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1470,8 +1476,8 @@ plot7var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
-  labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
-       x = "" , subtitle = "by forest type (dom. species)") +
+  labs(title = "Avg. stand biomass (year 100)", y = "biomass (ton/ha)",
+       x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1487,8 +1493,8 @@ plot8var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
-  labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
-       x = "" , subtitle = "by forest type (dom. species)") +
+  labs(title = "Avg. age (year 100)", y = "biomass-weighted age",
+       x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1507,8 +1513,8 @@ plot9var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
-  labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
-       x = "" , subtitle = "by forest type (dom. species)") +
+  labs(title = "Avg. stand age (year 100)", y = "biomass-weighted age",
+       x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1530,7 +1536,7 @@ plot10var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels, drop = FALSE) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
-       x = "" , subtitle = "by forest type (dom. species)") +
+       x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1545,8 +1551,8 @@ plot11var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
-  labs(title = "Forest type (year 100)", y = "no. pixels",
-       x = "" , subtitle = "by forest type (dom. species)") +
+  labs(title = "Abundance of cover type (year 100)", y = "no. pixels",
+       x = "" , subtitle = "(dominant species cover type)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1564,7 +1570,7 @@ plot12var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
-       x = "" , subtitle = "by forest type") +
+       x = "" , subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1581,8 +1587,8 @@ plot13var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Avg. biomass in a stand (year 100)", y = "biomass (ton/ha)",
-       x = "" , subtitle = "by forest type") +
+  labs(title = "Avg. stand biomass (year 100)", y = "biomass (ton/ha)",
+       x = "" , subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1598,8 +1604,8 @@ plot14var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Avg. biomass-weighted age (year 100)", y = "years",
-       x = "" , subtitle = "by forest type") +
+  labs(title = "Avg. age (year 100)", y = "biomass-weighted age",
+       x = "" , subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1618,8 +1624,8 @@ plot15var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Avg. biomass-weighted age in a stand (year 100)", y = "years",
-       x = "" , subtitle = "by forest type") +
+  labs(title = "Avg. stand age (year 100)", y = "biomass-weighted age",
+       x = "" , subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1638,7 +1644,7 @@ plot16var <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
-       x = "" , subtitle = "by forest type") +
+       x = "" , subtitle = "by functional cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1653,8 +1659,8 @@ plot17var <- ggplot(data = plotData,
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Forest type (year 100)", y = "no. pixels",
-       x = "" , subtitle = "by forest type") +
+  labs(title = "Abundance of cover type (year 100)", y = "no. pixels",
+       x = "" , subtitle = "(functional cover type)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
