@@ -1891,7 +1891,7 @@ plotSave <- ggarrange(plot32 + theme(legend.position = "none"),
                       plot32.2 + theme(legend.position = "none"),
                       widths = c(0.8, 0.2))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAgeDiff.tiff"),
-       width = 14, height = 7)
+       width = 10, height = 8)
 
 ggsave(plot = plot31, filename = file.path(figOutputPath, "results_noCohortsSimVsObs.tiff"),
        width = 14, height = 7)
@@ -1902,7 +1902,7 @@ plotSave <- ggarrange(plot31.2 + theme(legend.position = "none"),
                       plot31.3 + theme(legend.position = "none"),
                       widths = c(0.8, 0.2))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
-       width = 14, height = 7)
+       width = 10, height = 8)
 
 plotSave <- ggarrange(plot1var +
                         theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
