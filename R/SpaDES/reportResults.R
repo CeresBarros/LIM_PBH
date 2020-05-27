@@ -341,9 +341,19 @@ vegTypesCN <- rbindlist(vegTypesCN, use.names = TRUE)
 cols <- c("scenario", "rep", "year", "pixelGroup", "vegTypeCN")
 allPixelCohortDataMnt <- unique(vegTypesCN[, ..cols])[allPixelCohortDataMnt,
                                                       on = c("scenario", "rep", "year", "pixelGroup")]
+
+if (any(is.na(allPixelCohortDataMnt$vegTypeCN) & allPixelCohortDataMnt$B > 0))
+  stop("Some pixels with biomass were not assigned a vegTypeCN")
+
+allPixelCohortDataMnt[is.na(vegTypeCN), vegTypeCN := "No veg."]
 allPixelCohortDataMnt[, `:=`(sumB = NULL,
                              relB = NULL,
                              vegType = NULL)]
+## make "No veg." the last factor
+levs <- c(sort(grep("No veg.", unique(allPixelCohortDataMnt$vegTypeCN), value = TRUE, invert = TRUE)),
+          "No veg.")
+allPixelCohortDataMnt[, vegTypeCN := factor(vegTypeCN, levels = levs)]
+
 amc::.gc()
 
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
