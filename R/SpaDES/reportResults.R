@@ -720,23 +720,31 @@ amc::.gc()
 ## no. pixels
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, firePresAbs, vegType)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "firePresAbs"),
+       variable.name = "vegType", value.name = "noPixelsVeg")
+
 plot9 <- ggplot(data = plotData,
-                aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
+                aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Abundance of cover type", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot9.2 <- ggplot(data = plotData,
-                  aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
-  stat_summary(fun = "mean", geom = "line", size = 1) +
+                  aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
@@ -745,22 +753,30 @@ amc::.gc()
 
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, noFires, vegType)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "noFires"),
+       variable.name = "vegType", value.name = "noPixelsVeg")
+
 plot10 <- ggplot(data = plotData,
-                 aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
-  stat_summary(fun = "mean", geom = "line", size = 1) +
+                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ noFires)
 
 plot10.2 <- ggplot(data = plotData,
-                   aes(x = year, y = noPixelsVeg, colour = as.factor(vegType))) +
-  stat_summary(fun = "mean", geom = "line", size = 1) +
+                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
+  stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
+  scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ noFires)
@@ -873,6 +889,14 @@ amc::.gc()
 ## no. pixels
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegTypeCN, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "firePresAbs"),
+       variable.name = "vegTypeCN", value.name = "noPixelsVeg")
+
 plot19 <- ggplot(data = plotData,
                  aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
@@ -898,6 +922,14 @@ amc::.gc()
 
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, noFires, vegTypeCN)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegTypeCN, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "noFires"),
+       variable.name = "vegTypeCN", value.name = "noPixelsVeg")
+
 plot20 <- ggplot(data = plotData,
                  aes(x = year, y = noPixelsVeg, fill = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
@@ -1554,6 +1586,14 @@ plot10var <- ggplot(data = plotData,
 ## no. pixels
 plotData <- allPixelCohortData[year == 100, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, firePresAbs, vegType)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "firePresAbs"),
+       variable.name = "vegType", value.name = "noPixelsVeg")
+
 plot11var <- ggplot(data = plotData,
                     aes(x = as.factor(vegType), y = noPixelsVeg, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
@@ -1662,6 +1702,14 @@ plot16var <- ggplot(data = plotData,
 ## no. pixels
 plotData <- allPixelCohortDataMnt[year == 100, list(noPixelsVeg = length(unique(pixelIndex))),
                                   by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
+## add 0s to missing veg types in a year
+plotData <- plotData %>%
+  tidyr::pivot_wider(names_from = vegTypeCN, values_from = noPixelsVeg,
+                     values_fill = list(noPixelsVeg = 0)) %>%
+  as.data.table(.) %>%
+  melt(., id.vars = c("scenario", "year", "rep", "firePresAbs"),
+       variable.name = "vegTypeCN", value.name = "noPixelsVeg")
+
 plot17var <- ggplot(data = plotData,
                     aes(x = vegTypeCN, y = noPixelsVeg, fill = vegTypeCN)) +
   geom_boxplot(show.legend = FALSE) +
