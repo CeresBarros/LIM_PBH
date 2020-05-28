@@ -1190,7 +1190,7 @@ plot31.2 <- ggplot(plotData,
                        fill = vegTypeCN)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   labs(title = "Differences in no. cohorts from field data",
@@ -1204,7 +1204,7 @@ plot31.3 <- ggplot(plotData,
                        colour = vegTypeCN)) +
   geom_point(size = 2) +
   geom_line(aes(group = vegTypeCN), size = 1, show.legend = FALSE) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
@@ -1237,7 +1237,7 @@ plot32 <- ggplot(plotData,
                        fill = vegTypeCN)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   labs(title = "Avg. age differences from field data",
@@ -1250,9 +1250,11 @@ plot32.2 <- ggplot(plotData,
                    aes(x = scenario, y = meanAbsDevSimObs,
                        colour = vegTypeCN)) +
   geom_point(size = 3) +
-  geom_line(aes(group = vegTypeCN), size = 1, show.legend = FALSE) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(),
+        panel.grid.major = element_line(colour = "grey", size = 11/22),
+        panel.grid.minor = element_line(colour = "grey", size = 11/22)
+        ) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
   labs(title = "Mean abs. age deviation from field data",
@@ -1792,7 +1794,7 @@ plotMap2 <- ggplot() +
 plotMap2hist <- ggplot(rasData[!is.na(value)]) +
   geom_bar(aes(x = as.factor(value), fill = as.factor(value),
                alpha = variable == "PM"), position = "dodge") +
-  theme_pubr(base_size = 16, x.text.angle = 45) +
+  theme_pubr(base_size = 16) +
   theme(plot.margin = unit(c(0,0,0,0), units = "mm"), legend.title = element_blank(),
         axis.title.x = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels,
