@@ -445,8 +445,6 @@ setnames(plotData, "Cover.dendro", "vegTypeCN")
 
 plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppWeightedObs]
 plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData[, vegTypeCN := vegTypeCN]
-plotData[, vegTypeCN := relevel(vegTypeCN, "PICO")]
 
 ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
   lme4::lmer(abs(ageDiffSimObs) ~ scenario + (scenario | vegTypeCN), data = DT)
