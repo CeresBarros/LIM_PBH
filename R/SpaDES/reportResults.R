@@ -504,7 +504,7 @@ plotTest2 <- ggplot(plotData) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank()) +
-  labs(y = "biomass-weighted age (years)", x = "")
+  labs(y = "biomass-weighted age", x = "")
 
 ## SCENARIO EFFECTS ON ALPHA DIVERSITY ------------------
 ## scenario effects on alpha-div across landscape
