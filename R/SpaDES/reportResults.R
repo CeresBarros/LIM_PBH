@@ -465,10 +465,24 @@ plotTest1 <- ggplot(plotData) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank()) +
-  labs(title = "Age differences between sim. and obs. data",
+  labs(title = "Avg. age differences from field data",
        y = expression(bgroup("|", "sim." - bar("obs."), "|")),
        x = "") +
   facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
+
+plotTest1.2 <- ggplot(plotData) +
+  geom_boxplot(aes(x = firePresAbs, y = abs(ageDiffSimObs), fill = scenario)) +
+  stat_summary(mapping = aes(x = firePresAbs, y = predVals, group = scenario),
+               fun.data = "mean_sdl", position = position_dodge(width = 0.75),
+               size = 1, colour = "red", show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(title = "Avg. age differences from field data",
+       y = expression(bgroup("|", "sim." - bar("obs."), "|")),
+       x = "")
 
 ## SCENARIO EFFECTS ON STAND AGE------
 ## scenario effects on stand age across landscape
@@ -1181,8 +1195,8 @@ plot31.2 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Differences in no. cohorts between sim. and obs. data",
-       y = "mean no. cohort diff.", x = "") +
+  labs(title = "Differences in no. cohorts from field data",
+       y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1196,8 +1210,8 @@ plot31.3 <- ggplot(plotData,
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
-  labs(title = "Mean abs. deviation of no. cohorts between sim. and obs. data",
-       y = "mean absolute deviation no. cohorts", x = "") +
+  labs(title = "Mean abs. deviation of no. cohorts from field data",
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1228,8 +1242,8 @@ plot32 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  labs(title = "Age differences between sim. and obs. data",
-       y = "mean age diff.", x = "") +
+  labs(title = "Avg. age differences from field data",
+       y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1237,14 +1251,15 @@ plot32 <- ggplot(plotData,
 plot32.2 <- ggplot(plotData,
                    aes(x = scenario, y = meanAbsDevSimObs,
                        colour = vegTypeCN)) +
-  geom_point(size = 2) +
+  geom_point(size = 3) +
   geom_line(aes(group = vegTypeCN), size = 1, show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
   scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
   scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
-  labs(title = "Mean abs. age deviation between sim. and obs. data",
-       y = "mean absolute age deviation", x = "") +
+  labs(title = "Mean abs. age deviation from field data",
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
+  guides(colour = guide_legend(override.aes = list(size = 5))) +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
@@ -1265,7 +1280,7 @@ plot33 <- ggplot(data = plotData,
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  labs(y = "mean alpha-div.") +
+  labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1275,7 +1290,7 @@ plot34 <- ggplot(data = plotData,
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  labs(y = "mean alpha-div.") +
+  labs(title = "Avg. alpha-diversity", y = "mean alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ noFires)
 
@@ -1366,7 +1381,7 @@ plot35 <- ggplot(data = plotData2,
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  labs(y = "mean beta-div.") +
+  labs(title = "Avg. beta-diversity", y = "beta-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
@@ -1390,7 +1405,7 @@ plot36 <- ggplot(data = plotData2,
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank()) +
-  labs(y = "mean beta-div.") +
+  labs(title = "Avg. beta-diversity", y = "beta-div.")  +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ noFires)
 
@@ -1953,7 +1968,7 @@ plotSave <- ggarrange(plot32 + theme(legend.position = "none"),
                                    guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
                       plot32.2 + theme(legend.position = "none"),
                       widths = c(0.8, 0.2))
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAgeDiff.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDiff.tiff"),
        width = 10, height = 8)
 
 ggsave(plot = plot31, filename = file.path(figOutputPath, "results_noCohortsSimVsObs.tiff"),
@@ -1966,6 +1981,11 @@ plotSave <- ggarrange(plot31.2 + theme(legend.position = "none"),
                       widths = c(0.8, 0.2))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
        width = 10, height = 8)
+
+plotSave <- ggarrange(plot33,
+                      plot35, common.legend = TRUE, legend = "top")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAlphaBetaScenario.tiff"),
+       width = 14, height = 6)
 
 plotSave <- ggarrange(plot1var +
                         theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
@@ -2048,9 +2068,10 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_deltaAvgAge
 
 plotSave <- ggarrange(plotTest1 +
                         theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
-                              legend.key.size = unit(1.5, "cm")))
+                              legend.key.size = unit(1.5, "cm")),
+                      plotTest1.2 + theme(legend.position = "none"))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTestBP.tiff"),
-       width = 12, height = 7)
+       width = 14, height = 7)
 
 plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
                       plotTest3 + theme(legend.position = "none"),
