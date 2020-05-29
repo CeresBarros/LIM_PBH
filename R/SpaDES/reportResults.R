@@ -458,7 +458,6 @@ plotTest1 <- ggplot(plotData) +
   geom_boxplot(aes(x = firePresAbs, y = abs(ageDiffSimObs), fill = scenario)) +
   geom_point(aes(x = firePresAbs, y = predVals, colour = scenario),
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
-  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
@@ -559,7 +558,7 @@ plotTest3 <- ggplot(plotData) +
   labs(y = "alpha-div.", x = "")
 
 ## SCENARIO EFFECTS ON BETA DIVERSITY ------------------
-## scenario effects on beta-div across landscape
+## scenario effects on beta-div across landscape - with fire vs. no fire
 ## from multiplicative decomposition where both alpha
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
 # alpha-div
@@ -616,10 +615,59 @@ plotTest4 <- ggplot(plotData2) +
   theme(legend.title = element_blank()) +
   labs(y = "beta-div.", x = "")
 
+
+## scenario effects on beta-div across landscape - regardless of fire presence
+## from multiplicative decomposition where both alpha
+## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
+# alpha-div
+plotData <- allPixelCohortData[year == max(year)]
+plotData[, sumB := sum(B, na.rm = TRUE),
+         by = .(scenario, rep, pixelIndex, ecoregionGroup)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, pixelIndex, speciesCode, ecoregionGroup)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, pixelIndex, ecoregionGroup)]
+
+## gamma-div
+plotData2 <- allPixelCohortData[year == max(year),
+                                list(BiomassBySpecies = sum(B, na.rm = TRUE)),
+                                by = .(scenario, rep, speciesCode, ecoregionGroup)]
+plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
+          .(scenario, rep, ecoregionGroup)]
+plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
+                       by = .(scenario, rep, speciesCode, ecoregionGroup)]
+plotData2 <- plotData2[, list(gammaDiv = 1/sum(relB^2)),
+                       by = .(scenario, rep, ecoregionGroup)]
+
+## beta-div
+plotData2 <- plotData2[plotData, on = .(scenario, rep, ecoregionGroup)]
+plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na.rm = TRUE)),
+                       by = .(scenario, rep, ecoregionGroup)]
+
+plotData2[, ecoregionGroup := as.factor(ecoregionGroup)]
+plotData2 <- unique(plotData2[!is.na(ecoregionGroup) & !is.na(betaDiv)])
+
+## some ecoregionGroups only have one observation, leading to signular fit
+betaEffectsLMList2 <- lme4::lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = plotData2)
+## no effect - pixels wihout fire dampen the response.
+plotData2[, predVals := predict(betaEffectsLMList2, type = "response", re.form = NA)]
+
+plotTest5 <- ggplot(plotData2) +
+  geom_boxplot(aes(x = scenario, y = betaDiv, fill = scenario)) +
+  geom_point(aes(x = scenario, y = predVals, colour = scenario),
+             position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
+  geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
+  scale_color_manual(values = c("red", "red")) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank()) +
+  labs(y = "beta-div.", x = "")
+
+
 saveRDS(ageDiffLMList, file = file.path(simPaths$outputPath, "ageDiffModel.rds"))
 saveRDS(ageEffectsLMList, file = file.path(simPaths$outputPath, "ageEffectsModel.rds"))
 saveRDS(alphaEffectsLMList, file = file.path(simPaths$outputPath, "alphaEffectsModel.rds"))
 saveRDS(betaEffectsLMList, file = file.path(simPaths$outputPath, "betaEffectsModel.rds"))
+saveRDS(betaEffectsLMList2, file = file.path(simPaths$outputPath, "betaEffectsModel.rds"))
 
 ## PLOTS -----------------------------------------------
 ## MODELLED PROPERTIES ---------------------------------
@@ -1333,7 +1381,7 @@ plotMap1hist <- ggplot(rasData[!is.na(value)]) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank()) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
-  labs(y = "density", x = "mean alpha-div (years)")
+  labs(y = "density", x = "alpha-div.")
 
 ## delta plot
 plotMap1.2 <- ggplot() +
@@ -1347,7 +1395,7 @@ plotMap1.2 <- ggplot() +
   theme_pubr(base_size = 16) +
   scale_fill_distiller(palette = "RdBu", direction = 1,
                        na.value = "transparent") +
-  labs(x = "longitude", y = "latitude", fill = expression(paste(Delta, "mean alpha-div.")))
+  labs(x = "longitude", y = "latitude", fill = expression(paste(Delta, "alpha-div.")))
 
 
 ## BETA DIVERSITY --------------
