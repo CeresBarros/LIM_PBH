@@ -668,7 +668,7 @@ saveRDS(ageDiffLMList, file = file.path(simPaths$outputPath, "ageDiffModel.rds")
 saveRDS(ageEffectsLMList, file = file.path(simPaths$outputPath, "ageEffectsModel.rds"))
 saveRDS(alphaEffectsLMList, file = file.path(simPaths$outputPath, "alphaEffectsModel.rds"))
 saveRDS(betaEffectsLMList, file = file.path(simPaths$outputPath, "betaEffectsModel.rds"))
-saveRDS(betaEffectsLMList2, file = file.path(simPaths$outputPath, "betaEffectsModel.rds"))
+saveRDS(betaEffectsLMList2, file = file.path(simPaths$outputPath, "betaEffectsModel2.rds"))
 
 ## PLOTS -----------------------------------------------
 ## MODELLED PROPERTIES ---------------------------------
