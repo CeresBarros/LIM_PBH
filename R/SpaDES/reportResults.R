@@ -411,7 +411,7 @@ vegTypeColours <- as.character(levels(vegTypeMapStk_noPM[[1]])[[1]]$colors)
 vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
 names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
 
-vegTypeCNLabels <- unique(summaryBurnCohortDataVegTypeCN$vegTypeCN)
+vegTypeCNLabels <- unique(as.character(summaryBurnCohortDataVegTypeCN$vegTypeCN))
 names(vegTypeCNLabels) <- vegTypeCNLabels
 vegTypeCNLabels <- sub("PIEN", "Spruce", vegTypeCNLabels)
 vegTypeCNLabels <- sub("MMC", "Moist conif.", vegTypeCNLabels)
