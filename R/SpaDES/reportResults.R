@@ -1296,21 +1296,21 @@ plot32 <- ggplot(plotData,
 
 ## mean absolute differences
 plot32.2 <- ggplot(plotData,
-                   aes(x = scenario, y = meanAbsDevSimObs,
-                       colour = vegTypeCN)) +
-  geom_point(size = 3) +
+                   aes(x = vegTypeCN, y = meanAbsDevSimObs,
+                       colour = scenario)) +
+  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
-        panel.grid.major = element_line(colour = "grey", size = 11/22),
-        panel.grid.minor = element_line(colour = "grey", size = 11/22)
-        ) +
-  scale_colour_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+        panel.grid.major.x = element_line(colour = "grey", size = 11/22),
+        panel.grid.minor.x = element_line(colour = "grey", size = 11/22)) +
   scale_y_continuous(limits = c(0, max(plotData$meanAbsDevSimObs))) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Mean abs. age deviation from field data",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
-  guides(colour = guide_legend(override.aes = list(size = 5))) +
+  coord_flip() +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
 
 
 ## BIODIVERSITY METRICS --------------------------------
@@ -2022,14 +2022,13 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVe
 ggsave(plot = plot29, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
        width = 14, height = 7)
 
-plotSave <- ggarrange(plot32 + theme(legend.position = "none"),
-                      get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
-                                   guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
-                      plot32.2 + theme(legend.position = "none"),
-                      widths = c(0.8, 0.2),
-                      labels = c("a", "", "b"), font.label = list(size = 20))
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDiff.tiff"),
-       width = 10, height = 8)
+ggsave(plot = plot32 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAgeDiff.tiff"),
+       width = 14, height = 7)
+
+ggsave(plot = plot32.2 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAbsAgeDev.tiff"),
+       width = 10, height = 5)
 
 ggsave(plot = plot31, filename = file.path(figOutputPath, "results_noCohortsSimVsObs.tiff"),
        width = 14, height = 7)
