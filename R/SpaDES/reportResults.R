@@ -1904,7 +1904,8 @@ plotSave <- ggarrange(plot1,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeB.tiff"),
        width = 14, height = 7)
 
@@ -1913,7 +1914,8 @@ plotSave <- ggarrange(plot13 + theme(plot.title = element_text(size = 17)),
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBVegType.tiff"),
        width = 14, height = 7)
 
@@ -1922,7 +1924,8 @@ plotSave <- ggarrange(plot23,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBVegTypeCN.tiff"),
        width = 14, height = 7)
 
@@ -1940,7 +1943,8 @@ plotSave <- ggarrange(plot5,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
        width = 14, height = 7)
 
@@ -1949,7 +1953,8 @@ plotSave <- ggarrange(plot17,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAgeVegType.tiff"),
        width = 14, height = 7)
 
@@ -1958,7 +1963,8 @@ plotSave <- ggarrange(plot27,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAgeVegTypeCN.tiff"),
        width = 14, height = 7)
 
@@ -1966,8 +1972,9 @@ plotSave <- ggarrange(plot9.2,
                       plot10.2 +
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      widths = c(0.4, 0.7), labels = "auto", font.label = list(size = 20),
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
@@ -1976,7 +1983,8 @@ plotSave <- ggarrange(plot19.2,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypesCN.tiff"),
        width = 14, height = 7)
 
@@ -1986,7 +1994,8 @@ plotSave <- ggarrange(plot7 + theme(plot.subtitle = element_blank()),
                               axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohorts.tiff"),
        width = 14, height = 7)
 
@@ -1995,7 +2004,8 @@ plotSave <- ggarrange(plot11,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVegType.tiff"),
        width = 14, height = 7)
 
@@ -2004,7 +2014,8 @@ plotSave <- ggarrange(plot21,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
                       widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsVegTypeCN.tiff"),
        width = 14, height = 7)
 
@@ -2015,7 +2026,8 @@ plotSave <- ggarrange(plot32 + theme(legend.position = "none"),
                       get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
                                    guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
                       plot32.2 + theme(legend.position = "none"),
-                      widths = c(0.8, 0.2))
+                      widths = c(0.8, 0.2),
+                      labels = c("a", "", "b"), font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDiff.tiff"),
        width = 10, height = 8)
 
@@ -2026,12 +2038,14 @@ plotSave <- ggarrange(plot31.2 + theme(legend.position = "none"),
                       get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
                                    guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
                       plot31.3 + theme(legend.position = "none"),
-                      widths = c(0.8, 0.2))
+                      widths = c(0.8, 0.2),
+                      labels = c("a", "", "b"), font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
        width = 10, height = 8)
 
 plotSave <- ggarrange(plot33,
-                      plot35, common.legend = TRUE, legend = "top")
+                      plot35, common.legend = TRUE, legend = "top",
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAlphaBetaScenario.tiff"),
        width = 14, height = 6)
 
@@ -2046,7 +2060,8 @@ plotSave <- ggarrange(plot1var +
                                        plot.margin = margin(0,0,0,5, unit = "mm")) +
                         labs(title = "", subtitle = ""), ncol = 1,
                       heights = c(1, 0.9, 1.3),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVar.tiff"),
        width = 7, height = 12)
 
@@ -2060,7 +2075,8 @@ plotSave <- ggarrange(plot6var + theme(plot.subtitle = element_blank(),
                       plot11var + theme(plot.subtitle = element_blank()),
                       ncol = 2, nrow = 2,
                       heights = c(1, 1.6),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegType.tiff"),
        width = 14, height = 9)
 
@@ -2076,14 +2092,16 @@ plotSave <- ggarrange(plot12var +
                         theme(plot.margin = margin(t = 6, unit = "mm"), plot.subtitle = element_blank()),
                       ncol = 2, nrow = 2,
                       heights = c(1, 1.6),
-                      legend = "bottom", common.legend = TRUE)
+                      legend = "bottom", common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBAgeCohortsVarVegTypeCN.tiff"),
        width = 14, height = 9)
 
 plotSave <- ggarrange(plotMap1 + theme(legend.position = "right"),
                       plotMap1hist +
                         theme(legend.position = c(0.7, 0.95), legend.justification = c("left", "top")),
-                      ncol = 1, heights = c(2,1), widths = c(0.98, 1))
+                      ncol = 1, heights = c(2,1), widths = c(0.98, 1),
+                      labels = "auto", font.label = list(size = 24))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgAlphaDivMap.tiff"),
        width = 8, height = 12)
 
@@ -2100,7 +2118,8 @@ plotSave <- ggarrange(plotMap2 + theme(legend.position = "none"),
                         theme(legend.position = c(0.95, 0.95),
                               legend.justification = c("right", "top")),
                       get_legend(plotMap2hist),
-                      ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1))
+                      ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1),
+                      labels = c("a", "b", "", "", ""), font.label = list(size = 24))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgVegTypeAgeMap.tiff"),
        width = 13, height = 12)
 
@@ -2110,14 +2129,16 @@ plotSave <- ggarrange(plotMap1.2 + theme(legend.position = "bottom") +
                       plotMap3.2 + theme(legend.position = "bottom",
                                          axis.text.y = element_blank(), axis.title.y = element_blank()) +
                         guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
-                      ncol = 2, nrow = 1)
+                      ncol = 2, nrow = 1,
+                      labels = c("a", "b", ""), font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_deltaAvgAgeAlphaMap.tiff"),
        width = 8, height = 8)
 
 plotSave <- ggarrange(plotTest1 +
                         theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
                               legend.key.size = unit(1.5, "cm")),
-                      plotTest1.2 + theme(legend.position = "none"))
+                      plotTest1.2 + theme(legend.position = "none"),
+                      labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTestBP.tiff"),
        width = 14, height = 7)
 
@@ -2125,7 +2146,8 @@ plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
                       plotTest3 + theme(legend.position = "none"),
                       plotTest4 + theme(legend.position = "none"),
                       get_legend(plotTest2 + theme(legend.key.size = unit(1.5, "cm"))),
-                      ncol = 2, nrow = 2)
+                      ncol = 2, nrow = 2,
+                      labels = c("a", "b", "c", ""), font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageAlphaBetaDivEffectsTestBP.tiff"),
        width = 12, height = 7)
 
