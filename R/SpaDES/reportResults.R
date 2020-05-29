@@ -2144,7 +2144,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 
 plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
                       plotTest3 + theme(legend.position = "none"),
-                      plotTest4 + theme(legend.position = "none"),
+                      plotTest5 + theme(legend.position = "none"),
                       get_legend(plotTest2 + theme(legend.key.size = unit(1.5, "cm"))),
                       ncol = 2, nrow = 2,
                       labels = c("a", "b", "c", ""), font.label = list(size = 20))
