@@ -2121,7 +2121,7 @@ plotSave <- ggarrange(plotMap2 + theme(legend.position = "none"),
                       ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1),
                       labels = c("a", "b", "", "", ""), font.label = list(size = 24))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgVegTypeAgeMap.tiff"),
-       width = 13, height = 12)
+       width = 14, height = 12)
 
 
 plotSave <- ggarrange(plotMap1.2 + theme(legend.position = "bottom") +
