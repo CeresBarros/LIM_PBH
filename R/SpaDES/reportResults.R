@@ -14,6 +14,7 @@ library(magick)
 library(LandR)
 library(future)
 library(future.apply)
+library(lme4)
 
 source("R/R_tools/convertToCNVegType.R")
 
@@ -447,7 +448,7 @@ plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppWeightedObs]
 plotData[, firePresAbs := as.factor(firePresAbs)]
 
 ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
-  lme4::lmer(abs(ageDiffSimObs) ~ scenario + (scenario | vegTypeCN), data = DT)
+  lmer(abs(ageDiffSimObs) ~ scenario + (scenario | vegTypeCN), data = DT)
 })
 summary(ageDiffLMList$`0`)
 
@@ -494,7 +495,7 @@ plotData <- plotData[!is.na(ecoregionGroup) & !is.na(AgeBySppWeighted)]
 
 ## some ecoregionGroups only have one observation, leading to signular fit
 ageEffectsLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
-  lme4::lmer(AgeBySppWeighted ~ scenario + (scenario | ecoregionGroup), data = DT)
+  lmer(AgeBySppWeighted ~ scenario + (scenario | ecoregionGroup), data = DT)
 })
 summary(ageEffectsLMList$`1`)
 
@@ -534,7 +535,7 @@ plotData <- plotData[!is.na(ecoregionGroup) & !is.na(alphaDiv)]
 
 ## some ecoregionGroups only have one observation, leading to signular fit
 alphaEffectsLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
-  lme4::lmer(alphaDiv ~ scenario + (scenario | ecoregionGroup), data = DT)
+  lmer(alphaDiv ~ scenario + (scenario | ecoregionGroup), data = DT)
 })
 summary(alphaEffectsLMList$`1`)
 
@@ -592,7 +593,7 @@ plotData2 <- unique(plotData2[!is.na(ecoregionGroup) & !is.na(betaDiv)])
 
 ## some ecoregionGroups only have one observation, leading to signular fit
 betaEffectsLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
-  lme4::lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = DT)
+  lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = DT)
 })
 summary(betaEffectsLMList$`1`)
 
@@ -648,7 +649,7 @@ plotData2[, ecoregionGroup := as.factor(ecoregionGroup)]
 plotData2 <- unique(plotData2[!is.na(ecoregionGroup) & !is.na(betaDiv)])
 
 ## some ecoregionGroups only have one observation, leading to signular fit
-betaEffectsLMList2 <- lme4::lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = plotData2)
+betaEffectsLMList2 <- lmer(betaDiv ~ scenario + (1|ecoregionGroup), data = plotData2)
 ## no effect - pixels wihout fire dampen the response.
 plotData2[, predVals := predict(betaEffectsLMList2, type = "response", re.form = NA)]
 
