@@ -15,6 +15,7 @@ library(LandR)
 library(future)
 library(future.apply)
 library(lme4)
+library(MuMIn)
 
 source("R/R_tools/convertToCNVegType.R")
 
@@ -2151,3 +2152,35 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageAlphaBet
        width = 12, height = 7)
 
 q("no")
+
+
+## stats models outputs:
+ageDiffModel <- readRDS("R/SpaDES/outputs/ageDiffModel.rds")
+ageEffectsModel <- readRDS("R/SpaDES/outputs/ageEffectsModel.rds")
+alphaEffectsModel <- readRDS("R/SpaDES/outputs/alphaEffectsModel.rds")
+betaEffectsModel <- readRDS("R/SpaDES/outputs/betaEffectsModel.rds")
+betaEffectsModel2 <- readRDS("R/SpaDES/outputs/betaEffectsModel2.rds")
+
+summary(ageDiffModel$`0`)
+r.squaredGLMM(ageDiffModel$`0`)
+anova(ageDiffModel$`0`)
+
+summary(ageDiffModel$`1`)
+r.squaredGLMM(ageDiffModel$`1`)
+
+summary(ageEffectsModel$`0`)
+r.squaredGLMM(ageEffectsModel$`0`)
+summary(ageEffectsModel$`1`)
+r.squaredGLMM(ageEffectsModel$`1`)
+
+summary(alphaEffectsModel$`0`)
+r.squaredGLMM(alphaEffectsModel$`0`)
+summary(alphaEffectsModel$`1`)
+r.squaredGLMM(alphaEffectsModel$`1`)
+
+summary(betaEffectsModel2)
+r.squaredGLMM(betaEffectsModel2)
+
+
+
+
