@@ -1973,8 +1973,7 @@ plotSave <- ggarrange(plot9.2,
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = ""),
                       widths = c(0.4, 0.7), labels = "auto", font.label = list(size = 20),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+                      legend = "bottom", common.legend = TRUE)
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVegTypes.tiff"),
        width = 14, height = 7)
 
