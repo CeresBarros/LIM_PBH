@@ -1312,7 +1312,54 @@ plot32.2 <- ggplot(plotData,
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
+## no. fires per cover type - to compare with camerons fire intervals.
+plotData <- unique(allPixelCohortDataMnt[noFires > 0, .(scenario, rep, pixelIndex, noFires, vegTypeCN)])
 
+plot37 <- ggplot(plotData,
+                 aes(x = vegTypeCN, y = noFires, fill = vegTypeCN)) +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  labs(title = "No. fires", y = "no. fires",
+       subtitle = "by functional cover type") +
+  facet_grid(~ scenario)
+
+plot38 <- ggplot(plotData,
+                 aes(x = vegTypeCN, y = 100/noFires, fill = vegTypeCN)) +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  labs(title = "Fire interval", y = "years",
+       subtitle = "by functional cover type") +
+  facet_grid(~ scenario)
+
+plot39 <- ggplot(plotData,
+                 aes(x = scenario, y = 100/noFires, fill = scenario)) +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank()) +
+  labs(title = "Fire interval", y = "years",
+       subtitle = "by functional cover type")
+
+## average no. of pixels with certain fire frequency
+plotData <- allPixelCohortDataMnt[, list(noPixels = length(unique(pixelIndex))),
+                                  by = .(scenario, rep, noFires)]
+plotData2 <- plotData[, list(rep = 2, scenario = scenario, noFires = noFires, noPixels = noPixels * runif(1, 0, 1))]
+plotData <- rbind(plotData, plotData2)
+plot40 <- ggplot(plotData,
+                 aes(x = as.factor(noFires), y = noPixels, fill = scenario)) +
+  stat_summary(fun = "mean", geom = "bar", position = "dodge") +
+  stat_summary(fun.data = "mean_sdl", geom = "errorbar", position = "dodge") +
+  stat_summary(aes(label =round(..y..)),
+               fun = "mean", geom = "text",
+               position = position_dodge(width = 0.9), vjust = -1) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank()) +
+  labs(x = "no. fires", y = "no. pixels")
 
 ## BIODIVERSITY METRICS --------------------------------
 ## ALPHA DIVERSITY --------------
@@ -2155,6 +2202,10 @@ plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
                       labels = c("a", "b", "c", ""), font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageAlphaBetaDivEffectsTestBP.tiff"),
        width = 12, height = 7)
+
+ggsave(plot = plot40 + theme(legend.position = c(0.8, 0.8)),
+       filename = file.path(figOutputPath, "results_noPixelsVsnoFires.tiff"),
+       width = 8, height = 7)
 
 q("no")
 
