@@ -2100,8 +2100,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeBA
 plotSave <- ggarrange(plotMap1 + theme(legend.position = "right"),
                       plotMap1hist +
                         theme(legend.position = c(0.7, 0.95), legend.justification = c("left", "top")),
-                      ncol = 1, heights = c(2,1), widths = c(0.98, 1),
-                      labels = "auto", font.label = list(size = 24))
+                      ncol = 1, heights = c(2,1), widths = c(0.98, 1))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_avgAlphaDivMap.tiff"),
        width = 8, height = 12)
 
@@ -2141,6 +2140,12 @@ plotSave <- ggarrange(plotTest1 +
                       labels = "auto", font.label = list(size = 20))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTestBP.tiff"),
        width = 14, height = 7)
+
+plotSave <- ggarrange(plot32.2 + theme(legend.position = "bottom"),
+                      plotTest1.2 + theme(legend.position = "bottom"),
+                      labels = "auto", font.label = list(size = 20))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDev_ageSimVsObsTestBP_.tiff"),
+       width = 15, height = 7)
 
 plotSave <- ggarrange(plotTest2 + theme(legend.position = "none"),
                       plotTest3 + theme(legend.position = "none"),
