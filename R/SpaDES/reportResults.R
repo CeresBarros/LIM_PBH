@@ -1229,7 +1229,7 @@ plotData2 <- ageDataCN[, list(avgNoCohortsObs = mean(noCohorts)),
 plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(noCohorts - mean(avgNoCohortsObs)))),
-                      by = .(scenario, vegTypeCN, firePresAbs)]
+                      by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plotData <- plotData2[plotData, on = .(scenario, vegTypeCN, firePresAbs)]
 rm(plotData2)
 
@@ -1276,7 +1276,7 @@ plotData2 <- ageDataCN[, list(avgAgeBySppWeightedObs = mean(Reconstructed.age)),
 plotData <- plotData2[plotData, on = "Cover.dendro==vegTypeCN"]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppWeightedObs)))),
-                      by = .(scenario, vegTypeCN, firePresAbs)]
+                      by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plotData <- plotData2[plotData, on = .(scenario, vegTypeCN, firePresAbs)]
 rm(plotData2)
 
