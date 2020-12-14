@@ -8,6 +8,8 @@ library(ggspatial)
 library(SpaDES)
 library(raster)
 library(data.table)
+library(magick)
+library(purrr)
 
 source("R/R_tools/plotFunction.R")
 
@@ -353,19 +355,37 @@ ggsave(file.path(figOutputPath, "julMDCyr1.tiff"), plot8,
 
 ## GIFS ------------------------------------------------------
 ## make GIFs of vegetation maps
-## individual pics first
-speciesLabels <- c("Fir", "Larch", "En. spruce", "Wh. spruce",
-                   "Bl. spruce", "Lo. pine", "Aspen","Douglas-fir")
-names(speciesLabels) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
-speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
-names(speciesColours) <-  levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
+## individual pics
+outputs_PM <- list.dirs("R/SpaDES/outputs", full.names = TRUE, recursive = FALSE) %>%
+  grep("/PM_rep1", ., value = TRUE)
+outputs_noPM <- list.dirs("R/SpaDES/outputs", full.names = TRUE, recursive = FALSE) %>%
+  grep("/noPM_rep1", ., value = TRUE)
 
-foothillsMask <- simList_noPM$rawBiomassMap
-foothillsMask[!is.na(foothillsMask)] <- 1
+vegTypeMapFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE)),
+                     sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE))) %>%
+  unique(.)
+
+vegTypeMapStk_noPM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE), readRDS) %>%
+  stack(.)
+vegTypeMapStk_PM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE), readRDS) %>%
+  stack(.)
+names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE)))
+names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, invert = TRUE, value = TRUE)))
+
+
+speciesLabels <- LandR::equivalentName(value = levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE,
+                                       column = "EN_generic_full", df = simOutPreSim$sppEquiv)
+names(speciesLabels) <- unique(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID)
+
+speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
+names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
+
+foothillsMask <- simOutPreSim$rasterToMatch
+foothillsMask[!is.na(foothillsMask[])] <- 1
 foothillsMaskDF <- as.data.frame(as(foothillsMask, "SpatialPixelsDataFrame"))
 names(foothillsMaskDF) <- c("value", "x", "y")
 
-makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
+makePNGs <- function(id, rasterStack, labPrefix, labSufix, filePrefix, gif.dir) {
   suppressWarnings(dir.create(gif.dir, recursive = TRUE))
   cat("Making ", id, "\n")
   rasterVis::gplot(rasterStack[[id]],
@@ -376,7 +396,7 @@ makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
     scale_fill_manual(values = speciesColours,
                       labels = speciesLabels) +
     theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
-    labs(title = sub("year", "year ", names(rasterStack)[id])) +
+    labs(title = paste(labPrefix, sub("year", "year ", names(rasterStack)[id]), labSufix, sep = "")) +
     coord_equal()
   ggsave(file.path(gif.dir, paste0(filePrefix, id, ".png")),
          device = "png", width=5, height=10, dpi = 300, units = "in")
@@ -384,12 +404,16 @@ makePNGs <- function(id, rasterStack, filePrefix, gif.dir) {
 
 map_df(.x = 1:nlayers(vegTypeMapStk_noPM), .f = makePNGs,
        rasterStack = vegTypeMapStk_noPM,
+       labPrefix = "stand replacement\n",
+       labSufix = "",
        filePrefix = "vegTypeMapStk_noPM",
-       gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif")
+       gif.dir = "R/SpaDES/outputs/noPM_rep1/gif")
 map_df(.x = 1:nlayers(vegTypeMapStk_PM), .f = makePNGs,
        rasterStack = vegTypeMapStk_PM,
+       labPrefix = "partial mortality\n",
+       labSufix = "",
        filePrefix = "vegTypeMapStk_PM",
-       gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif")
+       gif.dir = "R/SpaDES/outputs/PM_rep1/gif")
 
 makeGIF <- function(gif.dir, gifPrefix, ...) {
   ## get file list and the file numbers (to sort numerically, rather than alphabetically)
@@ -404,10 +428,10 @@ makeGIF <- function(gif.dir, gifPrefix, ...) {
     image_write(file.path(gif.dir, paste0(gifPrefix, ".gif")))
 }
 
-makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_noPM_oneFire/gif",
+makeGIF(gif.dir = "R/SpaDES/outputs/noPM_rep1/gif",
         gifPrefix = "vegTypeMapStk_noPM",
         fps = 2)
-makeGIF(gif.dir = "R/SpaDES/outputs/blogSep2019_PM_oneFire/gif",
+makeGIF(gif.dir = "R/SpaDES/outputs/PM_rep1/gif",
         gifPrefix = "vegTypeMapStk_PM",
         fps = 2)
 
