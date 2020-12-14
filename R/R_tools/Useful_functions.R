@@ -204,7 +204,7 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   ## DEFINE PROJECTION AND RE-PROJECT IF NEED BE
   crsProj <- if(is.null(crsProj)) crs(sfObj) else CRS(crsProj)
 
-  if(crsProj != crs(sfObj)) {
+  if (!compareCRS(crsProj, crs(sfObj))) {
     warning("Reprojecting sfObj to selected projection")
     sfObj <- st_transform(sfObj, crs = crsProj)
   }
