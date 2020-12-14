@@ -202,11 +202,11 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   if(SAVE & is.null(fileNAME)) stop("SAVE is TRUE, but file name prefix is not defined")
 
   ## DEFINE PROJECTION AND RE-PROJECT IF NEED BE
-  crsProj <- if(is.null(crsProj)) crs(sfObj) else CRS(crsProj)
+  crsProj <- if (is.null(crsProj)) crs(sfObj) else CRS(crsProj)
 
   if (!compareCRS(crsProj, crs(sfObj))) {
     warning("Reprojecting sfObj to selected projection")
-    sfObj <- st_transform(sfObj, crs = crsProj)
+    sfObj <- st_transform(sfObj, crs = st_crs(crsProj))
   }
 
   ## Get vector of fire names
@@ -256,7 +256,7 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
 
   firePolys <- eval(parse(text = paste0("sfObj$", fireNAMES))) == fire
 
-  if(is.null(fireVARS)) {
+  if (is.null(fireVARS)) {
     sf.fire <- sfObj[firePolys, c(fireNAMES)]
   } else sf.fire <- sfObj[firePolys, c(fireNAMES, fireVARS)]
 
@@ -268,18 +268,18 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   ## REMOVE INNER MATRIX HOLES FROM EVENT AND ORIGINAL FIRE PERIMETER
   ## (i.e. unburnt patches surrounded by fire)
   if(class(eventPerim)[1] == "sfc_MULTIPOLYGON") {
-    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[[1]], function(x) x[1])), crs = crsProj)
+    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[[1]], function(x) x[1])), crs = st_crs(crsProj))
     noHolesEventPerim <- st_union(noHolesEventPerim)  ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
   } else {
-    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = crsProj)
+    noHolesEventPerim <- st_sfc(st_multipolygon(lapply(eventPerim[1], function(x) x[1])), crs = st_crs(crsProj))
     noHolesEventPerim <- st_union(noHolesEventPerim) ## union to account for disturbed patches inside inner matrix, nested within larger disturbed patches
   }
 
   if(class(firePerim)[1] == "sfc_MULTIPOLYGON") {
-    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = crsProj)
+    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[[1]], function(x) x[1])), crs = st_crs(crsProj))
     noHolesFirePerim <- st_union(noHolesFirePerim)
   } else {
-    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = crsProj)
+    noHolesFirePerim <- st_sfc(st_multipolygon(lapply(firePerim[1], function(x) x[1])), crs = st_crs(crsProj))
     noHolesFirePerim <- st_union(noHolesFirePerim)
   }
 
@@ -293,12 +293,12 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
   if(length(bufferedHoles) > 0) {
     if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
       remnHoleInters  <- sapply(allResiduals[[1]], FUN = function(sfgpoly) {
-        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = st_crs(crsProj))
         st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
       })
     } else {
       remnHoleInters  <- sapply(allResiduals[1], FUN = function(sfgpoly) {
-        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = crsProj)
+        sfcpoly <- st_sfc(list = st_polygon(sfgpoly[1]), crs = st_crs(crsProj))
         st_intersects(sfcpoly, bufferedHoles, sparse = FALSE)
       })
     }
@@ -312,10 +312,10 @@ defineFireEvents <- function(sfObj, fireNAMES = NULL, fireVARS = NULL, crsProj =
 
   ## DEFINE INTERIOR RESIDUALS
   if(class(allResiduals)[1] == "sfc_MULTIPOLYGON") {
-    inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+    inResids <- lapply(allResiduals[[1]][remnHoleInters], st_polygon) %>% st_sfc(., crs = st_crs(crsProj))
     inResids <- st_union(inResids)
   } else {
-    inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = crsProj)
+    inResids <- lapply(allResiduals[1][remnHoleInters], st_polygon) %>% st_sfc(., crs = st_crs(crsProj))
     inResids <- st_union(inResids)
   }
 
