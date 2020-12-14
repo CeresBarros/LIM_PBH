@@ -22,20 +22,31 @@ library(LandR)
 #                      list.files("R/SpaDES/outputs/blogSep2019_PM_oneFire/", pattern = "vegTypeMap", full.names = TRUE))
 
 ## new spp parameters
-cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE))
-rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE),
-                         list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE))
-pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE),
-                        list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE))
-vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE),
-                     list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE))
+# cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "cohortData", full.names = TRUE))
+# rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE),
+#                          list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "rstCurrentBurn", full.names = TRUE))
+# pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE),
+#                         list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "pixelGroupMap", full.names = TRUE))
+# vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE),
+#                      list.files("R/SpaDES/outputs/PM_oneFire_newSppParams/", pattern = "vegTypeMap", full.names = TRUE))
+
+## final simulations (AI report Jul 2020)
+cohortDataFiles <- c(list.files("R/SpaDES/outputs/noPM_rep1/", pattern = "cohortData", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_rep1/", pattern = "cohortData", full.names = TRUE))
+rstCurrentBurnFiles <- c(list.files("R/SpaDES/outputs/noPM_rep1/", pattern = "rstCurrentBurn", full.names = TRUE),
+                         list.files("R/SpaDES/outputs/PM_rep1/", pattern = "rstCurrentBurn", full.names = TRUE))
+pixelGroupMapFiles <- c(list.files("R/SpaDES/outputs/noPM_rep1/", pattern = "pixelGroupMap", full.names = TRUE),
+                        list.files("R/SpaDES/outputs/PM_rep1/", pattern = "pixelGroupMap", full.names = TRUE))
+vegTypeMapFiles <- c(list.files("R/SpaDES/outputs/noPM_rep1/", pattern = "vegTypeMap", full.names = TRUE),
+                     list.files("R/SpaDES/outputs/PM_rep1/", pattern = "vegTypeMap", full.names = TRUE))
+
 
 ## GET SIM LISTS
 # simList_PM <- readRDS("R/SpaDES/outputs/blogSep2019_PM_oneFire/simList_fakeRstCurrentBurnblogSep2019_PM_oneFire.rds")
 # simList_noPM <- readRDS("R/SpaDES/outputs/blogSep2019_noPM_oneFire/simList_fakeRstCurrentBurnblogSep2019_noPM_oneFire.rds")
-simList_PM <- readRDS("R/SpaDES/outputs/PM_oneFire_newSppParams/simList_fakeRstCurrentBurnPM_oneFire_newSppParams.rds")
-simList_noPM <- readRDS("R/SpaDES/outputs/noPM_oneFire_newSppParams/simList_fakeRstCurrentBurnnoPM_oneFire_newSppParams.rds")
+# simList_PM <- readRDS("R/SpaDES/outputs/PM_oneFire_newSppParams/simList_fakeRstCurrentBurnPM_oneFire_newSppParams.rds")
+# simList_noPM <- readRDS("R/SpaDES/outputs/noPM_oneFire_newSppParams/simList_fakeRstCurrentBurnnoPM_oneFire_newSppParams.rds")
 
 rstCurrentBurnStk_noPM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE), readRDS))
 rstCurrentBurnStk_PM <- stack(lapply(grep("_noPM|noPM_", rstCurrentBurnFiles, value = TRUE, invert = TRUE), readRDS))
@@ -282,7 +293,7 @@ ggsave(filename = "R/SpaDES/outputs/blogSep2019_noPM_PM_BMortVegType.tiff",
 ## make GIFs of vegetation maps
 ## individual pics first
 speciesLabels <- c("Fir", "Larch", "En. spruce", "Wh. spruce",
-                   "Bl. spruce", "Lo. pine", "Aspen","Douglas-fir")
+                   "Bl. spruce", "Lo. pine", "Aspen", "Douglas-fir")
 names(speciesLabels) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
 speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
 names(speciesColours) <-  levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
