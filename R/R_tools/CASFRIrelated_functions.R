@@ -1682,129 +1682,129 @@ meltPreFireABInv <- function(inv, invName, allVars, folder, dim) {
   }
 
   ## melt various fields
-  moistDT <- melt(tmpDT[, .(P_ID, MOIST_REG, UMOIST_REG)], id.vars = "P_ID",
+  moistDT <- melt.data.table(tmpDT[, .(P_ID, MOIST_REG, UMOIST_REG)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "MOIST_REG") %>%
     .[, LAYER := ifelse(LAYER == "MOIST_REG", "1", "2")]
 
-  densityDT <- melt(tmpDT[, .(P_ID, DENSITY, UDENSITY)], id.vars = "P_ID",
+  densityDT <- melt.data.table(tmpDT[, .(P_ID, DENSITY, UDENSITY)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "DENSITY") %>%
     .[, LAYER := ifelse(LAYER == "DENSITY", "1", "2")]
 
-  heightDT <- melt(tmpDT[, .(P_ID, HEIGHT, UHEIGHT)], id.vars = "P_ID",
+  heightDT <- melt.data.table(tmpDT[, .(P_ID, HEIGHT, UHEIGHT)], id.vars = "P_ID",
                    variable.name = "LAYER", value.name = "HEIGHT") %>%
     .[, LAYER := ifelse(LAYER == "HEIGHT", "1", "2")]
 
-  sp1DT <- melt(tmpDT[, .(P_ID, SP1, USP1)], id.vars = "P_ID",
+  sp1DT <- melt.data.table(tmpDT[, .(P_ID, SP1, USP1)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "SP1") %>%
     .[, LAYER := ifelse(LAYER == "SP1", "1", "2")]
 
-  sp2DT <- melt(tmpDT[, .(P_ID, SP2, USP2)], id.vars = "P_ID",
+  sp2DT <- melt.data.table(tmpDT[, .(P_ID, SP2, USP2)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "SP2") %>%
     .[, LAYER := ifelse(LAYER == "SP2", "1", "2")]
 
-  sp3DT <- melt(tmpDT[, .(P_ID, SP3, USP3)], id.vars = "P_ID",
+  sp3DT <- melt.data.table(tmpDT[, .(P_ID, SP3, USP3)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "SP3") %>%
     .[, LAYER := ifelse(LAYER == "SP3", "1", "2")]
 
-  sp4DT <- melt(tmpDT[, .(P_ID, SP4, USP4)], id.vars = "P_ID",
+  sp4DT <- melt.data.table(tmpDT[, .(P_ID, SP4, USP4)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "SP4") %>%
     .[, LAYER := ifelse(LAYER == "SP4", "1", "2")]
 
-  sp5DT <- melt(tmpDT[, .(P_ID, SP5, USP5)], id.vars = "P_ID",
+  sp5DT <- melt.data.table(tmpDT[, .(P_ID, SP5, USP5)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "SP5") %>%
     .[, LAYER := ifelse(LAYER == "SP5", "1", "2")]
 
-  sp1_PERDT <- melt(tmpDT[, .(P_ID, SP1_PER, USP1_PER)], id.vars = "P_ID",
+  sp1_PERDT <- melt.data.table(tmpDT[, .(P_ID, SP1_PER, USP1_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "SP1_PER") %>%
     .[, LAYER := ifelse(LAYER == "SP1_PER", "1", "2")]
 
-  sp2_PERDT <- melt(tmpDT[, .(P_ID, SP2_PER, USP2_PER)], id.vars = "P_ID",
+  sp2_PERDT <- melt.data.table(tmpDT[, .(P_ID, SP2_PER, USP2_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "SP2_PER") %>%
     .[, LAYER := ifelse(LAYER == "SP2_PER", "1", "2")]
 
-  sp3_PERDT <- melt(tmpDT[, .(P_ID, SP3_PER, USP3_PER)], id.vars = "P_ID",
+  sp3_PERDT <- melt.data.table(tmpDT[, .(P_ID, SP3_PER, USP3_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "SP3_PER") %>%
     .[, LAYER := ifelse(LAYER == "SP3_PER", "1", "2")]
 
-  sp4_PERDT <- melt(tmpDT[, .(P_ID, SP4_PER, USP4_PER)], id.vars = "P_ID",
+  sp4_PERDT <- melt.data.table(tmpDT[, .(P_ID, SP4_PER, USP4_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "SP4_PER") %>%
     .[, LAYER := ifelse(LAYER == "SP4_PER", "1", "2")]
 
-  sp5_PERDT <- melt(tmpDT[, .(P_ID, SP5_PER, USP5_PER)], id.vars = "P_ID",
+  sp5_PERDT <- melt.data.table(tmpDT[, .(P_ID, SP5_PER, USP5_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "SP5_PER") %>%
     .[, LAYER := ifelse(LAYER == "SP5_PER", "1", "2")]
 
-  strucDT <- melt(tmpDT[, .(P_ID, STRUC, USTRUC)], id.vars = "P_ID",
+  strucDT <- melt.data.table(tmpDT[, .(P_ID, STRUC, USTRUC)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "STRUC") %>%
     .[, LAYER := ifelse(LAYER == "STRUC", "1", "2")]
 
-  strucVDT <- melt(tmpDT[, .(P_ID, STRUC_VAL, USTRUC_VAL)], id.vars = "P_ID",
+  strucVDT <- melt.data.table(tmpDT[, .(P_ID, STRUC_VAL, USTRUC_VAL)], id.vars = "P_ID",
                    variable.name = "LAYER", value.name = "STRUC_VAL") %>%
     .[, LAYER := ifelse(LAYER == "STRUC_VAL", "1", "2")]
 
-  originDT <- melt(tmpDT[, .(P_ID, ORIGIN, UORIGIN)], id.vars = "P_ID",
+  originDT <- melt.data.table(tmpDT[, .(P_ID, ORIGIN, UORIGIN)], id.vars = "P_ID",
                    variable.name = "LAYER", value.name = "ORIGIN") %>%
     .[, LAYER := ifelse(LAYER == "ORIGIN", "1", "2")]
 
-  tprDT <- melt(tmpDT[, .(P_ID, TPR, UTPR)], id.vars = "P_ID",
+  tprDT <- melt.data.table(tmpDT[, .(P_ID, TPR, UTPR)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "TPR") %>%
     .[, LAYER := ifelse(LAYER == "TPR", "1", "2")]
 
-  initialsDT <- melt(tmpDT[, .(P_ID, INITIALS, UINITIALS)], id.vars = "P_ID",
+  initialsDT <- melt.data.table(tmpDT[, .(P_ID, INITIALS, UINITIALS)], id.vars = "P_ID",
                      variable.name = "LAYER", value.name = "INITIALS") %>%
     .[, LAYER := ifelse(LAYER == "INITIALS", "1", "2")]
 
-  nflDT <- melt(tmpDT[, .(P_ID, NFL, UNFL)], id.vars = "P_ID",
+  nflDT <- melt.data.table(tmpDT[, .(P_ID, NFL, UNFL)], id.vars = "P_ID",
                 variable.name = "LAYER", value.name = "NFL") %>%
     .[, LAYER := ifelse(LAYER == "NFL", "1", "2")]
 
-  nfl_PERDT <- melt(tmpDT[, .(P_ID, NFL_PER, UNFL_PER)], id.vars = "P_ID",
+  nfl_PERDT <- melt.data.table(tmpDT[, .(P_ID, NFL_PER, UNFL_PER)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "NFL_PER") %>%
     .[, LAYER := ifelse(LAYER == "NFL_PER", "1", "2")]
 
-  natnonDT <- melt(tmpDT[, .(P_ID, NAT_NON, UNAT_NON)], id.vars = "P_ID",
+  natnonDT <- melt.data.table(tmpDT[, .(P_ID, NAT_NON, UNAT_NON)], id.vars = "P_ID",
                    variable.name = "LAYER", value.name = "NAT_NON") %>%
     .[, LAYER := ifelse(LAYER == "NAT_NON", "1", "2")]
 
-  anthvegDT <- melt(tmpDT[, .(P_ID, ANTH_VEG, UANTH_VEG)], id.vars = "P_ID",
+  anthvegDT <- melt.data.table(tmpDT[, .(P_ID, ANTH_VEG, UANTH_VEG)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "ANTH_VEG") %>%
     .[, LAYER := ifelse(LAYER == "ANTH_VEG", "1", "2")]
 
-  anthnonDT <- melt(tmpDT[, .(P_ID, ANTH_NON, UANTH_NON)], id.vars = "P_ID",
+  anthnonDT <- melt.data.table(tmpDT[, .(P_ID, ANTH_NON, UANTH_NON)], id.vars = "P_ID",
                     variable.name = "LAYER", value.name = "ANTH_NON") %>%
     .[, LAYER := ifelse(LAYER == "ANTH_NON", "1", "2")]
 
-  mod1DT <- melt(tmpDT[, .(P_ID, MOD1, UMOD1)], id.vars = "P_ID",
+  mod1DT <- melt.data.table(tmpDT[, .(P_ID, MOD1, UMOD1)], id.vars = "P_ID",
                  variable.name = "LAYER", value.name = "MOD1") %>%
     .[, LAYER := ifelse(LAYER == "MOD1", "1", "2")]
 
-  mod1EDT <- melt(tmpDT[, .(P_ID, MOD1_EXT, UMOD1_EXT)], id.vars = "P_ID",
+  mod1EDT <- melt.data.table(tmpDT[, .(P_ID, MOD1_EXT, UMOD1_EXT)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "MOD1_EXT") %>%
     .[, LAYER := ifelse(LAYER == "MOD1_EXT", "1", "2")]
 
-  mod1YDT <- melt(tmpDT[, .(P_ID, MOD1_YR, UMOD1_YR)], id.vars = "P_ID",
+  mod1YDT <- melt.data.table(tmpDT[, .(P_ID, MOD1_YR, UMOD1_YR)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "MOD1_YR") %>%
     .[, LAYER := ifelse(LAYER == "MOD1_YR", "1", "2")]
 
-  mod2DT <- melt(tmpDT[, .(P_ID, MOD2, UMOD2)], id.vars = "P_ID",
+  mod2DT <- melt.data.table(tmpDT[, .(P_ID, MOD2, UMOD2)], id.vars = "P_ID",
                  variable.name = "LAYER", value.name = "MOD2") %>%
     .[, LAYER := ifelse(LAYER == "MOD2", "1", "2")]
 
-  mod2EDT <- melt(tmpDT[, .(P_ID, MOD2_EXT, UMOD2_EXT)], id.vars = "P_ID",
+  mod2EDT <- melt.data.table(tmpDT[, .(P_ID, MOD2_EXT, UMOD2_EXT)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "MOD2_EXT") %>%
     .[, LAYER := ifelse(LAYER == "MOD2_EXT", "1", "2")]
 
-  mod2YDT <- melt(tmpDT[, .(P_ID, MOD2_YR, UMOD2_YR)], id.vars = "P_ID",
+  mod2YDT <- melt.data.table(tmpDT[, .(P_ID, MOD2_YR, UMOD2_YR)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "MOD2_YR") %>%
     .[, LAYER := ifelse(LAYER == "MOD2_YR", "1", "2")]
 
   tmpDT[, UDATA := "NA"]
-  dataDT <- melt(tmpDT[, .(P_ID, DATA, UDATA)], id.vars = "P_ID",
+  dataDT <- melt.data.table(tmpDT[, .(P_ID, DATA, UDATA)], id.vars = "P_ID",
                  variable.name = "LAYER", value.name = "DATA") %>%
     .[, LAYER := ifelse(LAYER == "DATA", "1", "2")]
 
   tmpDT[, UDATA_YR := "NA"]
-  dataYDT <- melt(tmpDT[, .(P_ID, DATA_YR, UDATA_YR)], id.vars = "P_ID",
+  dataYDT <- melt.data.table(tmpDT[, .(P_ID, DATA_YR, UDATA_YR)], id.vars = "P_ID",
                   variable.name = "LAYER", value.name = "DATA_YR") %>%
     .[, LAYER := ifelse(LAYER == "DATA_YR", "1", "2")]
 
@@ -1840,111 +1840,111 @@ meltPreFireSKInv <- function(inv,  invName, folder, dim) {
     data.table(.)
 
   ## melt various fields
-  layerDT <- melt(tmpDT[, .(P_ID, LAYER1_, LAYER2_, LAYER3_)], id.vars = "P_ID",
+  layerDT <- melt.data.table(tmpDT[, .(P_ID, LAYER1_, LAYER2_, LAYER3_)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "LAYER") %>%
     .[, LAYER_NUM := sub("LAYER(.*?)_", "\\1", sub("ERBS_C|HRUB_C", "", LAYER_NUM))]
 
-  canopyDT <- melt(tmpDT[, .(P_ID, CANOPY1, CANOPY2, CANOPY3)], id.vars = "P_ID",
+  canopyDT <- melt.data.table(tmpDT[, .(P_ID, CANOPY1, CANOPY2, CANOPY3)], id.vars = "P_ID",
                    variable.name = "LAYER_NUM", value.name = "CANOPY") %>%
     .[, LAYER_NUM := sub("CANOPY", "", LAYER_NUM)]
 
-  crownDT <- melt(tmpDT[, .(P_ID, CROWN1_, CROWN2_, CROWN3_, HERBS_C, SHRUB_C)], id.vars = "P_ID",
+  crownDT <- melt.data.table(tmpDT[, .(P_ID, CROWN1_, CROWN2_, CROWN3_, HERBS_C, SHRUB_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "CROWN") %>%
     .[, LAYER_NUM := sub("CROWN(.*?)_", "\\1", sub("ERBS_C|HRUB_C", "", LAYER_NUM))]
 
-  heightDT <- melt(tmpDT[, .(P_ID, HEIGHT1, HEIGHT2, HEIGHT3)], id.vars = "P_ID",
+  heightDT <- melt.data.table(tmpDT[, .(P_ID, HEIGHT1, HEIGHT2, HEIGHT3)], id.vars = "P_ID",
                    variable.name = "LAYER_NUM", value.name = "HEIGHT") %>%
     .[, LAYER_NUM := sub("HEIGHT", "", LAYER_NUM)]
 
-  height_DT <- melt(tmpDT[, .(P_ID, HEIGHT1_, HEIGHT2_, HEIGHT3_)], id.vars = "P_ID",
+  height_DT <- melt.data.table(tmpDT[, .(P_ID, HEIGHT1_, HEIGHT2_, HEIGHT3_)], id.vars = "P_ID",
                     variable.name = "LAYER_NUM", value.name = "HEIGHT_") %>%
     .[, LAYER_NUM := sub("HEIGHT(.*?)_", "\\1", LAYER_NUM)]
 
-  sp1DT <- melt(tmpDT[, .(P_ID, HERBS1, SHRUB1, SP1_1, SP1_2, SP1_3)], id.vars = "P_ID",
+  sp1DT <- melt.data.table(tmpDT[, .(P_ID, HERBS1, SHRUB1, SP1_1, SP1_2, SP1_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP1") %>%
     .[, LAYER_NUM := sub("ERBS1|HRUB1|SP1_", "", LAYER_NUM)]
 
-  sp2DT <- melt(tmpDT[, .(P_ID, HERBS2, SHRUB2, SP2_1, SP2_2, SP2_3)], id.vars = "P_ID",
+  sp2DT <- melt.data.table(tmpDT[, .(P_ID, HERBS2, SHRUB2, SP2_1, SP2_2, SP2_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP2") %>%
     .[, LAYER_NUM := sub("ERBS2|HRUB2|SP2_", "", LAYER_NUM)]
 
-  sp3DT <- melt(tmpDT[, .(P_ID, HERBS3, SHRUB3, SP3_1, SP3_2, SP3_3)], id.vars = "P_ID",
+  sp3DT <- melt.data.table(tmpDT[, .(P_ID, HERBS3, SHRUB3, SP3_1, SP3_2, SP3_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP3") %>%
     .[, LAYER_NUM := sub("ERBS3|HRUB3|SP3_", "", LAYER_NUM)]
 
-  sp4DT <- melt(tmpDT[, .(P_ID, HERBS4, SHRUB4, SP4_1, SP4_2, SP4_3)], id.vars = "P_ID",
+  sp4DT <- melt.data.table(tmpDT[, .(P_ID, HERBS4, SHRUB4, SP4_1, SP4_2, SP4_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP4") %>%
     .[, LAYER_NUM := sub("ERBS4|HRUB4|SP4_", "", LAYER_NUM)]
 
-  sp5DT <- melt(tmpDT[, .(P_ID, HERBS5, SHRUB5, SP5_1, SP5_2, SP5_3)], id.vars = "P_ID",
+  sp5DT <- melt.data.table(tmpDT[, .(P_ID, HERBS5, SHRUB5, SP5_1, SP5_2, SP5_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP5") %>%
     .[, LAYER_NUM := sub("ERBS5|HRUB5|SP5_", "", LAYER_NUM)]
 
-  sp6DT <- melt(tmpDT[, .(P_ID, HERBS6, SHRUB6, SP6_1, SP6_2, SP6_3)], id.vars = "P_ID",
+  sp6DT <- melt.data.table(tmpDT[, .(P_ID, HERBS6, SHRUB6, SP6_1, SP6_2, SP6_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP6") %>%
     .[, LAYER_NUM := sub("ERBS6|HRUB6|SP6_", "", LAYER_NUM)]
 
-  sp7DT <- melt(tmpDT[, .(P_ID, HERBS7, SHRUB7)], id.vars = "P_ID",
+  sp7DT <- melt.data.table(tmpDT[, .(P_ID, HERBS7, SHRUB7)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP7") %>%
     .[, LAYER_NUM := sub("ERBS7|HRUB7", "", LAYER_NUM)]
 
-  sp8DT <- melt(tmpDT[, .(P_ID, HERBS8, SHRUB8)], id.vars = "P_ID",
+  sp8DT <- melt.data.table(tmpDT[, .(P_ID, HERBS8, SHRUB8)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP8") %>%
     .[, LAYER_NUM := sub("ERBS8|HRUB8", "", LAYER_NUM)]
 
-  sp9DT <- melt(tmpDT[, .(P_ID, HERBS9, SHRUB9)], id.vars = "P_ID",
+  sp9DT <- melt.data.table(tmpDT[, .(P_ID, HERBS9, SHRUB9)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "SP9") %>%
     .[, LAYER_NUM := sub("ERBS9|HRUB9", "", LAYER_NUM)]
 
-  sp10DT <- melt(tmpDT[, .(P_ID, HERBS10, SHRUB10)], id.vars = "P_ID",
+  sp10DT <- melt.data.table(tmpDT[, .(P_ID, HERBS10, SHRUB10)], id.vars = "P_ID",
                  variable.name = "LAYER_NUM", value.name = "SP10") %>%
     .[, LAYER_NUM := sub("ERBS10|HRUB10", "", LAYER_NUM)]
 
-  sp1_CDT <- melt(tmpDT[, .(P_ID, HERBS1_, SHRUB1_, SP1_1_C, SP1_2_C, SP1_3_C)], id.vars = "P_ID",
+  sp1_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS1_, SHRUB1_, SP1_1_C, SP1_2_C, SP1_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP1_C") %>%
     .[, LAYER_NUM := sub("SP1_(.*?)_C", "\\1", sub("ERBS1_|HRUB1_", "", LAYER_NUM))]
 
-  sp2_CDT <- melt(tmpDT[, .(P_ID, HERBS2_, SHRUB2_, SP2_1_C, SP2_2_C, SP2_3_C)], id.vars = "P_ID",
+  sp2_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS2_, SHRUB2_, SP2_1_C, SP2_2_C, SP2_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP2_C") %>%
     .[, LAYER_NUM := sub("SP2_(.*?)_C", "\\1", sub("ERBS2_|HRUB2_", "", LAYER_NUM))]
 
-  sp3_CDT <- melt(tmpDT[, .(P_ID, HERBS3_, SHRUB3_, SP3_1_C, SP3_2_C, SP3_3_C)], id.vars = "P_ID",
+  sp3_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS3_, SHRUB3_, SP3_1_C, SP3_2_C, SP3_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP3_C") %>%
     .[, LAYER_NUM := sub("SP3_(.*?)_C", "\\1", sub("ERBS3_|HRUB3_", "", LAYER_NUM))]
 
-  sp4_CDT <- melt(tmpDT[, .(P_ID, HERBS4_, SHRUB4_, SP4_1_C, SP4_2_C, SP4_3_C)], id.vars = "P_ID",
+  sp4_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS4_, SHRUB4_, SP4_1_C, SP4_2_C, SP4_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP4_C") %>%
     .[, LAYER_NUM := sub("SP4_(.*?)_C", "\\1", sub("ERBS4_|HRUB4_", "", LAYER_NUM))]
 
-  sp5_CDT <- melt(tmpDT[, .(P_ID, HERBS5_, SHRUB5_, SP5_1_C, SP5_2_C, SP5_3_C)], id.vars = "P_ID",
+  sp5_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS5_, SHRUB5_, SP5_1_C, SP5_2_C, SP5_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP5_C") %>%
     .[, LAYER_NUM := sub("SP5_(.*?)_C", "\\1", sub("ERBS5_|HRUB5_", "", LAYER_NUM))]
 
-  sp6_cDT <- melt(tmpDT[, .(P_ID, HERBS6_, SHRUB6_, SP6_1_C, SP6_2_C, SP6_3_C)], id.vars = "P_ID",
+  sp6_cDT <- melt.data.table(tmpDT[, .(P_ID, HERBS6_, SHRUB6_, SP6_1_C, SP6_2_C, SP6_3_C)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP6_C") %>%
     .[, LAYER_NUM := sub("SP6_(.*?)_C", "\\1", sub("ERBS6_|HRUB6_", "", LAYER_NUM))]
 
-  sp7_CDT <- melt(tmpDT[, .(P_ID, HERBS7_, SHRUB7_)], id.vars = "P_ID",
+  sp7_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS7_, SHRUB7_)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP7_C") %>%
     .[, LAYER_NUM := sub("ERBS7_|HRUB7_", "", LAYER_NUM)]
 
-  sp8_CDT <- melt(tmpDT[, .(P_ID, HERBS8_, SHRUB8_)], id.vars = "P_ID",
+  sp8_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS8_, SHRUB8_)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP8_C") %>%
     .[, LAYER_NUM := sub("ERBS8_|HRUB8_", "", LAYER_NUM)]
 
-  sp9_CDT <- melt(tmpDT[, .(P_ID, HERBS9_, SHRUB9_)], id.vars = "P_ID",
+  sp9_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS9_, SHRUB9_)], id.vars = "P_ID",
                   variable.name = "LAYER_NUM", value.name = "SP9_C") %>%
     .[, LAYER_NUM := sub("ERBS9_|HRUB9_", "", LAYER_NUM)]
 
-  sp10_CDT <- melt(tmpDT[, .(P_ID, HERBS10_, SHRUB10_)], id.vars = "P_ID",
+  sp10_CDT <- melt.data.table(tmpDT[, .(P_ID, HERBS10_, SHRUB10_)], id.vars = "P_ID",
                    variable.name = "LAYER_NUM", value.name = "SP10_C") %>%
     .[, LAYER_NUM := sub("ERBS10_|HRUB10_", "", LAYER_NUM)]
 
-  yooDT <- melt(tmpDT[, .(P_ID, YOO_1, YOO_2, YOO_3)], id.vars = "P_ID",
+  yooDT <- melt.data.table(tmpDT[, .(P_ID, YOO_1, YOO_2, YOO_3)], id.vars = "P_ID",
                 variable.name = "LAYER_NUM", value.name = "YOO") %>%
     .[, LAYER_NUM := sub("YOO_", "", LAYER_NUM)]
 
-  yoo_tyDT <- melt(tmpDT[, .(P_ID, YOO1_TY, YOO2_TY, YOO3_TY)], id.vars = "P_ID",
+  yoo_tyDT <- melt.data.table(tmpDT[, .(P_ID, YOO1_TY, YOO2_TY, YOO3_TY)], id.vars = "P_ID",
                    variable.name = "LAYER_NUM", value.name = "YOO_TY") %>%
     .[, LAYER_NUM := sub("YOO(.*?)_TY", "\\1", LAYER_NUM)]
 
