@@ -596,12 +596,15 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
                                   SIMPLIFY = FALSE)
 
     } else {
-      ngbSEVList <- mapply(FUN = .calculateNgbBurns, dist = fireBufferCombos$dists,
-                           fireID = fireBufferCombos$fireID,
-                           MoreArgs = list(sevPoints = sevPoints, sevColID = sevColID,
-                                           fireColID = fireColID, resolution = resolution),
-                           SIMPLIFY = FALSE)
+      browser()
+      ngbSEVList <- Cache(Map,
+                          dist = fireBufferCombos$dists,
+                          fireID = fireBufferCombos$fireID,
+                          MoreArgs = list(sevPoints = sevPoints, sevColID = sevColID,
+                                          fireColID = fireColID, resolution = resolution),
+                          .calculateNgbBurns)
     }
+    browser()
     ngbSEVDT <- Reduce(function(x, y) merge(x, y, by = "pixID", all = TRUE),
                        ngbSEVList)
   } else
