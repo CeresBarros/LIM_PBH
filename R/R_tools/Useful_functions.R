@@ -662,10 +662,8 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
            new = c("pixID", "pixIDneigh", "sevngb"))
 
   message(paste0("Calculating number of burnt neighbours"))
-  ngbhoodBurns <- pointsWithinBufferDT[, list(noBurns = sum(sevngb > 0, na.rm = TRUE)),
+  ngbhoodBurns <- pointsWithinBufferDT[, list(ngbPropBurns = sum(sevngb > 0, na.rm = TRUE)/sum(!is.na(sevngb))),
                                        by = pixID]
-  setnames(ngbhoodBurns, old = "noBurns",
-           new = paste0("ngbPropBurns", sevColID, "_", dist, "m"))
   message(paste0("Done!"))
   return(ngbhoodBurns)
 }
