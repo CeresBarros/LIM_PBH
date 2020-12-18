@@ -581,6 +581,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   ## make a list of combinations of fire ID and buffer distance
   fireBufferCombos <- expand.grid(unique(sevPoints[[fireColID]]), dists)
   names(fireBufferCombos) <- c("fireID", "dists")
+
   if (nrow(fireBufferCombos) > 1) {
     if (parallel) {
       message("Starting parallelization...")
@@ -662,8 +663,12 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
            new = c("pixID", "pixIDneigh", "sevngb"))
 
   message(paste0("Calculating number of burnt neighbours"))
-  ngbhoodBurns <- pointsWithinBufferDT[, list(ngbPropBurns = sum(sevngb > 0, na.rm = TRUE)/sum(!is.na(sevngb))),
+  ngbhoodBurns <- pointsWithinBufferDT[, list(ngbPropBurns = sum(sevngb > 0, na.rm = TRUE)/sum(!is.na(sevngb)),
+                                              fire = fireID),
                                        by = pixID]
+  setnames(ngbhoodBurns, old = c("ngbPropBurns", "fire"),
+           new = c(paste0("ngbPropBurns", sevColID, "_", dist, "m"),
+                   sevColID))
   message(paste0("Done!"))
   return(ngbhoodBurns)
 }
