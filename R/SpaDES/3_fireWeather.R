@@ -9,10 +9,10 @@
 ## or other modules). That's why caching is kept separate from the rest
 ## of the simulation
 
-fireWeatherPaths <-list(cachePath = file.path("R/SpaDES/cache/AI_report", "fireWeather"),
+fireWeatherPaths <-list(cachePath = file.path(simPaths$cachePath, "fireWeather"),
                         modulePath = file.path("R/SpaDES/m"),
                         inputPath = file.path("R/SpaDES/inputs"),
-                        outputPath = file.path("R/SpaDES/outputs", "fireWeather"))
+                        outputPath = file.path(simPaths$outputPath, "fireWeather"))
 
 fireWeatherParameters <- list(
   fireWeather = list(

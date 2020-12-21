@@ -23,10 +23,10 @@ speciesParams <- list(
 )
 
 ## SIM PARAMS ------------------------------------------------
-preSimPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report/preSim"),
+preSimPaths <- list(cachePath = file.path(simPaths$cachePath, "preSim"),
                     modulePath = file.path("R/SpaDES/m"),
                     inputPath = file.path("R/SpaDES/inputs"),
-                    outputPath = file.path("R/SpaDES/outputs/preSim"))
+                    outputPath = file.path(simPaths$outputPath, "preSim"))
 
 preSimModules <- list("Biomass_borealDataPrep"
                       , "Biomass_core"
