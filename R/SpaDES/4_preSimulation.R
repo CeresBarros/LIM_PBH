@@ -11,7 +11,7 @@
 ## fire frequency using FireSense
 
 ## CUSTOMIZE SPECIES TRAIT VALUES -------
-## pass a list of species traits parameter values to LandWebUtils::updateSpeciesTable
+## pass a list of species traits parameter values to LandR::updateSpeciesTable
 speciesParams <- list(
   "shadetolerance" = list(
     Abie_sp = 2.3,
@@ -44,7 +44,7 @@ preSimParams <- list(
     , "exportModels" = "all"
     ,"speciesUpdateFunction" = list(
       quote(LandR::speciesTableUpdate(sim$species, sim$speciesTable, sim$sppEquiv, P(sim)$sppEquivCol)),
-      quote(LandWebUtils::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
+      quote(LandR::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
     , "pixelGroupAgeClass" = successionTimestep * 10L
