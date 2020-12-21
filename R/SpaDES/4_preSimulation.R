@@ -158,11 +158,8 @@ simOutPreSim <- Cache(simInitAndSpades
                       , userTags = "preSim"
                       , omitArgs = c("userTags"))
 
-## this is not loading properly:
 saveSimList(simOutPreSim,
             file.path(preSimPaths$outputPath, "preSimList.qs"))
-# saveRDS(simOutPreSim,
-#             file.path(simPaths$outputPath, paste0("preSimList_fakeRstCurrentBurn", runName, ".rds")))
 
 ## ESTIMATE FIRE FREQUENCY------------------------------------------------
 ## fireSenseIgnitionPredict needs to be run separately as the objects can't
