@@ -42,6 +42,7 @@ options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
 options("reproducible.inputPaths" = normPath("R/SpaDES/inputs"))  ## store everything in data/ so that there are no duplicated files across modules
 options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
+options("reproducible.useGDAL" = FALSE)
 
 source("R/R_tools/Useful_functions.R")
 
