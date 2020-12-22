@@ -96,6 +96,15 @@ simObjects <- c(simObjects,
                 )
 )
 
+## remove objects that are outputs from Biomass_core's simulation at year 0 (after GM)
+simObjects$summaryBySpecies <- NULL
+simObjects$summaryBySpecies1 <- NULL
+simObjects$ANPPMap <- NULL
+simObjects$mortalityMap <- NULL
+simObjects$vegTypeMap <- NULL
+simObjects$simulatedBiomassMap <- NULL
+
+
 ## add fake fire map if need be
 if (sum(grepl("oneFire", runName))) {
   rstCurrentBurn <- raster(list.files("R/SpaDES/cache/AI_report", recursive = TRUE,
