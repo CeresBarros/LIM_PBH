@@ -68,7 +68,7 @@ useParallel <- FALSE
 
 ## paths define simulation paths
 # simDirName <- "AI_report"
-simDirName <- "dec2020Tests"
+simDirName <- "dec2020Runs"
 simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
@@ -111,8 +111,8 @@ source("R/SpaDES/4_preSimulation.R")
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
-# plotInitialTime <- simTimes$start
-plotInitialTime <- NA
+plotInitialTime <- simTimes$start
+# plotInitialTime <- NA
 
 ## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run
 ## name and the parameters above
@@ -122,16 +122,16 @@ source("R/SpaDES/5_simulationSetup.R")
 graphics.off()
 # simInitOut <- simInitAndSpades(times = simTimes
 #                                , params = simParams
-#                                , modules = simModulesNoPM
-#                                # , modules = simModulesPM
+#                                # , modules = simModulesNoPM
+#                                , modules = simModulesPM
 #                                , objects = simObjects
 #                                , paths = simPaths
 #                                , outputs = outputs
 #                                , debug = TRUE
 #                                , .plotInitialTime = plotInitialTime
 # )
-
-# saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
+#
+# saveSimList(simInitOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
 # if (!is.na(plotInitialTime))
 #   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
 #             res = 300, units = "in")
