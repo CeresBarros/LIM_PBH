@@ -625,10 +625,12 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   names(sevPoints) <- sub(sevColID, "sev", names(sevPoints))
 
   ## do one fire at a time
+  ## make raster of severity and raster of pixel IDs
   i <- which(sevPoints[[fireColID]] == fireID)
   fireRas <- raster(as_Spatial(sevPoints[i,]), resolution = resolution, crs = crs(sevPoints))
-  fireRas[] <- 1:ncell(fireRas)
-  fireRas <- rasterize(as_Spatial(sevPoints[i,]), fireRas, field = "pixID")
+  fireRas[] <- NA
+  fireRas <- rasterize(as_Spatial(sevPoints[i,]), fireRas, field = "sev")
+  fireRasIDs <- rasterize(as_Spatial(sevPoints[i,]), fireRas, field = "pixID")
 
   ## draw buffers
   message(paste0("Drawing ", dist, "m buffers and counting burnt neighbours for ", fireID, " fire"))
@@ -637,38 +639,27 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   w[w == 0] <- NA
   w[ceiling(nrow(w)/2), ceiling(ncol(w)/2)] <- 0  ## exclude focal cell
 
-  ## find neighbours
-  ngbhoodBurns <- data.table(adjacent(fireRas, cells = which(!is.na(getValues(fireRas))),
-                                      directions = w))
-  if (length(unique(ngbhoodBurns$from)) != length(i)) {
-    noMissing <- sum(!sevPoints$pixID[i] %in% fireRas[!is.na(fireRas[])])
+  ## calculate prop burnt neighbours per pixel
+  message(paste0("Calculating number of burnt neighbours"))
+  ngbhoodBurns <- focal(fireRas, w = w, pad = TRUE,
+                        fun = function(x) {sum(x > 0, na.rm = TRUE)/sum(!is.na(x))})
+  ngbhoodBurns <- mask(ngbhoodBurns, fireRas)  ## need to remove 0s beyond fire perimeter
+
+  ## make DT
+  ngbhoodBurnsDT <- data.table(pixID = getValues(fireRasIDs),
+                               ngbPropBurns = getValues(ngbhoodBurns),
+                               fire = fireID)
+  ngbhoodBurnsDT <- na.omit(ngbhoodBurnsDT)
+  setnames(ngbhoodBurnsDT, old = c("ngbPropBurns", "fire"),
+           new = c(paste0("ngbPropBurns", sevColID, "_", dist, "m"),
+                   sevColID))
+
+  ## checks
+  if (length(unique(ngbhoodBurnsDT$pixID)) != length(i)) {
+    noMissing <- sum(!sevPoints$pixID[i] %in% ngbhoodBurnsDT$pixID)
     warning(paste(noMissing, "points in fire perimeter were not converted to raster pixels.",
                   "\nThis is probably due to more than one point falling in the same cell"))
   }
-
-  ngbhoodBurns[, sev := getValues(fireRas)[to]]
-
-  bufferSf <- st_buffer(sevPoints[i,], dist = dist) ## keep all columns so that the join identifies .x and .y columns
-
-  ## join to find with pixels are within another's buffer
-  ## st_touches avoids "self" joins, so pixels are not joined with their own buffer
-  pointsWithinBuffer <- st_join(bufferSf, sevPoints[i,], join = st_touches)
-  names(pointsWithinBuffer) <- sub("\\.x", "buffer", names(pointsWithinBuffer))
-  names(pointsWithinBuffer) <- sub("\\.y", "points", names(pointsWithinBuffer))
-
-  pointsWithinBufferDT <- data.table(st_drop_geometry(pointsWithinBuffer))
-  pointsWithinBufferDT[, sevbuffer := NULL] ## keep track of neighbour sev only
-
-  setnames(pointsWithinBufferDT, old = c("pixIDbuffer", "pixIDpoints", "sevpoints"),
-           new = c("pixID", "pixIDneigh", "sevngb"))
-
-  message(paste0("Calculating number of burnt neighbours"))
-  ngbhoodBurns <- pointsWithinBufferDT[, list(ngbPropBurns = sum(sevngb > 0, na.rm = TRUE)/sum(!is.na(sevngb)),
-                                              fire = fireID),
-                                       by = pixID]
-  setnames(ngbhoodBurns, old = c("ngbPropBurns", "fire"),
-           new = c(paste0("ngbPropBurns", sevColID, "_", dist, "m"),
-                   sevColID))
   message(paste0("Done!"))
-  return(ngbhoodBurns)
+  return(ngbhoodBurnsDT)
 }
