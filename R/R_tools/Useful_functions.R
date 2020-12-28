@@ -645,7 +645,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   ## make DT
   ngbhoodBurnsDT <- data.table(pixID = getValues(fireRasIDs),
                                ngbPropBurns = getValues(ngbhoodBurns),
-                               fire = fireID
+                               fire = fireID,
                                bufferSize = dist)
   ngbhoodBurnsDT <- na.omit(ngbhoodBurnsDT)
 
