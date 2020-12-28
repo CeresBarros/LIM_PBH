@@ -645,11 +645,9 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   ## make DT
   ngbhoodBurnsDT <- data.table(pixID = getValues(fireRasIDs),
                                ngbPropBurns = getValues(ngbhoodBurns),
-                               fire = fireID)
+                               fire = fireID
+                               bufferSize = dist)
   ngbhoodBurnsDT <- na.omit(ngbhoodBurnsDT)
-  setnames(ngbhoodBurnsDT, old = c("ngbPropBurns", "fire"),
-           new = c(paste0("ngbPropBurns", sevColID, "_", dist, "m"),
-                   fireColID))
 
   ## checks
   if (length(unique(ngbhoodBurnsDT$pixID)) != length(i)) {
