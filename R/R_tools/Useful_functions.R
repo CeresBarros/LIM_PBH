@@ -604,8 +604,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
                                           fireColID = fireColID, resolution = resolution),
                           .calculateNgbBurns)
     }
-    ngbSEVDT <- Reduce(function(x, y) merge(x, y, by = "pixID", all = TRUE),
-                       ngbSEVList)
+    ngbSEVDT <- rbindlist(ngbSEVList, use.names = TRUE, fill = TRUE)
   } else
     ngbSEVDT <- .calculateNgbBurns(fireBufferCombos$dists, fireBufferCombos$fireID,
                                    sevPoints, sevColID, fireColID, resolution)
