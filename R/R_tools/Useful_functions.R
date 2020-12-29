@@ -604,7 +604,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
                                           fireColID = fireColID, resolution = resolution),
                           .calculateNgbBurns)
     }
-    ngbSEVDT <- rbindlist(ngbSEVList, use.names = TRUE, fill = TRUE)
+    ngbSEVDT <- rbindlist(ngbSEVList)
   } else
     ngbSEVDT <- .calculateNgbBurns(fireBufferCombos$dists, fireBufferCombos$fireID,
                                    sevPoints, sevColID, fireColID, resolution)
@@ -648,6 +648,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
                                fire = fireID,
                                bufferSize = dist)
   ngbhoodBurnsDT <- na.omit(ngbhoodBurnsDT)
+  setnames(ngbhoodBurnsDT, old = "fire", new = fireColID)
 
   ## checks
   if (length(unique(ngbhoodBurnsDT$pixID)) != length(i)) {
