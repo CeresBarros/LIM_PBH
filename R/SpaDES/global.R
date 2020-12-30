@@ -154,7 +154,7 @@ library(future)
 plan("multiprocess", workers = 2)
 simExperimentOut <- experiment2(noPM = simInitList[[1]], PM = simInitList[[2]],
                                 clearSimEnv = TRUE,
-                                replicates = 1)
+                                replicates = 5)
 lapply(names(simExperimentOut), FUN = function(simName) {
   saveSimList(simExperimentOut[[simName]],
               filename = file.path(outputPath(simExperimentOut[[simName]]), paste0("simList_", simName, ".qs")))
