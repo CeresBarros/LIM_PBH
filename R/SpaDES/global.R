@@ -9,20 +9,20 @@
 rm(list=ls()); amc::.gc()
 
 ## Get packages ----------------------
-## requires as of Dec 18th 2020
+## requires as of Dec 22th 2020
 # loading reproducible     1.0.0.9010
 # loading quickPlot        0.1.6.9000
 # loading SpaDES.core      1.0.0.9
 # loading SpaDES.tools     0.3.4.9000
 # loading SpaDES.addins    0.1.2
-# loading LandR            0.0.3.9006
+# loading LandR            0.0.10.9001
 # loading LandR.CS         0.0.1.0001
 
-# devtools::install_github("PredictiveEcology/reproducible@development", dependencies = FALSE)
+# devtools::install_github("CeresBarros/reproducible@development", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/pemisc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/map@development", dependencies = FALSE)
-# devtools::install_github("CeresBarros/LandR@dispersalRcpp", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/LandR@dispersalRcpp", dependencies = FALSE)
 # devtools::install_github("ianmseddy/LandR.CS", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
