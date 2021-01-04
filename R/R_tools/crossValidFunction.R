@@ -119,9 +119,11 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
   ## calculate confusion matrix
   confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
 
-  ## VALIDATION STATISTICS WITH CONITNUOS VARIABLE -----------------------
+  ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
   Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
   Rsquared <- Rsquared["Rsquared"]
 
-  list(validMetrics = validMetrics, confMatrix = confMatrix, Rsquared = Rsquared)
+  ## COEFFICIENTS
+  list(validMetrics = validMetrics, confMatrix = confMatrix,
+       Rsquared = Rsquared, coefs = coefAll(trainModel))
 }
