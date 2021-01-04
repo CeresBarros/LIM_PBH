@@ -22,8 +22,10 @@ crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cach
     origDataVars <- c(names(origData), idCol)
 
   ## remove NAs from the data without subsetting columns
-  toKeep <- na.omit(fullDT[, ..origDataVars])[, pixID]
-  fullDT <- fullDT[pixID %in% toKeep]
+  toKeep <- na.omit(fullDT[, ..origDataVars])[, ..idCol]
+  setkeyv(fullDT, idCol)
+  setkeyv(toKeep, idCol)
+  fullDT <- fullDT[toKeep]
 
   ## make chunks of 1/4 of the data
   cols2 <- c("FIRE_NAME", idCol)
@@ -38,7 +40,8 @@ crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cach
   origDataVars <- c(origDataVars, "sampID")
 
   crossValidResults <- lapply(unique(fullDT$sampID), FUN = calcCrossValidMetrics,
-                              fullDT = fullDT, origData = origData, statsModel = statsModel, origDataVars = origDataVars)
+                              fullDT = fullDT, origData = origData, idCol = idCol,
+                              statsModel = statsModel, origDataVars = origDataVars)
 
   return(crossValidResults)
 }
@@ -94,6 +97,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
                 by = row.names(predictionsDT)]
 
   ## add severity classes
+  testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
   predictionsDT[, pixID := testData$pixID]
   predictionsDT <- fullDT[, .(pixID, SEV_CLASS)][predictionsDT, on = "pixID"]
 
