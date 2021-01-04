@@ -98,7 +98,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, ori
 
   ## add severity classes
   testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
-  predictionsDT[, c(idCol) := testData[[grep(idCol, names(testDT))]]]
+  predictionsDT[, c(idCol) := testData[[grep(idCol, names(testData))]]]
   cols <- c(idCol, "SEV_CLASS")
   predictionsDT <- fullDT[, ..cols][predictionsDT, on = idCol]
 
