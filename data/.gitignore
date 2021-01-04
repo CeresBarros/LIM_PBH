@@ -10,4 +10,5 @@ Cameron*/*
 
 ## don't ignore:
 !CHECKSUMS.txt
+!*/CHECKSUMS.txt
 !.gitignore

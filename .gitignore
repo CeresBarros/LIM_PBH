@@ -12,3 +12,4 @@ analyses/FireEvents/*
 *.rds
 *.dat
 .Rprofile
+*.Rout
