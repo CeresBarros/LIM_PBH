@@ -58,7 +58,7 @@ crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cach
 
 
 ## outputs a list with 2 entries
-calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVars) {
+calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, origDataVars) {
   ## predict requires the original and new data to have the same columns
   if (!all(names(origData) %in% names(fullDT)))
     stop("'fullDT' needs to include all the columns in 'origData'")
@@ -98,8 +98,9 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, statsModel, origDataVa
 
   ## add severity classes
   testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
-  predictionsDT[, pixID := testData$pixID]
-  predictionsDT <- fullDT[, .(pixID, SEV_CLASS)][predictionsDT, on = "pixID"]
+  predictionsDT[, c(idCol) := testData[[grep(idCol, names(testDT))]]]
+  cols <- c(idCol, "SEV_CLASS")
+  predictionsDT <- fullDT[, ..cols][predictionsDT, on = idCol]
 
   ## convert to classes, using the quantiles corresponding to the observed class proportions
   ## accumulate proportions to get probabilities
