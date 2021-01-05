@@ -112,7 +112,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, ori
 
   ## convert to numbered factor (subtracting one, because classes are 0-5)
   predictionsDT[, predSEV_CLASS := as.numeric(predSEV_CLASS)-1]
-  classes <- as.character(sort(unique(predictionsDT$SEV_CLASS)))
+  classes <- as.character(sort(unique(fullDT$SEV_CLASS)))
   predictionsDT[, `:=`(SEV_CLASS = factor(SEV_CLASS, levels = classes),
                        predSEV_CLASS = factor(predSEV_CLASS, levels = classes))]
 
