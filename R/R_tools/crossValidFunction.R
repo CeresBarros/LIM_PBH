@@ -91,10 +91,11 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, ori
   ## change name
   setnames(predictionsDT, "y", "SEV_PROP")
 
-  ## predict using rBEINF
+  ## get fitted means - using method from gamlss.dist::meanBEINF
   ## tried generating many values and averaging, but doing that results in the same value
-  predictionsDT[, predSEV_PROP := mean(rBEINF(10, mu, sigma, nu, tau)),
-                by = row.names(predictionsDT)]
+  if (trainModel$family[1] != "BEINF")
+    stop("the object does not have a BEINF distribution")
+  predictionsDT[, predSEV_PROP := (tau + mu)/(1 + nu + tau)]
 
   ## add severity classes
   testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
