@@ -659,3 +659,12 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   message(paste0("Done!"))
   return(ngbhoodBurnsDT)
 }
+
+
+## CALCULATION OF THE MEAN FROM A BETA-INFLATED DISTRIBUTION
+## adapted from `gamlss::meanBEINF`
+## mu, nu, tau are vectors of values for the mu, nu and tau of the Beta-inflated distribution
+calcMeanBEINF <- function (mu, nu, tau) {
+  meanofY <- (tau + mu)/(1 + nu + tau)
+  meanofY
+}
