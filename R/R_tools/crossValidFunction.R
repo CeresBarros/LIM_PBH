@@ -106,8 +106,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     if (trainModel$family[1] != "BEINF")
       stop("the object does not have a BEINF distribution")
 
-    predictionsDT[, predSEV_PROP := .calcMeanBEINF(mu, nu, tau),
-                  by = row.names(predictionsDT)]
+    predictionsDT[, predSEV_PROP := .calcMeanBEINF(mu, nu, tau)]
 
     ## add severity classes
     testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
