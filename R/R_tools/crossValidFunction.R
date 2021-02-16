@@ -10,6 +10,7 @@
 
 ## fullDT - data.table with full dataset
 ## statsModel - the statistical model to validate. Only works with gamlss models
+## level - passed to gamlss:::predict
 ## k - integer with number of chunks that the data should be partioned in
 ## idCol - column with pixel/observation IDs (optional)
 ## origDataVars - the data used to fit the statsModule, needs to be passed to gamlss::predictAll
@@ -17,7 +18,8 @@
 ##  has the same variables (even if they're not used in the model)
 ## cacheObj1/2 - an object used by Cache for digesting, to avoid digesting the (potentially) large data arguments
 
-crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cacheObj1, cacheObj2) {
+crossValidFunction <- function (fullDT, statsModel, origData, level = NULL,
+                                k = 4, idCol, cacheObj1, cacheObj2) {
   if (!is.null(idCol))
     origDataVars <- c(names(origData), idCol)
 
@@ -41,7 +43,7 @@ crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cach
 
   crossValidResults <- lapply(unique(fullDT$sampID), FUN = calcCrossValidMetrics,
                               fullDT = fullDT, origData = origData, idCol = idCol,
-                              statsModel = statsModel, origDataVars = origDataVars)
+                              statsModel = statsModel, level = level, origDataVars = origDataVars)
 
   return(crossValidResults)
 }
@@ -58,7 +60,7 @@ crossValidFunction <- function (fullDT, statsModel, origData, k = 4, idCol, cach
 
 
 ## outputs a list with 2 entries
-calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, origDataVars) {
+calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, statsModel, origDataVars) {
   ## predict requires the original and new data to have the same columns
   if (!all(names(origData) %in% names(fullDT)))
     stop("'fullDT' needs to include all the columns in 'origData'")
@@ -82,54 +84,75 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, idCol, statsModel, ori
 
   ## refit model on training sample - this is failing due to singularity
   ## then predict
-  trainModel <- update(statsModel, data = trainData)
-  predictionsDT <- predictAll(trainModel,
-                              newdata = testData, data = trainData,
-                              type = "response", output = "matrix")
-  predictionsDT <- as.data.table(predictionsDT)
+  trainModel <- tryCatch(update(object = statsModel, data = trainData), error = function(e) e)
 
-  ## change name
-  setnames(predictionsDT, "y", "SEV_PROP")
+  if (any(class(trainModel) %in% "error")) {
+    validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA)
+  } else {
+    params <- c("mu", "nu", "tau")
+    names(params) <- params
+    predictionsDT <- lapply(params, FUN = function(param) {
+      predict(trainModel, what = param,
+              newdata = testData, data = trainData,
+              type = "response", level = level)
+    })
+    predictionsDT <- as.data.table(do.call(cbind, predictionsDT))
 
-  ## get fitted means - using method from gamlss.dist::meanBEINF
-  ## tried generating many values and averaging, but doing that results in the same value
-  if (trainModel$family[1] != "BEINF")
-    stop("the object does not have a BEINF distribution")
-  predictionsDT[, predSEV_PROP := (tau + mu)/(1 + nu + tau)]
+    ## add response variable
+    set(predictionsDT, NULL, "SEV_PROP", testData$SEV_PROP)
 
-  ## add severity classes
-  testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
-  predictionsDT[, c(idCol) := testData[[grep(idCol, names(testData))]]]
-  cols <- c(idCol, "SEV_CLASS")
-  predictionsDT <- fullDT[, ..cols][predictionsDT, on = idCol]
+    ## get fitted means - using method from gamlss.dist::meanBEINF
+    ## tried generating many values and averaging, but doing that results in the same value
+    if (trainModel$family[1] != "BEINF")
+      stop("the object does not have a BEINF distribution")
 
-  ## convert to classes, using the quantiles corresponding to the observed class proportions
-  ## accumulate proportions to get probabilities
-  quantProbs <- cumsum(table(predictionsDT$SEV_CLASS)/nrow(predictionsDT))
-  classRanges <- c(0, quantile(predictionsDT$predSEV_PROP, probs = quantProbs))
+    predictionsDT[, predSEV_PROP := .calcMeanBEINF(mu, nu, tau),
+                  by = row.names(predictionsDT)]
 
-  predictionsDT[, predSEV_CLASS := cut(predSEV_PROP, breaks = classRanges,
-                                       include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
+    ## add severity classes
+    testData <- na.omit(fullDT[sampID == samp, ..origDataVars]) ## redo testData in case idCol was dropped when subsetting to model data
+    predictionsDT[, c(idCol) := testData[[grep(idCol, names(testData))]]]
+    cols <- c(idCol, "SEV_CLASS")
+    predictionsDT <- fullDT[, ..cols][predictionsDT, on = idCol]
 
-  ## convert to numbered factor (subtracting one, because classes are 0-5)
-  predictionsDT[, predSEV_CLASS := as.numeric(predSEV_CLASS)-1]
-  classes <- as.character(sort(unique(fullDT$SEV_CLASS)))
-  predictionsDT[, `:=`(SEV_CLASS = factor(SEV_CLASS, levels = classes),
-                       predSEV_CLASS = factor(predSEV_CLASS, levels = classes))]
+    ## convert to classes, using the quantiles corresponding to the observed class proportions
+    ## accumulate proportions to get probabilities
+    quantProbs <- cumsum(table(predictionsDT$SEV_CLASS)/nrow(predictionsDT))
+    classRanges <- c(0, quantile(predictionsDT$predSEV_PROP, probs = quantProbs))
 
-  ## VALIDATION STATISTICS WITH CLASSES ----------------------------------
-  ## calculate overall statistics
-  validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = SEV_CLASS,
-                                                                pred = predSEV_CLASS)],
-                                           lev = classes)
-  ## calculate confusion matrix
-  confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
+    predictionsDT[, predSEV_CLASS := cut(predSEV_PROP, breaks = classRanges,
+                                         include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
 
-  ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
-  Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
-  Rsquared <- Rsquared["Rsquared"]
+    ## convert to numbered factor (subtracting one, because classes are 0-5)
+    predictionsDT[, predSEV_CLASS := as.numeric(predSEV_CLASS)-1]
+    classes <- as.character(sort(unique(fullDT$SEV_CLASS)))
+    predictionsDT[, `:=`(SEV_CLASS = factor(SEV_CLASS, levels = classes),
+                         predSEV_CLASS = factor(predSEV_CLASS, levels = classes))]
+
+    ## VALIDATION STATISTICS WITH CLASSES ----------------------------------
+    ## calculate overall statistics
+    validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = SEV_CLASS,
+                                                                  pred = predSEV_CLASS)],
+                                             lev = classes)
+    ## calculate confusion matrix
+    confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
+
+    ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
+    Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
+    Rsquared <- Rsquared["Rsquared"]
+  }
+
 
   ## COEFFICIENTS
   list(validMetrics = validMetrics, confMatrix = confMatrix,
        Rsquared = Rsquared, coefs = coefAll(trainModel))
+}
+
+
+## CALCULATION OF THE MEAN FROM A BETA-INFLATED DISTRIBUTION
+## adapted from `gamlss::meanBEINF`
+## mu, nu, tau are vectors of values for the mu, nu and tau of the Beta-inflated distribution
+.calcMeanBEINF <- function (mu, nu, tau) {
+  meanofY <- (tau + mu)/(1 + nu + tau)
+  meanofY
 }
