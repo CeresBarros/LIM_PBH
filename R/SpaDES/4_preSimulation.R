@@ -142,7 +142,7 @@ simParams <- list(
   , fireSense_IgnitionPredict = list(
     "data" = c("fuelTypesCoverPred", "weatherDataPred")
     , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
-    , "rescaleFactor" = substitute(sim$rescaleFactor))
+    , "rescaleFactor" = substitute(sim$rescaleFactor)
   )
 )
 
@@ -168,6 +168,7 @@ simObjects <- list (
   , "weatherData" = simOutFireWeather$weatherData
   , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
   , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
+  , "weatherDataCRS" = simOutFireWeather$weatherDataCRS
 )
 
 ## SIM OUTPUTS ------------------------------------------------
