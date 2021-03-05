@@ -22,22 +22,33 @@ speciesParams <- list(
   )
 )
 
-## SIM PARAMS ------------------------------------------------
-# simPaths <- list(cachePath = file.path(simPaths$cachePath, "preSim"),
-#                     modulePath = file.path("R/SpaDES/m"),
-#                     inputPath = file.path("R/SpaDES/inputs"),
-#                     outputPath = file.path(simPaths$outputPath, "preSim"))
-
-simModules <- list("Biomass_borealDataPrep"
-                   , "Biomass_speciesParameters"
-                   , "Biomass_fireProperties"
-                   , "Biomass_core"
-                   , "Biomass_fuelsPFG"
-                   , "fireSpread"
-                   , "fireSense_dataPrep"
-                   , "fireSense_IgnitionFit"
+## SIM MODULES AND PARAMETERS -----------------------------------------
+## make two lists of sim modules, one noPM and one PM
+simModules <- list("noPM" = list(
+  "Biomass_borealDataPrep"
+  , "Biomass_speciesParameters"
+  , "Biomass_fireProperties"
+  , "Biomass_fuelsPFG"
+  , "fireSense_dataPrep"
+  , "fireSense_IgnitionFit"
+  , "Biomass_core"
+  , "fireSpread"
+  , "Biomass_regeneration"
+)
+, "PM" = list(
+  "Biomass_borealDataPrep"
+  , "Biomass_speciesParameters"
+  , "Biomass_fireProperties"
+  , "Biomass_fuelsPFG"
+  , "fireSense_dataPrep"
+  , "fireSense_IgnitionFit"
+  , "Biomass_core"
+  , "fireSpread"
+  , "Biomass_regenerationPM"
+)
 )
 
+## noPM and PM moduels can both be in the same parameter list.
 simParams <- list(
   Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
@@ -46,12 +57,13 @@ simParams <- list(
     , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
+    , "fixModelBiomass" = TRUE
     , "speciesUpdateFunction" = list(
       quote(LandR::speciesTableUpdate(sim$species, sim$speciesTable, sim$sppEquiv, P(sim)$sppEquivCol)),
       quote(LandR::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
     # next two are used when assigning pixelGroup membership; what resolution for
     #   age and biomass
-    , "pixelGroupAgeClass" = successionTimestep * 10L
+    , "pixelGroupAgeClass" = successionTimestep
     , "pixelGroupBiomassClass" = 100
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
@@ -68,12 +80,12 @@ simParams <- list(
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep * 10L
+    , "successionTimestep" = successionTimestep
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
     , ".saveInitialTime" = NA
-    , ".useCache" = eventCaching[1] # seems slower to use Cache for both
+    , ".useCache" = eventCaching # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
   , Biomass_fuelsPFG = list(
@@ -87,12 +99,12 @@ simParams <- list(
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "successionTimestep" = successionTimestep
+    , "successionTimestep" = fireTimestep
   )
   , Biomass_regenerationPM = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "successionTimestep" = successionTimestep
+    , "successionTimestep" = fireTimestep
   )
   , Biomass_fireProperties = list(
     "fireInitialTime" = fireInitialTime
@@ -108,8 +120,11 @@ simParams <- list(
     , ".useCache" = eventCaching
   )
   , fireSense_dataPrep = list(
-    "fireInitialTime" = 0
+    "averageWeather4Pred" = TRUE
+    , "fireInitialTime" = 0
     , "fireTimestep" = 1
+    , "prepPredictionObjs" = TRUE
+    , "rescalePredictionObjs" = TRUE
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
@@ -123,6 +138,11 @@ simParams <- list(
     , "iterNlminb" = 100
     , "cores" = 1
     , ".useCache" = eventCaching
+  )
+  , fireSense_IgnitionPredict = list(
+    "data" = c("fuelTypesCoverPred", "weatherDataPred")
+    , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
+    , "rescaleFactor" = substitute(sim$rescaleFactor))
   )
 )
 
@@ -172,22 +192,38 @@ outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
 ## on the first year save at the start.
 outputs[outputs$saveTime == simTimes$start, "eventPriority"] <- 1
 
-simOutPreSim <- Cache(simInitAndSpades
-                      , times = list(start = 0, end = 0)
-                      , params = preSimParams
-                      , modules = preSimModules
-                      , paths = simPaths
-                      , objects = preSimObjects
-                      , outputs = outputs
-                      , debug = TRUE
-                      , .plotInitialTime = NA
-                      # , useCache = "overwrite"
-                      , cacheRepo = simPaths$cachePath
-                      , userTags = "preSim"
-                      , omitArgs = c("userTags"))
+## -----------------------------------------------
+## SIMULATION INITIALISATION
+## --------------------------------------------
 
-saveSimList(simOutPreSim,
-            file.path(simPaths$outputPath, "preSimList.qs"))
+## Run two simInit calls, plus init events
+LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules, simParams) {
+  browser()
+  simPaths2 <- simPaths
+  simPaths2$cachePath <- file.path(simPaths2$cachePath, scenario)
+  simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
+  simModules2 <- simModules[[scenario]]
+  # Cache(
+    simInitAndSpades(
+        times = simTimes
+        , params = simParams
+        , modules = simModules2
+        , loadOrder = unlist(simModules2)
+        , paths = simPaths2
+        , objects = simObjects
+        , outputs = outputs
+        , debug = TRUE
+        , .plotInitialTime = NA)
+        # , cacheRepo = simPaths2$cachePath
+        # , userTags = "simInitAndInits"
+        # , omitArgs = c("userTags", ".plotInitialTime", "debug"))
+}, simPaths = simPaths, simModules = simModules, simParams = simParams)
+
+## save
+lapply(names(LIM_simInitList), FUN = function(scenario) {
+  saveSimList(LIM_simInitList[[scenario]],
+              file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario)))
+})
 
 ## ESTIMATE FIRE FREQUENCY------------------------------------------------
 ## fireSenseIgnitionPredict needs to be run separately as the objects can't
