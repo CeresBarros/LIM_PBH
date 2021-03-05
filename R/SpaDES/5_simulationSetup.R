@@ -34,7 +34,7 @@ simParams <- list(
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
-    , "successionTimestep" = successionTimestep * 10L
+    , "successionTimestep" = successionTimestep
     , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
@@ -53,12 +53,12 @@ simParams <- list(
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "successionTimestep" = successionTimestep
+    , "successionTimestep" = fireTimestep
   )
   , Biomass_regenerationPM = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "successionTimestep" = successionTimestep
+    , "successionTimestep" = fireTimestep
   )
   , Biomass_fireProperties = list(
     "fireInitialTime" = fireInitialTime

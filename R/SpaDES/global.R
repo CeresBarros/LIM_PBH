@@ -37,7 +37,7 @@ library(SpaDES)
 library(SpaDES.experiment)
 library(LandR)
 
-options("reproducible.useNewDigestAlgorithm" = TRUE)
+options("reproducible.useNewDigestAlgorithm" = 2)
 options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
 options("reproducible.inputPaths" = normPath("R/SpaDES/inputs"))  ## store everything in data/ so that there are no duplicated files across modules
@@ -61,14 +61,14 @@ source("R/R_tools/Useful_functions.R")
 # runName <- "noPM_oneFire_newSppParams"
 # runName <- "PM_newSppParams"
 # runName <- "noPM_newSppParams"
-runName <- c("noPM_newSppParams_fullSA", "PM_newSppParams_fullSA")
+runName <- c("noPM", "PM")
 
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
 ## paths define simulation paths
 # simDirName <- "AI_report"
-simDirName <- "dec2020Runs"
+simDirName <- "mar2021Runs"
 simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
@@ -105,13 +105,13 @@ vegLeadingProportion <- 0 # indicates what proportion the stand must be in one s
 # If all are below this, then it is a "mixed" stand
 fireInitialTime <- 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
-successionTimestep <- 1L
+successionTimestep <- 10L
+plotInitialTime <- simTimes$start
 source("R/SpaDES/4_preSimulation.R")
 
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
-plotInitialTime <- simTimes$start
 # plotInitialTime <- NA
 
 ## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run

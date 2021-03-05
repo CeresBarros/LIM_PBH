@@ -104,7 +104,7 @@ Other module-specific parameters are defined in the `4_preSimulation.R` script a
 simTimes <- list(start = 1, end = 10)
 fireInitialTime <- 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
-successionTimestep <- 1L
+successionTimestep <- 10L
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand (e.g. 0 will never classify by leading type)
 source("R/SpaDES/4_preSimulation.R")
