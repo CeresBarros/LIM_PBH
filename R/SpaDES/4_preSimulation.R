@@ -19,7 +19,7 @@ speciesParams <- list(
     Pseu_men = 2.0,
     Pice_gla = 1.6,
     Pinu_sp = 1, Popu_sp = 1
-    )
+  )
 )
 
 ## SIM PARAMS ------------------------------------------------
