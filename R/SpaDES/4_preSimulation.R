@@ -23,18 +23,22 @@ speciesParams <- list(
 )
 
 ## SIM PARAMS ------------------------------------------------
-preSimPaths <- list(cachePath = file.path(simPaths$cachePath, "preSim"),
-                    modulePath = file.path("R/SpaDES/m"),
-                    inputPath = file.path("R/SpaDES/inputs"),
-                    outputPath = file.path(simPaths$outputPath, "preSim"))
+# simPaths <- list(cachePath = file.path(simPaths$cachePath, "preSim"),
+#                     modulePath = file.path("R/SpaDES/m"),
+#                     inputPath = file.path("R/SpaDES/inputs"),
+#                     outputPath = file.path(simPaths$outputPath, "preSim"))
 
-preSimModules <- list("Biomass_borealDataPrep"
-                      , "Biomass_core"
-                      , "Biomass_fuelsPFG"
-                      , "fireSense_dataPrep"
-                      , "fireSense_IgnitionFit"
+simModules <- list("Biomass_borealDataPrep"
+                   , "Biomass_speciesParameters"
+                   , "Biomass_fireProperties"
+                   , "Biomass_core"
+                   , "Biomass_fuelsPFG"
+                   , "fireSpread"
+                   , "fireSense_dataPrep"
+                   , "fireSense_IgnitionFit"
 )
-preSimParams <- list(
+
+simParams <- list(
   Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
     , "forestedLCCClasses" = c(1:15, 34:36)
@@ -42,7 +46,7 @@ preSimParams <- list(
     , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
-    ,"speciesUpdateFunction" = list(
+    , "speciesUpdateFunction" = list(
       quote(LandR::speciesTableUpdate(sim$species, sim$speciesTable, sim$sppEquiv, P(sim)$sppEquivCol)),
       quote(LandR::updateSpeciesTable(speciesTable = sim$species, params = sim$speciesParams)))
     # next two are used when assigning pixelGroup membership; what resolution for
@@ -53,10 +57,14 @@ preSimParams <- list(
     , "cloudFolderID" = NA
     , ".useCache" = eventCaching
   )
+  , Biomass_speciesParameters = list(
+    "sppEquivCol" = sppEquivCol
+    , ".useCache" = eventCaching
+  )
   , Biomass_core = list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-    , ".plotInitialTime" = simTimes$start
+    , ".plotInitialTime" = plotInitialTime
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
@@ -65,15 +73,38 @@ preSimParams <- list(
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
     , ".saveInitialTime" = NA
-    , ".useCache" = eventCaching # seems slower to use Cache for both
+    , ".useCache" = eventCaching[1] # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
   , Biomass_fuelsPFG = list(
-    "fireInitialTime" = 0
-    , "fireTimestep" = 1
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
     , "nonForestFire" = TRUE
     , "sppEquivCol" = sppEquivCol
     , ".plotMaps" = FALSE
+    , ".useCache" = eventCaching
+  )
+  , Biomass_regeneration = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = successionTimestep
+  )
+  , Biomass_regenerationPM = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = successionTimestep
+  )
+  , Biomass_fireProperties = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "vegFeedback" = TRUE
+    , ".useCache" = eventCaching
+  )
+  , fireSpread = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
+    , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , ".useCache" = eventCaching
   )
   , fireSense_dataPrep = list(
@@ -82,31 +113,24 @@ preSimParams <- list(
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
-    formula = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
-                        M2:julMDC + O1b:julMDC + NF:julMDC - 1)
-    , family = poisson(link = "identity")
-    , ub = list(coef = 1)
-    , data = "dataFireSense_IgnitionFit"
-    , trace = 1
-    , iterDEoptim = 60
-    , iterNlminb = 100
-    , cores = 1
+    "formula" = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
+                          M2:julMDC + O1b:julMDC + NF:julMDC - 1)
+    , "family" = poisson(link = "identity")
+    , "ub" = list(coef = 1)
+    , "data" = "dataFireSense_IgnitionFit"
+    , "trace" = 1
+    , "iterDEoptim" = 60
+    , "iterNlminb" = 100
+    , "cores" = 1
     , ".useCache" = eventCaching
   )
 )
 
-if (sum(grepl("newSppParam", runName))) {
-  preSimModules <- c("Biomass_speciesParameters", preSimModules)
-
-  preSimParams[["Biomass_speciesParameters"]] <- list(
-    "sppEquivCol" = sppEquivCol
-    , ".useCache" = eventCaching
-  )
-}
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-preSimObjects <- list(# "studyArea" = foothillsSMALL
+simObjects <- list (
+  # "studyArea" = foothillsSMALL
   # , "studyAreaLarge" = foothillsMED
   "studyArea" = foothills
   , "studyAreaLarge" = foothills
@@ -118,48 +142,52 @@ preSimObjects <- list(# "studyArea" = foothillsSMALL
   , "treed" =  simOutSpeciesLayers$treed
   , "numTreed" =  simOutSpeciesLayers$numTreed
   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+  , "PSPgis" = PSPgis
+  , "PSPmeasure" = PSPmeasure
+  , "PSPplot" = PSPplot
   , "weatherData" = simOutFireWeather$weatherData
   , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
   , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
 )
 
-## add PSP data if need be
-if (sum(grepl("newSppParams", runName))) {
-  preSimObjects$PSPgis <- PSPgis
-  preSimObjects$PSPmeasure <- PSPmeasure
-  preSimObjects$PSPplot <- PSPplot
-}
-
-
 ## SIM OUTPUTS ------------------------------------------------
-## on the first year save after init events, but before mortalityAndGrowth
+## save objects at the end of each year
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = 0,
-                                  eventPriority = 5.5,
+                                  saveTime = unique(sort(c(1, simTimes$end,
+                                                           seq(simTimes$start, simTimes$end, by = 5)))),
+                                  eventPriority = 10,
                                   stringsAsFactors = FALSE))
-outputs <- rbind(outputs, data.frame(objectName = "fuelTypesMaps",
-                                     saveTime = 0,
-                                     eventPriority = 5.5))
+outputs <- rbind(outputs, data.frame(objectName = "rstCurrentBurn",
+                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                     saveTime = unique(sort(c(1, simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
+                                     eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = 0,
-                                     eventPriority = 5.5))
+                                     saveTime = unique(sort(c(1, simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
+                                     eventPriority = 10))
+## on the first year save at the start.
+outputs[outputs$saveTime == simTimes$start, "eventPriority"] <- 1
 
 simOutPreSim <- Cache(simInitAndSpades
                       , times = list(start = 0, end = 0)
                       , params = preSimParams
                       , modules = preSimModules
-                      , paths = preSimPaths
+                      , paths = simPaths
                       , objects = preSimObjects
                       , outputs = outputs
                       , debug = TRUE
                       , .plotInitialTime = NA
                       # , useCache = "overwrite"
-                      , cacheRepo = preSimPaths$cachePath
+                      , cacheRepo = simPaths$cachePath
                       , userTags = "preSim"
                       , omitArgs = c("userTags"))
 
 saveSimList(simOutPreSim,
-            file.path(preSimPaths$outputPath, "preSimList.qs"))
+            file.path(simPaths$outputPath, "preSimList.qs"))
 
 ## ESTIMATE FIRE FREQUENCY------------------------------------------------
 ## fireSenseIgnitionPredict needs to be run separately as the objects can't
@@ -208,16 +236,16 @@ parameters <- list(
 simOutFireFreq <- Cache(simInitAndSpades
                         , times = list(start = 0, end = 0)
                         , modules = "fireSense_IgnitionPredict"
-                        , paths = preSimPaths
+                        , paths = simPaths
                         , objects = objects
                         , outputs = outputs
                         , params = parameters
-                        , cacheRepo = preSimPaths$cachePath
+                        , cacheRepo = simPaths$cachePath
                         , userTags = "preSim"
                         , omitArgs = c("userTags")
 )
 saveSimList(simOutFireFreq,
-            file.path(preSimPaths$outputPath, "preSimList_FireSense_IgnitionPredict.qs"))
+            file.path(simPaths$outputPath, "preSimList_FireSense_IgnitionPredict.qs"))
 
 
 ## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
@@ -242,10 +270,10 @@ if (FALSE) {
   simOutFireFreqPredVals <- Cache(simInitAndSpades
                                   , times = list(start = 0, end = 0)
                                   , modules = "fireSense_IgnitionPredict"
-                                  , paths = preSimPaths
+                                  , paths = simPaths
                                   , objects = objects
                                   , params = parameters
-                                  , cacheRepo = preSimPaths$cachePath
+                                  , cacheRepo = simPaths$cachePath
                                   , userTags = "preSim"
                                   , omitArgs = c("userTags")
   )
