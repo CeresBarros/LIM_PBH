@@ -112,49 +112,15 @@ source("R/SpaDES/4_preSimulation.R")
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
-# plotInitialTime <- NA
-
-## Make actuaL simulation module list, parameters objects, objects and outputs accoding to run
-## name and the parameters above
-source("R/SpaDES/5_simulationSetup.R")
-
-# simPaths$cachePath <- file.path(simPaths$cachePath, runName[1])
 graphics.off()
-# simInitOut <- simInitAndSpades(times = simTimes
-#                                , params = simParams
-#                                # , modules = simModulesNoPM
-#                                , modules = simModulesPM
-#                                , objects = simObjects
-#                                , paths = simPaths
-#                                , outputs = outputs
-#                                , debug = TRUE
-#                                , .plotInitialTime = plotInitialTime
-# )
-#
-# saveSimList(simInitOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
-# if (!is.na(plotInitialTime))
-#   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
-#             res = 300, units = "in")
 
 ## using experiment:
-simInitList <- mapply(function(modList, pathSim) {
-  simPaths$cachePath <- file.path(simPaths$cachePath, pathSim)
-  simInit(times = simTimes
-          , params = simParams
-          , modules = modList
-          , objects = simObjects
-          , paths = simPaths
-          , outputs = outputs)
-},
-modList = list(simModulesNoPM, simModulesPM),
-pathSim = runName, SIMPLIFY = FALSE)
-
-amc::.gc()
 library(future)
 plan("multiprocess", workers = 2)
-simExperimentOut <- experiment2(noPM = simInitList[[1]], PM = simInitList[[2]],
+simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]], PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
-                                replicates = 5)
+                                replicates = 10)
+
 lapply(names(simExperimentOut), FUN = function(simName) {
   saveSimList(simExperimentOut[[simName]],
               filename = file.path(outputPath(simExperimentOut[[simName]]), paste0("simList_", simName, ".qs")))

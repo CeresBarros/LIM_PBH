@@ -27,22 +27,22 @@ speciesParams <- list(
 simModules <- list("noPM" = list(
   "Biomass_borealDataPrep"
   , "Biomass_speciesParameters"
-  , "Biomass_fireProperties"
+  , "Biomass_core"
   , "Biomass_fuelsPFG"
   , "fireSense_dataPrep"
   , "fireSense_IgnitionFit"
-  , "Biomass_core"
+  , "Biomass_fireProperties"
   , "fireSpread"
   , "Biomass_regeneration"
 )
 , "PM" = list(
   "Biomass_borealDataPrep"
   , "Biomass_speciesParameters"
-  , "Biomass_fireProperties"
+  , "Biomass_core"
   , "Biomass_fuelsPFG"
   , "fireSense_dataPrep"
   , "fireSense_IgnitionFit"
-  , "Biomass_core"
+  , "Biomass_fireProperties"
   , "fireSpread"
   , "Biomass_regenerationPM"
 )
@@ -96,6 +96,12 @@ simParams <- list(
     , ".plotMaps" = FALSE
     , ".useCache" = eventCaching
   )
+  , Biomass_fireProperties = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "vegFeedback" = TRUE
+    , ".useCache" = eventCaching
+  )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
@@ -106,12 +112,6 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
   )
-  , Biomass_fireProperties = list(
-    "fireInitialTime" = fireInitialTime
-    , "fireTimestep" = fireTimestep
-    , "vegFeedback" = TRUE
-    , ".useCache" = eventCaching
-  )
   , fireSpread = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
@@ -121,8 +121,6 @@ simParams <- list(
   )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
-    , "fireInitialTime" = 0
-    , "fireTimestep" = 1
     , "prepPredictionObjs" = TRUE
     , "rescalePredictionObjs" = TRUE
     , ".useCache" = eventCaching
@@ -198,26 +196,26 @@ outputs[outputs$saveTime == simTimes$start, "eventPriority"] <- 1
 ## --------------------------------------------
 
 ## Run two simInit calls, plus init events
+names(runName) <- runName
 LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules, simParams) {
-  browser()
   simPaths2 <- simPaths
   simPaths2$cachePath <- file.path(simPaths2$cachePath, scenario)
   simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
   simModules2 <- simModules[[scenario]]
-  # Cache(
-    simInitAndSpades(
-        times = simTimes
+  Cache(simInitAndSpades
+        , times = simTimes
         , params = simParams
         , modules = simModules2
         , loadOrder = unlist(simModules2)
         , paths = simPaths2
         , objects = simObjects
         , outputs = outputs
+        , events = "init"
         , debug = TRUE
-        , .plotInitialTime = NA)
-        # , cacheRepo = simPaths2$cachePath
-        # , userTags = "simInitAndInits"
-        # , omitArgs = c("userTags", ".plotInitialTime", "debug"))
+        , .plotInitialTime = NA
+        , cacheRepo = simPaths2$cachePath
+        , userTags = c("simInitAndInits", scenario)
+        , omitArgs = c("userTags", ".plotInitialTime", "debug"))
 }, simPaths = simPaths, simModules = simModules, simParams = simParams)
 
 ## save
