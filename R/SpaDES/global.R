@@ -120,12 +120,9 @@ plan("multiprocess", workers = 2)
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]], PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
                                 replicates = 10)
-
-lapply(names(simExperimentOut), FUN = function(simName) {
-  saveSimList(simExperimentOut[[simName]],
-              filename = file.path(outputPath(simExperimentOut[[simName]]), paste0("simList_", simName, ".qs")))
-})
-
 future:::ClusterRegistry("stop")
+
+## save simLists object.
+qs::qsave(LandRBiomass_sim, file.path(simPaths$outputPath, paste0("LIM_simLists_", runName)))
 
 q("no")
