@@ -16,7 +16,8 @@ fireWeatherPaths <-list(cachePath = file.path(simPaths$cachePath, "fireWeather")
 
 fireWeatherParameters <- list(
   fireWeather = list(
-    ".useCache" = eventCaching
+    "loadWeatherInChunks" = TRUE
+    , ".useCache" = eventCaching
   )
 )
 
