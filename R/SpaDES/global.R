@@ -116,8 +116,9 @@ source("R/SpaDES/4_preSimulation.R")
 
 ## using experiment:
 library(future)
-plan("multiprocess", workers = 2)
-simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]], PM = LIM_simInitList[["PM"]],
+plan("multiprocess", workers = 5)
+simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
+                                PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
                                 replicates = 10)
 future:::ClusterRegistry("stop")
