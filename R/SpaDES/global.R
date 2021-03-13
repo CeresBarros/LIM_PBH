@@ -112,7 +112,7 @@ source("R/SpaDES/4_preSimulation.R")
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
-graphics.off()
+# graphics.off()
 
 ## using experiment:
 library(future)
