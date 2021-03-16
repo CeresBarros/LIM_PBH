@@ -118,7 +118,6 @@
 "NFDB_point_20190801.prj" "df97ba465b16fcf6" "478" "xxhash64"
 "NFDB_point_20190801.sbn" "3f4dfc9193befad3" "3830428" "xxhash64"
 "NFDB_point_20190801.sbx" "09e647a268fc1dd2" "40772" "xxhash64"
-"NFDB_point_20190801.shp" "400ca2ac37a4ca6c" "17959668" "xxhash64"
 "NFDB_point_20190801.shp.xml" "b0777b12d69b5037" "486050" "xxhash64"
 "NFDB_point_20190801.shx" "7aaf5f22ebf1315b" "3265476" "xxhash64"
 "NFDB_point_20190801_Stats.xlsx" "c6ed754558d9d105" "136401" "xxhash64"
