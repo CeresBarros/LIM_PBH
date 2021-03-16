@@ -38,7 +38,7 @@ defineModule(sim, list(
                  desc = "Raster of crown fraction burnt"),
     expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
                  desc = "Raster of equilibrium head fire intensity [kW/m]"),
-    expectsInput(objectName = "fireIgnitions", objectClass = "RasterLayer",
+    expectsInput(objectName = "fireIgnitionProb", objectClass = "RasterLayer",
                  desc = paste("Raster of expected no. of ignitions (lambda in a poisson ditribution). Optional.",
                               "If not present, will use 'noStartPix' to randomly start a given number of fires",
                               "in the landscape")),
@@ -124,15 +124,25 @@ Init <- function(sim) {
 
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
-  if (!compareRaster(sim$fireIgnitions, sim$rasterToMatch, stopiffalse = FALSE)) {
-    message(blue(paste("Properties of 'fireIgnitions' and 'rasterToMatch' differ.",
-                       "Projecing/masking 'fireIgnitions' to 'rasterToMatch")))
-    sim$fireIgnitions <- postProcess(sim$fireIgnitions,
-                                     rasterToMatch = sim$rasterToMatch,
-                                     maskWithRTM = TRUE,
-                                     method = "bilinear",
-                                     filename2 = NULL, ## don't save
-                                     useCache = FALSE)  ## don't cache
+  if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+    if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
+      message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
+                         "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
+      origRes <- res(sim$fireIgnitionProb)[1]
+      finalRes <- res(sim$rasterToMatch)[1]
+      sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
+                                          rasterToMatch = sim$rasterToMatch,
+                                          maskWithRTM = TRUE,
+                                          method = "bilinear",
+                                          filename2 = NULL, ## don't save
+                                          useCache = FALSE)  ## don't cache
+
+      if (origRes != finalRes) {
+        message(blue(paste("Resolution of 'fireIgnitionProb' and 'rasterToMatch' differed.",
+                           "Rescaling values in fireIgnitionProb")))
+        sim$fireIgnitionProb[] <- sim$fireIgnitionProb[] * (finalRes/origRes ^ 2)
+      }
+    }
   }
 
   return(invisible(sim))
@@ -142,25 +152,27 @@ Init <- function(sim) {
 doFireSpread <- function(sim) {
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
-  if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
-    message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
-                       "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
-    origRes <- res(sim$fireIgnitions)[1]
-    finalRes <- res(sim$rasterToMatch)[1]
-    sim$fireIgnitions <- postProcess(sim$fireIgnitions,
-                                     rasterToMatch = sim$rasterToMatch,
-                                     maskWithRTM = TRUE,
-                                     method = "bilinear",
-                                     filename2 = NULL, ## don't save
-                                     useCache = FALSE)  ## don't cache
+  ## thise needs to be done each year, in case fireIgnitionsProb is being updated
+  if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+    if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
+      message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
+                         "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
+      origRes <- res(sim$fireIgnitionProb)[1]
+      finalRes <- res(sim$rasterToMatch)[1]
+      sim$fireIgnitionProb <- postProcess(sim$fireIgnitionProb,
+                                          rasterToMatch = sim$rasterToMatch,
+                                          maskWithRTM = TRUE,
+                                          method = "bilinear",
+                                          filename2 = NULL, ## don't save
+                                          useCache = FALSE)  ## don't cache
 
-    if (origRes != finalRes) {
-      message(blue(paste("Resolution of 'fireIgnitions' and 'rasterToMatch' differed.",
-                         "Rescaling values in fireIgnitions")))
-      sim$fireIgnitions[] <- sim$fireIgnitions[] * (finalRes/origRes ^ 2)
+      if (origRes != finalRes) {
+        message(blue(paste("Resolution of 'fireIgnitionProb' and 'rasterToMatch' differed.",
+                           "Rescaling values in fireIgnitionProb")))
+        sim$fireIgnitionProb[] <- sim$fireIgnitionProb[] * (finalRes/origRes ^ 2)
+      }
     }
   }
-
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
   ## if no simulatedBiomassMap is supplied then generate one from raw data
