@@ -96,7 +96,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     doFireSpread = {
       ## calculate fire spread in fire years
-      if(time(sim) == sim$fireYear) {
+      if (time(sim) == sim$fireYear) {
         sim <- doFireSpread(sim)
 
         ## define next fire year
