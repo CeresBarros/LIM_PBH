@@ -431,8 +431,14 @@ doNoFire <- function(sim) {
   }
 
   if (!suppliedElsewhere("fireIgnitionProb", sim)) {
-    message(blue(paste("'fireIgnitionProb' raster was not supplied. Fires will be ignited",
-                       "randomly across the landscape, in number = to 'noStartPix'")))
+    if (!suppliedElsewhere("fireSense_IgnitionPredicted", sim)) {
+      message(blue(paste("'fireIgnitionProb' raster was not supplied, but 'fireSense_IgnitionPredicted' exists in sim.",
+                         "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
+      sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+    } else {
+      message(blue(paste("'fireIgnitionProb' raster was not supplied. Fires will be ignited",
+                         "randomly across the landscape, in number = to 'noStartPix'")))
+    }
   }
 
   return(invisible(sim))
