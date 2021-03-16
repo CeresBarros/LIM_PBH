@@ -142,7 +142,7 @@ simParams <- list(
   , fireSense_IgnitionPredict = list(
     "data" = c("fuelTypesCoverPred", "weatherDataPred")
     , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
-    , "rescaleFactor" = substitute(sim$rescaleFactor)
+    # , "rescaleFactor" = quote(sim$rescaleFactor)
   )
 )
 
