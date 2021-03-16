@@ -6,7 +6,7 @@
 ## ------------------------------------------------------
 
 ## clean workspace
-rm(list=ls()); amc::.gc()
+rm(list = ls()); amc::.gc()
 
 ## Get packages ----------------------
 ## requires as of Mar 5th 2021
