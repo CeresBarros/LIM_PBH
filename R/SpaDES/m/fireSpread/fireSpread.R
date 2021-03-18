@@ -173,6 +173,7 @@ doFireSpread <- function(sim) {
       }
     }
   }
+
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
   ## if no simulatedBiomassMap is supplied then generate one from raw data
