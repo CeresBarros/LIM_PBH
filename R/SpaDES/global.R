@@ -33,9 +33,18 @@ rm(list = ls()); amc::.gc()
 ## test packages
 # devtools::install_local("../LandR", dependencies = FALSE, force = TRUE)
 # devtools::install_local("../reproducible", dependencies = FALSE, force = TRUE)
-library(SpaDES)
-library(SpaDES.experiment)
-library(LandR)
+
+if (!require("Require")) {
+  devtools::install_github("PredictiveEcology/Require@development")
+  library(Require)
+}
+
+drat::addRepo("PredictiveEcology")
+
+Require(c("SpaDES",
+          "PredictiveEcology/SpaDES.experiment",
+          "PredictiveEcology/LandR@modelBiomass"),
+        upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2)
 options("spades.moduleCodeChecks" = FALSE)
