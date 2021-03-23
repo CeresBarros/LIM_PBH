@@ -122,9 +122,21 @@ Init <- function(sim) {
   if (start(sim) == P(sim)$fireInitialTime)
     warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
 
+  ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
+  ## if fireSense_IgntionPredicted not present, try again later
+  mod$useFireSense <- FALSE
+  if (is.null(sim$fireIgnitionProb)) {
+    if (suppliedElsewhere("fireSense_IgnitionPredicted", sim)) {
+      message(blue(paste("'fireIgnitionProb' raster was not supplied, but 'fireSense_IgnitionPredicted' exists in sim.",
+                         "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
+      sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+      mod$useFireSense <- TRUE
+    }
+  }
+
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
-  if (suppliedElsewhere("fireIgnitionProb", sim)) {
+  if (!is.null(sim$fireIgnitionProb)) {
     if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
       message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
                          "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
@@ -150,10 +162,32 @@ Init <- function(sim) {
 
 ## Fire spread event in fire years - rasters should be back in LandR Biomass projection
 doFireSpread <- function(sim) {
+  ## make or update fireIgnitionProb from fireSense_IgnitionPredicted
+  if (time(sim) == P(sim)$fireInitialTime) {
+    if (is.null(sim$fireIgnitionProb)) {
+      if (suppliedElsewhere("fireSense_IgnitionPredicted", sim)) {
+        message(blue(paste("'fireIgnitionProb' raster was not supplied, but 'fireSense_IgnitionPredicted' exists in sim.",
+                           "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
+        sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+        mod$useFireSense <- TRUE
+      } else {
+        message(blue(paste("'fireIgnitionProb' raster was not supplied. Fires will be ignited",
+                           "randomly across the landscape, in number = to 'noStartPix'")))
+      }
+    }
+  }
+
+  if (!is.null(sim$fireIgnitionProb)) {
+    if (isTRUE(mod$useFireSense)) {
+      message(blue("Updating 'fireIgnitionProb' with 'fireSense_IgnitionPredicted'"))
+      sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+    }
+  }
+
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
   ## thise needs to be done each year, in case fireIgnitionsProb is being updated
-  if (suppliedElsewhere("fireIgnitionProb", sim)) {
+  if (!is.null(sim$fireIgnitionProb)) {
     if (!compareRaster(sim$fireIgnitionProb, sim$rasterToMatch, stopiffalse = FALSE)) {
       message(blue(paste("Properties of 'fireIgnitionProb' and 'rasterToMatch' differ.",
                          "Projecing/masking 'fireIgnitionProb' to 'rasterToMatch")))
@@ -438,14 +472,13 @@ doNoFire <- function(sim) {
     sim$fireTFCRas <- setValues(sim$rasterToMatch, valsTFC)
   }
 
+  ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
+  ## if fireSense_IgnitionPredicted not available, try again during init.
   if (!suppliedElsewhere("fireIgnitionProb", sim)) {
     if (suppliedElsewhere("fireSense_IgnitionPredicted", sim)) {
       message(blue(paste("'fireIgnitionProb' raster was not supplied, but 'fireSense_IgnitionPredicted' exists in sim.",
                          "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
       sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
-    } else {
-      message(blue(paste("'fireIgnitionProb' raster was not supplied. Fires will be ignited",
-                         "randomly across the landscape, in number = to 'noStartPix'")))
     }
   }
 
