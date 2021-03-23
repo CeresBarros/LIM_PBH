@@ -301,7 +301,7 @@ doFireSpread <- function(sim) {
          i < 5) {
     i <- i + 1
     ## draw from runif to get fire ignitions, first make a raster
-    if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+    if (is.null(sim$fireIgnitionProb)) {
       message(blue(paste("'fireIgnitionProb' raster was not supplied. Igniting fires",
                          "randomly across the landscape, in number = to 'noStartPix'")))
       sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
