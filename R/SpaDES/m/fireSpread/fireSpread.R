@@ -175,14 +175,15 @@ doFireSpread <- function(sim) {
                            "randomly across the landscape, in number = to 'noStartPix'")))
       }
     }
-  }
-
-  if (!is.null(sim$fireIgnitionProb)) {
-    if (isTRUE(mod$useFireSense)) {
-      message(blue("Updating 'fireIgnitionProb' with 'fireSense_IgnitionPredicted'"))
-      sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+  } else {
+    if (!is.null(sim$fireIgnitionProb)) {
+      if (isTRUE(mod$useFireSense)) {
+        message(blue("Updating 'fireIgnitionProb' with 'fireSense_IgnitionPredicted'"))
+        sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+      }
     }
   }
+
 
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
