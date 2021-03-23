@@ -117,7 +117,7 @@ simParams <- list(
   , fireSpread = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "fireSize" = ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
+    , "fireSize" = raster::ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , ".useCache" = eventCaching
   )
@@ -149,7 +149,7 @@ simParams <- list(
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-simObjects <- list (
+simObjects <- list(
   # "studyArea" = foothillsSMALL
   # , "studyAreaLarge" = foothillsMED
   "studyArea" = foothills
