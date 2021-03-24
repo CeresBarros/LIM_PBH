@@ -116,7 +116,12 @@ fireInitialTime <- 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 successionTimestep <- 10L
 plotInitialTime <- simTimes$start
+
+# reproducible::clearCache(file.path(simPaths$cachePath, "PM"),userTags = "simInitAndSpades", ask = FALSE)
+# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"),userTags = "simInitAndSpades", ask = FALSE)
 source("R/SpaDES/4_preSimulation.R")
+
+# spades(LIM_simInitList[[1]])
 
 ## -----------------------------------------------
 ## SIMULATION RUN
