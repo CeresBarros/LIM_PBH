@@ -89,7 +89,7 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       ## Initialise module
       sim <- Init(sim)
-
+      
       ## schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$fireInitialTime, "fireSpread",
                            "doFireSpread", eventPriority = 2.5) ## always schedule fire
@@ -98,14 +98,14 @@ doEvent.fireSpread = function(sim, eventTime, eventType, debug = FALSE) {
       ## calculate fire spread in fire years
       if (time(sim) == sim$fireYear) {
         sim <- doFireSpread(sim)
-
+        
         ## define next fire year
         sim$fireYear <- time(sim) + P(sim)$fireTimestep
       } else {
         ## No fire
         sim <- doNoFire(sim)
       }
-
+      
       ## schedule future event(s) - always schedule fire
       sim <- scheduleEvent(sim, time(sim) + 1, "fireSpread",
                            "doFireSpread", eventPriority = 2.5)  ## always schedule fire
@@ -121,7 +121,7 @@ Init <- function(sim) {
   ## checks
   if (start(sim) == P(sim)$fireInitialTime)
     warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
-
+  
   ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
   ## if fireSense_IgntionPredicted not present, try again later
   mod$useFireSense <- FALSE
@@ -133,7 +133,7 @@ Init <- function(sim) {
       mod$useFireSense <- TRUE
     }
   }
-
+  
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
   if (!is.null(sim$fireIgnitionProb)) {
@@ -148,7 +148,7 @@ Init <- function(sim) {
                                           method = "bilinear",
                                           filename2 = NULL, ## don't save
                                           useCache = FALSE)  ## don't cache
-
+      
       if (origRes != finalRes) {
         message(blue(paste("Resolution of 'fireIgnitionProb' and 'rasterToMatch' differed.",
                            "Rescaling values in fireIgnitionProb")))
@@ -156,7 +156,7 @@ Init <- function(sim) {
       }
     }
   }
-
+  
   return(invisible(sim))
 }
 
@@ -183,8 +183,8 @@ doFireSpread <- function(sim) {
       }
     }
   }
-
-
+  
+  
   ## check if ignition raster matches RTM
   ## e.g. fireSense_IgnitionPredict projects at lower res. and this may need to be checked at each fireTimeStep
   ## thise needs to be done each year, in case fireIgnitionsProb is being updated
@@ -200,7 +200,7 @@ doFireSpread <- function(sim) {
                                           method = "bilinear",
                                           filename2 = NULL, ## don't save
                                           useCache = FALSE)  ## don't cache
-
+      
       if (origRes != finalRes) {
         message(blue(paste("Resolution of 'fireIgnitionProb' and 'rasterToMatch' differed.",
                            "Rescaling values in fireIgnitionProb")))
@@ -208,7 +208,7 @@ doFireSpread <- function(sim) {
       }
     }
   }
-
+  
   ## MAKE BURNABLE AREAS RASTER -------------------------------
   ## only areas with biomass can burn if no non-forest fire spread is allowed
   ## if no simulatedBiomassMap is supplied then generate one from raw data
@@ -219,7 +219,7 @@ doFireSpread <- function(sim) {
       if (is.null(sim$biomassMap)) {
         cacheTags <- c(currentModule(sim), current(sim))
         dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
-
+        
         # If biomassMap is not present either, get rawBiomassMap, but crop it to studyArea/RTM instead of SALarge/RTMLarge
         rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
                                    "canada-forests-attributes_attributs-forests-canada/",
@@ -239,7 +239,7 @@ doFireSpread <- function(sim) {
                                filename2 = NULL,
                                userTags = c(cacheTags, "rawBiomassMap"),
                                omitArgs = c("destinationPath", "targetFile", cacheTags, "stable"))
-
+        
         burnableAreas <- rawBiomassMap
         rm(cacheTags, rawBiomassMap)
       } else {
@@ -251,24 +251,24 @@ doFireSpread <- function(sim) {
   } else {
     burnableAreas <- sim$rasterToMatch
   }
-
+  
   vals <- data.table(B = getValues(burnableAreas))   ## making a mask is probably faster with data.table
   vals <- vals[B > 0, B := 1]
   vals <- vals[B <= 0, B := NA]
   burnableAreas[] <- vals$B
-
+  
   ## MAKE RASTER OF SPREAD PROBABILITIES
   ## spread probability is the combination of ROS and intensity, which have an multiplicative effect
   ## and their product is centred and scaled around 0.23 (a suggested value for realistic spread)
   ## TODO: ROS and intensity should be combined differently
   spreadProb_map <- sim$fireROSRas * sim$fireIntRas
   spreadProb_map <- mask(spreadProb_map, burnableAreas)
-
+  
   vals <- data.table(spreadP = getValues(spreadProb_map))   ## making a mask is probably faster with data.table
   vals[!is.na(spreadP) & spreadP > 0, spreadPsc := scales::rescale(spreadP, to = c(0.20, 0.25))]
   vals[spreadP == 0, spreadPsc := 0]
   spreadProb_map[] <- vals$spreadPsc
-
+  
   ## MAKE RASTER OF PERSISTENCE PROBABILITIES
   ## persistence probability is the combination of TFC and intensity, as a ratio
   ## (higher intensity fires should a same amount of biomass for less time tan a low intensity fire)
@@ -278,21 +278,21 @@ doFireSpread <- function(sim) {
   persistProb_map <- sim$fireTFCRas / sim$fireIntRas
   persistProb_map[sim$fireIntRas[] == 0] <- 0
   persistProb_map <- mask(persistProb_map, burnableAreas)
-
+  
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
   vals[!is.na(persisP), persisPsc := scales::rescale(persisP, to = c(0,1))]
   persistProb_map[] <- vals$persisPsc
-
+  
   ## check if NAs match
   if (getOption("LandR.assertions"))
     if (any(!is.na(spreadProb_map[is.na(persistProb_map[])])))
       stop("spread and persistence probability rasters have unmatching NAs")
-
+  
   ## redo burnable areas if missing fire probabilities
   if (any(!is.na(burnableAreas[is.na(spreadProb_map[])])))
     burnableAreas <- mask(burnableAreas, spreadProb_map)
-
-
+  
+  
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function has two random components: selection of starting pixels and fire spread
   ## Favier's model:
@@ -312,7 +312,7 @@ doFireSpread <- function(sim) {
       ## assess "winners" and convert to vector (also export to sim)
       sim$startPix <- which(getValues(startPix) >= 1) ## winners are 1 or larger.
     }
-
+    
     rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
                                        spreadProb = spreadProb_map,
                                        persistProb = persistProb_map,
@@ -321,30 +321,32 @@ doFireSpread <- function(sim) {
                                        plot.it = FALSE),
                                error = function(e) e)
   }
-
-  if (class(rstCurrentBurn) != "RasterLayer")
+  
+  if (class(rstCurrentBurn) != "RasterLayer") {
     stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
          It is possible fires are not being able to spread. Please debug 'doFireSpread' event")
-
+  }
+  
   ## remove fires that only burned one pixel - these didn't really spread
   noSpreadFires <- as.data.table(table(rstCurrentBurn[]))
   noSpreadFires <- noSpreadFires[N == 1]
   rstCurrentBurn[rstCurrentBurn[] %in% noSpreadFires$V1] <- NA
-
+  
   ## remove fires that spread beyond burnable areas
-  if (any(!is.na(rstCurrentBurn[is.na(burnableAreas[])])))
+  if (any(!is.na(rstCurrentBurn[is.na(burnableAreas[])]))) {
     rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
-
+  }
+  
   ## convert to mask
   rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
-
+  
   ## remove pixels that didn't burn from fire property rasters
   sim$fireCFBRas <- mask(sim$fireCFBRas, rstCurrentBurn)
   sim$fireIntRas <- mask(sim$fireIntRas, rstCurrentBurn)
   sim$fireROSRas <- mask(sim$fireROSRas, rstCurrentBurn)
   sim$fireRSORas <- mask(sim$fireRSORas, rstCurrentBurn)
   sim$fireTFCRas <- mask(sim$fireTFCRas, rstCurrentBurn)
-
+  
   ## export to sim
   sim$rstCurrentBurn <- rstCurrentBurn
   return(invisible(sim))
@@ -353,7 +355,7 @@ doFireSpread <- function(sim) {
 ## What to do in no fire years
 doNoFire <- function(sim) {
   sim$rstCurrentBurn <- NULL
-
+  
   return(invisible(sim))
 }
 
@@ -362,19 +364,19 @@ doNoFire <- function(sim) {
   ## TODO: ADD DUMMIES FOR FIRE PROPERTIES
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
-
+  
   if (!suppliedElsewhere("studyArea", sim)) {
     stop("Please provide a 'studyArea' polygon")
     # message("'studyArea' was not provided by user. Using a polygon (6250000 m^2) in southwestern Alberta, Canada")
     # sim$studyArea <- randomStudyArea(seed = 1234, size = (250^2)*100)  # Jan 2021 we agreed to force user to provide a SA/SAL
   }
-
+  
   if (is.na(P(sim)$.studyAreaName)) {
     params(sim)[[currentModule(sim)]][[".studyAreaName"]] <- reproducible::studyAreaName(sim$studyArea)
     message("The .studyAreaName is not supplied; derived name from sim$studyArea: ",
             params(sim)[[currentModule(sim)]][[".studyAreaName"]])
   }
-
+  
   ## DEFAULT RASTER TO MATCH
   needRTM <- FALSE
   if (is.null(sim$rasterToMatch)) {
@@ -388,7 +390,7 @@ doNoFire <- function(sim) {
            " or in a module that gets loaded prior to ", currentModule(sim))
     }
   }
-
+  
   if (needRTM) {
     ## if rawBiomassMap exists, it needs to match SALarge, if it doesn't make it
     if (!suppliedElsewhere("rawBiomassMap", sim) ||
@@ -424,27 +426,27 @@ doNoFire <- function(sim) {
                              userTags = cacheTags,
                              omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
     }
-
+    
     ## if we need rasterToMatch, that means a) we don't have it, but b) we will have rawBiomassMap
     ## even if one of the rasterToMatch is present re-do both.
     ## if we need rasterToMatch, that means a) we don't have it, but b) we will have rawBiomassMap
     sim$rasterToMatch <- rawBiomassMap
     RTMvals <- getValues(sim$rasterToMatch)
     sim$rasterToMatch[!is.na(RTMvals)] <- 1
-
+    
     sim$rasterToMatch <- Cache(writeOutputs, sim$rasterToMatch,
                                filename2 = .suffix(file.path(dPath, "rasterToMatch.tif"),
                                                    paste0("_", P(sim)$.studyAreaName)),
                                datatype = "INT2U", overwrite = TRUE)
   }
-
+  
   if (!compareCRS(sim$studyArea, sim$rasterToMatch)) {
     warning(paste0("studyArea and rasterToMatch projections differ.\n",
                    "studyArea will be projected to match rasterToMatch"))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$studyArea <- fixErrors(sim$studyArea)
   }
-
+  
   ## DEFAULT FIRE PROPERTIES RASTERS
   if (any(!suppliedElsewhere("fireRSORas", sim),
           !suppliedElsewhere("fireROSRas", sim),
@@ -460,21 +462,21 @@ doNoFire <- function(sim) {
     valsCFB[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
     valsROS[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
     valsRSO[!is.na(vals)] <- as.integer(round(runif(sum(!is.na(vals)), 0, 100)))
-
+    
     ## TODO: decide on best values
     browser()
-
+    
     valsInt[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
     valsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
     valvalsIgnitsTFC[!is.na(vals)] <- runif(sum(!is.na(vals)), 0, 1)
-
+    
     sim$fireCFBRas <- setValues(sim$rasterToMatch, valsCFB)
     sim$fireIntRas <- setValues(sim$rasterToMatch, valsInt)
     sim$fireROSRas <- setValues(sim$rasterToMatch, valsROS)
     sim$fireRSORas <- setValues(sim$rasterToMatch, valsRSO)
     sim$fireTFCRas <- setValues(sim$rasterToMatch, valsTFC)
   }
-
+  
   ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
   ## if fireSense_IgnitionPredicted not available, try again during init.
   if (!suppliedElsewhere("fireIgnitionProb", sim)) {
@@ -484,6 +486,6 @@ doNoFire <- function(sim) {
       sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
     }
   }
-
+  
   return(invisible(sim))
 }
