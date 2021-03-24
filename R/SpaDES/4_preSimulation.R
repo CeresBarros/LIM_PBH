@@ -205,7 +205,7 @@ LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules
   simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
   simModules2 <- simModules[[scenario]]
   Cache(simInitAndSpades
-        , times = simTimes
+        , times = list(start = simTimes$start, end = simTimes$start)
         , params = simParams
         , modules = simModules2
         , loadOrder = unlist(simModules2)
