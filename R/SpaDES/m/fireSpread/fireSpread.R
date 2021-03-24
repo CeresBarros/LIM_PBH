@@ -318,16 +318,18 @@ doFireSpread <- function(sim) {
                                        persistProb = persistProb_map,
                                        start = sim$startPix,
                                        maxSize =  P(sim)$fireSize,
-                                       plot.it = FALSE), error = function(e) e)
-
-    ## remove fires that only burned one pixel - these didn't really spread
-    noSpreadFires <- as.data.table(table(rstCurrentBurn[]))
-    noSpreadFires <- noSpreadFires[N == 1]
-    rstCurrentBurn[rstCurrentBurn[] %in% noSpreadFires$V1] <- NA
+                                       plot.it = FALSE),
+                               error = function(e) e)
   }
+
   if (class(rstCurrentBurn) != "RasterLayer")
     stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
          It is possible fires are not being able to spread. Please debug 'doFireSpread' event")
+
+  ## remove fires that only burned one pixel - these didn't really spread
+  noSpreadFires <- as.data.table(table(rstCurrentBurn[]))
+  noSpreadFires <- noSpreadFires[N == 1]
+  rstCurrentBurn[rstCurrentBurn[] %in% noSpreadFires$V1] <- NA
 
   ## remove fires that spread beyond burnable areas
   if (any(!is.na(rstCurrentBurn[is.na(burnableAreas[])])))
