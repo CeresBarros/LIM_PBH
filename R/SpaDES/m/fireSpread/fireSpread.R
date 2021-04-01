@@ -301,7 +301,7 @@ doFireSpread <- function(sim) {
   ## before:
   # vals[!is.na(spreadP) & spreadP > 0, spreadPsc := scales::rescale(spreadP, to = P(sim)$spreadProbRange)]
 
-  ## now - there are real 0s, so these shouldn't be excluded but need to stay 0s at the end
+  ## now: there are real 0s, so these shouldn't be excluded but need to stay 0s at the end
   ## this rescaling is not affected by the shape of the distribution, as the relative positions of the values
   ## and dist. sahpe are maintained in the new scale
   ## if the min(P(sim)$spreadProbRange) != 0, small values will only exist for original values close to 0.
