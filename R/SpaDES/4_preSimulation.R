@@ -128,21 +128,25 @@ simParams <- list(
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
-    "formula" = formula(n_fires ~ coniferous:julMDC + D2:julMDC +
-                          M2:julMDC + O1b:julMDC + NF:julMDC - 1)
-    , "family" = poisson(link = "identity")
-    , "ub" = list(coef = 1)
-    , "data" = "dataFireSense_IgnitionFit"
+    "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:julMDC + D2:julMDC +
+                          M2:julMDC + O1b:julMDC + NF:julMDC +
+                          coniferous:pw(julMDC, k_conif) + D2:pw(julMDC, k_D2) +
+                          M2:pw(julMDC, k_M2) + O1b:pw(julMDC, k_O1b) + NF:pw(julMDC, k_NF) - 1")
+    , "lb" = list(coef = 0,
+                  knots = list("julMDC" = 19))   ## the rounded 5% quantile, pre scaling
+    , "ub" = list(coef = 1,
+                  knots = list("julMDC" = 21))   ## the rounded 80% quantile, pre scaling
     , "trace" = 1
     , "iterDEoptim" = 60
     , "iterNlminb" = 100
-    , "cores" = 1
+    , "cores" = 4
+    , "rescaleVars" = TRUE
+    , "rescalers" = NULL
+    , ".plots" = "png"
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionPredict = list(
-    "data" = c("fuelTypesCoverPred", "weatherDataPred")
-    , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
-    # , "rescaleFactor" = quote(sim$rescaleFactor)
+    ".runInterval" = NA    ## only run once at the start
   )
 )
 
