@@ -109,7 +109,7 @@ source("R/SpaDES/3_fireWeather.R")
 # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
 ## to prepare objects for simulation and FireSense ignition/fire frquency fits
 ## Define simulation params
-simTimes <- list(start = 1, end = 100)
+simTimes <- list(start = 1L, end = 100L)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireInitialTime <- 5L
