@@ -26,6 +26,16 @@ defineModule(sim, list(
                     desc = "The event time that the first fire disturbance event occurs"),
     defineParameter(name = "fireTimestep", class = "numeric", default = 2L,
                     desc = "The number of time units between successive fire events in a fire module"),
+    defineParameter(name = "persistProbRange", class = "numeric", default = c(0, 1), min = 0, max = 1,
+                    desc = paste("Range of values to use when rescaling presistence probability, q,",
+                                 "calculated from fire properties. Defaults to 0-1, the minimum and",
+                                 "maximum values possible. Must be a sorted vector of length 2",
+                                 "If min(persistProbRange) != 0, 0s are forced to 0 after scaling")),
+    defineParameter(name = "spreadProbRange", class = "numeric", default = c(0.20, 0.25), min = 0, max = 1,
+                    desc = paste("Range of values to use when rescaling spread probability, p,",
+                                 "calculated from fire properties. Defaults to 0.20-0.25, which",
+                                 "produces sensible fire sizes, but can be 0-1. Must be a sorted vector of length 2.",
+                                 "If min(spreadProbRange) != 0, 0s are forced to 0 after scaling")),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
@@ -121,7 +131,31 @@ Init <- function(sim) {
   ## checks
   if (start(sim) == P(sim)$fireInitialTime)
     warning(red("start(sim) and P(sim)$fireInitialTime are the same.\nThis may create bad scheduling with init events"))
-  
+
+  if (length(P(sim)$spreadProbRange) != 2) {
+    stop("'P(sim)$spreadProbRange' must be a vector of length = 2")
+  }
+
+  if (length(P(sim)$persistProbRange) != 2) {
+    stop("'P(sim)$persistProbRange' must be a vector of length = 2")
+  }
+
+  if (min(P(sim)$spreadProbRange) < 0 | max(P(sim)$spreadProbRange) > 1) {
+    stop("'P(sim)$spreadProbRange' must be between [0,1]")
+  }
+
+  if (min(P(sim)$persistProbRange) < 0 | max(P(sim)$persistProbRange) > 1) {
+    stop("'P(sim)$persistProbRange' must be between [0,1]")
+  }
+
+  if (P(sim)$spreadProbRange[1] > P(sim)$spreadProbRange[2]) {
+    stop("'P(sim)$spreadProbRange[1]' must be <= 'P(sim)$spreadProbRange[2]'")
+  }
+
+  if (P(sim)$persistProbRange[1] > P(sim)$persistProbRange[2]) {
+    stop("'P(sim)$persistProbRange[1]' must be <= 'P(sim)$persistProbRange[2]'")
+  }
+
   ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
   ## if fireSense_IgntionPredicted not present, try again later
   mod$useFireSense <- FALSE
@@ -287,7 +321,8 @@ doFireSpread <- function(sim) {
   persistProb_map <- mask(persistProb_map, burnableAreas)
 
   vals <- data.table(persisP = getValues(persistProb_map))   ## making a mask is probably faster with data.table
-  vals[!is.na(persisP), persisPsc := scales::rescale(persisP, to = c(0,1))]
+  vals[!is.na(persisP), persisPsc := scales::rescale(persisP, to = P(sim)$persistProbRange)]
+  vals[persisP == 0, persisPsc := 0]
   persistProb_map[] <- vals$persisPsc
 
   ## check if NAs match
