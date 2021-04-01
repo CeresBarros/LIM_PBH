@@ -139,7 +139,6 @@ simParams <- list(
                   knots = list("julMDC" = 19))   ## the rounded 5% quantile, pre scaling
     , "ub" = list(coef = 1,
                   knots = list("julMDC" = 21))   ## the rounded 80% quantile, pre scaling
-    , "trace" = 1
     , "iterDEoptim" = 60
     , "iterNlminb" = 100
     , "cores" = 4
