@@ -338,35 +338,36 @@ doFireSpread <- function(sim) {
   ## MAKE RASTER OF FIRE SPREAD -------------------------------
   ## note that this function has two random components: selection of starting pixels and fire spread
   ## Favier's model:
-  rstCurrentBurn <- NULL
-  i <- 0
-  while (class(rstCurrentBurn) != "RasterLayer" &
-         i < 5) {
-    i <- i + 1
-    ## draw from runif to get fire ignitions, first make a raster
-    if (is.null(sim$fireIgnitionProb)) {
-      message(blue(paste("'fireIgnitionProb' raster was not supplied. Igniting fires",
-                         "randomly across the landscape, in number = to 'noStartPix'")))
-      sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
-    } else {
-      startPix <- mask(sim$fireIgnitionProb, burnableAreas)
-      startPix[] <- rpois(ncell(sim$fireIgnitionProb), sim$fireIgnitionProb[])
-      ## assess "winners" and convert to vector (also export to sim)
-      sim$startPix <- which(getValues(startPix) >= 1) ## winners are 1 or larger.
-    }
-    
-    rstCurrentBurn <- tryCatch(spread2(landscape = burnableAreas,
-                                       spreadProb = spreadProb_map,
-                                       persistProb = persistProb_map,
-                                       start = sim$startPix,
-                                       maxSize =  P(sim)$fireSize,
-                                       plot.it = FALSE),
-                               error = function(e) e)
+
+  if (is.null(sim$fireIgnitionProb)) {
+    message(blue(paste("'fireIgnitionProb' raster was not supplied. Igniting fires",
+                       "randomly across the landscape, in number = to 'noStartPix'")))
+    sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
+  } else {
+    startPix <- mask(sim$fireIgnitionProb, burnableAreas)
+    startPix[] <- rpois(ncell(startPix), startPix[])
+    ## assess "winners" and convert to vector (also export to sim)
+    sim$startPix <- which(getValues(startPix) >= 1) ## winners are 1 or larger.
   }
-  
-  if (class(rstCurrentBurn) != "RasterLayer") {
-    stop("tried to calculate 'rstCurrentBurn' 5 times and failed.
-         It is possible fires are not being able to spread. Please debug 'doFireSpread' event")
+
+  if (length(sim$startPix)) {
+    ## run spread2 for one iteration to simulate escape - a bit like fireSense.R
+    escapedFires <- spread2(landscape = burnableAreas,
+                            spreadProb = spreadProb_map,
+                            start = sim$startPix,
+                            iterations = 1,
+                            maxSize =  P(sim)$fireSize,
+                            plot.it = FALSE,
+                            asRaster = FALSE)
+
+    rstCurrentBurn <- spread2(landscape = burnableAreas,
+                              spreadProb = spreadProb_map,
+                              persistProb = persistProb_map,
+                              start = escapedFires,
+                              maxSize =  P(sim)$fireSize,
+                              plot.it = FALSE)
+  } else {
+    rstCurrentBurn <- setValues(burnableAreas, rep(NA, ncell(burnableAreas)))
   }
 
   ## remove fires that only burned one pixel - these didn't really spread
