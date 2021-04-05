@@ -17,9 +17,9 @@ defineModule(sim, list(
                   "sf", "scales", "crayon",
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
-                  "PredictiveEcology/reproducible@development"),
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/LandR (>= 1.0.0.9003)"),
   parameters = rbind(
-    defineParameter("fireSize", "integer", 1000L, NA, NA, desc = "Fire size in pixels"),
     defineParameter("noStartPix", "integer", 100L, 0L, NA,
                     desc = paste("Number of fire events. Only used if fireIgnitionProb is not available")),
     defineParameter(name = "fireInitialTime", class = "numeric", default = 2L,
@@ -58,6 +58,10 @@ defineModule(sim, list(
                  desc = "Critical spread rate for crowning [m/min]"),
     expectsInput(objectName = "fireTFCRas", objectClass = "RasterLayer",
                  desc = "Raster of total fuel consumed [kg/m^2]"),
+    expectsInput(objectName = "fireSize", objectClass = "integer",
+                 desc = paste("Fire size in pixels. Defaults to maximum fire size obtained from fire perimeter",
+                              "records in the study area (using all fire perimeter polygons in the Canadian National Fire Database)."),
+                 sourceURL = "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip"),
     expectsInput(objectName = "rasterToMatch", "RasterLayer",
                  desc = "a raster of the studyArea in the same resolution and projection as biomassMap ",
                  sourceURL = NA),
@@ -364,7 +368,7 @@ doFireSpread <- function(sim) {
                               spreadProb = spreadProb_map,
                               persistProb = persistProb_map,
                               start = escapedFires,
-                              maxSize =  P(sim)$fireSize,
+                              maxSize = sim$fireSize,
                               plot.it = FALSE)
   } else {
     rstCurrentBurn <- setValues(burnableAreas, rep(NA, ncell(burnableAreas)))
@@ -530,6 +534,36 @@ doNoFire <- function(sim) {
                          "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
       sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
     }
+  }
+
+  ## try to make fireIgnitionProb from fireSense_IgnitionPredicted
+  ## if fireSense_IgnitionPredicted not available, try again during init.
+  if (!suppliedElsewhere("fireIgnitionProb", sim)) {
+    if (suppliedElsewhere("fireSense_IgnitionPredicted", sim)) {
+      message(blue(paste("'fireIgnitionProb' raster was not supplied, but 'fireSense_IgnitionPredicted' exists in sim.",
+                         "Using 'fireSense_IgnitionPredicted' as 'fireIgnitionProb' in", currentModule(sim))))
+      sim$fireIgnitionProb <- sim$fireSense_IgnitionPredicted
+    }
+  }
+
+  ## calculate fire sizes from CWFIS polygon data
+  if (!suppliedElsewhere("fireSize", sim)) {
+    fireRaster <- Cache(prepInputsFireYear,
+                        url = extractURL("fireSize"),
+                        destinationPath = dPath,
+                        rasterToMatch = sim$rasterToMatch,
+                        maskWithRTM = TRUE,
+                        method = "ngb",
+                        datatype = "INT2U",
+                        filename2 = NULL,
+                        fireField = "CFS_REF_ID",
+                        earliestYear = 1,
+                        fun = "raster::shapefile",
+                        userTags = cacheTags,
+                        useCache = FALSE,
+                        omitArgs = c("destinationPath", "targetFile", "userTags"))
+
+    sim$fireSize <- max(table(fireRaster[]))
   }
 
   return(invisible(sim))
