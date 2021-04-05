@@ -117,7 +117,6 @@ simParams <- list(
   , fireSpread = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
-    , "fireSize" = raster::ncell(simOutSpeciesLayers$rasterToMatchLarge)   ## try allowing fires to spread beyond SA
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , "spreadProbRange" = c(0.19, 0.24)
     , ".useCache" = eventCaching
