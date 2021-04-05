@@ -348,10 +348,11 @@ doFireSpread <- function(sim) {
                        "randomly across the landscape, in number = to 'noStartPix'")))
     sim$startPix <- sample(which(!is.na(getValues(burnableAreas))), P(sim)$noStartPix)
   } else {
+    ## draw prob of having a fire, assess "winners", convert to vector (also export to sim)
     startPix <- mask(sim$fireIgnitionProb, burnableAreas)
-    startPix[] <- rpois(ncell(startPix), startPix[])
-    ## assess "winners" and convert to vector (also export to sim)
-    sim$startPix <- which(getValues(startPix) >= 1) ## winners are 1 or larger.
+    startPix <- rbinom(n = ncell(startPix), size = 1, prob = pmin(startPix[], 1))
+    startPix <- which(startPix > 0) ## winners are 0 or larger.
+    sim$startPix <- sample(startPix)  ## randomize order so that first fires aren't always at top of landscape
   }
 
   if (length(sim$startPix)) {
