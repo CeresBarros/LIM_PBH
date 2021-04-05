@@ -9,15 +9,16 @@
 rm(list = ls()); amc::.gc()
 
 ## Get packages ----------------------
-## requires as of Mar 5th 2021
-# loading reproducible      1.0.0.9010
-# loading quickPlot         0.1.6.9000
-# loading SpaDES.core       1.0.6.9000
-# loading SpaDES.tools      0.3.7.9000
+## requires as of Apr 5th 2021
+# loading reproducible      1.0.0.9014
+# loading quickPlot         0.1.7.9002
+# loading SpaDES.core       1.0.6.9025
+# loading SpaDES.tools      0.3.7.9007
 # loading SpaDES.addins     0.1.2
-# loading SpaDES.experiment 0.0.2.9000
-# loading LandR             0.0.12.9006
-# loading LandR.CS          0.0.1.0001
+# loading SpaDES.experiment 0.0.2.9002
+# loading LandR             1.0.1.9002
+# loading LandR.CS          0.0.2.0002
+## loading fireSenseUtils   0.0.4.9052
 
 # devtools::install_github("PredictiveEcology/reproducible@development", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
@@ -27,8 +28,9 @@ rm(list = ls()); amc::.gc()
 # devtools::install_github("ianmseddy/LandR.CS", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.core@development", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/SpaDES.core@development")
 # devtools::install_github("PredictiveEcology/SpaDES.experiment@development", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/fireSenseUtils@development", dependencies = FALSE)
 
 ## test packages
 # devtools::install_local("../LandR", dependencies = FALSE, force = TRUE)
@@ -120,6 +122,7 @@ plotInitialTime <- simTimes$start
 # reproducible::clearCache(file.path(simPaths$cachePath, "PM"),userTags = "simInitAndSpades", ask = FALSE)
 # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"),userTags = "simInitAndSpades", ask = FALSE)
 source("R/SpaDES/4_preSimulation.R")
+simOut <- spades(LIM_simInitList[[1]])
 
 # spades(LIM_simInitList[[1]])
 
