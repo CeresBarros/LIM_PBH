@@ -116,9 +116,9 @@ simParams <- list(
   )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
+    , "fitRes" = 1000
     , "prepPredictionObjs" = TRUE
-    , "propAbsences" = NA
-    , "rescalePredictionObjs" = TRUE
+    , "propAbsences" = 9
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
@@ -128,10 +128,10 @@ simParams <- list(
                           M2:pw(julMDC, k_M2) + O1b:pw(julMDC, k_O1b) + NF:pw(julMDC, k_NF) - 1")
     , "lb" = list(coef = 0,
                   knots = list("julMDC" = 19))   ## the rounded 5% quantile, pre scaling
-    , "ub" = list(coef = 1,
+    , "ub" = list(coef = 20,
                   knots = list("julMDC" = 21))   ## the rounded 80% quantile, pre scaling
     , "iterDEoptim" = 60
-    , "iterNlminb" = 100
+    , "iterNlminb" = 500
     , "cores" = 4
     , "rescaleVars" = TRUE
     , "rescalers" = NULL
