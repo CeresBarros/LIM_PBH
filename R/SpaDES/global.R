@@ -48,12 +48,15 @@ Require(c("SpaDES",
           "PredictiveEcology/LandR@modelBiomass"),
         upgrade = FALSE)
 
-options("reproducible.useNewDigestAlgorithm" = 2)
-options("spades.moduleCodeChecks" = FALSE)
-options("reproducible.useCache" = TRUE)
-options("reproducible.inputPaths" = normPath("R/SpaDES/inputs"))  ## store everything in data/ so that there are no duplicated files across modules
-options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
-options("reproducible.useGDAL" = FALSE)
+options("reproducible.useNewDigestAlgorithm" = 2,
+        "spades.moduleCodeChecks" = FALSE,
+        "reproducible.useCache" = TRUE,
+        "reproducible.inputPaths" = normPath("R/SpaDES/inputs"),  ## store everything in data/ so that there are no duplicated files across modules
+        "reproducible.destinationPath" = normPath("R/SpaDES/inputs"),
+        "reproducible.useGDAL" = FALSE,
+        "reproducible.cacheSaveFormat" = "qs",
+        "reproducible.useMemoise" = TRUE)
+
 
 source("R/R_tools/Useful_functions.R")
 
