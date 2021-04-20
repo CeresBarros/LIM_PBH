@@ -1,121 +1,130 @@
 ## DIAGNOSE MODELBIOMASS ---------------------------------
 ## allFit is taking too long (>12h and didn't even with first optimizer)
-if (FALSE) {
-  library(lme4)
-  modBiomass <- LIM_simInitList$noPM$modelBiomass$mod
+library(lme4)
+modBiomass <- LIM_simInitList$noPM$modelBiomass$mod
+
+pars <- unlist(getME(modBiomass, c("theta")))
+updateModBiomass <- update(modBiomass, devFunOnly = TRUE, data = modBiomass@frame)
+grad <- numDeriv::grad(updateModBiomass, pars)
+hess <- numDeriv::hessian(updateModBiomass, pars)
+sc_grad <- solve(hess, grad)
+
+if (length(modBiomass@optinfo$conv$lme4$messages) &
+    max(pmin(abs(sc_grad), abs(grad))) > 0.001) {
+  ## Nelder and L-BFGS-B methods didn't converge
+  # , REML = FALSE,
+  # control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))
+  # ss <- getME(modBiomass, c("theta","fixef"))
+  # modBiomass <- update(modBiomass, start = ss, data = modBiomass@frame,
+  #                            control = lmerControl(calc.derivs = FALSE,  ## it's faster
+  #                                                  optimizer = "optimx",
+  #                                                  optCtrl = list(method='nlminb', maxit = 1e5)))  ## keeps hitting maxit...
+  ncores <- detectCores()
+  library(dfoptim)
+  .specialData <<- modBiomass@frame
+  diff_optims <- allFit(modBiomass$mod, parallel = 'multicore', ncpus = ncores)
+  is.OK <- sapply(diff_optims, is, "merMod")  ## nlopt NELDERMEAD failed, others succeeded
+  aa.OK <- diff_optims[is.OK]
+  lapply(aa.OK,function(x) x@optinfo$conv$lme4$messages)
 
   pars <- unlist(getME(modBiomass, c("theta")))
-  updateModBiomass <- update(modBiomass, devFunOnly = TRUE, data = modBiomass@frame)
-  grad <- numDeriv::grad(updateModBiomass, pars)
-  hess <- numDeriv::hessian(updateModBiomass, pars)
+  grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
+  hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
   sc_grad <- solve(hess, grad)
-
-  if (length(modBiomass@optinfo$conv$lme4$messages) &
-      max(pmin(abs(sc_grad), abs(grad))) > 0.001) {
-    ## Nelder and L-BFGS-B methods didn't converge
-    # , REML = FALSE,
-    # control = lmerControl(optimizer ='optimx', optCtrl=list(method='nlminb')))
-    # ss <- getME(modBiomass, c("theta","fixef"))
-    # modBiomass <- update(modBiomass, start = ss, data = modBiomass@frame,
-    #                            control = lmerControl(calc.derivs = FALSE,  ## it's faster
-    #                                                  optimizer = "optimx",
-    #                                                  optCtrl = list(method='nlminb', maxit = 1e5)))  ## keeps hitting maxit...
-    ncores <- detectCores()
-    library(dfoptim)
-    .specialData <<- modBiomass@frame
-    diff_optims <- allFit(modBiomass$mod, parallel = 'multicore', ncpus = ncores)
-    is.OK <- sapply(diff_optims, is, "merMod")  ## nlopt NELDERMEAD failed, others succeeded
-    aa.OK <- diff_optims[is.OK]
-    lapply(aa.OK,function(x) x@optinfo$conv$lme4$messages)
-
-    pars <- unlist(getME(modBiomass, c("theta")))
-    grad <- numDeriv::grad(update(modBiomass, devFunOnly = TRUE), pars)
-    hess <- numDeriv::hessian(update(modBiomass, devFunOnly = TRUE), pars)
-    sc_grad <- solve(hess, grad)
-    max(pmin(abs(sc_grad),abs(grad)))
-  }
+  max(pmin(abs(sc_grad),abs(grad)))
 }
 
 
 ## DIAGNOSE FIRE IGNITION MODEL ----------------------------------
 ## to get predicted values we re-run the IgnitionPredict with the original data
-if (FALSE) {
-  library(data.table)
-  library(ggplot2)
-  library(ggspatial)
-  library(ggpubr)
 
-  objects <- list(
-    "fireSense_IgnitionFitted" = LIM_simInitList$noPM$fireSense_IgnitionFitted
-    , "dataFireSense_IgnitionFit" = LIM_simInitList$noPM$dataFireSense_IgnitionFit
-  )
+library(data.table)
+library(ggplot2)
+library(ggspatial)
+library(ggpubr)
+library(SpaDES)
 
-  parameters <- list(
-    fireSense_IgnitionPredict = list(
-      "data" = "dataFireSense_IgnitionFit"
-      , "modelObjName" = "fireSense_IgnitionFitted" # This is the default
-      , "rescaleFactor" = 1
-    )
-  )
-  simOutFireFreqPredVals <- Cache(simInitAndSpades
-                                  , times = list(start = 0, end = 0)
-                                  , modules = "fireSense_IgnitionPredict"
-                                  , paths = simPaths
-                                  , objects = objects
-                                  , params = parameters
-                                  , cacheRepo = simPaths$cachePath
-                                  , userTags = "fireSense_IgnitionPredict"
-                                  , omitArgs = c("userTags")
-  )
+simDirName <- "mar2021Runs"
+simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "noPM")
+                 , modulePath = file.path("R/SpaDES/m")
+                 , inputPath = file.path("R/SpaDES/inputs")
+                 , outputPath = file.path("R/SpaDES/outputs", simDirName, "noPM"))
+eventCaching <- c(".inputObjects", "init")
 
-  ## plot predicted and fitted values
-  ignitionsData <- LIM_simInitList$noPM$dataFireSense_IgnitionFit
-  ignitionsData[,  rows := 1:nrow(ignitionsData)]
-  predVals <- data.table(rows = as.integer(names(simOutFireFreqPredVals$fireSense_IgnitionPredicted)),
-                         fittedVals = simOutFireFreqPredVals$fireSense_IgnitionPredicted)
-  ignitionsData <- predVals[ignitionsData, on = .(rows)]
-  ignitionsData[, n_firesPred := rpois(.N, fittedVals)]
 
-  plot1 <- ggplot(data = ignitionsData, aes(y = fittedVals, x = n_fires)) +
-    geom_point() +
-    labs(y = "lambda", x = "observed no. fires")
+## old data
+# oldSim <- qs::qread("C:/Users/cbarros/Desktop/oldDisp_noPM/preSimList.qs")
 
-  plot2 <- ggplot(data = ignitionsData, aes(y = fittedVals, x = n_firesPred)) +
-    geom_point() +
-    labs(y = "lambda", x = "predicted (rpois) no. fires")
+## get simList from Init - doesn't matter which scenario
+LIM_simInitList <- loadSimList("R/SpaDES/outputs/mar2021Runs/noPM/LIM_simInit_noPM")
 
-  plot3 <- ggplot(data = ignitionsData, aes(y = n_firesPred, x = n_fires)) +
-    geom_point() +
-    labs(y = "predicted (rpois) no. fires", x = "observed no. fires")
+parameters <- list(
+  fireSense_IgnitionFit = list(
+    "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:julMDC + D2:julMDC +",
+                                         "M2:julMDC + O1b:julMDC + NF:julMDC +",
+                                         "coniferous:pw(julMDC, k_conif) + D2:pw(julMDC, k_D2) +",
+                                         "M2:pw(julMDC, k_M2) + O1b:pw(julMDC, k_O1b) + NF:pw(julMDC, k_NF) - 1")
+    , "lb" = list(coef = 0,
+                  knots = list("julMDC" = 19))   ## the rounded 5% quantile, pre scaling
+    , "ub" = list(coef = 20,
+                  knots = list("julMDC" = 21))   ## the rounded 80% quantile, pre scaling
+    , "iterDEoptim" = 60
+    , "iterNlminb" = 500
+    , "family" = quote(MASS::negative.binomial(theta = 1, link = 'identity'))
+    , "cores" = 4
+    , "rescaleVars" = TRUE
+    , "rescalers" = NULL
+    , ".plots" = "png"
+    , ".useCache" = eventCaching
+  ),
+  fireSense_IgnitionPredict = list(
+    ".runInterval" = NA    ## only run once at the start
+  ))
 
-  # plotData <- ignitionsData[, list(obsFires = sum(n_fires), predFires = sum(n_firesPred)),
-  #                           by = year]
-  plotData <- ignitionsData[, list(obsFires = sum(n_fires, na.rm = TRUE),
-                                   predFires = sum(fittedVals, na.rm = TRUE)),
-                            by = year]
-  plotData <- melt(plotData, id.var = "year")
-  plot4 <- ggplot(data = plotData, aes(y = value, x = year, colour = variable)) +
-    geom_line(size = 1) +
-    scale_color_discrete(labels = c("obsFires" = "sum of observed no. fires",
-                                    "predFires" = "sum of predicted (lambda) no. fires")) +
-    theme_pubr(margin = FALSE, base_size = 14) +
-    theme(legend.position = "bottom") +
-    labs(y = "no. fires", x = "year", colour = "")
+objects <- list(
+  "ignitionFitRTM" = LIM_simInitList$ignitionFitRTM
+  , "fireSense_ignitionCovariates" = LIM_simInitList$fireSense_ignitionCovariates
+  , "fireSense_IgnitionAndEscapeCovariates" = LIM_simInitList$fireSense_IgnitionAndEscapeCovariates  ## FOR PRED AT 250M
+)
 
-  gridExtra::grid.arrange(plot1, plot2, plot3, plot4)
+simOutFireFreqPredVals <- simInitAndSpades(
+  times = list(start = 0, end = 0)
+  , modules = list("fireSense_IgnitionFit", "fireSense_IgnitionPredict")
+  , paths = simPaths
+  , objects = objects
+  , params = parameters
+  , cacheRepo = simPaths$cachePath
+  , userTags = "fireSense_IgnitionFit&Predict"
+  , omitArgs = c("userTags")
+)
 
-  plot5 <- ggplot() +
-    layer_spatial(data = simOutFireFreq$fireSense_IgnitionPredicted) +
-    layer_spatial(data = simOutPreSim$fireLocations, colour = "darkred") +
-    annotation_north_arrow(style = north_arrow_minimal,
-                           location = "tr", which_north = "true") +
-    scale_fill_distiller(palette = "Greys", na.value = "transparent", direction = 1) +
-    theme_pubr(margin = FALSE, legend = "right", base_size = 14) +
-    labs(x = "longitude", y = "latitude", fill = expression(lambda))
+library(data.table)
+library(ggplot2)
+library(ggspatial)
+library(ggpubr)
 
-  plot6 <- ggarrange(plot4, plot5, widths = c(0.6,0.4),
-                     labels = "auto", font.label = list(size = 20))
-  ggsave("C:/Users/Ceres Barros/Google Drive/Shared/McIntire-lab/Manuscripts_inPrep/LIMmodel_paper",
-         plot6, width = 12, height = 7, dpi = 300)
-}
+plot1 <- ggplot() +
+  layer_spatial(data = simOutFireFreqPredVals$fireSense_IgnitionPredicted) +
+  layer_spatial(data = LIM_simInitList$fireLocations, colour = "darkred") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         location = "tr", which_north = "true") +
+  scale_fill_distiller(palette = "Greys", na.value = "transparent", direction = 1) +
+  theme_pubr(margin = FALSE, legend = "right", base_size = 14) +
+  labs(x = "longitude", y = "latitude", fill = expression(lambda))
+plot1
 
+## total no. fires (fitted)
+fitted <- predictIgnition(simOutFireFreqPredVals$fireSense_IgnitionFitted[["formula"]][-2],
+                          simOutFireFreqPredVals$fireSense_IgnitionFitted$data,
+                          simOutFireFreqPredVals$fireSense_IgnitionFitted$coef,
+                          1,
+                          1,
+                          simOutFireFreqPredVals$fireSense_IgnitionFitted$family$linkinv)
+## fitted and observed
+sum(fitted, na.rm = TRUE)
+sum(simOutFireFreqPredVals$fireSense_IgnitionFitted$data$n_fires)
+
+## average no. fires per year
+fittedData <- data.table(simOutFireFreqPredVals$fireSense_IgnitionFitted$data, fittedVals = fitted)
+mean(fittedData[, sum(fittedVals), by = year]$V1)
+mean(fittedData[, sum(n_fires), by = year]$V1)
