@@ -18,7 +18,7 @@ defineModule(sim, list(
                   "PredictiveEcology/SpaDES.core@development",
                   "PredictiveEcology/SpaDES.tools@development",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/LandR (>= 1.0.0.9003)"),
+                  "PredictiveEcology/LandR@development (>= 1.0.0.9003)"),
   parameters = rbind(
     defineParameter("noStartPix", "integer", 100L, 0L, NA,
                     desc = paste("Number of fire events. Only used if fireIgnitionProb is not available")),
@@ -558,9 +558,8 @@ doNoFire <- function(sim) {
                         filename2 = NULL,
                         fireField = "CFS_REF_ID",
                         earliestYear = 1,
-                        fun = "raster::shapefile",
+                        fun = "sf::st_read",
                         userTags = cacheTags,
-                        useCache = FALSE,
                         omitArgs = c("destinationPath", "targetFile", "userTags"))
 
     sim$fireSize <- max(table(fireRaster[]))
