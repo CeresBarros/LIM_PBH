@@ -114,13 +114,6 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
   )
-  , fireSpread = list(
-    "fireInitialTime" = fireInitialTime
-    , "fireTimestep" = fireTimestep
-    , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
-    , "spreadProbRange" = c(0.19, 0.24)
-    , ".useCache" = eventCaching
-  )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "prepPredictionObjs" = TRUE
@@ -147,6 +140,13 @@ simParams <- list(
   )
   , fireSense_IgnitionPredict = list(
     ".runInterval" = NA    ## only run once at the start
+  )
+  , fireSpread = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
+    , "spreadProbRange" = c(0.19, 0.24)
+    , ".useCache" = eventCaching
   )
 )
 
