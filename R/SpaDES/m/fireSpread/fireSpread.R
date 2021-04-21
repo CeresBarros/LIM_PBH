@@ -35,7 +35,7 @@ defineModule(sim, list(
                     desc = paste("Range of values to use when rescaling spread probability, p,",
                                  "calculated from fire properties. Defaults to 0.20-0.25, which",
                                  "produces sensible fire sizes, but can be 0-1. Must be a sorted vector of length 2.",
-                                 "If min(spreadProbRange) != 0, 0s are forced to 0 after scaling")),
+                                 "If min(spreadProbRange) != 0, 0s in the original scale are forced to 0 after scaling")),
     defineParameter(".plotMaps", "logical", FALSE, NA, NA, "This describes whether maps should be plotted or not"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time interval between plot events"),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
@@ -368,6 +368,7 @@ doFireSpread <- function(sim) {
                               spreadProb = spreadProb_map,
                               persistProb = persistProb_map,
                               start = escapedFires,
+                              # start = sim$startPix,
                               maxSize = sim$fireSize,
                               plot.it = FALSE)
   } else {
