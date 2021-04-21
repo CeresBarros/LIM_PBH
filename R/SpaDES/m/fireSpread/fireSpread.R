@@ -92,6 +92,8 @@ defineModule(sim, list(
                   desc = "updated community map at each succession time step, on FBP-compatible projection"),
     createsOutput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
                   desc = "Binary raster of fire spread"),
+    createsOutput(objectName = "rstCurrentFires", objectClass = "RasterLayer",
+                  desc = "Raster of fire spread with fire IDs (not binary)"),
     createsOutput(objectName = "startPix", objectClass = "vector",
                   desc = "List of starting fire pixels")
   )
@@ -387,6 +389,8 @@ doFireSpread <- function(sim) {
     rstCurrentBurn <- mask(rstCurrentBurn, burnableAreas)
   }
 
+  ## output fire raster with fire IDs
+  sim$rstCurrentFires <- rstCurrentBurn
   ## convert to mask
   rstCurrentBurn[!is.na(rstCurrentBurn[])][] <- 1
 
