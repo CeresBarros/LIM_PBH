@@ -133,10 +133,6 @@ source("R/SpaDES/4_preSimulation.R")
 ## -----------------------------------------------
 # graphics.off()
 
-## re-define end time - needed because we pre-run init events
-end(LIM_simInitList[[1]]) <- simTimes$end
-end(LIM_simInitList[[2]]) <- simTimes$end
-
 ## using experiment:
 library(future)
 plan("multiprocess", workers = 10)
