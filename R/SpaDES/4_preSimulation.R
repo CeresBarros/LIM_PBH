@@ -145,7 +145,7 @@ simParams <- list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
-    , "spreadProbRange" = c(0.19, 0.24)
+    , "spreadProbRange" = c(0.20, 0.25)
     , ".useCache" = eventCaching
   )
 )
@@ -194,6 +194,7 @@ outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
                                      saveTime = unique(sort(c(1, simTimes$end,
                                                               seq(simTimes$start, simTimes$end, by = 5)))),
                                      eventPriority = 10))
+
 ## on the first year save at the start.
 outputs[outputs$saveTime == simTimes$start, "eventPriority"] <- 1
 
