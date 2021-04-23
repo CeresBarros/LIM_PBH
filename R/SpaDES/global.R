@@ -28,7 +28,7 @@ rm(list = ls()); amc::.gc()
 # devtools::install_github("ianmseddy/LandR.CS", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.core@development")
+# devtools::install_github("PredictiveEcology/SpaDES.core@dotSeed")
 # devtools::install_github("PredictiveEcology/SpaDES.experiment@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/fireSenseUtils@development", dependencies = FALSE)
 

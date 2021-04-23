@@ -69,6 +69,7 @@ simParams <- list(
     , "pixelGroupBiomassClass" = 100
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
+    , ".seed" = list("init" = 123)
     , ".useCache" = eventCaching
   )
   , Biomass_speciesParameters = list(
