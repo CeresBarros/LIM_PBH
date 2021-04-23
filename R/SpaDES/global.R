@@ -125,7 +125,8 @@ plotInitialTime <- simTimes$start
 # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
 # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
 source("R/SpaDES/4_preSimulation.R")
-# simOut <- spades(LIM_simInitList[[1]])
+# simOut1 <- spades(LIM_simInitList[[1]])
+# simOut2 <- spades(LIM_simInitList[[2]])
 
 
 ## -----------------------------------------------
@@ -135,7 +136,7 @@ source("R/SpaDES/4_preSimulation.R")
 
 ## using experiment:
 library(future)
-plan("multiprocess", workers = 10)
+plan("multisession", workers = 5)
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
