@@ -668,3 +668,11 @@ calcMeanBEINF <- function (mu, nu, tau) {
   meanofY <- (tau + mu)/(1 + nu + tau)
   meanofY
 }
+
+## REPLACE NAs BY ANOTHER VALUE IN A DATA.TABLE
+## x is a `dat.table`
+## val is the value to replace NAs for
+replaceNAs <- function(x, val = 0) {
+  x[is.na(x)] <- val
+  x
+}
