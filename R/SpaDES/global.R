@@ -97,8 +97,8 @@ source("R/SpaDES/2_speciesLayers.R")
 ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
 # plot(simOutSpeciesLayers$speciesLayers)
 keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
-  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(simOutSpeciesLayers$speciesLayers[[2]][]))
-  propPres > 0.05  ## species need to be in at least 5% of the landscaoe
+  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(ras[]))
+  propPres > 0.05  ## species need to be in at least 5% of the landscape
 })
 
 keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
@@ -136,7 +136,7 @@ source("R/SpaDES/4_preSimulation.R")
 
 ## using experiment:
 library(future)
-plan("multisession", workers = 5)
+plan("multisession", workers = 2)
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
@@ -144,6 +144,6 @@ simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
 future:::ClusterRegistry("stop")
 
 ## save simLists object.
-qs::qsave(LandRBiomass_sim, file.path(simPaths$outputPath, paste0("LIM_simLists_", runName)))
+qs::qsave(simExperimentOut, file.path(simPaths$outputPath, paste0("LIM_simLists_noPM_PM")))
 
 q("no")
