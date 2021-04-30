@@ -69,11 +69,13 @@ simParams <- list(
     , "pixelGroupBiomassClass" = 100
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
+    , ".plotInitialTime" = plotInitialTime
     , ".seed" = list("init" = 123)
     , ".useCache" = eventCaching
   )
   , Biomass_speciesParameters = list(
     "sppEquivCol" = sppEquivCol
+    , ".plotInitialTime" = plotInitialTime
     , ".useCache" = eventCaching
   )
   , Biomass_core = list(
@@ -96,6 +98,7 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "nonForestFire" = TRUE
     , "sppEquivCol" = sppEquivCol
+    , ".plotInitialTime" = plotInitialTime
     , ".plotMaps" = FALSE
     , ".useCache" = eventCaching
   )
@@ -103,23 +106,27 @@ simParams <- list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
+    , ".plotInitialTime" = plotInitialTime
     , ".useCache" = eventCaching
   )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
+    , ".plotInitialTime" = plotInitialTime
   )
   , Biomass_regenerationPM = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
+    , ".plotInitialTime" = plotInitialTime
   )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "fitRes" = 1000
     , "prepPredictionObjs" = TRUE
     , "propAbsences" = 9
+    , ".plotInitialTime" = plotInitialTime
     , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
@@ -147,6 +154,7 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , "spreadProbRange" = c(0.20, 0.25)
+    , ".plotInitialTime" = plotInitialTime
     , ".useCache" = eventCaching
   )
 )
@@ -220,7 +228,6 @@ LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules
         , outputs = outputs
         , events = "init"
         , debug = TRUE
-        , .plotInitialTime = NA
         , cacheRepo = simPaths2$cachePath
         , userTags = c("simInitAndInits", scenario)
         , omitArgs = c("userTags", ".plotInitialTime", "debug"))
