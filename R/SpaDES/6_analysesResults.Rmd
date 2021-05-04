@@ -552,7 +552,7 @@ plotTest1.2 <- ggplot(plotData) +
        x = "")
 ```
 
-```{r plotPlots12}
+```{r plotPlots13}
 ggarrange(plotTest1 +
                         theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
                               legend.key.size = unit(1.5, "cm")),
@@ -761,7 +761,7 @@ plotTest5 <- ggplot(plotData2) +
   labs(y = "beta-div.", x = "")
 ```
 
-```{r plotPlots13}
+```{r plotPlots14}
 ggarrange(plotTest2 + theme(legend.position = "none"),
                       plotTest3 + theme(legend.position = "none"),
                       plotTest5 + theme(legend.position = "none"),
@@ -1707,7 +1707,7 @@ plot17var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
-```{r plotPlots10}
+```{r plotPlots12}
 ggarrange(plot12var +
                         theme(plot.subtitle = element_blank(), plot.margin = margin(unit = "mm"),
                               axis.title.x = element_blank(), axis.text.x = element_blank()),
