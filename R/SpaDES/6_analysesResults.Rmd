@@ -113,13 +113,13 @@ names(rstCurrentFiresStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", gr
                                       sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", rstCurrentFiresFiles, value = TRUE, invert = TRUE)), sep = "_")
 names(pixelGroupMapStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE))),
                                       sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", pixelGroupMapFiles, value = TRUE)), sep = "_")
-                                      
+
 names(pixelGroupMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", pixelGroupMapFiles, value = TRUE, invert = TRUE))),
                                     sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", pixelGroupMapFiles, value = TRUE, invert = TRUE)), sep = "_")
 
 names(vegTypeMapStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE))),
                                    sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE)), sep = "_")
-                                   
+
 names(vegTypeMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE))),
                                  sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE)), sep = "_")
 ```
@@ -554,10 +554,10 @@ plotTest1.2 <- ggplot(plotData) +
 
 ```{r plotPlots13}
 ggarrange(plotTest1 +
-                        theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
-                              legend.key.size = unit(1.5, "cm")),
-                      plotTest1.2 + theme(legend.position = "none"),
-                      labels = "auto", font.label = list(size = 20))
+            theme(legend.position = c(0.6, 0), legend.justification = c("left", "bottom"),
+                  legend.key.size = unit(1.5, "cm")),
+          plotTest1.2 + theme(legend.position = "none"),
+          labels = "auto", font.label = list(size = 20))
 ```
 
 
@@ -763,11 +763,11 @@ plotTest5 <- ggplot(plotData2) +
 
 ```{r plotPlots14}
 ggarrange(plotTest2 + theme(legend.position = "none"),
-                      plotTest3 + theme(legend.position = "none"),
-                      plotTest5 + theme(legend.position = "none"),
-                      get_legend(plotTest2 + theme(legend.key.size = unit(1.5, "cm"))),
-                      ncol = 2, nrow = 2,
-                      labels = c("a", "b", "c", ""), font.label = list(size = 20))
+          plotTest3 + theme(legend.position = "none"),
+          plotTest5 + theme(legend.position = "none"),
+          get_legend(plotTest2 + theme(legend.key.size = unit(1.5, "cm"))),
+          ncol = 2, nrow = 2,
+          labels = c("a", "b", "c", ""), font.label = list(size = 20))
 ```
 
 
@@ -911,13 +911,13 @@ ggarrange(plot5,
 
 ## no. cohorts:
 ggarrange(plot7 + theme(plot.subtitle = element_blank()),
-                      plot8 +
-                        theme(plot.subtitle = element_blank(),
-                              axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot8 +
+            theme(plot.subtitle = element_blank(),
+                  axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ```
 
@@ -1018,19 +1018,19 @@ plot5var <- ggplot(data = plotData,
 ```
 
 ```{r plotPlots9}
- ggarrange(plot1var +
-                        theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
-                              plot.margin = margin(0,0,0,0)),
-                      plot3var +
-                        theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
-                              plot.title = element_blank(), plot.margin = margin(0,0,0,0)) +
-                        labs(title = "", subtitle = ""),
-                      plot5var + theme(plot.title = element_blank(),
-                                       plot.margin = margin(0,0,0,5, unit = "mm")) +
-                        labs(title = "", subtitle = ""), ncol = 1,
-                      heights = c(1, 0.9, 1.3),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+ggarrange(plot1var +
+            theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+                  plot.margin = margin(0,0,0,0)),
+          plot3var +
+            theme(axis.title.x = element_blank(), axis.text.x = element_blank(),
+                  plot.title = element_blank(), plot.margin = margin(0,0,0,0)) +
+            labs(title = "", subtitle = ""),
+          plot5var + theme(plot.title = element_blank(),
+                           plot.margin = margin(0,0,0,5, unit = "mm")) +
+            labs(title = "", subtitle = ""), ncol = 1,
+          heights = c(1, 0.9, 1.3),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 ```
 
 ### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY VEG TYPE (dom species)
@@ -1207,37 +1207,37 @@ amc::.gc()
 ```{r plotPlots2}
 ## biomass
 ggarrange(plot13 + theme(plot.title = element_text(size = 17)),
-                      plot14 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot14 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 ## age
 ggarrange(plot17,
-                      plot18 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot18 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ## veg type abundance 
 ggarrange(plot9.2,
-                      plot10.2 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = ""),
-                      widths = c(0.4, 0.7), labels = "auto", font.label = list(size = 20),
-                      legend = "bottom", common.legend = TRUE)
+          plot10.2 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = ""),
+          widths = c(0.4, 0.7), labels = "auto", font.label = list(size = 20),
+          legend = "bottom", common.legend = TRUE)
 
 ## no. cohorts
 ggarrange(plot11,
-                      plot12 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot12 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ```
 
@@ -1365,17 +1365,17 @@ plot11var <- ggplot(data = plotData,
 
 ```{r plotPlots10}
 ggarrange(plot6var + theme(plot.subtitle = element_blank(),
-                                       axis.title.x = element_blank(), axis.text.x = element_blank()),
-                      plot8var +
-                        theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
-                              axis.title.x = element_blank(), axis.text.x = element_blank()),
-                      plot10var +
-                        theme(plot.margin = margin(l = 9, unit = "mm"), plot.subtitle = element_blank()),
-                      plot11var + theme(plot.subtitle = element_blank()),
-                      ncol = 2, nrow = 2,
-                      heights = c(1, 1.6),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+                           axis.title.x = element_blank(), axis.text.x = element_blank()),
+          plot8var +
+            theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
+                  axis.title.x = element_blank(), axis.text.x = element_blank()),
+          plot10var +
+            theme(plot.margin = margin(l = 9, unit = "mm"), plot.subtitle = element_blank()),
+          plot11var + theme(plot.subtitle = element_blank()),
+          ncol = 2, nrow = 2,
+          heights = c(1, 1.6),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 ```
 
 ### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY FUNCTIONAL VEG TYPE (Cameron's veg types)
@@ -1550,21 +1550,21 @@ plot28 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
 ```{r plotPlots3}
 ## biomass
 ggarrange(plot13 + theme(plot.title = element_text(size = 17)),
-                      plot14 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot14 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ## age
 ggarrange(plot27,
-                      plot28 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot28 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ## veg type abundance 
 plotSave <- ggarrange(plot19.2,
@@ -1579,12 +1579,12 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeVe
 
 ## no. cohorts
 ggarrange(plot21,
-                      plot22 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
-                        labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+          plot22 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
+            labs(title = "", subtitle = ""),
+          widths = c(0.4, 0.7),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 
 ```
 
@@ -1709,19 +1709,19 @@ plot17var <- ggplot(data = plotData,
 
 ```{r plotPlots12}
 ggarrange(plot12var +
-                        theme(plot.subtitle = element_blank(), plot.margin = margin(unit = "mm"),
-                              axis.title.x = element_blank(), axis.text.x = element_blank()),
-                      plot14var +
-                        theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
-                              axis.title.x = element_blank(), axis.text.x = element_blank()),
-                      plot16var +
-                        theme(plot.margin = margin(t = 6, l = 6, unit = "mm"), plot.subtitle = element_blank()),
-                      plot17var +
-                        theme(plot.margin = margin(t = 6, unit = "mm"), plot.subtitle = element_blank()),
-                      ncol = 2, nrow = 2,
-                      heights = c(1, 1.6),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+            theme(plot.subtitle = element_blank(), plot.margin = margin(unit = "mm"),
+                  axis.title.x = element_blank(), axis.text.x = element_blank()),
+          plot14var +
+            theme(plot.margin = margin(l = 10, unit = "mm"), plot.subtitle = element_blank(),
+                  axis.title.x = element_blank(), axis.text.x = element_blank()),
+          plot16var +
+            theme(plot.margin = margin(t = 6, l = 6, unit = "mm"), plot.subtitle = element_blank()),
+          plot17var +
+            theme(plot.margin = margin(t = 6, unit = "mm"), plot.subtitle = element_blank()),
+          ncol = 2, nrow = 2,
+          heights = c(1, 1.6),
+          legend = "bottom", common.legend = TRUE,
+          labels = "auto", font.label = list(size = 20))
 ```
 
 
@@ -1896,11 +1896,11 @@ plot31.3 <- ggplot(plotData,
 
 ```{r plotPlots6}
 ggarrange(plot31.2 + theme(legend.position = "none"),
-                      get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
-                                   guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
-                      plot31.3 + theme(legend.position = "none"),
-                      widths = c(0.8, 0.2),
-                      labels = c("a", "", "b"), font.label = list(size = 20))
+          get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
+                       guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
+          plot31.3 + theme(legend.position = "none"),
+          widths = c(0.8, 0.2),
+          labels = c("a", "", "b"), font.label = list(size = 20))
 ```
 
 Mean age differences
@@ -1959,8 +1959,8 @@ plot32.2 <- ggplot(plotData,
 plot32
 
 ggarrange(plot32.2 + theme(legend.position = "bottom"),
-                      plotTest1.2 + theme(legend.position = "bottom"),
-                      labels = "auto", font.label = list(size = 20))
+          plotTest1.2 + theme(legend.position = "bottom"),
+          labels = "auto", font.label = list(size = 20))
 ```
 
 No. fires and fire frequency
@@ -2166,8 +2166,8 @@ plot36 <- ggplot(data = plotData2,
 
 ```{r plotPlots8}
 ggarrange(plot33,
-                      plot35, common.legend = TRUE, legend = "top",
-                      labels = "auto", font.label = list(size = 20))
+          plot35, common.legend = TRUE, legend = "top",
+          labels = "auto", font.label = list(size = 20))
 ```
 
 ## MAPS
@@ -2284,33 +2284,33 @@ plotMap3.2 <- ggplot() +
 
 ```{r plotPlots11}
 ggarrange(plotMap1 + theme(legend.position = "right"),
-                      plotMap1hist +
-                        theme(legend.position = c(0.7, 0.95), legend.justification = c("left", "top")),
-                      ncol = 1, heights = c(2,1), widths = c(0.98, 1))
+          plotMap1hist +
+            theme(legend.position = c(0.7, 0.95), legend.justification = c("left", "top")),
+          ncol = 1, heights = c(2,1), widths = c(0.98, 1))
 
 ggarrange(plotMap2 + theme(legend.position = "none"),
-                      plotMap3 +
-                        theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
-                              legend.position = "right"),
-                      plotMap2hist +
-                        theme(plot.margin = margin(b = 12, unit = "mm"),
-                              axis.text.x = element_blank(),
-                              legend.position = "none") +
-                        guides(fill = guide_legend(nrow = 2), alpha = guide_legend(nrow = 2)),
-                      plotMap3hist +
-                        theme(legend.position = c(0.95, 0.95),
-                              legend.justification = c("right", "top")),
-                      get_legend(plotMap2hist),
-                      ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1),
-                      labels = c("a", "b", "", "", ""), font.label = list(size = 24))
+          plotMap3 +
+            theme(axis.title.y = element_blank(), axis.text.y = element_blank(),
+                  legend.position = "right"),
+          plotMap2hist +
+            theme(plot.margin = margin(b = 12, unit = "mm"),
+                  axis.text.x = element_blank(),
+                  legend.position = "none") +
+            guides(fill = guide_legend(nrow = 2), alpha = guide_legend(nrow = 2)),
+          plotMap3hist +
+            theme(legend.position = c(0.95, 0.95),
+                  legend.justification = c("right", "top")),
+          get_legend(plotMap2hist),
+          ncol = 2, nrow = 3, heights = c(2,1,0.2), widths = c(0.98, 1),
+          labels = c("a", "b", "", "", ""), font.label = list(size = 24))
 
 ggarrange(plotMap1.2 + theme(legend.position = "bottom") +
-                        guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
-                      plotMap3.2 + theme(legend.position = "bottom",
-                                         axis.text.y = element_blank(), axis.title.y = element_blank()) +
-                        guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
-                      ncol = 2, nrow = 1,
-                      labels = c("a", "b", ""), font.label = list(size = 20))
+            guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
+          plotMap3.2 + theme(legend.position = "bottom",
+                             axis.text.y = element_blank(), axis.title.y = element_blank()) +
+            guides(fill = guide_colorbar(title.position = "top", barwidth = 10)),
+          ncol = 2, nrow = 1,
+          labels = c("a", "b", ""), font.label = list(size = 20))
 ```
 
 ```{r savePlots, include = FALSE}
