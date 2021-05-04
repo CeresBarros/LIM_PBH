@@ -124,7 +124,7 @@ names(vegTypeMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("n
                                  sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE)), sep = "_")
 ```
 
-```{r makeVegTables, include = FALSE}
+```{r makeVegTables, include = FALSE, cache = FALSE}
 yearSubset <- c(seq(1, 100, 5), 100)
 
 ## BUILD TABLES OF RESULTS ------------------------
@@ -239,7 +239,7 @@ rm(list = grep("^[pixel|vegType].*Data", ls(), value = TRUE))
 amc::.gc()
 ```
 
-```{r makeEcozoneTables, include = FALSE}
+```{r makeEcozoneTables, include = FALSE, cache = FALSE}
 ## ECOLOGICAL ZONATION -----------------------------
 preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
 ecoregionLayerRas <- rasterize(preSimList$ecoregionLayer, preSimList$rasterToMatch, field = "ecozoneCode")
@@ -258,7 +258,7 @@ amc::.gc()
 
 ```
 
-```{r addFires, include = FALSE}
+```{r addFires, include = FALSE, cache = FALSE}
 ## NO. FIRES ---------------------------------------
 ## add no. fires per pixel, then remove lines with NA pixelGroup (not recorded)
 ## how many times did each pixel burn?
@@ -279,7 +279,7 @@ rm(noFiresPixel, test)
 amc::.gc()
 ```
 
-```{r addZeroesTables, include = FALSE}
+```{r addZeroesTables, include = FALSE, cache = FALSE}
 ## ADD MISSING SPECIES IN YEAR/SCENARIO/PIXEL COMBINATION
 ## cohortData doens't track absent cohorts, so they need to ba added back
 ## for now pixels from the 0s pixelGroup  have one entry with NAs for speciesCode
@@ -313,7 +313,7 @@ if (test3)
   stop("There are NA speciesCodes")
 ```
 
-```{r addEcozones, include = FALSE}
+```{r addEcozones, include = FALSE, cache = FALSE}
 ## add ecoregion group/ecozone code/name where they're missing
 ## add vegType where it's missing, but it's a pixel with some veg
 allPixelCohortData[, `:=`(vegType = max(vegType, na.rm = TRUE)),
@@ -340,7 +340,7 @@ allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenari
 amc::.gc()
 ```
 
-```{r addCameronVegTypes, include = FALSE}
+```{r addCameronVegTypes, include = FALSE, cache = FALSE}
 ## USING CAMERON'S CLASSIFICATION/SUMMARY ---------------------
 ## Cameron uses relative basal area to classify stand structure, we can use relative Biomass.
 ## we subset to the montane ecological zone, from where Cameron's data comes from
@@ -414,7 +414,7 @@ rm(vegTypesCN)
 amc::.gc()
 ```
 
-```{r summaryTables, include = FALSE}
+```{r summaryTables, include = FALSE, cache = FALSE}
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
