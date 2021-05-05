@@ -781,7 +781,7 @@ saveRDS(betaEffectsLMList2, file = file.path(simPaths$outputPath, "betaEffectsMo
 ```
 
 ### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY SPECIES
-```{r plotsBySpecies}
+```{r plotsBySpecies, cache = FALSE}
 ## PLOTS -----------------------------------------------
 ## MODELLED PROPERTIES ---------------------------------
 ## BY SPECIES ------------
@@ -922,7 +922,7 @@ ggarrange(plot7 + theme(plot.subtitle = element_blank()),
 ```
 
 #### Variability across repetitions
-```{r varRepsBySpecies}
+```{r varRepsBySpecies, cache = FALSE}
 ## VARIABILITY ACROSS REPS -----------------------------
 ## BY SPECIES ---------------------
 ## total biomass across landscape
@@ -1034,7 +1034,7 @@ ggarrange(plot1var +
 ```
 
 ### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY VEG TYPE (dom species)
-```{r plotsByDomSpecies}
+```{r plotsByDomSpecies, cache = FALSE}
 ## BY FOREST TYPE (DOMINANT SPECIES) ------------
 ## no. pixels
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
@@ -1242,7 +1242,7 @@ ggarrange(plot11,
 ```
 
 #### Variability across repetitions
-```{r varRepsByDomSpecies}
+```{r varRepsByDomSpecies, cache = FALSE}
 ## (DOMINANT SPECIES) ------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegType[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
@@ -1379,7 +1379,7 @@ ggarrange(plot6var + theme(plot.subtitle = element_blank(),
 ```
 
 ### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY FUNCTIONAL VEG TYPE (Cameron's veg types)
-```{r plotsByFunctVegType}
+```{r plotsByFunctVegType, cache = FALSE}
 ## BY CAMERON'S VEG TYPE ------------
 ## no. pixels
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
@@ -1589,7 +1589,7 @@ ggarrange(plot21,
 ```
 
 #### Variability across repetitions
-```{r varRepsByFunctVegType}
+```{r varRepsByFunctVegType, cache = FALSE}
 ## BY CAMERON'S VEG TYPE ------------------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegTypeCN[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
@@ -1727,7 +1727,7 @@ ggarrange(plot12var +
 
 ### COMPARING SIMULATED AND OBSERVED DATA
 Age distributions:
-```{r simVsObsAges}
+```{r simVsObsAges, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's - subset to common veg types
 plotData <- allPixelCohortDataMnt[year == max(year) & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
@@ -1822,7 +1822,7 @@ plot29
 ```
 
 No. cohorts
-```{r simVsObsCohorts}
+```{r simVsObsCohorts, cache = FALSE}
 ## no. cohorts at end of simulation vs cameron's - subset to common veg types
 plotData <- allPixelCohortDataMnt[year == max(year) & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
                                   list(noCohorts = length(unique(age))),
@@ -1850,7 +1850,7 @@ plot31
 ```
 
 Absolute differences of no. cohorts between observed data and simulated mean.
-```{r simVsObsCohortsDif}
+```{r simVsObsCohortsDif, cache = FALSE}
 ## mean cohort differences
 ## calculate the absolute difference of each stand to the observed average (per veg type) across reps
 plotData2 <- ageDataCN[, list(avgNoCohortsObs = mean(noCohorts)),
@@ -1904,7 +1904,7 @@ ggarrange(plot31.2 + theme(legend.position = "none"),
 ```
 
 Mean age differences
-```{r simVsObsAgesDif}
+```{r simVsObsAgesDif, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages per stand first
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
@@ -1964,7 +1964,7 @@ ggarrange(plot32.2 + theme(legend.position = "bottom"),
 ```
 
 No. fires and fire frequency
-```{r simVsObsFires}
+```{r simVsObsFires, cache = FALSE}
 ## no. fires per cover type - to compare with camerons fire intervals.
 plotData <- unique(allPixelCohortDataMnt[noFires > 0, .(scenario, rep, pixelIndex, noFires, vegTypeCN)])
 
@@ -2016,7 +2016,7 @@ plot40 <- ggplot(plotData,
 ```
 
 ### ALPHA AND BETA DIVERSITY PLOTS
-```{r alphaDiv}
+```{r alphaDiv, cache = FALSE}
 ## BIODIVERSITY METRICS --------------------------------
 ## ALPHA DIVERSITY --------------
 ## inverse Simpson concentration (Whittaker 1972)
@@ -2103,7 +2103,7 @@ plotMap1.2 <- ggplot() +
   labs(x = "longitude", y = "latitude", fill = expression(paste(Delta, "alpha-div.")))
 ```
 
-```{r betaDiv}
+```{r betaDiv, cache = FALSE}
 ## BETA DIVERSITY --------------
 ## from multiplicative decomposition where both alpha
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
@@ -2171,7 +2171,7 @@ ggarrange(plot33,
 ```
 
 ## MAPS
-```{r mapPlots}
+```{r mapPlots, cache = FALSE}
 ## MAPS ------------------------
 ## dominant species - to deal with reps we need to reclassify the stands after averaging across reps.
 plotData <- allPixelCohortData[year == 100, list(B = mean(B, na.rm = TRUE),
@@ -2313,7 +2313,7 @@ ggarrange(plotMap1.2 + theme(legend.position = "bottom") +
           labels = c("a", "b", ""), font.label = list(size = 20))
 ```
 
-```{r savePlots, include = FALSE}
+```{r savePlots, include = FALSE, cache = FALSE}
 ## SAVE PLOTS ------------------------------------------
 amc::.gc()
 plotSave <- ggarrange(plot1,
