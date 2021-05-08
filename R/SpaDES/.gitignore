@@ -7,6 +7,8 @@ m/*/cache
 m/*/*.zip
 m/old
 inputs/*
+6_analysesResults_cache
+6_analysesResults_files
 
 ## don't ignore
 !m/*/data/CHECKSUMS.txt
