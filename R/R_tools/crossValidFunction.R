@@ -45,10 +45,23 @@ crossValidFunction <- function(fullDT, statsModel, origData, level = NULL,
 
   origDataVars <- c(origDataVars, "sampID")
 
-  crossValidResults <- lapply(unique(fullDT$sampID), FUN = calcCrossValidMetrics,
-                              fullDT = fullDT, origData = origData, idCol = idCol,
-                              statsModel = statsModel, level = level, origDataVars = origDataVars)
-
+  message(paste("Starting cross-validation using", k, "folds"))
+  if (parallel) {
+    if (Sys.info()[["sysname"]] == "Windows") {
+      plan(multisession, gc = TRUE, ...)
+    } else plan(multicore, ...)
+    crossValidResults <- future_lapply(unique(fullDT$sampID), FUN = calcCrossValidMetrics,
+                                       fullDT = fullDT, origData = origData, idCol = idCol,
+                                       statsModel = statsModel, level = level,
+                                       origDataVars = origDataVars)
+    ## Explicitly close workers
+    future:::ClusterRegistry("stop")
+  } else {
+    crossValidResults <- lapply(unique(fullDT$sampID), FUN = calcCrossValidMetrics,
+                                fullDT = fullDT, origData = origData, idCol = idCol,
+                                statsModel = statsModel, level = level,
+                                origDataVars = origDataVars)
+  }
   return(crossValidResults)
 }
 
