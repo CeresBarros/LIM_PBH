@@ -7,7 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 # knitr::opts_knit$set(root.dir = "~/GitHub/LandscapesInMotion/")
-knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
+                      fig.width = 10, fig.height = 8)
 
 library(data.table)
 library(ggplot2)
@@ -892,8 +893,8 @@ plot8 <- ggplot(data = plotData,
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
   facet_grid(scenario ~ noFires)
-amc::.gc()
 
+amc::.gc()
 ```
 
 ```{r plot&savePlots, echo = FALSE}
@@ -1359,9 +1360,6 @@ plotData <- allPixelCohortData[year == 100 & B > 0,
                                by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegType)]
-plotData[, vegType := factor(vegType, levels = sort(names(vegTypeLabels)),
-                             labels = vegTypeLabels[order(names(vegTypeLabels))])]
-
 plot10var <- ggplot(data = plotData,
                     aes(x = as.factor(vegType), y = avgNoCohorts, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +

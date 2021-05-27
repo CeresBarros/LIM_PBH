@@ -17,9 +17,13 @@
 ##   (it may not be able to access it) bu also to make sure newdata in gamlss::predictAll
 ##  has the same variables (even if they're not used in the model)
 ## cacheObj1/2 - an object used by Cache for digesting, to avoid digesting the (potentially) large data arguments
+## parallel - logical. Uses future.apply::future_lapply to parallelise model fiting across the k-folds, using plan(multiprocess).
+##    Defauls to FALSE
+## ... further arguments passed to future::plan like workers
 
-crossValidFunction <- function (fullDT, statsModel, origData, level = NULL,
-                                k = 4, idCol, cacheObj1, cacheObj2) {
+crossValidFunction <- function(fullDT, statsModel, origData, level = NULL,
+                               k = 4, idCol, cacheObj1, cacheObj2,
+                               parallel = FALSE, ...) {
   if (!is.null(idCol))
     origDataVars <- c(names(origData), idCol)
 
