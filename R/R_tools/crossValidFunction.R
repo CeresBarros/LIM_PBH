@@ -141,6 +141,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
 
     ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
+    RsqGAMLSS <- Rsq(trainModel)
+    TGDstats <- getTGD(trainModel, newdata = testData, data = trainData)
     Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
     Rsquared <- Rsquared["Rsquared"]
   }
@@ -148,7 +150,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
 
   ## COEFFICIENTS
   list(validMetrics = validMetrics, confMatrix = confMatrix,
-       Rsquared = Rsquared, coefs = coefAll(trainModel))
+       Rsquared = Rsquared, RsqGAMLSS = RsqGAMLSS, TGD = TGDstats$TGD,
+       coefs = coefAll(trainModel))
 }
 
 
