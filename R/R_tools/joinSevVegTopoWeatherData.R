@@ -122,11 +122,17 @@ joinPerFire <- function(smallSevDataSf, vegDataSf, topoDataSf, weatherDataDt,
   if(!compareCRS(crs(topoDataSf), crs(smallSevDataSf)))
     topoDataSf <- st_transform(topoDataSf, crs = st_crs(smallSevDataSf))
 
-  ## use velox to extract raster IDs per point
+  ## use prioritizr::fast_extract to extract raster IDs per point
   templateRasV <- templateRas
   templateRasV[!is.na(getValues(templateRasV))] <- pixID
-  templateRasV <- velox(templateRasV)
-  topoDataPixID <- templateRasV$extract_points(topoDataSf)[,1]   ## faster than raster::extract()
+
+  ## if extents to not intersect (some fires are beyong the topo SF extent)
+  ## then make NA IDs
+  topoDataPixID <- if (prioritizr:::intersecting_extents(templateRasV, topoDataSf)) {
+    fast_extract(templateRasV, topoDataSf)   ## faster than raster::extract()
+  } else {
+    rep(NA, dim(topoDataSf)[1])
+  }
 
   topoDataPoints <- data.table(st_set_geometry(topoDataSf, NULL))
   topoDataPoints$pixID <- topoDataPixID
