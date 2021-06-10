@@ -102,7 +102,7 @@ sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
 ## PSP DATA ------------------------------------------------------------------
 ## Set up PSP data for Biomass_speciesParameters
 PSPmeasure <- Cache(prepInputs,
-                    targetFile = "PSPmeasure.Rdat",
+                    targetFile = "randomizedPSPmeasure.rds",
                     archive = "randomized_Biomass_speciesParameters_Inputs.zip",
                     url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                     fun = "readRDS",
@@ -112,7 +112,7 @@ PSPmeasure <- Cache(prepInputs,
                     omitArgs = c("userTags"))
 
 PSPplot <- Cache(prepInputs,
-                 targetFile = "PSPplot.Rdat",
+                 targetFile = "randomizedPSPplot.rds",
                  archive = "randomized_LandR_speciesParameters_Inputs.zip",
                  url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                  destinationPath = simPaths$inputPath,
@@ -122,7 +122,7 @@ PSPplot <- Cache(prepInputs,
                  omitArgs = c("userTags"))
 
 PSPgis <- Cache(prepInputs,
-                targetFile = "randomizedPSPdata.Rdat",
+                targetFile = "randomizedrandomizedPSPdata.rds",
                 archive = "randomized_LandR_speciesParameters_Inputs.zip",
                 url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                 destinationPath = simPaths$inputPath,
