@@ -136,7 +136,11 @@ source("R/SpaDES/4_preSimulation.R")
 
 ## using experiment:
 library(future)
-plan("multisession", workers = 2)
+if (Sys.info()$sysname == "Windows") {
+  plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+} else {
+  plan("multicore", workers = 2)
+}
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
