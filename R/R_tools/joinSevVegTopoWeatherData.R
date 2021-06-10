@@ -46,7 +46,6 @@ joinSevVegTopoWeatherData <- function(sevDataSf, vegDataSf, topoDataSf, weatherD
     message(paste0(length(fireNames), " fires to do.")) else
       message("All fires have been joined.")
   ## do joins and save output tables by fire
-  invisible(utils::memory.limit(64000))
   for(x in fireNames) {
     joinPerFire(smallSevDataSf = sevDataSf[sevDataSf$FIRE_NAME == x,],
                 vegDataSf = vegDataSf, topoDataSf = topoDataSf,
