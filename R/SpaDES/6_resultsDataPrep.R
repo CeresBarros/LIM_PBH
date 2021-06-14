@@ -2,6 +2,10 @@
 ##  DATA PREP FOR ANALYSES OF RESULTS
 ## -----------------------------------
 
+if (!exists(yearSubset)) {
+  stop("please provide yearSubset vector")
+}
+
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES -----------------------
 ageDataCN <- fread("data/CameronsAgeData/treelist_outputs_for Ceres.csv")
 patchVegTypeCN <- fread("data/CameronsAgeData/patch outputs_for Ceres.csv")
@@ -73,9 +77,6 @@ names(vegTypeMapStk_noPM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep(
 names(vegTypeMapStk_PM) <- paste(sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE))),
                                  sub(".*(rep)([0-9]+)/.*", "\\1\\2", grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE)), sep = "_")
 
-
-
-yearSubset <- c(seq(1, 100, 5), 100)
 
 ## BUILD TABLES OF RESULTS ------------------------
 ## pixelCohortData tables
