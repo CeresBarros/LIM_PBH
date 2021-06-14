@@ -18,9 +18,26 @@ speciesParams <- list(
     Pice_eng = 2.1,
     Pseu_men = 2.0,
     Pice_gla = 1.6,
-    Pinu_sp = 1, Popu_sp = 1
+    Pinu_sp = 1,
+    Popu_sp = 1
   )
 )
+
+## Get land-cover raster 2001 now that we have a rasterToMatchLarge
+# if (is.null(P(simOutSpeciesLayers)$.studyAreaName)) {
+#   SAname <- reproducible::studyAreaName(simOutSpeciesLayers$studyAreaLarge)
+# }
+# rstLCC2005 <- LandR::prepInputsLCC(
+#   year = 2005L,
+#   destinationPath = simPaths$inputPath,
+#   studyArea = simOutSpeciesLayers$studyAreaLarge,   ## Ceres: makePixel table needs same no. pixels for this, RTM rawBiomassMap, LCC.. etc
+#   rasterToMatch = simOutSpeciesLayers$rasterToMatchLarge,
+#   filename2 = .suffix("rstLCC.tif", paste0("_", SAname)),
+#   overwrite = TRUE,
+#   cacheRepo = simPaths$cachePath,
+#   userTags = c("rstLCC", SAname),
+#   omitArgs = c("userTags"))
+
 
 ## SIM MODULES AND PARAMETERS -----------------------------------------
 ## make two lists of sim modules, one noPM and one PM
@@ -54,8 +71,10 @@ simModules <- list("noPM" = list(
 simParams <- list(
   Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
-    , "forestedLCCClasses" = c(1:15, 34:36)
-    , "LCCClassesToReplaceNN" = c(34:36)
+    # , "forestedLCCClasses" = c(1:15, 34:36)
+    # , "LCCClassesToReplaceNN" = c(34:36)
+    , "forestedLCCClasses" = c(1:6)   ## LCC 2010
+    , "LCCClassesToReplaceNN" = numeric(0) ## no replacement - urban/cropland could be grassland, barren may or not suppport veg.
     , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
@@ -165,19 +184,25 @@ simParams <- list(
 simObjects <- list(
   # "studyArea" = foothillsSMALL
   # , "studyAreaLarge" = foothillsMED
-  "studyArea" = foothills
+  "ecoregionLayer" = ecoregionLayer
+  , "nonForestFuelsTable" = nonForestFuelsTable
+  , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
+  , "numTreed" =  simOutSpeciesLayers$numTreed
+  , "PSPgis" = PSPgis
+  , "PSPmeasure" = PSPmeasure
+  , "PSPplot" = PSPplot
+  , "rasterToMatch" = rasterToMatchLarge
+  , "rasterToMatchLarge" = rasterToMatchLarge
+  , "rawBiomassMap" = rawBiomassMap
+  , "standAgeMap" = standAgeMap
+  , "studyArea" = foothills
   , "studyAreaLarge" = foothills
   , "sppEquiv" = sppEquivalencies_CA
   , "sppColorVect" = sppColorVect
   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
   , "speciesParams" = speciesParams
-  , "ecoregionLayer" = ecoregionLayer
   , "treed" =  simOutSpeciesLayers$treed
-  , "numTreed" =  simOutSpeciesLayers$numTreed
-  , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
-  , "PSPgis" = PSPgis
-  , "PSPmeasure" = PSPmeasure
-  , "PSPplot" = PSPplot
+  # , "rstLCC" = rstLCC2005
   , "weatherData" = simOutFireWeather$weatherData
   , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
   , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
@@ -187,7 +212,7 @@ simObjects <- list(
 ## SIM OUTPUTS ------------------------------------------------
 ## save objects at the end of each year
 outputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = unique(sort(c(1, simTimes$end,
+                                  saveTime = unique(sort(c(simTimes$end,
                                                            seq(simTimes$start, simTimes$end, by = 5)))),
                                   eventPriority = 10,
                                   stringsAsFactors = FALSE))
@@ -195,12 +220,16 @@ outputs <- rbind(outputs, data.frame(objectName = "rstCurrentFires",
                                      saveTime = seq(simParams$fireSpread$fireInitialTime,
                                                     simTimes$end, by = simParams$fireSpread$fireTimestep),
                                      eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "severityMap",
+                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = unique(sort(c(1, simTimes$end,
+                                     saveTime = unique(sort(c(simTimes$end,
                                                               seq(simTimes$start, simTimes$end, by = 5)))),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = unique(sort(c(1, simTimes$end,
+                                     saveTime = unique(sort(c(simTimes$end,
                                                               seq(simTimes$start, simTimes$end, by = 5)))),
                                      eventPriority = 10))
 

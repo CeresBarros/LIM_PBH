@@ -9,14 +9,14 @@
 ## or other modules). That's why caching is kept separate from the rest
 ## of the simulation
 
-speciesPaths <-list(cachePath = file.path(simPaths$cachePath, "speciesLayers"),
+speciesPaths <- list(cachePath = file.path(simPaths$cachePath, "speciesLayers"),
                     modulePath = file.path("R/SpaDES/m"),
                     inputPath = file.path("R/SpaDES/inputs"),
                     outputPath = file.path(simPaths$outputPath, "speciesLayers"))
 
 speciesParameters <- list(
   Biomass_speciesData = list(
-    "types" = c("KNN", "CASFRI", "Pickell", "ForestInventory")
+    "types" = c("KNN2011", "CASFRI", "ForestInventory")   ## Pickell has no data here having errors with the other two. extents and NA data.
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = c(".inputObjects", "init")
   )
@@ -27,6 +27,7 @@ speciesObjects <- list(
   , "sppColorVect" = sppColorVect
   # , "studyAreaLarge" = foothillsMED
   , "studyAreaLarge" = foothills
+  , "rasterToMatchLarge" = rasterToMatchLarge
 )
 
 simOutSpeciesLayers <- Cache(simInitAndSpades

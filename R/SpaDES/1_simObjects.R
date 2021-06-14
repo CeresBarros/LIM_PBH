@@ -16,11 +16,75 @@ foothills <- Cache(prepKMZ2shapefile,
                    cacheRepo = "data/cache",
                    userTags = "foothills",
                    omitArgs = c("userTags"))
-foothills <- spTransform(foothills,
-                         CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"))
+foothills <- sp::spTransform(foothills,
+                             sp::CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0"))
 foothillsSMALL <- raster::buffer(foothills, width = -30000)
 foothillsMED <- raster::buffer(foothills, width = -15000)
 
+## RASTER TO MATCH LARGE AND KNN 2010 THINGS -----------
+## get rawBiomassMap first
+rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                           "canada-forests-attributes_attributs-forests-canada/",
+                           "2011-attributes_attributs-2011/",
+                           "NFI_MODIS250m_2011_kNN_Structure_Biomass_TotalLiveAboveGround_v1.tif")
+standAgeMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                         "canada-forests-attributes_attributs-forests-canada/",
+                         "2011-attributes_attributs-2011/",
+                         "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif")
+fireURL <- "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip"
+
+cacheTags <- c("1_simObjects")
+
+rawBiomassMapFilename <- basename(rawBiomassMapURL)
+rawBiomassMap <- Cache(prepInputs,
+                       targetFile = rawBiomassMapFilename,
+                       url = rawBiomassMapURL,
+                       destinationPath = simPaths$inputPath,
+                       studyArea = foothills,
+                       rasterToMatch = NULL,
+                       maskWithRTM = FALSE,
+                       useSAcrs = FALSE,     ## never use SA CRS
+                       method = "bilinear",
+                       datatype = "INT2U",
+                       filename2 = NULL,
+                       cacheRepo = simPaths$cachePath,
+                       userTags = c(cacheTags, "rawBiomassMap"),
+                       omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
+
+## now RTMLarge
+rasterToMatchLarge <- rawBiomassMap
+RTMvals <- raster::getValues(rasterToMatchLarge)
+rasterToMatchLarge[!is.na(RTMvals)] <- 1
+rasterToMatchLarge <- Cache(writeOutputs, rasterToMatchLarge,
+                            filename2 = file.path(simPaths$cachePath, "rasters", "rasterToMatchLarge.tif"),
+                            datatype = "INT2U", overwrite = TRUE,
+                            userTags = c(cacheTags, "rasterToMatchLarge"),
+                            omitArgs = c("userTags"))
+
+## and standAgeMap
+standAgeMap <- Cache(LandR::prepInputsStandAgeMap,
+                     destinationPath = simPaths$inputPath,
+                     ageURL = standAgeMapURL,
+                     studyArea = raster::aggregate(foothills),
+                     rasterToMatch = rasterToMatchLarge,
+                     filename2 = .suffix("standAgeMap.tif", paste0("_", reproducible::studyAreaName(foothills))),
+                     overwrite = TRUE,
+                     fireURL = fireURL,
+                     fireField = "YEAR",
+                     startTime = 2011,
+                     userTags = c("prepInputsStandAge_rtm", cacheTags),
+                     omitArgs = c("destinationPath", "targetFile", "overwrite",
+                                  "alsoExtract", "userTags"))
+
+## NON FOREST FUELS TABLE LCC2010 ----
+## see data/LCC2010_LCC2005_correspondence.xlsx
+nonForestFuelsTable <- data.table(LC = c(8, 10, 12, 11, 13, 16),
+                                  FuelTypeFBP = c("O1b", "O1b", "O1b", "O1b", "O1b", "NF"),
+                                  FuelType = c(15, 15, 15, 15, 15, 19),
+                                  fixedCuring = c(FALSE, FALSE, FALSE, FALSE, TRUE, NA),
+                                  curingMean = c(60, 60, 60, 60, 30, NA),
+                                  curingMin = c(50, 50, 50, 50, 30, NA),
+                                  curingMax = c(80, 80, 80, 80, 30, NA))
 ## ECOREGION LAYER --------------------
 ecoregionLayer <- Cache(prepInputs,
                         targetFile = "Natural_Regions_Subregions_of_Alberta.shp",
@@ -122,7 +186,7 @@ PSPplot <- Cache(prepInputs,
                  omitArgs = c("userTags"))
 
 PSPgis <- Cache(prepInputs,
-                targetFile = "randomizedrandomizedPSPdata.rds",
+                targetFile = "randomizedPSPgis.rds",
                 archive = "randomized_LandR_speciesParameters_Inputs.zip",
                 url = "https://drive.google.com/file/d/1LmOaEtCZ6EBeIlAm6ttfLqBqQnQu4Ca7/view?usp=sharing",
                 destinationPath = simPaths$inputPath,
@@ -130,5 +194,3 @@ PSPgis <- Cache(prepInputs,
                 cacheRepo = "data/cache",
                 userTags = "PSPgis",
                 omitArgs = c("userTags"))
-
-

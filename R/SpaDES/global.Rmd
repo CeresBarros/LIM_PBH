@@ -101,7 +101,7 @@ Other module-specific parameters are defined in the `4_preSimulation.R` script a
 # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
 ## to prepare objects for simulation and FireSense ignition/fire frquency fits
 ## Define simulation params
-simTimes <- list(start = 1, end = 10)
+simTimes <- list(start = 2011L, end = 2111L)
 fireInitialTime <- 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 successionTimestep <- 10L
