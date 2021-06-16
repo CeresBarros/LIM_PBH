@@ -9,16 +9,16 @@
 rm(list = ls()); amc::.gc()
 
 ## Get packages ----------------------
-## requires as of Apr 5th 2021
-# loading reproducible      1.0.0.9014
+## requires as of June 16th 2021
+# loading reproducible      1.2.7.9006
 # loading quickPlot         0.1.7.9002
-# loading SpaDES.core       1.0.6.9025
+# loading SpaDES.core       1.0.8.9000
 # loading SpaDES.tools      0.3.7.9007
 # loading SpaDES.addins     0.1.2
 # loading SpaDES.experiment 0.0.2.9002
-# loading LandR             1.0.1.9002
+# loading LandR             1.0.4.0001
 # loading LandR.CS          0.0.2.0002
-## loading fireSenseUtils   0.0.4.9052
+## loading fireSenseUtils   0.0.4.9080
 
 # devtools::install_github("PredictiveEcology/reproducible@DotsBugFix", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
@@ -129,8 +129,8 @@ source("R/SpaDES/4_preSimulation.R")
 #                           loadSimList)
 # end(LIM_simInitList[[1]]) <- 2020
 # end(LIM_simInitList[[2]]) <- 2020
-simOut1 <- spades(LIM_simInitList[[1]])
-simOut2 <- spades(LIM_simInitList[[2]])
+# simOut1 <- spades(LIM_simInitList[[1]])
+# simOut2 <- spades(LIM_simInitList[[2]])
 
 
 ## -----------------------------------------------
@@ -140,7 +140,7 @@ simOut2 <- spades(LIM_simInitList[[2]])
 
 ## using experiment:
 library(future)
-if (Sys.info()$sysname == "Windows") {
+if (Sys.info()["sysname"] == "Windows") {
   plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
 } else {
   plan("multicore", workers = 2)
