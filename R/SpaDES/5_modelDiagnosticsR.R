@@ -60,14 +60,14 @@ LIM_simInitList <- loadSimList("R/SpaDES/outputs/mar2021Runs/noPM/LIM_simInit_no
 
 parameters <- list(
   fireSense_IgnitionFit = list(
-    "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:julMDC + D2:julMDC +",
-                                         "M2:julMDC + O1b:julMDC + NF:julMDC +",
-                                         "coniferous:pw(julMDC, k_conif) + D2:pw(julMDC, k_D2) +",
-                                         "M2:pw(julMDC, k_M2) + O1b:pw(julMDC, k_O1b) + NF:pw(julMDC, k_NF) - 1")
+    "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:meanMDC + D2:meanMDC +",
+                                         "M2:meanMDC + O1b:meanMDC + NF:meanMDC +",
+                                         "coniferous:pw(meanMDC, k_conif) + D2:pw(meanMDC, k_D2) +",
+                                         "M2:pw(meanMDC, k_M2) + O1b:pw(meanMDC, k_O1b) + NF:pw(meanMDC, k_NF) - 1")
     , "lb" = list(coef = 0,
-                  knots = list("julMDC" = 19))   ## the rounded 5% quantile, pre scaling
+                  knots = list("meanMDC" = 19))   ## the rounded 5% quantile, pre scaling
     , "ub" = list(coef = 20,
-                  knots = list("julMDC" = 21))   ## the rounded 80% quantile, pre scaling
+                  knots = list("meanMDC" = 21))   ## the rounded 80% quantile, pre scaling
     , "iterDEoptim" = 60
     , "iterNlminb" = 500
     , "family" = quote(MASS::negative.binomial(theta = 1, link = 'identity'))
