@@ -20,7 +20,7 @@ rm(list = ls()); amc::.gc()
 # loading LandR.CS          0.0.2.0002
 ## loading fireSenseUtils   0.0.4.9052
 
-# devtools::install_github("PredictiveEcology/reproducible@development", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/reproducible@DotsBugFix", dependencies = FALSE)
 # devtools::install_github("achubaty/amc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/pemisc@development", dependencies = FALSE)
 # devtools::install_github("PredictiveEcology/map@development", dependencies = FALSE)
@@ -127,7 +127,9 @@ source("R/SpaDES/4_preSimulation.R")
 ## tests
 # LIM_simInitList <- lapply(list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE),
 #                           loadSimList)
-# simOut1 <- spades(LIM_simInitList[[1]])
+# end(LIM_simInitList[[1]]) <- 2020
+# end(LIM_simInitList[[2]]) <- 2020
+simOut1 <- spades(LIM_simInitList[[1]])
 simOut2 <- spades(LIM_simInitList[[2]])
 
 
