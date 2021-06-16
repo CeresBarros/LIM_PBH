@@ -43,7 +43,7 @@ defineModule(sim, list(
     defineParameter(".useCache", "logical", "init", NA, NA,
                     desc = "use caching for the spinup simulation?")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "fireCFBRas", objectClass = "RasterLayer",
                  desc = "Raster of crown fraction burnt"),
     expectsInput(objectName = "fireIntRas", objectClass = "RasterLayer",
@@ -76,7 +76,7 @@ defineModule(sim, list(
                               "Defaults to  an area in Southwestern Alberta, Canada."),
                  sourceURL = NA)
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "fireCFBRas", objectClass = "RasterLayer",
                   desc = "Raster of crown fraction burnt"),
     createsOutput(objectName = "fireIntRas", objectClass = "RasterLayer",
