@@ -45,7 +45,7 @@ Require(c("SpaDES",
           "CeresBarros/ToolsCB",
           "PredictiveEcology/SpaDES.experiment",
           "PredictiveEcology/LandR@modelBiomass",
-          "reproducible"),
+          "PredictiveEcology/reproducible@DotsBugFix"),
         upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2,
@@ -125,8 +125,8 @@ plotInitialTime <- NA
 source("R/SpaDES/4_preSimulation.R")
 
 ## tests
-LIM_simInitList <- lapply(list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE),
-                          loadSimList)
+# LIM_simInitList <- lapply(list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE),
+#                           loadSimList)
 # simOut1 <- spades(LIM_simInitList[[1]])
 simOut2 <- spades(LIM_simInitList[[2]])
 
