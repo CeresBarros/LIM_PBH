@@ -1,4 +1,5 @@
 #' Classification of stand structure into Cameron Naficy's vegetation types.
+#'
 #' Uses a set of rules based on species relative biomass in a stand to
 #' classify it  into one of 12 vegetation types:
 #' "Oak", "PJ", "purePIPO", "DMCPIPO", "dryPSME", "PSME", "DMCPSME", "PICO",
@@ -23,10 +24,10 @@
 #' @return a data.table with an extra column \code{"vegTypeCN"}
 #' @export
 
-convertToCNVegType <- function (DT, groupingCols = c("pixelGroup"), pureCutoff = 0.8,
-                                drySp = c("PSME", "PIPO", "PIFL", "JUSC", "QUGA"),
-                                moistSp = c("ABLA", "BEPA", "PIEN", "PIGL", "PIMO", "POBA", "THPL"),
-                                cachingArg) {
+convertToCNVegType <- function(DT, groupingCols = c("pixelGroup"), pureCutoff = 0.8,
+                               drySp = c("PSME", "PIPO", "PIFL", "JUSC", "QUGA"),
+                               moistSp = c("ABLA", "BEPA", "PIEN", "PIGL", "PIMO", "POBA", "THPL"),
+                               cachingArg) {
   ## check:
   if (!all(c("speciesCode", "Cameron", groupingCols) %in% names(DT)))
     stop("not all groupingCols were found in DT") else
@@ -37,30 +38,30 @@ convertToCNVegType <- function (DT, groupingCols = c("pixelGroup"), pureCutoff =
 
   ## Oak woodlands are dominated by oaks with no more dominant tree stature species
   DT[, oak := all(.sumRelBs("QUGA", .SD) >= pureCutoff,
-                      .sumRelBs(c('PIPO', 'PSME', 'PIED', 'PIMO2','JUSC', 'JUOC', 'JUOS'), .SD) < 0.05),
+                  .sumRelBs(c('PIPO', 'PSME', 'PIED', 'PIMO2','JUSC', 'JUOC', 'JUOS'), .SD) < 0.05),
      by = groupingCols, .SDcols = cols]
 
   ## P-J woodlands are dominated by Pinyon juniper trees with no more dominant tree stature species
   DT[, PJ := all(.sumRelBs(c('PIED', 'PIMO2','JUSC', 'JUOC', 'JUOS', 'QUGA'), .SD) >= pureCutoff,
-            .sumRelBs(c('PIPO', 'PSME'), .SD) < 0.05),
+                 .sumRelBs(c('PIPO', 'PSME'), .SD) < 0.05),
      by = groupingCols, .SDcols = cols]
 
   ## Pure PIPO if PIPO is heavily dominant and accompanied by small amount of other species
   DT[, purePIPO := all(.sumRelBs("PIPO", .SD) >= pureCutoff,
-                  .sumRelBs(c('PSME', 'PIFL', 'PIED', 'PIMO2', 'JUSC', 'JUOC', 'JUOS', 'QUGA'), .SD) < 0.30),
+                       .sumRelBs(c('PSME', 'PIFL', 'PIED', 'PIMO2', 'JUSC', 'JUOC', 'JUOS', 'QUGA'), .SD) < 0.30),
      by = groupingCols, .SDcols = cols]
 
   ## DMC if PIPO present at >= 10% but less than 70% and other species are all dry site species
   DT[, DMCPIPO := all(.sumRelBs("PIPO", .SD) >= 0.10,
-                        .sumRelBs("PIPO", .SD) < pureCutoff,
-                        .sumRelBs(c('PSME', 'PIPO', 'PIFL', 'PIED', 'PIMO2', 'JUSC', 'JUOC', 'JUOS', 'QUGA'), .SD) >= 0.50),
+                      .sumRelBs("PIPO", .SD) < pureCutoff,
+                      .sumRelBs(c('PSME', 'PIPO', 'PIFL', 'PIED', 'PIMO2', 'JUSC', 'JUOC', 'JUOS', 'QUGA'), .SD) >= 0.50),
      by = groupingCols, .SDcols = cols]
 
 
   ## If PSME is dominant and dry site species are present
   DT[, dryPSME := all(.sumRelBs("PSME", .SD) >= pureCutoff,
-                     .sumRelBs(moistSp, .SD) < 0.10,
-                     .sumRelBs(c('JUSC', 'JUOC', 'JUOS', 'PIFL', 'PIED', 'PIMO2', 'QUGA'), .SD) > 0.05),
+                      .sumRelBs(moistSp, .SD) < 0.10,
+                      .sumRelBs(c('JUSC', 'JUOC', 'JUOS', 'PIFL', 'PIED', 'PIMO2', 'QUGA'), .SD) > 0.05),
      by = groupingCols, .SDcols = cols]
 
   ## If PSME is dominant and dry site species are absent
@@ -73,7 +74,7 @@ convertToCNVegType <- function (DT, groupingCols = c("pixelGroup"), pureCutoff =
   ## DMC if ponderosa pine not present, dry site species are dominant but may be
   ## micov.BAed with some other species (e.g. POTR, LAOC, PICO), and few moist site species are present in significant numbers
   DT[, DMCPSME := all(.sumRelBs(drySp, .SD) >= 0.50,
-                        .sumRelBs(moistSp, .SD) < 0.10),
+                      .sumRelBs(moistSp, .SD) < 0.10),
      by = groupingCols, .SDcols = cols]
 
   ## PICO if PICO dominates stand
