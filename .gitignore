@@ -8,7 +8,6 @@
 *.RData
 figs/*
 outputs/*
-analyses/FireEvents/*
 *.rds
 *.dat
 .Rprofile
