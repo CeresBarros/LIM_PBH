@@ -55,7 +55,8 @@ options("reproducible.useNewDigestAlgorithm" = 2,
         "reproducible.destinationPath" = normPath("R/SpaDES/inputs"),
         "reproducible.useGDAL" = FALSE,
         "reproducible.cacheSaveFormat" = "qs",
-        "reproducible.useMemoise" = TRUE)
+        "reproducible.useMemoise" = TRUE,
+        "spades.useRequire" = TRUE)
 
 ## -----------------------------------------------
 ## SIMULATION SETUP
