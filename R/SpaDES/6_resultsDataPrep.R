@@ -2,9 +2,15 @@
 ##  DATA PREP FOR ANALYSES OF RESULTS
 ## -----------------------------------
 
-if (!exists(yearSubset)) {
+if (!exists("yearSubset")) {
   stop("please provide yearSubset vector")
 }
+
+## load one of the preSim lists to get years and later the ecolocations map
+preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
+
+startYear <- start(preSimList)
+endYear <- end(preSimList)
 
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES -----------------------
 ageDataCN <- fread("data/CameronsAgeData/treelist_outputs_for Ceres.csv")
@@ -32,6 +38,10 @@ outputs_noPM <- list.dirs(simPaths$outputPath, full.names = TRUE, recursive = TR
 ## GET FILE NAMES
 cohortDataFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "cohortData", full.names = TRUE)),
                      sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "cohortData", full.names = TRUE))) %>%
+  unique(.)
+
+severityDataFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "severityData", full.names = TRUE)),
+                       sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "severityData", full.names = TRUE))) %>%
   unique(.)
 
 rstCurrentFiresFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "rstCurrentFires", full.names = TRUE)),
@@ -164,10 +174,44 @@ pixelBurnData_PM <- lapply(unstack(rstCurrentFiresStk_PM), FUN = function(ras) {
 
 allPixelBurnData <- rbind(pixelBurnData_noPM, pixelBurnData_PM, use.names = TRUE)
 
-## clean-up to save memory - keep vegTypeMapStk_noPM for labels
+## severityData tables
+## pixelBurnData tables - all rasters
+files <- grep("noPM", severityDataFiles, value = TRUE, invert = TRUE)
+severityData_noPM <- lapply(files, FUN = function(ff) {
+  severityData <- readRDS(ff)
+  yr <- sub(".*year", "",  sub(".rds", "", ff))
+  r <- sub(".*(rep)([0-9]+)/.*", "\\2", ff)
+  severityData[, year := as.integer(yr)]
+  severityData[, rep := as.integer(r)]
+  severityData[, scenario := "noPM"]
+  return(severityData)
+}) %>%
+  rbindlist(fill = TRUE, l = .)
+
+files <- grep("noPM", severityDataFiles, value = TRUE, invert = TRUE)
+severityData_PM <- lapply(files, FUN = function(ff) {
+  severityData <- readRDS(ff)
+  yr <- sub(".*year", "",  sub(".rds", "", ff))
+  r <- sub(".*(rep)([0-9]+)/.*", "\\2", ff)
+  severityData[, year := as.integer(yr)]
+  severityData[, rep := as.integer(r)]
+  severityData[, scenario := "PM"]
+  return(severityData)
+}) %>%
+  rbindlist(fill = TRUE, l = .)
+
+allPixelBurnData <- rbind(pixelBurnData_noPM, pixelBurnData_PM, use.names = TRUE)
+allSeverityData <- rbind(severityData_noPM, severityData_PM, use.names = TRUE)
+
+allPixelBurnData <- allPixelBurnData[fireID != "NA"]
+amc::.gc()
+allPixelBurnData <- allSeverityData[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
+
+## join the fire data tables and clean ws - keep vegTypeMapStk_noPM for labels
 rm(files, vegTypeSubset, rstCurrentFiresStk_PM, rstCurrentFiresStk_noPM,
    vegTypeMapStk_PM, pixelGroupMapStk_PM, pixelGroupMapStk_noPM,
-   pixelBurnData_PM, pixelBurnData_noPM)
+   pixelBurnData_PM, pixelBurnData_noPM, severityData_noPM, severityData_PM,
+   allSeverityData)
 amc::.gc()
 
 ## join tables, add scenario col and rbind.
@@ -189,8 +233,24 @@ allPixelCohortData <- rbind(pixelCohortData_noPM, pixelCohortData_PM, use.names 
 if (exists("allPixelCohortData")) rm(list = grep("^(pixelCohort|vegType)Data", ls(), value = TRUE))
 amc::.gc()
 
+## checks
+## note that some years may not have all the reps in allPixelBurnData if there where no fires
+## because we excluded NAs (i.e. pixels without fires)
+repsFire <- unique(allPixelBurnData[, length(unique(rep)), by = .(scenario)]$V1)
+repsCohortData <- unique(allPixelCohortData[, length(unique(rep)), by = .(scenario, year)]$V1)
+
+test1 <- all(length(repsFire) == 1, length(repsCohortData) == 1)
+test2 <- all(length(repsFire) == length(repsCohortData),
+             identical(sort(repsFire), sort(repsCohortData)))
+
+if (!isTRUE(test1)) {
+  stop("Fire and/or cohort data do not have the same number of reps across scenarios")
+}
+if (!isTRUE(test2)) {
+  stop("Fire and cohort data differ in number of reps (per scenario/year)")
+}
+
 ## ECOLOGICAL ZONATION -----------------------------
-preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
 ecoregionLayerRas <- rasterize(preSimList$ecoregionLayer, preSimList$rasterToMatch, field = "ecozoneCode")
 ecoregionLayerDT <- data.table(ecozoneCode = getValues(ecoregionLayerRas),
                                pixelIndex = seq_len(ncell(ecoregionLayerRas)))
@@ -206,38 +266,65 @@ ecoregionLayerDT <- ecoregionLayerLabels[ecoregionLayerDT, on = .(ecozoneCode)]
 allPixelCohortData <- ecoregionLayerDT[allPixelCohortData, on = .(pixelIndex)]
 amc::.gc()
 
-
-## NO. FIRES ---------------------------------------
-## how many times did each pixel burn?
-## calculate total no. fires per pixel/scenario/rep
-## calculate fire size in pixels per fireID/scenario/rep
-## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
-
-allPixelBurnData <- allPixelBurnData[fireID != "NA"]
+## FIRE ATTRIBUTES ---------------------------------------
+## no. fires per pixel
+## how many times did each pixel burn? total no. fires per pixel/scenario/rep
 allPixelBurnData[, noFires := sum(burnt), by = .(scenario, rep, pixelIndex)]
-allPixelBurnData[, fireSize := length(pixelIndex), by = .(scenario, rep, year, fireID)]
+
+## calculate fire size in pixels per fireID/scenario/rep
+## this accounts for both forest and non-forest pixels
+allPixelBurnData[, fireSize := length(unique(pixelIndex)), by = .(scenario, rep, year, fireID)]
+
+## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
+## note that for noPM we assume severity class (i.e. 'severity' column) to be the maximum = 5
+## only in pixels with a pixelGroup (others are non-forest and had no veg dynamics)
+## also note that we are ignoring if patches are contiguous or not, and simply counting the number of pixels
+## with a given severity per fireID
+allPixelBurnData[scenario == "noPM" & !is.na(pixelGroup), severity := 5]
+allPixelBurnData[!is.na(severity), patchSize := length(unique(pixelIndex)),
+                 by = .(scenario, rep, year, severity, fireID)]
 
 ## fire frequency
-fireFreqDT <- allPixelBurnData[, list(year = c(year, 100),     ## year one is dropped here
-                                      fireInt = diff(c(1, year, 100))),   ## interval calculated between fire years, and start and end years
+## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
+fireFreqDT <- allPixelBurnData[, list(year = c(year, endYear),     ## year one is dropped here
+                                      fireInt = diff(c(startYear, year, endYear))),   ## interval calculated between fire years, and start and end years
                                by = .(scenario, rep, pixelIndex)]
-## because we forced a start and end year, intervals of 0 for the 100th year mean that there was a fire at year 100
-## this doesn't apply in the same way to fires at year 1, these should have a return interval of 0 (because we added the first year)
-## if only one fire occurred and it was at year 100, then the correct interval is 99 (100-1)
-fireFreqDT <- fireFreqDT[!(fireInt == 0 & year == 100)]
+## because we forced a start and end year, intervals of 0 for the 100th year mean that there was a fire at year endYear
+## this doesn't apply in the same way to fires at startYear, these should have a return interval of 0 (because we added the first year)
+## if only one fire occurred and it was at endYear, then the correct interval is 99 (endYear-startYear)
+fireFreqDT <- fireFreqDT[!(fireInt == 0 & year == endYear)]
 fireFreqDT[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
-
-if (any(is.na(fireFreqDT$fireFreq))) stop("NA fire intervals")
 
 ## join DTs
 allPixelBurnData <- fireFreqDT[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
 allPixelBurnData[, burnt := NULL] ## no longer necessary
 
-test <- sapply(split(allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
+## checks
+test1 <- sapply(split(allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
   any(duplicated(x[, pixelIndex]))
 })
-if (any(test))
+test2 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+                 which(is.na(allPixelBurnData$severity)))
+test3 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+                 which(is.na(allPixelBurnData$severityB)))
+test4 <- any(is.na(allPixelBurnData[!is.na(severity), patchSize]))
+
+test5 <- any(is.na(allPixelBurnData$fireFreq))
+
+if (any(test1))
   stop("Each pixel should only have one record of no. fires per scenario")
+
+if (length(test2) | length(test3)) {
+  stop("NAs differ between pixelGroup and severity/severityB")
+}
+
+if (test4) {
+  stop("There are NA's in patch sizes where severity is non-NA")
+}
+
+if (test5) {
+  stop("NA fire intervals")
+}
 
 rm(fireFreqDT, test)
 amc::.gc()
@@ -247,12 +334,14 @@ cols <- c("scenario", "rep", "pixelIndex", "noFires")
 allPixelCohortData <- unique(allPixelBurnData[, ..cols])[allPixelCohortData,
                                                          on = .(scenario, rep, pixelIndex)]
 
+## checks
 cols <- c("scenario", "rep", "pixelIndex")
-
-test <- allPixelBurnData[allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
-test <- dim(test)[1]
-if (test) stop("There shouldn't be any NAs in noFires except in scenario/rep/pixelIndex\n",
-               "combos that did not have any fires during the simulation")
+test1 <- allPixelBurnData[allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
+test1 <- dim(test1)[1]
+if (test1) {
+  stop("There shouldn't be any NAs in noFires except in scenario/rep/pixelIndex\n",
+       "combos that did not have any fires during the simulation")
+}
 
 allPixelCohortData[is.na(noFires), noFires := 0]
 allPixelCohortData <- allPixelCohortData[!is.na(pixelGroup),]
