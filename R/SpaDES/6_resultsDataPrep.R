@@ -457,7 +457,7 @@ vegTypesCN <- rbindlist(vegTypesCN, use.names = TRUE)
 ## test:
 # vegTypesCN <- lapply(unique(showCache(cPath,
 #                                       userTags = c("convertToCNVegType", "reportResults"),
-#                                       after = "2021-05-05")$cacheId),
+#                                       after = "2021-06-16")$cacheId),
 #                      FUN = function(x) {loadFromCache(cPath, cacheId = x)}) %>%
 #   rbindlist(.)
 
@@ -467,12 +467,15 @@ cols2 <- c("scenario", "rep", "year", "pixelGroup")
 allPixelCohortDataMnt <- tryCatch(unique(vegTypesCN[, ..cols])[allPixelCohortDataMnt,
                                                                on = cols2],
                                   error = allPixelCohortDataMnt)
-if (!"vegTypeCN" %in% names(allPixelCohortDataMnt))
-  stop("Joining Cameron's veg types didn't work") else
+if (!"vegTypeCN" %in% names(allPixelCohortDataMnt)) {
+  stop("Joining Cameron's veg types didn't work")
+} else {
+  if (any(is.na(allPixelCohortDataMnt$vegTypeCN) & allPixelCohortDataMnt$B > 0)) {
+    stop("Some pixels with biomass were not assigned a vegTypeCN")
+  } else {
     rm(vegTypesCN)
-
-if (any(is.na(allPixelCohortDataMnt$vegTypeCN) & allPixelCohortDataMnt$B > 0))
-  stop("Some pixels with biomass were not assigned a vegTypeCN")
+  }
+}
 
 allPixelCohortDataMnt[is.na(vegTypeCN), vegTypeCN := "No veg."]
 allPixelCohortDataMnt[, `:=`(sumB = NULL,
