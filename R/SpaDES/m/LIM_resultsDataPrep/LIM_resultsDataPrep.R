@@ -132,6 +132,8 @@ Init <- function(sim) {
 
 loadSimulationDataEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
+
   grepPattrn <- paste0("/", P(sim)$scenarios)
   if (all(!is.na(P(sim)$reps))) {
     reps <- P(sim)$reps
@@ -242,6 +244,8 @@ loadSimulationDataEvent <- function(sim) {
 
 joinSimulationDataEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
+
   ## ECOLOGICAL ZONATION -----------------------------
   message(cyan("Adding ecological zones"))
   ecoregionLayerRas <- rasterize(sim$ecoregionLayer, sim$rasterToMatch, field = "ecozoneCode")
@@ -414,6 +418,8 @@ joinSimulationDataEvent <- function(sim) {
 
 addVegTypesCNEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
+
   ## USING CAMERON'S CLASSIFICATION/SUMMARY ---------------------
   ## Cameron uses relative basal area to classify stand structure, we can use relative Biomass.
   ## we subset to the montane ecological zone, from where Cameron's data comes from
