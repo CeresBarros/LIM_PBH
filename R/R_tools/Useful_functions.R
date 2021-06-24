@@ -354,3 +354,32 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
   message(paste0("Done!"))
   return(ngbhoodBurnsDT)
 }
+
+
+
+## WRAPPER FUNCTION TO ESTIMATE HYPERVOLUME BANDWIDTHS  -----------------------
+##
+## allData is a data.table with the data for both hypervolumes and an ID column (HVidvar) fo
+##   that identifies the data for each hypervolume
+## ... further arguments passed to ToolsCB::HVordination
+
+estimateBW_wrapper <- function(allData, HVidvar, ...) {
+  HVnames <- unique(allData[, HVidvar])
+
+  ## need to re-do categorical variables so that levels correspond to unique values
+  ordi.list <- HVordination(datatable = allData, HVidvar = HVidvar, ...)
+
+  HVpoints <- ordi.list[[1]]
+  noAxes <- ordi.list[[2]]
+
+  HV1rows <- allData[, HVidvar] %in% HVnames[1]
+  HV2rows <- allData[, HVidvar] %in% HVnames[2]
+
+  temp <- data.frame(SilvBW_HV1 = hypervolume::estimate_bandwidth(HVpoints[HV1rows, 1:noAxes]),
+                     SilvBW_HV2 = hypervolume::estimate_bandwidth(HVpoints[HV2rows, 1:noAxes]),
+                     stdev_HV1 = apply(HVpoints[HV1rows, 1:noAxes], 2, sd),
+                     stdev_HV2 = apply(HVpoints[HV2rows, 1:noAxes], 2, sd),
+                     PC = c(1:noAxes))
+  temp$HVpair = paste0(HVnames[1], "_", HVnames[2])
+  return(temp)
+}
