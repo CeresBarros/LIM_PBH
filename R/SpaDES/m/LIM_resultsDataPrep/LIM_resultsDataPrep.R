@@ -385,12 +385,17 @@ joinSimulationDataEvent <- function(sim) {
     if (test3)
       stop("There are NA speciesCodes")
     rm(test, test2, test3)
+    amc::.gc()
   }
+
+  ## replace NAs of cohortData by 0s
+  cols <- c("age", "B", "mortality", "aNPPAct", "vegType", "noFires")
+  allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
+  amc::.gc()
 
   ## add ecoregion group/ecozone code/name where they're missing
   ## add vegType where it's missing, but it's a pixel with some veg
-  browser()
-  sim$allPixelCohortData[, `:=`(vegType = max(vegType, na.rm = TRUE)),
+  allPixelCohortData[, `:=`(vegType = max(vegType)),
                      by = .(scenario, rep, year, pixelGroup)]
 
   allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
@@ -400,18 +405,17 @@ joinSimulationDataEvent <- function(sim) {
   amc::.gc()
 
   ## add noFires where it's missing
-  sim$allPixelCohortData[, noFires := max(noFires, na.rm = TRUE),
+  allPixelCohortData[, noFires := max(noFires),
                      by = .(scenario, rep, pixelIndex)]
   amc::.gc()
 
-  ## replace NAs of cohortData by 0s
-  cols <- c("age", "B", "mortality", "aNPPAct", "vegType", "noFires")
-  sim$allPixelCohortData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
+  ## add presence/absence of fire across simulation per pixel/scenario
+  allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, rep, pixelIndex)]
   amc::.gc()
 
-  ## add presence/absence of fire across simulation per pixel/scenario
-  sim$allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, rep, pixelIndex)]
-  amc::.gc()
+  ## export to sim
+  sim$allPixelCohortData <- allPixelCohortData
+  sim$allPixelBurnData <- allPixelBurnData
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
