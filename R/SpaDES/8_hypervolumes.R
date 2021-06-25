@@ -32,6 +32,7 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 paramsResults <- list("LIM_resultsDataPrep" = list("endYear" = as.integer(end(preSimList)),
+                                                   "parallel" = FALSE,
                                                    "reps" = 1L:10L,
                                                    "startYear" = start(preSimList),
                                                    "yearSubset" = as.integer(unique(c(seq(2011, 2111, 5), 2111))),
