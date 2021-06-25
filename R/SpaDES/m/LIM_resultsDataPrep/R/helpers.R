@@ -21,7 +21,7 @@ loadStackFromRDS <- function(x, files) {
 loadCohortDataFromRDS <- function(x, files, pixelGroupMapStk, yearSubset = NULL) {
   files <- grep(x, files, value = TRUE)
 
-  pixelCohortData <- lapply(files[2], FUN = function(ff, pixelGroupMapStk) {
+  pixelCohortData <- lapply(files, FUN = function(ff, pixelGroupMapStk) {
     cohortData <- readRDS(ff)
     yr <- sub(".*year", "",  sub(".rds", "", ff))
     if (grepl("rep", ff)) {
