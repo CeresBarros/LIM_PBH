@@ -474,7 +474,6 @@ addVegTypesCNEvent <- function(sim) {
     } else {
       plan("multicore", workers = P(sim)$ncores)
     }
-    browser()
     vegTypesCN <- future_lapply(split(vegTypesCN, by = c("scenario", "rep")),
                                 FUN = parallelFUN, cPath = cachePath(sim))
     future:::ClusterRegistry("stop")
