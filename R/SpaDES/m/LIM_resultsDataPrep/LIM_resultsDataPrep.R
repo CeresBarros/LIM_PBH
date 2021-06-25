@@ -23,6 +23,11 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("endYear", "integer", 2111L, 1, NA,
                     "The last year of the simulation"),
+    defineParameter("ncores", "integer", 8, 1, NA,
+                    "Number of cores to use if P(sim)$parallel is TRUE"),
+    defineParameter("parallel", "logical", TRUE, 1, NA,
+                    paste("Should data processing be parallelized? Currently only used in assigning",
+                          "functional vegetation types following Cameron Naficy's classification")),
     defineParameter("reps", "integer", 1L:10L, NA, NA,
                     "The simulation repetitions to compile. If no repetitions were performed set to NA"),
     defineParameter("scenarios", "character", c("PM", "noPM"), NA, NA,
@@ -463,17 +468,22 @@ addVegTypesCNEvent <- function(sim) {
   }
 
   amc::.gc()
-  if (.Platform$OS.type == "windows") {
-    plan("multisession", workers = 8)
+  if (P(sim)$parallel) {
+    if (.Platform$OS.type == "windows") {
+      plan("multisession", workers = P(sim)$ncores)
+    } else {
+      plan("multicore", workers = P(sim)$ncores)
+    }
+    browser()
+    vegTypesCN <- future_lapply(split(vegTypesCN, by = c("scenario", "rep")),
+                                FUN = parallelFUN, cPath = cachePath(sim))
+    future:::ClusterRegistry("stop")
   } else {
-    plan("multicore", workers = 8)
+    vegTypesCN <- lapply(split(vegTypesCN, by = c("scenario", "rep")),
+                         FUN = parallelFUN, cPath = cachePath(sim))
   }
-  browser()
-  vegTypesCN <- future_lapply(split(vegTypesCN, by = c("scenario", "rep")),
-                              FUN = parallelFUN, cPath = cachePath(sim))
-  future:::ClusterRegistry("stop")
-  amc::.gc()
 
+  amc::.gc()
   vegTypesCN <- rbindlist(vegTypesCN, use.names = TRUE)
 
   ## test:
