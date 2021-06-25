@@ -18,7 +18,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.md", "LIM_resultsDataPrep.Rmd")), ## same file
   reqdPkgs = list("data.table", "raster", "LandR",
-                  "future", "future.apply",
+                  "future", "future.apply", "dplyr",
                   "CeresBarros/ToolsCB", "crayon"),
   parameters = rbind(
     defineParameter("endYear", "integer", 2111L, 1, NA,
