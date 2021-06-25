@@ -51,13 +51,13 @@ outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortD
 outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortDataMnt",
                                             saveTime = 1,
                                             eventPriority = 10))
-options("LandR.assertions" = FALSE)
+# options("LandR.assertions" = FALSE)
 simOut <- Cache(simInitAndSpades,
                 times = list(start = 1, end = 1),
                 params = paramsResults,
                 modules = "LIM_resultsDataPrep",
-                outputs = outputsResults,
                 objects = objectsResults,
+                outputs = outputsResults,
                 paths = simPaths,
                 cacheRepo = simPaths$cachePath,
                 userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
@@ -72,16 +72,16 @@ simOut <- Cache(simInitAndSpades,
 ## summarize data first - as in Steel et al 2021, fire properties are summarized across time, but by pixel
 ## (and by scenario/rep)
 ## only look at pixels with vegetation dynamics so that we can compare with biodiv. HVs
-summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
-                                                                   meanSev = mean(severity),
-                                                                   meanSevB = mean(severityB),
-                                                                   meanPatchS = mean(patchSize)),
-                                          by = .(scenario, rep, pixelIndex)]
+summaryFireAttributes <- simOut$allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
+                                                                          meanSev = mean(severity),
+                                                                          meanSevB = mean(severityB),
+                                                                          meanPatchS = mean(patchSize)),
+                                                 by = .(scenario, rep, pixelIndex)]
 ## add vegType per pixel at the first year of fire,
 ## and add pixels that had no fires
 firstFireYr <- P(preSimList)$fireSpread$fireInitialTime
 cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
-summaryFireAttributes <- summaryFireAttributes[allPixelCohortDataMnt[year == firstFireYr, ..cols],
+summaryFireAttributes <- summaryFireAttributes[simOut$allPixelCohortDataMnt[year == firstFireYr, ..cols],
                                                on = c("scenario", "rep", "pixelIndex")]
 ## checks
 test1 <- any(is.na(summaryFireAttributes$vegTypeCN))
