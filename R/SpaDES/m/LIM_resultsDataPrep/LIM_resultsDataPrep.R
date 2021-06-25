@@ -25,7 +25,7 @@ defineModule(sim, list(
                     "The last year of the simulation"),
     defineParameter("ncores", "integer", 8, 1, NA,
                     "Number of cores to use if P(sim)$parallel is TRUE"),
-    defineParameter("parallel", "logical", TRUE, 1, NA,
+    defineParameter("parallel", "logical", TRUE, NA, NA,
                     paste("Should data processing be parallelized? Currently only used in assigning",
                           "functional vegetation types following Cameron Naficy's classification")),
     defineParameter("reps", "integer", 1L:10L, NA, NA,
