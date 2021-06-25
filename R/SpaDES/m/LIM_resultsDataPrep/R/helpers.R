@@ -41,7 +41,7 @@ loadCohortDataFromRDS <- function(x, files, pixelGroupMapStk, yearSubset = NULL)
     rbindlist(fill = TRUE, l = .)
 
   if (!is.null(yearSubset)) {
-    pixelCohortData[year %in% yearSubset]
+    pixelCohortData <- pixelCohortData[year %in% yearSubset]
   }
 
   return(pixelCohortData)
