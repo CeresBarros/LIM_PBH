@@ -35,9 +35,7 @@ paramsResults <- list("LIM_resultsDataPrep" = list("endYear" = as.integer(end(pr
                                                    "reps" = 1L:10L,
                                                    "startYear" = start(preSimList),
                                                    "yearSubset" = as.integer(unique(c(seq(2011, 2111, 5), 2111))),
-                                                   ".useCache" = c(".inputObjects", "init",
-                                                                   "loadSimulationData", "joinSimulationData",
-                                                                   "addVegTypesCN")))
+                                                   ".useCache" = c(".inputObjects", "init")))
 
 objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
                        "rasterToMatch" = preSimList$rasterToMatch,
