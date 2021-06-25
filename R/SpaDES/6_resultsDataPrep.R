@@ -176,7 +176,7 @@ allPixelBurnData <- rbind(pixelBurnData_noPM, pixelBurnData_PM, use.names = TRUE
 
 ## severityData tables
 ## pixelBurnData tables - all rasters
-files <- grep("noPM", severityDataFiles, value = TRUE, invert = TRUE)
+files <- grep("noPM", severityDataFiles, value = TRUE)
 severityData_noPM <- lapply(files, FUN = function(ff) {
   severityData <- readRDS(ff)
   yr <- sub(".*year", "",  sub(".rds", "", ff))
@@ -200,8 +200,7 @@ severityData_PM <- lapply(files, FUN = function(ff) {
 }) %>%
   rbindlist(fill = TRUE, l = .)
 
-allPixelBurnData <- rbind(pixelBurnData_noPM, pixelBurnData_PM, use.names = TRUE)
-allSeverityData <- rbind(severityData_noPM, severityData_PM, use.names = TRUE)
+allSeverityData <- rbind(severityData_noPM, severityData_PM, use.names = TRUE, fill = TRUE)
 
 allPixelBurnData <- allPixelBurnData[fireID != "NA"]
 amc::.gc()
