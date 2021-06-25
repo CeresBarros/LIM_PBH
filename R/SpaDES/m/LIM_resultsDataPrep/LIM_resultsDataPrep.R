@@ -260,18 +260,19 @@ joinSimulationDataEvent <- function(sim) {
 
   ecoregionLayerDT <- ecoregionLayerLabels[ecoregionLayerDT, on = .(ecozoneCode)]
 
-  sim$allPixelCohortData <- ecoregionLayerDT[sim$allPixelCohortData, on = .(pixelIndex)]
+  allPixelCohortData <- ecoregionLayerDT[sim$allPixelCohortData, on = .(pixelIndex)]
   amc::.gc()
 
   ## FIRE ATTRIBUTES ---------------------------------------
   message(cyan("Calculating and adding fire attributes"))
   ## no. fires per pixel
   ## how many times did each pixel burn? total no. fires per pixel/scenario/rep
-  sim$allPixelBurnData[, noFires := sum(burnt), by = .(scenario, rep, pixelIndex)]
+  allPixelBurnData <- copy(sim$allPixelBurnData)
+  allPixelBurnData[, noFires := sum(burnt), by = .(scenario, rep, pixelIndex)]
 
   ## calculate fire size in pixels per fireID/scenario/rep
   ## this accounts for both forest and non-forest pixels
-  sim$allPixelBurnData[, fireSize := length(unique(pixelIndex)), by = .(scenario, rep, year, fireID)]
+  allPixelBurnData[, fireSize := length(unique(pixelIndex)), by = .(scenario, rep, year, fireID)]
 
   ## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
   ## note that for noPM we assume severity class (i.e. 'severity' column) to be the maximum = 5
@@ -279,13 +280,13 @@ joinSimulationDataEvent <- function(sim) {
   ## also note that we are ignoring if patches are contiguous or not, and simply counting the number of pixels
   ## with a given severity per fireID
   message(blue("Assuming a severity class 5 for any scenario with 'noPM'"))
-  sim$allPixelBurnData[grepl("noPM", scenario) & !is.na(pixelGroup), severity := 5]
-  sim$allPixelBurnData[!is.na(severity), patchSize := length(unique(pixelIndex)),
+  allPixelBurnData[grepl("noPM", scenario) & !is.na(pixelGroup), severity := 5]
+  allPixelBurnData[!is.na(severity), patchSize := length(unique(pixelIndex)),
                    by = .(scenario, rep, year, severity, fireID)]
 
   ## fire frequency
   ## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
-  fireFreqDT <- sim$allPixelBurnData[, list(year = c(year, P(sim)$endYear),     ## year one is dropped here
+  fireFreqDT <- allPixelBurnData[, list(year = c(year, P(sim)$endYear),     ## year one is dropped here
                                         fireInt = diff(c(P(sim)$startYear, year, P(sim)$endYear))),   ## interval calculated between fire years, and start and end years
                                  by = .(scenario, rep, pixelIndex)]
   ## because we forced a start and end year, intervals of 0 for the 100th year mean that there was a fire at year P(sim)$endYear
@@ -295,20 +296,20 @@ joinSimulationDataEvent <- function(sim) {
   fireFreqDT[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
 
   ## join DTs
-  sim$allPixelBurnData <- fireFreqDT[sim$allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
-  sim$allPixelBurnData[, burnt := NULL] ## no longer necessary
+  allPixelBurnData <- fireFreqDT[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
+  allPixelBurnData[, burnt := NULL] ## no longer necessary
 
   ## checks
   if (mod$doAssertion)  {
-    test1 <- sapply(split(sim$allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
+    test1 <- sapply(split(allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
       any(duplicated(x[, pixelIndex]))
     })
-    test2 <- setdiff(which(is.na(sim$allPixelBurnData$pixelGroup)),
-                     which(is.na(sim$allPixelBurnData$severity)))
-    test3 <- setdiff(which(is.na(sim$allPixelBurnData$pixelGroup)),
-                     which(is.na(sim$allPixelBurnData$severityB)))
-    test4 <- any(is.na(sim$allPixelBurnData[!is.na(severity), patchSize]))
-    test5 <- any(is.na(sim$allPixelBurnData$fireFreq))
+    test2 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+                     which(is.na(allPixelBurnData$severity)))
+    test3 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+                     which(is.na(allPixelBurnData$severityB)))
+    test4 <- any(is.na(allPixelBurnData[!is.na(severity), patchSize]))
+    test5 <- any(is.na(allPixelBurnData$fireFreq))
 
     if (any(test1))
       stop("Each pixel should only have one record of no. fires per scenario")
@@ -331,13 +332,13 @@ joinSimulationDataEvent <- function(sim) {
 
   ## add noFires to cohortData - no year info, because its the total across the simulation
   cols <- c("scenario", "rep", "pixelIndex", "noFires")
-  sim$allPixelCohortData <- unique(sim$allPixelBurnData[, ..cols])[sim$allPixelCohortData,
+  allPixelCohortData <- unique(allPixelBurnData[, ..cols])[allPixelCohortData,
                                                            on = .(scenario, rep, pixelIndex)]
 
   ## checks
   if (mod$doAssertion) {
     cols <- c("scenario", "rep", "pixelIndex")
-    test1 <- sim$allPixelBurnData[sim$allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
+    test1 <- allPixelBurnData[allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
     test1 <- dim(test1)[1]
     if (test1) {
       stop("There shouldn't be any NAs in noFires except in scenario/rep/pixelIndex\n",
@@ -346,8 +347,8 @@ joinSimulationDataEvent <- function(sim) {
     rm(test1)
   }
 
-  sim$allPixelCohortData[is.na(noFires), noFires := 0]
-  sim$allPixelCohortData <- sim$allPixelCohortData[!is.na(pixelGroup),]
+  allPixelCohortData[is.na(noFires), noFires := 0]
+  allPixelCohortData <- allPixelCohortData[!is.na(pixelGroup),]
   amc::.gc()
 
   ## ADD MISSING SPECIES IN YEAR/SCENARIO/PIXEL COMBINATION
@@ -356,8 +357,8 @@ joinSimulationDataEvent <- function(sim) {
   ## they will be ignored for now and removed later, after adding one species entry for each of these pixels.
   ## for reporting consistency add to show losses in B
   message(cyan("Adding absent species in all scenario/year/pixel combinations"))
-  combinations <- unique(sim$allPixelCohortData[, .(scenario, rep, year, pixelIndex, pixelGroup)])
-  spp <- as.character(na.omit(unique(sim$allPixelCohortData$speciesCode)))
+  combinations <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, pixelGroup)])
+  spp <- as.character(na.omit(unique(allPixelCohortData$speciesCode)))
   combinations <- lapply(spp, FUN = function(x) {
     data.table(combinations,
                speciesCode = x)
@@ -365,7 +366,7 @@ joinSimulationDataEvent <- function(sim) {
     rbindlist(., use.names = TRUE)
 
   ## join while keeping all combos, NA species will now disappear.
-  sim$allPixelCohortData <- sim$allPixelCohortData[combinations,
+  allPixelCohortData <- allPixelCohortData[combinations,
                                            on = .(scenario, rep, year, pixelIndex,
                                                   pixelGroup, speciesCode)]
   rm(spp, combinations)
@@ -373,9 +374,9 @@ joinSimulationDataEvent <- function(sim) {
 
   ## checks
   if (mod$doAssertion) {
-    test <- length(unique(sim$allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, rep, year)]$V1)) == 1
-    test2 <- length(unique(sim$allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, rep, year, pixelIndex)]$V1)) == 1
-    test3 <- any(is.na(sim$allPixelCohortData$speciesCode))
+    test <- length(unique(allPixelCohortData[, length(unique(pixelIndex)), by = .(scenario, rep, year)]$V1)) == 1
+    test2 <- length(unique(allPixelCohortData[, length(unique(speciesCode)), by = .(scenario, rep, year, pixelIndex)]$V1)) == 1
+    test3 <- any(is.na(allPixelCohortData$speciesCode))
 
     if (isFALSE(test))
       stop("No. pixels should be the same across years, for a given scenario/rep")
@@ -392,7 +393,7 @@ joinSimulationDataEvent <- function(sim) {
   sim$allPixelCohortData[, `:=`(vegType = max(vegType, na.rm = TRUE)),
                      by = .(scenario, rep, year, pixelGroup)]
 
-  sim$allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
+  allPixelCohortData[, `:=`(ecoregionGroup = unique(na.omit(ecoregionGroup)),
                             ecozoneCode = unique(na.omit(ecozoneCode)),
                             ecozoneName = unique(na.omit(ecozoneName))),
                      by = .(pixelIndex)]
