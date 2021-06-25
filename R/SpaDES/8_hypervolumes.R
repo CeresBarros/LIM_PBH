@@ -31,14 +31,13 @@ bw.outputPath <- file.path(HVoutputPath, "bwTest")
 preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
 
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
-paramsResults <- list("LIM_resultsDataPrep" = list("endYear" = end(preSimList),
+paramsResults <- list("LIM_resultsDataPrep" = list("endYear" = as.integer(end(preSimList)),
                                                    "reps" = 1L:10L,
                                                    "startYear" = start(preSimList),
-                                                   "yearSubset" = unique(c(seq(2011L, 2111L, 5), 2111L)),
+                                                   "yearSubset" = as.integer(unique(c(seq(2011, 2111, 5), 2111))),
                                                    ".useCache" = c(".inputObjects", "init",
                                                                    "loadSimulationData", "joinSimulationData",
-                                                                   "addVegTypesCN"))
-)
+                                                                   "addVegTypesCN")))
 
 objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
                        "rasterToMatch" = preSimList$rasterToMatch,
