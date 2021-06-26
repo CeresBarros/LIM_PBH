@@ -4,9 +4,11 @@
 
 library(SpaDES)
 library(ToolsCB)
+library(data.table)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
+source("R/R_tools/hypervolumesWrapper.R")
 options("reproducible.useNewDigestAlgorithm" = 2)
 options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
@@ -53,27 +55,34 @@ outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortD
                                             saveTime = 1,
                                             eventPriority = 10))
 # options("LandR.assertions" = FALSE)
-simOut <- Cache(simInitAndSpades,
-                times = list(start = 1, end = 1),
-                params = paramsResults,
-                modules = "LIM_resultsDataPrep",
-                objects = objectsResults,
-                outputs = outputsResults,
-                paths = simPaths,
-                cacheRepo = simPaths$cachePath,
-                userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
-                omitArgs = "userTags")
+# simOut <- Cache(simInitAndSpades,
+#                 times = list(start = 1, end = 1),
+#                 params = paramsResults,
+#                 modules = "LIM_resultsDataPrep",
+#                 objects = objectsResults,
+#                 outputs = outputsResults,
+#                 paths = simPaths,
+#                 cacheRepo = simPaths$cachePath,
+#                 userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
+#                 omitArgs = "userTags")
 
-# source("R/SpaDES/6_resultsDataPrep.R")
+## get rid of simOut
+# allPixelBurnData <- simOut$allPixelBurnData
+# allPixelCohortDataMnt <- simOut$allPixelCohortDataMnt
+# rm(simOut)
 
+## alternatively:
+allPixelBurnData <- readRDS(list.files(simPaths$outputPath, "allPixelBurnData", full.names = TRUE))
+allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
 
+amc::.gc()
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 
 ## summarize data first - as in Steel et al 2021, fire properties are summarized across time, but by pixel
 ## (and by scenario/rep)
 ## only look at pixels with vegetation dynamics so that we can compare with biodiv. HVs
-summaryFireAttributes <- simOut$allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
+summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
                                                                           meanSev = mean(severity),
                                                                           meanSevB = mean(severityB),
                                                                           meanPatchS = mean(patchSize)),
@@ -82,7 +91,7 @@ summaryFireAttributes <- simOut$allPixelBurnData[!is.na(pixelGroup), list(meanFr
 ## and add pixels that had no fires
 firstFireYr <- P(preSimList)$fireSpread$fireInitialTime
 cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
-summaryFireAttributes <- summaryFireAttributes[simOut$allPixelCohortDataMnt[year == firstFireYr, ..cols],
+summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == firstFireYr, ..cols]),
                                                on = c("scenario", "rep", "pixelIndex")]
 ## checks
 test1 <- any(is.na(summaryFireAttributes$vegTypeCN))
@@ -103,69 +112,6 @@ summaryFireAttributes[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 amc::.gc()
 
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
-## BANDWITH ESTIMATES ----
-amc::.gc()
-parallel_wrapper <- function(ncores, summaryFireAttributes, byVars, bw.outputPath) {
-  if (!dir.exists(bw.outputPath)) dir.create(bw.outputPath)
-
-  if (.Platform$OS.type == "windows") {
-    plan("multisession", workers = ncores)
-  } else {
-    plan("multicore", workers = ncores)
-  }
-  bw_estimates <- future_lapply(X = split(summaryFireAttributes, by = byVars),
-                                FUN = function(DT, bw.outputPath) {
-                                  r <- unique(DT$rep)
-                                  veg <- unique(DT$vegTypeCN)
-                                  message(paste("Calculating PCAs and estimating BWs for: rep", r, "and", veg))
-                                  file.suffix <- paste0("fireHVs_freeBW_", veg, "_rep", r)
-
-                                  init.vars <- grep("mean", names(DT))
-
-                                  DT <- ToolsCB:::.scaleVars(DT, init.vars)
-
-                                  out <- estimateBW_wrapper(as.data.frame(DT),
-                                                            init.vars = init.vars,
-                                                            HVidvar = which(names(DT) == "scenario"),
-                                                            noAxes = 4,
-                                                            ordination = "PCA",
-                                                            file.suffix = file.suffix,
-                                                            outputs.dir = bw.outputPath)
-                                  return(out)
-                                },
-                                bw.outputPath = bw.outputPath)
-  future:::ClusterRegistry("stop")
-  return(bw_estimates)
-}
-
-bw_estimates <- Cache(parallel_wrapper,
-                      summaryFireAttributes = summaryFireAttributes,
-                      ncores = 10,
-                      byVars = c("rep", "vegTypeCN"),
-                      bw.outputPath = bw.outputPath,
-                      cacheRepo = simPaths$cachePath,
-                      userTags = c("bw_estimates", "hypervolumes", "vegTypeCN"),
-                      omitArgs = c("userTags", "ncores", "bw.outputPath"))
-
-bw_estimates <- do.call(rbind.data.frame, bw_estimates)
-bw_estimates$vegType <- sub("[[:digit:]]*\\.", "", sub("\\.PC.*", "", row.names(bw_estimates)))
-bw_estimates$rep <- sub("\\..*", "", sub("\\.PC.*", "", row.names(bw_estimates)))
-bw_estimates <- as.data.table(bw_estimates)
-saveRDS(bw_estimates, file.path(bw.outputPath, "BW_estimates_vegType.rds"))
-
-summaryBW <- bw_estimates[, list(SilvermanMean = mean(c(SilvBW_HV1, SilvBW_HV2)),
-                                 StDevMean = mean(c(stdev_HV1, stdev_HV2)),
-                                 SilvermanMax = max(c(SilvBW_HV1, SilvBW_HV2)),
-                                 StDevMax = max(c(stdev_HV1, stdev_HV2))),
-                          by = "PC"]
-
-saveRDS(summaryBW, file.path(bw.outputPath, "BW_MeanMax_vegType.rds"))
-
-
-## fix bandwidth to max of estimated BW
-summaryBW <- readRDS(file.path(bw.outputPath, "BW_MeanMax_vegType.rds"))
-bwHV <- summaryBW[["StDevMax"]]
-
 amc::.gc()
 ncores <- 5
 if (.Platform$OS.type == "windows") {
@@ -177,98 +123,33 @@ if (.Platform$OS.type == "windows") {
 future_lapply(split(summaryFireAttributes, by = c("rep", "vegTypeCN")), FUN = function(allData, bwVal1, bwVal2) {
   r <- unique(allData$rep)
   veg <- unique(allData$vegTypeCN)
-  hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
-               HVdata2 = as.data.frame(allData[scenario == "PM"]),
-               HVidvar = which(names(allData) == "scenario"),
-               init.vars = which(names(allData) %in% c("meanSev", "meanFreq", "meanSevB", "meanPatchS")),
-               HVmethod = "box", no.runs = 3,
-               freeBW = FALSE, bwHV1 = bwHV, bwHV2 = bwHV,
-               do.scale = TRUE,
-               noAxes = 4, outputs.dir = HVoutputPath,
-               file.suffix = paste0("fireHVs_freeBW_", veg, "_rep", r),
-               saveOrdi = TRUE, plotOrdi = TRUE, plotHV = TRUE)
+  file.suffix <- paste0("fireHVs_", veg, "_rep", r)
+
+  noAxes <- 4
+  cols <- c("meanSev", "meanFreq", "meanSevB", "meanPatchS")
+
+  hypervolumesWrapper(allData, noAxes, cols, bwVal1, bwVal2, file.suffix)
 })
 future:::ClusterRegistry("stop")
 
 
 ## HYPERVOLUMES ACROSS THE LANDSCAPE - only montane belt ----------------
-## BANDWITH ESTIMATES ----
-amc::.gc()
-parallel_wrapper <- function(ncores, summaryFireAttributes, byVars, bw.outputPath) {
-  if (!dir.exists(bw.outputPath)) dir.create(bw.outputPath)
-
-  if (.Platform$OS.type == "windows") {
-    plan("multisession", workers = ncores)
-  } else {
-    plan("multicore", workers = ncores)
-  }
-  bw_estimates <- future_lapply(X = split(summaryFireAttributes, by = byVars),
-                                FUN = function(DT, bw.outputPath) {
-                                  r <- unique(DT$rep)
-                                  message(paste("Calculating PCAs and estimating BWs for: rep", r))
-                                  file.suffix <- paste0("fireHVs_freeBW_landscape_rep", r)
-
-                                  init.vars <- grep("mean", names(DT))
-
-                                  DT <- ToolsCB:::.scaleVars(DT, init.vars)
-
-                                  out <- estimateBW_wrapper(as.data.frame(DT),
-                                                            init.vars = init.vars,
-                                                            HVidvar = which(names(DT) == "scenario"),
-                                                            noAxes = 4,
-                                                            ordination = "PCA",
-                                                            file.suffix = file.suffix,
-                                                            outputs.dir = bw.outputPath)
-                                  return(out)
-                                },
-                                bw.outputPath = bw.outputPath)
-  future:::ClusterRegistry("stop")
-  return(bw_estimates)
-}
-bw_estimates <- Cache(parallel_wrapper,
-                      ncores = 10,
-                      summaryFireAttributes = summaryFireAttributes,
-                      byVars = c("rep"),
-                      bw.outputPath = bw.outputPath,
-                      cacheRepo = simPaths$cachePath,
-                      userTags = c("bw_estimates", "hypervolumes", "landscape"),
-                      omitArgs = c("userTags", "ncores", "bw.outputPath"))
-
-bw_estimates <- do.call(rbind.data.frame, bw_estimates)
-bw_estimates$rep <- sub("\\..*", "", sub("\\.PC.*", "", row.names(bw_estimates)))
-bw_estimates <- as.data.table(bw_estimates)
-saveRDS(bw_estimates, file.path(bw.outputPath, "BW_estimates_landscape.rds"))
-
-summaryBW <- bw_estimates[, list(SilvermanMean = mean(c(SilvBW_HV1, SilvBW_HV2)),
-                                 StDevMean = mean(c(stdev_HV1, stdev_HV2)),
-                                 SilvermanMax = max(c(SilvBW_HV1, SilvBW_HV2)),
-                                 StDevMax = max(c(stdev_HV1, stdev_HV2))),
-                          by = "PC"]
-
-saveRDS(summaryBW, file.path(bw.outputPath, "BW_MeanMax_landscape.rds"))
-
-## fix bandwidth to max of estimated BW
-summaryBW <- readRDS(file.path(bw.outputPath, "BW_MeanMax_landscape.rds"))
-bwHV <- summaryBW[["StDevMax"]]
-
 amc::.gc()
 if (.Platform$OS.type == "windows") {
   plan("multisession", workers = ncores)
 } else {
   plan("multicore", workers = ncores)
 }
-future_lapply(split(summaryFireAttributes, by = c("rep"))[9], FUN = function(allData, bwVal1, bwVal2) {
+
+future_lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allData, bwVal1, bwVal2) {
   r <- unique(allData$rep)
-  hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
-               HVdata2 = as.data.frame(allData[scenario == "PM"]),
-               HVidvar = which(names(allData) == "scenario"),
-               init.vars = which(names(allData) %in% c("meanSev", "meanFreq", "meanSevB", "meanPatchS")),
-               HVmethod = "box", no.runs = 3,
-               freeBW = FALSE, bwHV1 = bwHV, bwHV2 = bwHV,
-               do.scale = TRUE,
-               noAxes = 4, outputs.dir = HVoutputPath,
-               file.suffix = paste0("fireHVs_freeBW_landscape_rep", r),
-               saveOrdi = TRUE, plotOrdi = TRUE, plotHV = TRUE)
+  file.suffix <- paste0("fireHVs_landscape_rep", r)
+
+  noAxes <- 4
+  cols <- c("meanSev", "meanFreq", "meanSevB", "meanPatchS")
+
+  hypervolumesWrapper(allData, noAxes, cols, bwVal1, bwVal2, file.suffix)
+
 })
 future:::ClusterRegistry("stop")
 
