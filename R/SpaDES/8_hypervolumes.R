@@ -5,6 +5,7 @@
 library(SpaDES)
 library(ToolsCB)
 library(data.table)
+library(future.apply)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
@@ -27,7 +28,7 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAna
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 dir.create(figOutputPath)
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
-bw.outputPath <- file.path(HVoutputPath, "bwTest")
+# bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
 ## LOAD DATA (RESULTS)  -------------------
 preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
@@ -49,11 +50,11 @@ outputsResults <- data.frame(expand.grid(objectName = c("allPixelBurnData"),
                                          eventPriority = 10,
                                          stringsAsFactors = FALSE))
 outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortData",
-                                            saveTime = 1,
-                                            eventPriority = 10))
+                                                   saveTime = 1,
+                                                   eventPriority = 10))
 outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortDataMnt",
-                                            saveTime = 1,
-                                            eventPriority = 10))
+                                                   saveTime = 1,
+                                                   eventPriority = 10))
 # options("LandR.assertions" = FALSE)
 # simOut <- Cache(simInitAndSpades,
 #                 times = list(start = 1, end = 1),
@@ -74,8 +75,8 @@ outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortD
 ## alternatively:
 allPixelBurnData <- readRDS(list.files(simPaths$outputPath, "allPixelBurnData", full.names = TRUE))
 allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
-
 amc::.gc()
+
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 
@@ -83,10 +84,10 @@ amc::.gc()
 ## (and by scenario/rep)
 ## only look at pixels with vegetation dynamics so that we can compare with biodiv. HVs
 summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
-                                                                          meanSev = mean(severity),
-                                                                          meanSevB = mean(severityB),
-                                                                          meanPatchS = mean(patchSize)),
-                                                 by = .(scenario, rep, pixelIndex)]
+                                                                   meanSev = mean(severity),
+                                                                   meanSevB = mean(severityB),
+                                                                   meanPatchS = mean(patchSize)),
+                                          by = .(scenario, rep, pixelIndex)]
 ## add vegType per pixel at the first year of fire,
 ## and add pixels that had no fires
 firstFireYr <- P(preSimList)$fireSpread$fireInitialTime
@@ -111,7 +112,8 @@ cols <- c("meanFreq", "meanSev", "meanSevB", "meanPatchS")
 summaryFireAttributes[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 amc::.gc()
 
-## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
+## HYPERVOLUMES BY VEGETATION TYPE ----------
+## only montane belt
 amc::.gc()
 ncores <- 5
 if (.Platform$OS.type == "windows") {
@@ -133,7 +135,8 @@ future_lapply(split(summaryFireAttributes, by = c("rep", "vegTypeCN")), FUN = fu
 future:::ClusterRegistry("stop")
 
 
-## HYPERVOLUMES ACROSS THE LANDSCAPE - only montane belt ----------------
+## HYPERVOLUMES ACROSS THE LANDSCAPE ----------------
+## only montane belt
 amc::.gc()
 if (.Platform$OS.type == "windows") {
   plan("multisession", workers = ncores)
