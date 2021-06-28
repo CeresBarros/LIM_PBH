@@ -1,5 +1,67 @@
-#' Wrapper function to calculate hypervolumes
-hypervolumesWrapper <- function(allData, noAxes, cols, bwVal1, bwVal2, file.suffix) {
+#' Wrapper function to calculate vegetation attributess hypervolumes
+vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
+  ## a bit of prep
+  HVnames <- unique(allData[[HVIDcol]])
+  if (length(HVnames) != 2) {
+    stop("There should be 2 values in,", HVIDcol)
+  }
+
+  ## calculate stand-age as the mean biomass-weighted age
+  allData[, standAge := mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                          sum((B/100), na.rm = TRUE))),
+          by = IDcols]
+  allData[is.na(standAge), standAge := 0]  ## NAs come from stands with 0 B and 0 age
+
+  ## calculate relative species B (across speciesCohorts)
+  allData[, standB := sum(B, na.rm = TRUE), by = IDcols]
+  allData[, relB := sum(B) / standB, by = c(IDcols, "speciesCode")]
+  allData[relB == "NaN", relB := 0]
+
+  ## expand data
+  cols <- c("standAge", "relB", "speciesCode", IDcols)   ## keep rep for wrapper.
+  allData <- unique(allData[, ..cols])
+  allData <- dcast.data.table(allData, as.formula("... ~ speciesCode"),
+                              value.var = "relB")
+
+  ## still use 4 axes.
+  cols <- setdiff(names(allData), IDcols)
+
+  ## add noise to data if all dimensions have zero variance
+  IDcols2 <- setdiff(IDcols, "pixelIndex")
+  needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = IDcols2]
+  needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = IDcols2]
+
+  if (any(needsNoise$V1)) {
+    tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
+                        on = IDcols2]
+    tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
+                                n = .N), .SDcols = cols]
+    allData <- rbind(allData[!tempData, on = IDcols2],
+                     tempData, fill = TRUE, use.names = TRUE)
+  }
+  ## HV calculation
+  out <- tryCatch(hypervolumes(HVdata1 = as.data.frame(allData[get(HVIDcol) == HVnames[1]]),
+                               HVdata2 = as.data.frame(allData[get(HVIDcol) == HVnames[2]]),
+                               HVidvar = which(names(allData) == HVIDcol),
+                               init.vars = which(names(allData) %in% cols),
+                               file.suffix = file.suffix,
+                               ...), error = function(e) e)
+
+  if (is(out, "error")) {
+    if (grepl("contour.default", out)) {
+      hypervolumes(HVdata1 = as.data.frame(allData[get(HVIDcol) == HVnames[1]]),
+                   HVdata2 = as.data.frame(allData[get(HVIDcol) == HVnames[2]]),
+                   HVidvar = which(names(allData) == HVIDcol),
+                   init.vars = which(names(allData) %in% cols),
+                   file.suffix = file.suffix,
+                   plotHVDots = list(contour.type = "ball"),
+                   ...)
+    }
+  }
+}
+
+#' Wrapper function to calculate fire attributes hypervolumes
+fireHVWrapper <- function(allData, cols, file.suffix, ...) {
   ## add noise to data if all dimensions have zero variance
   needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = .(scenario, rep)]
   needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = .(scenario, rep)]
@@ -16,13 +78,8 @@ hypervolumesWrapper <- function(allData, noAxes, cols, bwVal1, bwVal2, file.suff
                HVdata2 = as.data.frame(allData[scenario == "PM"]),
                HVidvar = which(names(allData) == "scenario"),
                init.vars = which(names(allData) %in% cols),
-               HVmethod = "svm", no.runs = 3,
-               # freeBW = FALSE, bwHV1 = bwHV, bwHV2 = bwHV,
-               svm.gamma = 0.01,
-               do.scale = TRUE,
-               noAxes = noAxes, outputs.dir = HVoutputPath,
                file.suffix = file.suffix,
-               saveOrdi = TRUE, plotOrdi = TRUE, plotHV = TRUE)
+               ...)
 }
 
 
