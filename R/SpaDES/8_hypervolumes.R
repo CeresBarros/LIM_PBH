@@ -156,6 +156,95 @@ future_lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allDat
 })
 future:::ClusterRegistry("stop")
 
+## VEGETATION ATTRIBUTES HYPERVOLUMES -----------
+## HYPERVOLUMES BY VEGETATION TYPE --------------
+## only montane belt
+
+## Use the first fire year to identify the pixels we want to follow in time
+## we follow the same pixels that were used to make fire attributes HVs, only now
+## we select the start year and end years of the simulation
+## the join shouldn't acutally change anything because we already subset the pixels with veg
+## in the montane belt (regardless of fire)
+pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
+vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
+
+if (getOption("LandR.assertions")) {
+  temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
+  setkey(temp, scenario, rep, pixelIndex)
+  setkey(vegDataForHVs, scenario, rep, pixelIndex)
+
+  if (isFALSE(identical(temp, vegDataForHVs))) {
+    stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
+         "Combinations as allPixelCohortDataMnt")
+  }
+}
+
+## HV comparisons per year, between scenarios --------------
+## gaussian HVs were extremely slow
+amc::.gc()
+ncores <- 3
+if (.Platform$OS.type == "windows") {
+  plan("multisession", workers = ncores)
+} else {
+  plan("multicore", workers = ncores)
+}
+future_lapply(split(vegDataForHVs, by = c("rep", "vegTypeCN", "year")), FUN = function(allData, HVoutputPath) {
+  r <- unique(allData$rep)
+  yr <- unique(allData$year)
+  veg <- unique(allData$vegTypeCN)
+  file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
+  IDcols <- c("scenario", "rep", "pixelIndex")
+  print(file.suffix)
+
+  vegHVWrapper(allData,
+               IDcols,
+               "scenario",
+               file.suffix,
+               noAxes = 4,
+               HVmethod = "svm",
+               no.runs = 3,
+               svm.gamma = 0.01,
+               do.scale = TRUE,
+               outputs.dir = HVoutputPath,
+               saveOrdi = TRUE,
+               plotOrdi = TRUE,
+               plotHV = TRUE,
+               verbose = FALSE)
+}, HVoutputPath = HVoutputPath)
+future:::ClusterRegistry("stop")
 
 
+## HV comparisons per scenario, between years --------------
+## gaussian HVs were extremely slow
+amc::.gc()
+ncores <- 3
+if (.Platform$OS.type == "windows") {
+  plan("multisession", workers = ncores)
+} else {
+  plan("multicore", workers = ncores)
+}
+future_lapply(split(vegDataForHVs, by = c("rep", "vegTypeCN", "scenario")), FUN = function(allData, HVoutputPath) {
+  r <- unique(allData$rep)
+  scen <- unique(allData$scenario)
+  veg <- unique(allData$vegTypeCN)
+  file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
+  IDcols <- c("year", "rep", "pixelIndex")
+  print(file.suffix)
+
+  vegHVWrapper(allData,
+               IDcols,
+               "year",
+               file.suffix,
+               noAxes = 4,
+               HVmethod = "svm",
+               no.runs = 3,
+               svm.gamma = 0.01,
+               do.scale = TRUE,
+               outputs.dir = HVoutputPath,
+               saveOrdi = TRUE,
+               plotOrdi = TRUE,
+               plotHV = TRUE,
+               verbose = FALSE)
+}, HVoutputPath = HVoutputPath)
+future:::ClusterRegistry("stop")
 
