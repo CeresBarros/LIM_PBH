@@ -130,7 +130,7 @@ future_lapply(split(summaryFireAttributes, by = c("rep", "vegTypeCN")), FUN = fu
   noAxes <- 4
   cols <- c("meanSev", "meanFreq", "meanSevB", "meanPatchS")
 
-  hypervolumesWrapper(allData, noAxes, cols, bwVal1, bwVal2, file.suffix)
+  fireHVWrapper(allData, noAxes, cols, file.suffix)
 })
 future:::ClusterRegistry("stop")
 
@@ -151,7 +151,7 @@ future_lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allDat
   noAxes <- 4
   cols <- c("meanSev", "meanFreq", "meanSevB", "meanPatchS")
 
-  hypervolumesWrapper(allData, noAxes, cols, bwVal1, bwVal2, file.suffix)
+  fireHVWrapper(allData, noAxes, cols, file.suffix)
 
 })
 future:::ClusterRegistry("stop")
