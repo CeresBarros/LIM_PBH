@@ -1,3 +1,5 @@
+Require("dplyr")
+
 #' Wrapper function to calculate vegetation attributess hypervolumes
 vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
   ## a bit of prep
@@ -35,7 +37,7 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
     tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
                         on = IDcols2]
     tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
-                                n = .N), .SDcols = cols]
+                                n = .N), .SDcols = cols, by = IDcols2]
     allData <- rbind(allData[!tempData, on = IDcols2],
                      tempData, fill = TRUE, use.names = TRUE)
   }
@@ -62,6 +64,7 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
 
 #' Wrapper function to calculate fire attributes hypervolumes
 fireHVWrapper <- function(allData, cols, file.suffix, ...) {
+  print(file.suffix)
   ## add noise to data if all dimensions have zero variance
   needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = .(scenario, rep)]
   needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = .(scenario, rep)]
@@ -74,15 +77,76 @@ fireHVWrapper <- function(allData, cols, file.suffix, ...) {
     allData <- rbind(allData[!tempData, on = .(scenario, rep)],
                      tempData, fill = TRUE, use.names = TRUE)
   }
-  hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
-               HVdata2 = as.data.frame(allData[scenario == "PM"]),
-               HVidvar = which(names(allData) == "scenario"),
-               init.vars = which(names(allData) %in% cols),
-               file.suffix = file.suffix,
-               ...)
+  out <- tryCatch(hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
+                               HVdata2 = as.data.frame(allData[scenario == "PM"]),
+                               HVidvar = which(names(allData) == "scenario"),
+                               init.vars = which(names(allData) %in% cols),
+                               file.suffix = file.suffix,
+                               ...), error = function(e) e)
+
+  if (is(out, "error")) {
+    if (grepl("contour.default", out)) {
+      hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
+                   HVdata2 = as.data.frame(allData[scenario == "PM"]),
+                   HVidvar = which(names(allData) == "scenario"),
+                   init.vars = which(names(allData) %in% cols),
+                   file.suffix = file.suffix,
+                   plotHVDots = list(contour.type = "ball"),
+                   ...)
+    }
+  }
 }
 
 
+#' Function to load hypervolume comparison tables from .rds files that match a pattern
+#'
+#' @param x the pattern of file name to be matched
+#' @param files the vector of all file names to be searched
+
+loadHVResultsFromRDS <- function(x, files) {
+  files <- grep(x, files, value = TRUE)
+
+  HVData <- lapply(files, FUN = function(ff) {
+    HVData <- readRDS(ff)
+    if (!is(HVData, "data.table")) {
+      ## intersection results only have one row
+      if (!is.null(rownames(HVData)) & nrow(HVData) > 1) {
+        HVData$HVid <- rownames(HVData)
+      }
+      HVData <- as.data.table(HVData)
+    }
+    ff <- basename(ff)
+    if (grepl("yr", ff)) {
+      yr <- sub(".*yr([0-9]{1,4})_.*", "\\1", ff)
+    } else {
+      yr <- NA
+    }
+    if (grepl("rep", ff)) {
+      r <- sub(".*(rep)([0-9]+)_.*", "\\2", ff)
+    } else {
+      r <- NA
+    }
+
+    if (grepl("[0-9]+\\.rds$", ff)) {
+      rHV <- sub(".*([0-9]+)\\.rds", "\\1", ff)
+    } else {
+      r <- NA
+    }
+
+    vegType <- unlist(strsplit(sub("(_yr|_rep).*", "", ff), "_"))[2]
+    scenario <- unlist(strsplit(sub("(_yr|_rep).*", "", ff), "_"))[3]
+
+    HVData[, year := as.integer(yr)]
+    HVData[, rep := as.integer(r)]
+    HVData[, repHV := as.integer(rHV)]
+    HVData[, vegType := vegType]
+    HVData[, scenario := scenario]
+
+    return(HVData)
+  }) %>%
+    rbindlist(fill = TRUE, l = ., use.names = TRUE)
+  return(HVData)
+}
 
 
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
