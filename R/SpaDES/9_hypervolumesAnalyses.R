@@ -188,164 +188,6 @@ vegTypeCNColours <- vegTypeCNLabels
 vegTypeCNColours[1:length(vegTypeCNColours)-1] <- RColorBrewer::brewer.pal(length(vegTypeCNColours)-1, name = "Set1")
 vegTypeCNColours["landscape"] <- "darkgreen"
 
-## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
-## how does scenario affect hypervolume sizes at the end of the simulation?
-## general plot
-
-## reorder vegType for plotting
-allHVData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
-
-## melt volume data
-plotData <- allHVData[year == end(preSimList),
-                      .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
-                        rep, repHV, vegType)]
-plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
-                            variable.name = "scenario", value.name = "Volume")
-
-HVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
-                               aes(x = vegType, y = Volume, alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank()) +
-  labs(x = "", fill = "", alpha = "") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
-  facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-             labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-                                            "fireHV" = "pyrodiversity")))
-
-HVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape"],
-                                aes(x = vegType, y = Volume, fill = scenario)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_brewer(palette = "Greys",
-                    labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank()) +
-  labs(x = "", fill = "") +
-  guides(alpha = "none", fill = "none") +
-  facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-             labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-                                            "fireHV" = "pyrodiversity")))
-
-plotSave <- ggarrange(HVvolumeVegTypesPlot, HVvolumeLandscapePlot + labs(y = ""),
-                      ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
-                      common.legend = TRUE, legend = "bottom")
-
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
-       width = 10, height = 8)
-
-## were biodiversity volumes different at the start?
-plotData <- allHVData[year == start(preSimList),
-                      .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
-                        rep, repHV, vegType)]
-plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
-                            variable.name = "scenario", value.name = "Volume")
-HVvolumeVegTypesStartPlot <- ggplot(plotData[HVtype == "vegHV"],
-                                    aes(x = vegType, y = Volume, alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, x.text.angle = 30,
-             margin = FALSE, legend = "right") +
-  theme(legend.box = "vertical",
-        strip.background = element_blank()) +
-  labs(x = "", fill = "", alpha = "") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
-
-ggsave(plot = HVvolumeVegTypesStartPlot, filename = file.path(figOutputPath, "HVVolumesVegStart.tiff"),
-       width = 7, height = 5)
-
-
-## How much did communities change in time? ---------------------------------------
-plotData <- allHVData[HVtype == "vegHV" & compare == "2011_2111",
-                      .(overlap, MinDist, CentroidDist, rep, repHV, vegType, scenario)]
-
-HVOverlapVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
-                                aes(x = vegType, y = overlap,
-                                    alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("noPM" = 0.4, "PM" = 1.0),
-                     labels = c("noPM" = "no PM", "PM" = "PM")) +
-  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank()) +
-  labs(x = "", y = "Overlap", fill = "", alpha = "") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
-
-HVOverlapLandscapePlot <- ggplot(plotData[vegType == "landscape"],
-                                 aes(x = vegType, y = overlap, fill = scenario)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_brewer(palette = "Greys",
-                    labels = c("noPM" = "no PM", "PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank()) +
-  labs(x = "", y = "Overlap", fill = "") +
-  guides(alpha = "none", fill = "none")
-
-plotSave <- ggarrange(HVOverlapVegTypesPlot, HVOverlapLandscapePlot + labs(y = ""),
-                      ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
-                      common.legend = TRUE, legend = "bottom")
-
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVOverlap.tiff"),
-       width = 10, height = 8)
-
-
-## relationship between pyrodiversity and biodiversity --------------------
-## melt volume data and dcast by volume type to relate the two
-plotData <- allHVData[year == end(preSimList),
-                      .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
-plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
-                            variable.name = "scenario", value.name = "Volume")
-
-plotData <- dcast(plotData, ... ~ HVtype, value.var = "Volume")
-
-pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
-                                   aes(x = fireHV, y = vegHV,
-                                       linetype = scenario, colour = vegType)) +
-  geom_point() +
-  geom_smooth(method = "gam", formula = y ~ s(x, k = 4), se = FALSE) +
-  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_linetype_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank()) +
-  labs(x = "pyrodiversity", y = "forest diversity", colour = "", linetype = "") +
-  guides(linetype = guide_legend(override.aes = list(colour = "black"))) +
-  facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
-              scales = "free")
-
-pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
-                                       aes(x = fireHV, y = vegHV,
-                                           linetype = scenario, colour = vegType)) +
-  geom_point() +
-  geom_smooth(method = "lm", se = FALSE) +
-  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_linetype_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank(),
-        plot.title = element_text(size = 12, hjust = 0.5)) +
-  labs(x = "pyrodiversity", y = "forest diversity", title = "landscape",
-       colour = "", linetype = "") +
-  guides(linetype = guide_legend(override.aes = list(colour = "black")))
-
-plotSave <- ggarrange(pyroVSbioDivVegTypesPlot, pyroVSbioDivVegLandscapePlot + labs(y = ""),
-                      ncol = 2, nrow = 1, widths = c(1, 0.6),
-                      common.legend = TRUE, legend = "bottom")
-
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversity.tiff"),
-       width = 12, height = 7)
-
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------
 ## make separate datatable for stats so that we can change contrasts
@@ -593,3 +435,177 @@ emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ scenario | vegType,
 emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ vegType | scenario,
          var = "fireHV", mode = "df.error", data = modelData2)
 sink()
+
+
+
+## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
+## how does scenario affect hypervolume sizes at the end of the simulation?
+## general plot
+
+## reorder vegType for plotting
+allHVData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
+
+## melt volume data
+plotData <- allHVData[year == end(preSimList),
+                      .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
+                        rep, repHV, vegType)]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+
+HVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
+                               aes(x = vegType, y = Volume, alpha = scenario, fill = vegType)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
+                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
+  theme(legend.box = "vertical",
+        strip.background = element_blank()) +
+  labs(x = "", fill = "", alpha = "") +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
+             labeller = labeller(HVtype = c("vegHV" = "forest diversity",
+                                            "fireHV" = "pyrodiversity")))
+
+HVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape"],
+                                aes(x = vegType, y = Volume, fill = scenario)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_brewer(palette = "Greys",
+                    labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  theme_pubr(base_size = 12, margin = FALSE) +
+  theme(strip.background = element_blank()) +
+  labs(x = "", fill = "") +
+  guides(alpha = "none", fill = "none") +
+  facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
+             labeller = labeller(HVtype = c("vegHV" = "forest diversity",
+                                            "fireHV" = "pyrodiversity")))
+
+plotSave <- ggarrange(HVvolumeVegTypesPlot, HVvolumeLandscapePlot + labs(y = ""),
+                      ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
+                      common.legend = TRUE, legend = "bottom")
+
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
+       width = 10, height = 8)
+
+## were biodiversity volumes different at the start?
+plotData <- allHVData[year == start(preSimList),
+                      .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
+                        rep, repHV, vegType)]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+HVvolumeVegTypesStartPlot <- ggplot(plotData[HVtype == "vegHV"],
+                                    aes(x = vegType, y = Volume, alpha = scenario, fill = vegType)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
+                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  theme_pubr(base_size = 12, x.text.angle = 30,
+             margin = FALSE, legend = "right") +
+  theme(legend.box = "vertical",
+        strip.background = element_blank()) +
+  labs(x = "", fill = "", alpha = "") +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
+
+ggsave(plot = HVvolumeVegTypesStartPlot, filename = file.path(figOutputPath, "HVVolumesVegStart.tiff"),
+       width = 7, height = 5)
+
+
+## How much did communities change in time? ---------------------------------------
+plotData <- allHVData[HVtype == "vegHV" & compare == "2011_2111",
+                      .(overlap, MinDist, CentroidDist, rep, repHV, vegType, scenario)]
+
+HVOverlapVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
+                                aes(x = vegType, y = overlap,
+                                    alpha = scenario, fill = vegType)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+  scale_alpha_manual(values = c("noPM" = 0.4, "PM" = 1.0),
+                     labels = c("noPM" = "no PM", "PM" = "PM")) +
+  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
+  theme(legend.box = "vertical",
+        strip.background = element_blank()) +
+  labs(x = "", y = "Overlap", fill = "", alpha = "") +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
+
+HVOverlapLandscapePlot <- ggplot(plotData[vegType == "landscape"],
+                                 aes(x = vegType, y = overlap, fill = scenario)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_brewer(palette = "Greys",
+                    labels = c("noPM" = "no PM", "PM" = "PM")) +
+  theme_pubr(base_size = 12, margin = FALSE) +
+  theme(strip.background = element_blank()) +
+  labs(x = "", y = "Overlap", fill = "") +
+  guides(alpha = "none", fill = "none")
+
+plotSave <- ggarrange(HVOverlapVegTypesPlot, HVOverlapLandscapePlot + labs(y = ""),
+                      ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
+                      common.legend = TRUE, legend = "bottom")
+
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVOverlap.tiff"),
+       width = 10, height = 8)
+
+
+## relationship between pyrodiversity and biodiversity --------------------
+## melt volume data and dcast by volume type to relate the two
+plotData <- allHVData[year == end(preSimList),
+                      .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+
+plotData <- dcast(plotData, ... ~ HVtype, value.var = "Volume")
+
+plotData2 <- as.data.frame(plotData[vegType != "landscape"])
+plotData2$scenario <- factor(plotData2$scenario)
+plotData2$vegType <- factor(plotData2$vegType)
+
+## refit models for plot
+pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = plotData[vegType == "landscape"])
+pyroVSbiodiversityVegTypes.gls <- gls(vegHV ~ fireHV*scenario*vegType,
+                                      weights = varIdent(form = ~ 1 | scenario * vegType),
+                                      data = plotData2)
+
+plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm)]
+plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls)]
+
+pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
+                                   aes(x = fireHV, y = vegHV,
+                                       linetype = scenario, shape = scenario,
+                                       colour = vegType)) +
+  geom_point() +
+  geom_line(aes(y = pred)) +
+  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+  scale_linetype_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  theme_pubr(base_size = 12, margin = FALSE) +
+  theme(legend.box = "vertical",
+        strip.background = element_blank()) +
+  labs(x = "pyrodiversity", y = "forest diversity", colour = "", linetype = "", shape = "") +
+  facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
+              scales = "free")
+
+pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
+                                       aes(x = fireHV, y = vegHV, shape = scenario,
+                                           linetype = scenario, colour = vegType)) +
+  geom_point() +
+  geom_line(aes(y = pred)) +
+  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+  scale_linetype_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  theme_pubr(base_size = 12, margin = FALSE) +
+  theme(legend.box = "vertical",
+        strip.background = element_blank(),
+        plot.title = element_text(size = 12, hjust = 0.5)) +
+  labs(x = "pyrodiversity", y = "forest diversity", title = "landscape",
+       colour = "", linetype = "", shape = "")
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlot, pyroVSbioDivVegLandscapePlot + labs(y = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.6),
+                      common.legend = TRUE, legend = "bottom")
+
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversity.tiff"),
+       width = 12, height = 7)
