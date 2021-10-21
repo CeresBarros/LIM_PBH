@@ -25,7 +25,7 @@ library(future)
 library(future.apply)
 library(lme4)
 library(MuMIn)
-library(toolsCB)
+library(ToolsCB)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
@@ -37,7 +37,7 @@ options("reproducible.useGDAL" = FALSE)
 
 
 ## general paths
-simDirName <- "mar2021Runs"
+simDirName <- "jun2021Runs"
 simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
