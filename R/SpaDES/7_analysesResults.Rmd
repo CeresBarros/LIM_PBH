@@ -113,19 +113,19 @@ speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortDataSpp$s
                                        df = preSimList$sppEquiv)
 names(speciesLabels) <- unique(summaryBurnCohortDataSpp$speciesCode)
 
-speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
-names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE
+speciesColours <- levels(preSimList$vegTypeMap)[[1]]$colors
+names(speciesColours) <- levels(preSimList$vegTypeMap)[[1]]$VALUE
 
 ## make vegType labels/colours
-vegTypeLabels <- as.character(levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE)
+vegTypeLabels <- as.character(levels(preSimList$vegTypeMap)[[1]]$VALUE)
 vegTypeLabels <- LandR::equivalentName(value = vegTypeLabels, column = "EN_generic_full",
                                        df = preSimList$sppEquiv)
 vegTypeLabels[length(vegTypeLabels) + 1] <- "No veg."
-names(vegTypeLabels) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
+names(vegTypeLabels) <- c(levels(preSimList$vegTypeMap)[[1]]$ID, "0")
 
-vegTypeColours <- as.character(levels(vegTypeMapStk_noPM[[1]])[[1]]$colors)
+vegTypeColours <- as.character(levels(preSimList$vegTypeMap)[[1]]$colors)
 vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
-names(vegTypeColours) <- c(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID, "0")
+names(vegTypeColours) <- c(levels(preSimList$vegTypeMap)[[1]]$ID, "0")
 
 vegTypeCNLabels <- unique(as.character(summaryBurnCohortDataVegTypeCN$vegTypeCN))
 names(vegTypeCNLabels) <- vegTypeCNLabels
@@ -140,6 +140,7 @@ vegTypeCNLabels <- sub("dryPSME", "Dry Douglas-fir", vegTypeCNLabels)
 
 vegTypeCNColours <- vegTypeCNLabels
 vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNColours), name = "Set1")
+names(vegTypeCNColours) <- names(vegTypeCNLabels)
 
 ## remove rasters to save memory
 rm(list = grep("Stk", ls(), value = TRUE))
