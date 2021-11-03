@@ -54,7 +54,7 @@ amc::.gc()
 
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES -----------------------
 ageDataCN <- fread("data/CameronsAgeData/treelist_outputs_for Ceres.csv")
-patchVegTypeCN <- fread("data/CameronsAgeData/patch outputs_for Ceres.csv")
+patchVegTypeCN <- fread("data/CameronsAgeData/patch outputs_for Ceres_Oct2021.csv")
 
 ageDataCN <- patchVegTypeCN[ageDataCN, on = .(Patch.ID)]
 ageDataCN$Cover.dendro <- sub("Mixedwood", "mixedwood", ageDataCN$Cover.dendro)
