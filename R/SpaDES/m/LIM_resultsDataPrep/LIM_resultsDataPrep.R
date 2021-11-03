@@ -199,7 +199,7 @@ loadSimulationDataEvent <- function(sim) {
   amc::.gc()
   allPixelBurnData <- allSeverityData[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
 
-  ## clean ws - keep for labels
+  ## clean ws
   rm(rstCurrentFiresStkList, vegTypeMapStkList, pixelGroupMapStkList,
      pixelBurnDataList, severityDataList, allSeverityData)
   amc::.gc()
