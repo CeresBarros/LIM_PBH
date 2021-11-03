@@ -291,17 +291,12 @@ joinSimulationDataEvent <- function(sim) {
 
   ## fire frequency
   ## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
-  fireFreqDT <- allPixelBurnData[, list(year = c(year, P(sim)$endYear),     ## year one is dropped here
-                                        fireInt = diff(c(P(sim)$startYear, year, P(sim)$endYear))),   ## interval calculated between fire years, and start and end years
-                                 by = .(scenario, rep, pixelIndex)]
-  ## because we forced a start and end year, intervals of 0 for the 100th year mean that there was a fire at year P(sim)$endYear
-  ## this doesn't apply in the same way to fires at P(sim)$startYear, these should have a return interval of 0 (because we added the first year)
-  ## if only one fire occurred and it was at P(sim)$endYear, then the correct interval is 99 (P(sim)$endYear-P(sim)$startYear)
-  fireFreqDT <- fireFreqDT[!(fireInt == 0 & year == P(sim)$endYear)]
-  fireFreqDT[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
+  setkey(allPixelBurnData, pixelIndex, scenario, rep, year)
+  allPixelBurnData[, fireInt := year - lag(year, n = 1),
+                   by = .(scenario, rep, pixelIndex)]
+  allPixelBurnData[is.na(fireInt), fireInt := year - P(sim)$startYear] ## NAs mean only one fire, return interval is the difference from start year
+  allPixelBurnData[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
 
-  ## join DTs
-  allPixelBurnData <- fireFreqDT[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
   allPixelBurnData[, burnt := NULL] ## no longer necessary
 
   ## checks
