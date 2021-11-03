@@ -190,7 +190,7 @@ if (getOption("LandR.assertions")) {
 ## identical between scenarios (tested above)
 ## gaussian HVs were extremely slow
 
-pixelIndexList <- split(vegDataForHVs[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)],
+pixelIndexList <- split(vegDataForHVs[year == firstFireYr, .(rep, vegTypeCN, pixelIndex)],
                         by = c("rep", "vegTypeCN"))
 
 lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath) {
