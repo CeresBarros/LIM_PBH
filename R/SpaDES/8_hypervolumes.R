@@ -185,14 +185,14 @@ if (getOption("LandR.assertions")) {
 
 ## HV comparisons per year, between scenarios --------------
 ## note that splitting by veg type has to be done on the first
-## year as vegTypes can change. Splitting is done by rep only
+## year as vegTypes can change (cannot use first fire year, because cohortData will have
+## been impacted by fire already). Splitting is done by rep only
 ## as vegTypeCN/pixelIndex combos for the first year have to be
 ## identical between scenarios (tested above)
 ## gaussian HVs were extremely slow
 
-pixelIndexList <- split(vegDataForHVs[year == firstFireYr, .(rep, vegTypeCN, pixelIndex)],
+pixelIndexList <- split(vegDataForHVs[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)],
                         by = c("rep", "vegTypeCN"))
-
 lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath) {
   r <- unique(pixelIndexDT$rep)
   veg <- unique(pixelIndexDT$vegTypeCN)
