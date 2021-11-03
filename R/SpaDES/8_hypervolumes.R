@@ -79,6 +79,9 @@ amc::.gc()
 
 ## Hypervolumes by vegetation type ----------
 ## only montane belt
+if (mergeDMCPSME) {
+  summaryFireAttributes <- summaryFireAttributes[vegTypeCN == "DMCPSME"]
+}
 lapply(split(summaryFireAttributes, by = c("rep", "vegTypeCN")), FUN = function(allData, HVoutputPath) {
   r <- unique(allData$rep)
   veg <- unique(allData$vegTypeCN)
@@ -134,7 +137,12 @@ lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allData, HVou
 ## the join shouldn't actually change anything because we already subset the pixels with veg
 ## in the montane belt (regardless of fire)
 pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
-vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
+
+if (mergeDMCPSME) {  ## only do the the merged vegTypes
+  vegDataForHVs <- allPixelCohortDataMnt[vegTypeCN == "DMCPSME" & year %in% c(start(preSimList), end(preSimList))]
+} else {
+  vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
+}
 
 if (getOption("LandR.assertions")) {
   temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
