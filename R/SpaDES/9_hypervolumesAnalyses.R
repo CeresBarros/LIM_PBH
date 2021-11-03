@@ -28,17 +28,30 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAna
                  , outputPath = file.path("R/SpaDES/outputs", simDirName))
 
 ## path to figure folder and cache folder
-figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
-dir.create(figOutputPath)
+figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane")
 statsOutputPath <- file.path(simPaths$outputPath, "statsAnalysis")
-dir.create(statsOutputPath)
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
+
+## are we using the merged douglas-fir/dry-conifer stands?
+mergeDMCPSME <- TRUE
+if (mergeDMCPSME) {
+  HVoutputPathMergedVegType <- file.path(simPaths$outputPath, "hypervolumes", "mergeDMCPSME")
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
+  statsOutputPath <- file.path(simPaths$outputPath, "statsAnalysis/mergeDMCPSME")
+}
+
+dir.create(figOutputPath, recursive = TRUE)
+dir.create(statsOutputPath, recursive = TRUE)
 
 ## LOAD SIM LIST  ---------------------------------
 preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
 
 ## LOAD HYPERVOLUMES RESULTS ----------------------
 allFiles <- list.files(HVoutputPath, "Intersection.*.rds", full.names = TRUE)
+if (mergeDMCPSME) {
+  allFiles <- grep("_DMCPSME_|_PSME_|_dryPSME_", allFiles, value = TRUE, invert = TRUE) ## remove HV for vegTypes that were merged
+  allFiles <- c(allFiles, list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE)) ## add HV for merged vegType
+}
 
 fireHVData <- loadHVResultsFromRDS("fireHVs", allFiles)
 if ("HVid" %in% names(fireHVData)) {
