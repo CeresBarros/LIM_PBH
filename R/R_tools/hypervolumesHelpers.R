@@ -9,10 +9,13 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
   }
 
   ## calculate stand-age as the mean biomass-weighted age
-  allData[, standAge := mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+  allData[, `:=`(meanStandAge = mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                           sum((B/100), na.rm = TRUE))),
+                 sdStandAge = sd(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                  sum((B/100), na.rm = TRUE)))),
           by = IDcols]
-  allData[is.na(standAge), standAge := 0]  ## NAs come from stands with 0 B and 0 age
+  allData[is.na(meanStandAge), meanStandAge := 0]  ## NAs come from stands with 0 B and 0 age
+  allData[is.na(sdStandAge), sdStandAge := 0]  ## NAs come from stands with 0 B and 0 age or just one value of standAge
 
   ## calculate relative species B (across speciesCohorts)
   allData[, standB := sum(B, na.rm = TRUE), by = IDcols]
@@ -20,7 +23,7 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
   allData[relB == "NaN", relB := 0]
 
   ## expand data
-  cols <- c("standAge", "relB", "speciesCode", IDcols)   ## keep rep for wrapper.
+  cols <- c("meanStandAge", "sdStandAge", "relB", "speciesCode", IDcols)   ## keep rep for wrapper.
   allData <- unique(allData[, ..cols])
   allData <- dcast.data.table(allData, as.formula("... ~ speciesCode"),
                               value.var = "relB")
