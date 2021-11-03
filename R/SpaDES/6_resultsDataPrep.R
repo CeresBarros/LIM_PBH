@@ -63,7 +63,7 @@ ageDataCN$Cover.dendro <- sub("-", "", ageDataCN$Cover.dendro)
 rm(patchVegTypeCN)
 
 ## remove a record that seems funky (maybe it's a new cohort?)
-ageDataCN <- ageDataCN[Reconstructed.age != 2018]
+# ageDataCN <- ageDataCN[Reconstructed.age != 2018]
 
 ## calculate no. cohorts:
 ageDataCN[, noCohorts := length(unique(Est.bin)) , by = .(Patch.ID)]
