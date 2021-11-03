@@ -54,7 +54,19 @@ Given the size of the data put together in a pixel-based format, results were sa
 
 ```{r dataPrep, include = FALSE, cache = FALSE}
 yearSubset <- c(seq(2011, 2111, 5), 2111)
+
 source("R/SpaDES/6_resultsDataPrep.R")
+
+startYear <- as.integer(start(preSimList))
+endYear <- as.integer(end(preSimList))
+
+## check
+if (endYear != max(allPixelCohortData$year, na.rm = TRUE)) {
+  stop("endYear and max(year) differ")
+}
+if (startYear != min(allPixelCohortData$year, na.rm = TRUE)) {
+  stop("startYear and min(year) differ")
+}
 ```
 
 ```{r summaryTables, include = FALSE, cache = FALSE}
