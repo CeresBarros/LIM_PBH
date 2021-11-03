@@ -69,7 +69,7 @@ if (startYear != min(allPixelCohortData$year, na.rm = TRUE)) {
 }
 ```
 
-```{r summaryTables, include = FALSE, cache = FALSE}
+```{r summaryTables, cache=FALSE, include=FALSE}
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
@@ -560,7 +560,7 @@ plot2var <- ggplot(data = plotData,
 
 ## average age across landscape
 plotData <- allPixelCohortData[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                 sum((B/100), na.rm = TRUE))),
+                                                                                     sum((B/100), na.rm = TRUE))),
                                by = .(scenario, year, rep, firePresAbs, speciesCode)]
 plot3var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = AgeBySppWeighted, fill = speciesCode)) +
@@ -1011,7 +1011,7 @@ amc::.gc()
 allPixelCohortData[, sumB := sum(B, na.rm = TRUE),
                    by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 plotData <- allPixelCohortData[, list(relB = sum(B, na.rm = TRUE)/sumB),
-                     by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+                               by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
 plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 
@@ -1087,7 +1087,7 @@ plotMap1.2 <- ggplot() +
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
 ## alpha-div
 plotData <- allPixelCohortData[, list(relB = sum(B, na.rm = TRUE)/sumB),
-                     by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+                               by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
 plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 
@@ -1150,7 +1150,7 @@ rm(plot33, plot35)
 gc()
 ```
 
-## MAPS
+## MAPS - veg type (dominant species)
 ```{r mapPlots, cache = FALSE}
 ## MAPS ------------------------
 ## dominant species - to deal with reps we need to reclassify the stands after averaging across reps.
