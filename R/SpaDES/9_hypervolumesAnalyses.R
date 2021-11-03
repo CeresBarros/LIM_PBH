@@ -102,8 +102,8 @@ set(vegHVDataBYrComparisons, NULL, grep("Unique", names(vegHVDataBYrComparisons)
 if (getOption("LandR.assertions")) {
   test <- unique(vegHVDataBYrComparisons[is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
   test2 <- unique(vegHVDataBYrComparisons[!is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
-  test[, test := paste(scenario, rep,vegType)]
-  test2[, test := paste(scenario, rep,vegType)]
+  test[, test := paste(scenario, rep, vegType)]
+  test2[, test := paste(scenario, rep, vegType)]
   if (length(intersect(test$test, test2$test)) |
       length(intersect(test2$test, test$test))) {
     stop("There are duplicated HV comparisions between years\n",
@@ -141,7 +141,6 @@ setnames(tempData, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData)
 setnames(tempData2, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData2)))
 
 vegHVDataBYrComparisons <- rbind(tempData, tempData2, use.names = TRUE)
-
 
 vegHVData <- rbind(vegHVDataWYrComparisons, vegHVDataBYrComparisons, use.names = TRUE,
                    fill = TRUE)
