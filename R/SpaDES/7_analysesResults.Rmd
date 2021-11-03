@@ -153,7 +153,7 @@ Across the landscape in pixels with/without fire
 ```{r age_scenario}
 ## SCENARIO EFFECTS ON STAND AGE------
 ## scenario effects on stand age across landscape
-plotData <- allPixelCohortData[year == max(year),
+plotData <- allPixelCohortData[year == endYear,
                                list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                     sum((B/100), na.rm = TRUE))),
                                by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
@@ -196,7 +196,7 @@ plotTest2 <- ggplot(plotData) +
 ## SCENARIO EFFECTS ON ALPHA DIVERSITY ------------------
 ## scenario effects on alpha-div across landscape
 ## inverse Simpson concentration (Whittaker 1972)
-plotData <- allPixelCohortData[year == max(year)]
+plotData <- allPixelCohortData[year == endYear]
 plotData[, sumB := sum(B, na.rm = TRUE),
          by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
 plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
@@ -240,7 +240,7 @@ plotTest3 <- ggplot(plotData) +
 ## from multiplicative decomposition where both alpha
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
 # alpha-div
-plotData <- allPixelCohortData[year == max(year)]
+plotData <- allPixelCohortData[year == endYear]
 plotData[, sumB := sum(B, na.rm = TRUE),
          by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
 plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
@@ -249,7 +249,7 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
 
 ## gamma-div
-plotData2 <- allPixelCohortData[year == max(year),
+plotData2 <- allPixelCohortData[year == endYear,
                                 list(BiomassBySpecies = sum(B, na.rm = TRUE)),
                                 by = .(scenario, rep, firePresAbs, speciesCode, ecoregionGroup)]
 plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
@@ -301,7 +301,7 @@ plotTest4
 ## from multiplicative decomposition where both alpha
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
 # alpha-div
-plotData <- allPixelCohortData[year == max(year)]
+plotData <- allPixelCohortData[year == endYear]
 plotData[, sumB := sum(B, na.rm = TRUE),
          by = .(scenario, rep, pixelIndex, ecoregionGroup)]
 plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
@@ -310,7 +310,7 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, pixelIndex, ecoregionGroup)]
 
 ## gamma-div
-plotData2 <- allPixelCohortData[year == max(year),
+plotData2 <- allPixelCohortData[year == endYear,
                                 list(BiomassBySpecies = sum(B, na.rm = TRUE)),
                                 by = .(scenario, rep, speciesCode, ecoregionGroup)]
 plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
@@ -524,7 +524,7 @@ gc()
 ## VARIABILITY ACROSS REPS -----------------------------
 ## BY SPECIES ---------------------
 ## total biomass across landscape
-plotData <- summaryBurnCohortDataSpp[year == 100, list(BiomassBySpecies = sum(BiomassBySpecies)),
+plotData <- summaryBurnCohortDataSpp[year == endYear, list(BiomassBySpecies = sum(BiomassBySpecies)),
                                      by = .(scenario, year, rep, speciesCode, firePresAbs)]
 plot1var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = log(BiomassBySpecies + 0.000001),
@@ -541,7 +541,7 @@ plot1var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand biomass
-plotData <- allPixelCohortData[year == 100, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
+plotData <- allPixelCohortData[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
                                by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(avgBspp = mean(B, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, speciesCode)]
@@ -559,7 +559,7 @@ plot2var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average age across landscape
-plotData <- allPixelCohortData[year == 100, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+plotData <- allPixelCohortData[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                                  sum((B/100), na.rm = TRUE))),
                                by = .(scenario, year, rep, firePresAbs, speciesCode)]
 plot3var <- ggplot(data = plotData,
@@ -576,7 +576,7 @@ plot3var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand age
-plotData <- allPixelCohortData[year == 100,
+plotData <- allPixelCohortData[year == endYear,
                                list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                     sum((B/100), na.rm = TRUE))),   ## calculate per stand first
                                by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
@@ -596,7 +596,7 @@ plot4var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## avg no. cohorts in stand
-plotData <- allPixelCohortData[year == 100 & B > 0,
+plotData <- allPixelCohortData[year == endYear & B > 0,
                                list(noCohorts = length(unique(age))),   ## calculate per stand first
                                by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
@@ -864,14 +864,14 @@ gc()
 ```{r varRepsByDomSpecies, cache = FALSE}
 ## (DOMINANT SPECIES) ------------
 ## total biomass across landscape
-plotData <- summaryBurnCohortDataVegType[year == 100, list(BiomassBySpecies = sum(BiomassByVegType)),
+plotData <- summaryBurnCohortDataVegType[year == endYear, list(BiomassBySpecies = sum(BiomassByVegType)),
                                          by = .(scenario, rep, vegType, firePresAbs)]
 plot6var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = log(BiomassBySpecies + 0.000001),
                        fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
@@ -881,7 +881,7 @@ plot6var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand biomass
-plotData <- allPixelCohortData[year == 100, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
+plotData <- allPixelCohortData[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
                                by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(avgBvegType = mean(B, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegType)]
@@ -899,14 +899,14 @@ plot7var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average age across landscape
-plotData <- allPixelCohortData[year == 100, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                 sum((B/100), na.rm = TRUE))),
+plotData <- allPixelCohortData[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                     sum((B/100), na.rm = TRUE))),
                                by = .(scenario, year, rep, firePresAbs, vegType)]
 plot8var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = AgeBySppWeighted, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. age (year 100)", y = "biomass-weighted age",
@@ -916,7 +916,7 @@ plot8var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand age
-plotData <- allPixelCohortData[year == 100,
+plotData <- allPixelCohortData[year == endYear,
                                list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                     sum((B/100), na.rm = TRUE))),   ## calculate per stand first
                                by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
@@ -936,7 +936,7 @@ plot9var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## avg no. cohorts in stand
-plotData <- allPixelCohortData[year == 100 & B > 0,
+plotData <- allPixelCohortData[year == endYear & B > 0,
                                list(noCohorts = length(unique(age))),   ## calculate per stand first
                                by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
@@ -955,7 +955,7 @@ plot10var <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## no. pixels
-plotData <- allPixelCohortData[year == 100, list(noPixelsVeg = length(unique(pixelIndex))),
+plotData <- allPixelCohortData[year == endYear, list(noPixelsVeg = length(unique(pixelIndex))),
                                by = .(scenario, year, rep, firePresAbs, vegType)]
 ## add 0s to missing veg types in a year
 plotData <- plotData %>%
@@ -1026,7 +1026,7 @@ plot33 <- ggplot(data = plotData,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## map of alpha - avg across reps
-plotData2 <- plotData[year == 100, list(alphaDiv = mean(alphaDiv)),
+plotData2 <- plotData[year == endYear, list(alphaDiv = mean(alphaDiv)),
                       by = .(scenario, pixelIndex)]
 alphaStk <- lapply(split(plotData2, by = "scenario"), function(DT, RTM) {
   rasAlpha <- RTM
