@@ -29,51 +29,16 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 # bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
 ## LOAD DATA (RESULTS)  -------------------
-preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
+yearSubset <- c(seq(2011, 2111, 5), 2111)
+source("R/SpaDES/6_resultsDataPrep.R")
 
-## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
-paramsResults <- list("LIM_resultsDataPrep" = list("endYear" = as.integer(end(preSimList)),
-                                                   "parallel" = FALSE,
-                                                   "reps" = 1L:10L,
-                                                   "startYear" = start(preSimList),
-                                                   "yearSubset" = as.integer(unique(c(seq(2011, 2111, 5), 2111))),
-                                                   ".useCache" = c(".inputObjects", "init")))
+## MERGE DOUGLAS-FIR/DRY-CONIFER STANDS
+mergeDMCPSME <- TRUE
 
-objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
-                       "rasterToMatch" = preSimList$rasterToMatch,
-                       "sppEquiv" = preSimList$sppEquiv)
-
-outputsResults <- data.frame(expand.grid(objectName = c("allPixelBurnData"),
-                                         saveTime = 1,
-                                         eventPriority = 10,
-                                         stringsAsFactors = FALSE))
-outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortData",
-                                                   saveTime = 1,
-                                                   eventPriority = 10))
-outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortDataMnt",
-                                                   saveTime = 1,
-                                                   eventPriority = 10))
-# options("LandR.assertions" = FALSE)
-# simOut <- Cache(simInitAndSpades,
-#                 times = list(start = 1, end = 1),
-#                 params = paramsResults,
-#                 modules = "LIM_resultsDataPrep",
-#                 objects = objectsResults,
-#                 outputs = outputsResults,
-#                 paths = simPaths,
-#                 cacheRepo = simPaths$cachePath,
-#                 userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
-#                 omitArgs = "userTags")
-
-## get rid of simOut
-# allPixelBurnData <- simOut$allPixelBurnData
-# allPixelCohortDataMnt <- simOut$allPixelCohortDataMnt
-# rm(simOut)
-
-## alternatively:
-allPixelBurnData <- readRDS(list.files(simPaths$outputPath, "allPixelBurnData", full.names = TRUE))
-allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
-amc::.gc()
+if (mergeDMCPSME) {
+  HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
+  allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
+}
 
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
@@ -379,6 +344,3 @@ lapply(split(vegDataForHVs, by = c("rep","scenario")), FUN = function(allData, H
                plotHV = TRUE,
                verbose = FALSE)
 }, HVoutputPath = HVoutputPath)
-
-
-
