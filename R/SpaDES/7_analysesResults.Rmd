@@ -188,7 +188,7 @@ plotTest2 <- ggplot(plotData) +
   scale_color_manual(values = c("red", "red")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "biomass-weighted age", x = "")
 ```
 
@@ -230,7 +230,7 @@ plotTest3 <- ggplot(plotData) +
   scale_color_manual(values = c("red", "red")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "alpha-div.", x = "")
 ```
 
@@ -290,7 +290,7 @@ plotTest4 <- ggplot(plotData2) +
   scale_color_manual(values = c("red", "red")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "beta-div.", x = "")
 
 plotTest4
@@ -340,7 +340,7 @@ plotTest5 <- ggplot(plotData2) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
   theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "beta-div.", x = "")
 ```
 
@@ -380,7 +380,7 @@ plot1 <- ggplot(data = plotData,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
@@ -392,7 +392,7 @@ plot2 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
@@ -406,7 +406,7 @@ plot3 <- ggplot(data = plotData,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
@@ -417,7 +417,7 @@ plot4 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
@@ -433,7 +433,7 @@ plot5 <- ggplot(data = plotData,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
@@ -444,7 +444,7 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
@@ -458,7 +458,7 @@ plot7 <- ggplot(data = plotData,
                 aes(x = year, y = noCohorts, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
@@ -469,7 +469,7 @@ plot8 <- ggplot(data = plotData,
                 aes(x = year, y = noCohorts, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
@@ -531,7 +531,7 @@ plot1var <- ggplot(data = plotData,
                        fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Total biomass (year 100)", y = "log-biomass (ton/ha)",
@@ -549,7 +549,7 @@ plot2var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = avgBspp, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. stand biomass (year 100)", y = "biomass (ton/ha)",
@@ -566,7 +566,7 @@ plot3var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = AgeBySppWeighted, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. age (year 100)", y = "biomass-weighted age",
@@ -586,7 +586,7 @@ plot4var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = AgeBySppWeighted, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. stand age (year 100)", y = "biomass-weighted age",
@@ -605,7 +605,7 @@ plot5var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = avgNoCohorts, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = speciesColours, labels = speciesLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
@@ -655,7 +655,7 @@ plot9 <- ggplot(data = plotData,
                 aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Abundance of cover type", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
@@ -666,7 +666,7 @@ plot9.2 <- ggplot(data = plotData,
                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
@@ -688,7 +688,7 @@ plot10 <- ggplot(data = plotData,
                  aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "stack") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
@@ -698,7 +698,7 @@ plot10.2 <- ggplot(data = plotData,
                    aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "area", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
@@ -711,7 +711,7 @@ plot11 <- ggplot(data = plotData,
                  aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
        subtitle = "by dom. species cover type") +
@@ -722,7 +722,7 @@ plot12 <- ggplot(data = plotData,
                  aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
        subtitle = "by dom. species cover type") +
@@ -735,7 +735,7 @@ plot13 <- ggplot(data = plotData,
                  aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Total biomass", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
@@ -747,7 +747,7 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Total biomass", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
@@ -761,7 +761,7 @@ plot15 <- ggplot(data = plotData,
                  aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
@@ -772,7 +772,7 @@ plot16 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
@@ -788,7 +788,7 @@ plot17 <- ggplot(data = plotData,
                  aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by dominant species cover type") +
@@ -799,7 +799,7 @@ plot18 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by dominant species cover type") +
@@ -889,7 +889,7 @@ plot7var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = avgBvegType, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. stand biomass (year 100)", y = "biomass (ton/ha)",
@@ -926,7 +926,7 @@ plot9var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = AgeBySppWeighted, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Avg. stand age (year 100)", y = "biomass-weighted age",
@@ -945,7 +945,7 @@ plot10var <- ggplot(data = plotData,
                     aes(x = as.factor(vegType), y = avgNoCohorts, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels, drop = FALSE) +
   labs(title = "Avg. no. cohorts in a stand (year 100)", y = "no. cohorts",
@@ -969,7 +969,7 @@ plot11var <- ggplot(data = plotData,
                     aes(x = as.factor(vegType), y = noPixelsVeg, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   scale_x_discrete(labels = vegTypeLabels) +
   labs(title = "Abundance of cover type (year 100)", y = "no. pixels",
@@ -1019,7 +1019,7 @@ plot33 <- ggplot(data = plotData,
                  aes(x = year, y = alphaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
@@ -1062,7 +1062,7 @@ plotMap1 <- ggplot() +
 plotMap1hist <- ggplot(rasData[!is.na(value)]) +
   geom_density(aes(x = value, fill = variable, alpha = variable)) +
   theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1)) +
   labs(y = "density", x = "alpha-div.")
 
@@ -1109,12 +1109,11 @@ plot35 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
-
 
 ## gamma-div - no fires
 plotData2 <- copy(summaryBurnCohortDataSpp)
@@ -1133,7 +1132,7 @@ plot36 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank()) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.")  +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ noFires)
