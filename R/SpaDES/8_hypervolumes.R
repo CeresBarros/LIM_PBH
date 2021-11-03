@@ -263,14 +263,9 @@ lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath)
 
 
 ## Hypervolumes across the landscape ----------------
-## Hypervolumes by vegetation type --------------
 ## only montane belt
-
-## Use the first fire year to identify the pixels we want to follow in time
-## we follow the same pixels that were used to make fire attributes HVs, only now
-## we select the start year and end years of the simulation
-## the join shouldn't acutally change anything because we already subset the pixels with veg
-## in the montane belt (regardless of fire)
+## Now we follow all pixels, so there is no need to subset pixels by veg type in
+## in the first year
 vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
 
 if (getOption("LandR.assertions")) {
