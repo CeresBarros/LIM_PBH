@@ -90,6 +90,11 @@ allPixelBurnData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 
 ## summarise fire data
 source("R/R_tools/prepFireData4HVs.R")
+
+## drop unused levels
+allPixelBurnData$vegTypeCN <- droplevels(allPixelBurnData$vegTypeCN)
+allPixelCohortDataMnt$vegTypeCN <- droplevels(allPixelCohortDataMnt$vegTypeCN)
+summaryFireAttributes$vegTypeCN <- droplevels(summaryFireAttributes$vegTypeCN)
 ```
 
 ```{r summaryTables, cache=FALSE, include=FALSE}
@@ -1686,63 +1691,108 @@ gc()
 
 No. fires and fire frequency
 ```{r simVsObsFires, cache = FALSE}
-## no. fires per cover type - to compare with camerons fire intervals.
-#### HERE
-
-
-## NAs are places with no fires?
-
+## fire size distribution
+plotData <- allPixelBurnData[, list(fireSize = length(unique(pixelIndex))), by = .(scenario, rep, fireID)]
 plot37 <- ggplot(plotData,
-                 aes(x = vegTypeCN, y = noFires, fill = vegTypeCN)) +
-  geom_boxplot() +
+                 aes(x = log(fireSize), fill = scenario, alpha = scenario)) +
+  geom_density(adjust = 1.5) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
-  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "No. fires", y = "no. fires",
-       subtitle = "by functional cover type") +
-  facet_grid(~ scenario)
-
-plot38 <- ggplot(plotData,
-                 aes(x = vegTypeCN, y = 100/noFires, fill = vegTypeCN)) +
-  geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
-  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Fire interval", y = "years",
-       subtitle = "by functional cover type") +
-  facet_grid(~ scenario)
-
-plot39 <- ggplot(plotData,
-                 aes(x = scenario, y = 100/noFires, fill = scenario)) +
-  geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
-  labs(title = "Fire interval", y = "years",
-       subtitle = "by functional cover type")
+  labs(title = "Fire size distribution", 
+       x = "Log-fire size (no. pixels)")
 
 ## average no. of pixels with certain fire frequency
 plotData <- allPixelCohortDataMnt[, list(noPixels = length(unique(pixelIndex))),
                                   by = .(scenario, rep, noFires)]
 plotData2 <- plotData[, list(rep = 2, scenario = scenario, noFires = noFires, noPixels = noPixels * runif(1, 0, 1))]
 plotData <- rbind(plotData, plotData2)
-plot40 <- ggplot(plotData,
-                 aes(x = as.factor(noFires), y = noPixels, fill = scenario)) +
-  stat_summary(fun = "mean", geom = "bar", position = "dodge") +
-  stat_summary(fun.data = "mean_sdl", geom = "errorbar", position = "dodge") +
-  stat_summary(aes(label =round(..y..)),
-               fun = "mean", geom = "text",
+plot38 <- ggplot(plotData,
+                 aes(x = as.factor(noFires), y = noPixels, colour = scenario, fill = scenario)) +
+  stat_summary(fun = "mean", geom = "bar", position = "dodge", alpha = 0.5) +
+  stat_summary(fun.data = "mean_sdl", geom = "errorbar", position = "dodge", show.legend = FALSE) +
+  stat_summary(aes(label = round(..y..)),
+               fun = "mean", geom = "text", show.legend = FALSE,
                position = position_dodge(width = 0.9), vjust = -1) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(x = "no. fires", y = "no. pixels")
+
+
+## mean fire interval per stand fires per cover type - to compare with camerons fire intervals.
+plot39 <- ggplot() +
+  stat_summary(data = summaryFireAttributes,
+               aes(x = vegTypeCN, y = meanFreq, colour = vegTypeCN, 
+                   shape = scenario), 
+               fun.data = "mean_sd", geom = "pointrange", 
+               position = position_dodge(width = 0.5), size = 0.7) +
+  stat_summary(data = ageDataCN,
+               aes(x = Cover.dendro, y = mean.FI, shape = "observed", 
+                   colour = Cover.dendro),
+               fun.data = "mean_sd", geom = "pointrange",
+               position = position_nudge(x = 0.4), size = 0.7, show.legend = FALSE) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_shape_discrete(breaks = c("noPM", "PM", "observed")) +
+  scale_colour_manual(values = vegTypeCNColours[as.character(unique(summaryFireAttributes$vegTypeCN))],
+                      labels = vegTypeCNLabels[as.character(unique(summaryFireAttributes$vegTypeCN))]) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  labs(y = "Mean fire interval", x = "", colour = "")
+
+## distribution of fire severity per stand across landscape
+plot40 <- ggplot(data = summaryFireAttributes) +
+  geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "")
+
+## distribution of fire severity per stand by veg types DEFINED AT YEAR 1
+## as used for HVs
+plot41 <- ggplot(data = summaryFireAttributes) +
+  geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
+  facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
+
+## distribution of fire severity by veg types defined every year
+## so not always the same pixels
+plotData <- unique(allPixelCohortDataMnt[, .(scenario, rep, year, pixelIndex, vegTypeCN)])
+plotData <- summaryFireAttributes[, .(scenario, rep, pixelIndex, meanSevB)][plotData, on = .(scenario, rep, pixelIndex)]
+plot42 <- ggplot(data = plotData) +
+  geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
+  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
+  facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 ```
 
 ```{r plot&savePlots15, echo = FALSE}
-ggsave(plot = plot40 + theme(legend.position = c(0.8, 0.8)),
+ggsave(plot = plot37 + theme(legend.position = c(0.1, 0.9), legend.background = element_blank()),
+       filename = file.path(figOutputPath, "results_fireSizeDist.tiff"),
+       width = 8, height = 6)
+ggsave(plot = plot38 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
        filename = file.path(figOutputPath, "results_noPixelsVsnoFires.tiff"),
        width = 8, height = 7)
+ggsave(plot = plot39 + theme(axis.title.x = element_blank(), 
+                             legend.position = "right",
+                             legend.direction = "vertical", legend.box = "vertical"),
+       filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
+       width = 10, height = 7)
+
+ggsave(plot = plot40 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
+       filename = file.path(figOutputPath, "results_meanSevDistLandscape.tiff"),
+       width = 8, height = 6)
+ggsave(plot = plot41 + theme(legend.position = c(0.5, 0.1), legend.background = element_blank()),
+       filename = file.path(figOutputPath, "results_meanSevDistVegTypeCNyear1.tiff"),
+       width = 10, height = 8)
+ggsave(plot = plot42 + theme(legend.position = c(0.5, 0.1), legend.background = element_blank()),
+       filename = file.path(figOutputPath, "results_meanSevDistVegTypeCN.tiff"),
+       width = 10, height = 8)
+
 ```
 
 
