@@ -16,9 +16,6 @@
 [submodule "R/SpaDES/m/Biomass_fuels"]
 	path = R/SpaDES/m/Biomass_fuels
 	url = https://github.com/CeresBarros/Biomass_fuels.git
-[submodule "R/SpaDES/m/Biomass_fireProperties"]
-	path = R/SpaDES/m/Biomass_fireProperties
-	url = https://github.com/CeresBarros/Biomass_fireProperties.git
 [submodule "R/SpaDES/m/fireSense_IgnitionFit"]
 	path = R/SpaDES/m/fireSense_IgnitionFit
 	url = https://github.com/CeresBarros/fireSense_IgnitionFit.git
