@@ -399,7 +399,7 @@ modelData <- allHVData[year == end(preSimList),
 modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
                              variable.name = "scenario", value.name = "Volume")
 
-modelData <- dcast(modelData, ... ~ HVtype, value.var = "Volume")
+modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
 
 ## model landscape separately
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData[vegType == "landscape"])

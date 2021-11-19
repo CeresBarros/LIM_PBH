@@ -94,11 +94,11 @@ allPixelBurnData[, pixelGroup := NULL]
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
 summaryBurnCohortDataSpp <- allPixelCohortDataMnt[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                      MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                      aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                      AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                      sum((B/100), na.rm = TRUE))),
-                                               by = .(scenario, rep, year, noFires, speciesCode)]
+                                                         MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                         aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+                                                         AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                         sum((B/100), na.rm = TRUE))),
+                                                  by = .(scenario, rep, year, noFires, speciesCode)]
 summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
 amc::.gc()
@@ -106,11 +106,11 @@ amc::.gc()
 ## BY FOREST TYPE (def. as dominant species)
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
 summaryBurnCohortDataVegType <- allPixelCohortDataMnt[, list(BiomassByVegType = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                          MortalityByVegType = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                          aNPPByVegType = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                          AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                          sum((B/100), na.rm = TRUE))),
-                                                   by = .(scenario, rep, year, noFires, vegType)]
+                                                             MortalityByVegType = as.numeric(sum((mortality/100), na.rm = TRUE)),
+                                                             aNPPByVegType = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
+                                                             AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                                             sum((B/100), na.rm = TRUE))),
+                                                      by = .(scenario, rep, year, noFires, vegType)]
 summaryBurnCohortDataVegType[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataVegType[, firePresAbs := as.integer(noFires != 0)]
 amc::.gc()
@@ -245,9 +245,9 @@ Across the landscape in pixels with/without fire
 ## SCENARIO EFFECTS ON STAND AGE------
 ## scenario effects on stand age across landscape
 plotData <- allPixelCohortDataMnt[year == endYear,
-                               list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),
-                               by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, ecoregionGroup)]
 
 plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData[, ecoregionGroup := as.factor(ecoregionGroup)]
@@ -341,8 +341,8 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
 
 ## gamma-div
 plotData2 <- allPixelCohortDataMnt[year == endYear,
-                                list(BiomassBySpecies = sum(B, na.rm = TRUE)),
-                                by = .(scenario, rep, firePresAbs, speciesCode, ecoregionGroup)]
+                                   list(BiomassBySpecies = sum(B, na.rm = TRUE)),
+                                   by = .(scenario, rep, firePresAbs, speciesCode, ecoregionGroup)]
 plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
           .(scenario, rep, firePresAbs, ecoregionGroup)]
 plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
@@ -402,8 +402,8 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
 
 ## gamma-div
 plotData2 <- allPixelCohortDataMnt[year == endYear,
-                                list(BiomassBySpecies = sum(B, na.rm = TRUE)),
-                                by = .(scenario, rep, speciesCode, ecoregionGroup)]
+                                   list(BiomassBySpecies = sum(B, na.rm = TRUE)),
+                                   by = .(scenario, rep, speciesCode, ecoregionGroup)]
 plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
           .(scenario, rep, ecoregionGroup)]
 plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
@@ -518,8 +518,8 @@ amc::.gc()
 
 ## average age
 plotData <- allPixelCohortDataMnt[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                      sum((B/100), na.rm = TRUE))),
-                               by = .(scenario, year, rep, firePresAbs, speciesCode)]
+                                                                         sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, year, rep, firePresAbs, speciesCode)]
 plot5 <- ggplot(data = plotData,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -544,7 +544,7 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
 
 ## no. cohorts
 plotData <- allPixelCohortDataMnt[B > 0, list(noCohorts = length(unique(age))),
-                               by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, speciesCode)]
+                                  by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, speciesCode)]
 plot7 <- ggplot(data = plotData,
                 aes(x = year, y = noCohorts, colour = speciesCode)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -633,7 +633,7 @@ plot1var <- ggplot(data = plotData,
 
 ## average stand biomass
 plotData <- allPixelCohortDataMnt[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(avgBspp = mean(B, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, speciesCode)]
 plot2var <- ggplot(data = plotData,
@@ -651,8 +651,8 @@ plot2var <- ggplot(data = plotData,
 
 ## average age across landscape
 plotData <- allPixelCohortDataMnt[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                     sum((B/100), na.rm = TRUE))),
-                               by = .(scenario, year, rep, firePresAbs, speciesCode)]
+                                                                                        sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, year, rep, firePresAbs, speciesCode)]
 plot3var <- ggplot(data = plotData,
                    aes(x = speciesCode, y = AgeBySppWeighted, fill = speciesCode)) +
   geom_boxplot(show.legend = FALSE) +
@@ -668,9 +668,9 @@ plot3var <- ggplot(data = plotData,
 
 ## average stand age
 plotData <- allPixelCohortDataMnt[year == endYear,
-                               list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(AgeBySppWeighted = mean(AgeBySppWeighted, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, speciesCode)]
 plot4var <- ggplot(data = plotData,
@@ -688,8 +688,8 @@ plot4var <- ggplot(data = plotData,
 
 ## avg no. cohorts in stand
 plotData <- allPixelCohortDataMnt[year == endYear & B > 0,
-                               list(noCohorts = length(unique(age))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
+                                  list(noCohorts = length(unique(age))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, speciesCode)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, speciesCode)]
 plot5var <- ggplot(data = plotData,
@@ -733,7 +733,7 @@ gc()
 ## BY FOREST TYPE (DOMINANT SPECIES) ------------
 ## no. pixels
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, rep, firePresAbs, vegType)]
+                                  by = .(scenario, year, rep, firePresAbs, vegType)]
 ## add 0s to missing veg types in a year
 plotData <- plotData %>%
   tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
@@ -766,7 +766,7 @@ plot9.2 <- ggplot(data = plotData,
 amc::.gc()
 
 plotData <- allPixelCohortDataMnt[, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, rep, noFires, vegType)]
+                                  by = .(scenario, year, rep, noFires, vegType)]
 ## add 0s to missing veg types in a year
 plotData <- plotData %>%
   tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
@@ -797,7 +797,7 @@ plot10.2 <- ggplot(data = plotData,
 
 ## no. cohorts
 plotData <- allPixelCohortDataMnt[B > 0, list(noCohorts = length(unique(age))),
-                               by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, vegType)]
+                                  by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, vegType)]
 plot11 <- ggplot(data = plotData,
                  aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -872,8 +872,8 @@ plot16 <- ggplot(data = summaryBurnCohortDataVegType,
 
 ## average age
 plotData <- allPixelCohortDataMnt[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                      sum((B/100), na.rm = TRUE))),
-                               by = .(scenario, year, rep, firePresAbs, vegType)]
+                                                                         sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, year, rep, firePresAbs, vegType)]
 
 plot17 <- ggplot(data = plotData,
                  aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegType))) +
@@ -973,7 +973,7 @@ plot6var <- ggplot(data = plotData,
 
 ## average stand biomass
 plotData <- allPixelCohortDataMnt[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(avgBvegType = mean(B, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegType)]
 plot7var <- ggplot(data = plotData,
@@ -991,8 +991,8 @@ plot7var <- ggplot(data = plotData,
 
 ## average age across landscape
 plotData <- allPixelCohortDataMnt[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                     sum((B/100), na.rm = TRUE))),
-                               by = .(scenario, year, rep, firePresAbs, vegType)]
+                                                                                        sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, year, rep, firePresAbs, vegType)]
 plot8var <- ggplot(data = plotData,
                    aes(x = as.factor(vegType), y = AgeBySppWeighted, fill = as.factor(vegType))) +
   geom_boxplot(show.legend = FALSE) +
@@ -1008,9 +1008,9 @@ plot8var <- ggplot(data = plotData,
 
 ## average stand age
 plotData <- allPixelCohortDataMnt[year == endYear,
-                               list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(AgeBySppWeighted = mean(AgeBySppWeighted, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegType)]
 plot9var <- ggplot(data = plotData,
@@ -1028,8 +1028,8 @@ plot9var <- ggplot(data = plotData,
 
 ## avg no. cohorts in stand
 plotData <- allPixelCohortDataMnt[year == endYear & B > 0,
-                               list(noCohorts = length(unique(age))),   ## calculate per stand first
-                               by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
+                                  list(noCohorts = length(unique(age))),   ## calculate per stand first
+                                  by = .(scenario, rep, firePresAbs, pixelIndex, vegType)]
 plotData <- plotData[, list(avgNoCohorts = mean(noCohorts, na.rm = TRUE)),    ## now average across landscape
                      by = .(scenario, rep, firePresAbs, vegType)]
 plot10var <- ggplot(data = plotData,
@@ -1047,7 +1047,7 @@ plot10var <- ggplot(data = plotData,
 
 ## no. pixels
 plotData <- allPixelCohortDataMnt[year == endYear, list(noPixelsVeg = length(unique(pixelIndex))),
-                               by = .(scenario, year, rep, firePresAbs, vegType)]
+                                  by = .(scenario, year, rep, firePresAbs, vegType)]
 ## add 0s to missing veg types in a year
 plotData <- plotData %>%
   tidyr::pivot_wider(names_from = vegType, values_from = noPixelsVeg,
@@ -1751,9 +1751,9 @@ ggsave(plot = plot40 + theme(legend.position = c(0.8, 0.8)),
 rm(plotData, plotData2)
 amc::.gc()
 allPixelCohortDataMnt[, sumB := sum(B, na.rm = TRUE),
-                   by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
+                      by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 plotData <- allPixelCohortDataMnt[, list(relB = sum(B, na.rm = TRUE)/sumB),
-                               by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+                                  by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
 plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 
@@ -1829,7 +1829,7 @@ plotMap1.2 <- ggplot() +
 ## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
 ## alpha-div
 plotData <- allPixelCohortDataMnt[, list(relB = sum(B, na.rm = TRUE)/sumB),
-                               by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
+                                  by = .(scenario, rep, year, pixelIndex, speciesCode, firePresAbs, noFires)]
 plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, noFires)]
 
@@ -1897,10 +1897,10 @@ gc()
 ## MAPS ------------------------
 ## dominant species - to deal with reps we need to reclassify the stands after averaging across reps.
 plotData <- allPixelCohortDataMnt[year %in% c(startYear, endYear), 
-                               list(B = mean(B, na.rm = TRUE),
-                                    age =  as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                        sum((B/100), na.rm = TRUE))),
-                               by = .(year, scenario, pixelIndex, speciesCode, firePresAbs)]
+                                  list(B = mean(B, na.rm = TRUE),
+                                       age =  as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                           sum((B/100), na.rm = TRUE))),
+                                  by = .(year, scenario, pixelIndex, speciesCode, firePresAbs)]
 
 plotData <- lapply(split(plotData[B > 0], by = c("scenario", "year")), vegTypeGenerator,
                    vegLeadingProportion = 0, sppEquiv = preSimList$sppEquiv,

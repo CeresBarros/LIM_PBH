@@ -32,7 +32,7 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 yearSubset <- c(seq(2011, 2111, 5), 2111)
 source("R/SpaDES/6_resultsDataPrep.R")
 
-## MERGE DOUGLAS-FIR/DRY-CONIFER STANDS
+## MERGE DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- TRUE
 
 if (mergeDMCPSME) {
