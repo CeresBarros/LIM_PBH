@@ -77,6 +77,7 @@ if (startYear != min(allPixelCohortDataMnt$year, na.rm = TRUE)) {
 
 if (mergeDMCPSME) {
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
+  ageDataCN[Cover.dendro %in% c("DMCPSME", "PSME", "dryPSME"), Cover.dendro := "DMCPSME"]
 }
 
 ## add vegTypes and pixels with no fires to burn data - note that we loose the yearly fire data.
