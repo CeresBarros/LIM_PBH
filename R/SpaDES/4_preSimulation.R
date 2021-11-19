@@ -49,7 +49,7 @@ simModules <- list("noPM" = list(
   , "fireSense_dataPrep"
   , "fireSense_IgnitionFit"
   , "fireSense_IgnitionPredict"
-  , "Biomass_fireProperties"
+  , "fireProperties"
   , "FavierFireSpread"
   , "Biomass_regeneration"
 )
@@ -61,7 +61,7 @@ simModules <- list("noPM" = list(
   , "fireSense_dataPrep"
   , "fireSense_IgnitionFit"
   , "fireSense_IgnitionPredict"
-  , "Biomass_fireProperties"
+  , "fireProperties"
   , "FavierFireSpread"
   , "Biomass_regenerationPM"
 )
@@ -121,7 +121,7 @@ simParams <- list(
     , ".plotMaps" = FALSE
     , ".useCache" = eventCaching
   )
-  , Biomass_fireProperties = list(
+  , fireProperties = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
