@@ -10,8 +10,9 @@
 ##   labelling so that the legend scale is uniform across
 ##   plots when iterating the function through many layers.
 ##   If ommitted it will take the min and max values of the current ras
+## palette is the name of an RColorBrewer palette
 
-plotFunction <- function(ras, studyArea, limits = NULL) {
+plotFunction <- function(ras, studyArea, palette = "Greys", limits = NULL) {
   if (is.null(limits))
     limits <- range(getValues(ras), na.rm = TRUE)
 
@@ -23,7 +24,7 @@ plotFunction <- function(ras, studyArea, limits = NULL) {
                            location = "tr", which_north = "true") +
     theme_pubr(legend = "bottom") +
     theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
-    scale_fill_distiller(palette = "Greys", na.value = "transparent",
+    scale_fill_distiller(palette = palette, na.value = "transparent",
                          direction = 1,
                          breaks = seq(limits[1], limits[2], length.out = 6),
                          limits = limits) +
