@@ -37,3 +37,6 @@
 [submodule "R/SpaDES/m/FavierFireSpread"]
 	path = R/SpaDES/m/FavierFireSpread
 	url = https://github.com/CeresBarros/FavierFireSpread.git
+[submodule "R/SpaDES/m/Biomass_fireProperties"]
+	path = R/SpaDES/m/Biomass_fireProperties
+	url = https://github.com/CeresBarros/Biomass_fireProperties.git
