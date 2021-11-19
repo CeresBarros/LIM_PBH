@@ -1,0 +1,502 @@
+---
+title: "General publication plots"
+author: "Ceres Barros"
+date: "18/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_knit$set(root.dir = "~/GitHub/LandscapesInMotion/")
+knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
+                      fig.width = 10, fig.height = 8)
+library(qs)
+library(ggplot2)
+library(ggpubr)
+library(ggspatial)
+library(SpaDES)
+library(raster)
+library(data.table)
+library(magick)
+library(purrr)
+library(cowplot)
+
+source("R/R_tools/plotFunction.R")
+source("R/R_tools/convertToCNVegType.R")
+source("R/R_tools/Useful_functions.R")
+options("reproducible.useNewDigestAlgorithm" = 2)
+options("spades.moduleCodeChecks" = FALSE)
+options("reproducible.useCache" = TRUE)
+options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
+options("reproducible.useGDAL" = FALSE)
+
+## general paths
+simDirName <- "jun2021Runs"
+simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
+                 , modulePath = file.path("R/SpaDES/m")
+                 , inputPath = file.path("R/SpaDES/inputs")
+                 , outputPath = file.path("R/SpaDES/outputs", simDirName))
+
+## path to figure folder and cache folder
+figOutputPath <- file.path(simPaths$outputPath, "figuresGeneral")
+dir.create(figOutputPath)
+cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
+```
+
+### DATA LOADING AND PROCESSING NOTES
+```{r dataPrep, include = FALSE, cache = FALSE}
+## load one preSimulation simList - doesn't matter which one, because the objects we need are identical between scenarios.
+simOutPreSim <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
+```
+
+### FIRE LOCATIONS
+```{r fireLocations}
+fireLocations <- ggplot() +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "grey", colour = "black") +
+  layer_spatial(data = simOutPreSim$fireLocations, colour = "darkred") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         location = "tr", which_north = "true") +
+  theme_pubr(margin = FALSE) +
+  labs(x = "longitude", y = "latitude")
+
+fireLocations
+
+ggsave(file.path(figOutputPath, "fireLocations.tiff"), fireLocations,
+       width = 4, height = 7, dpi = 300)
+```
+
+### FUEL TYPES 
+```{r fuelTypes}
+rasFuels <- setValues(raster(simOutPreSim$fuelTypesMaps$finalFuelType),
+                      getValues(simOutPreSim$fuelTypesMaps$finalFuelType))
+FTlabs <- raster::levels(simOutPreSim$fuelTypesMaps$finalFuelType)[[1]][,2]
+names(FTlabs) <- raster::levels(simOutPreSim$fuelTypesMaps$finalFuelType)[[1]][,1]
+
+FTlabs <- sub("O1b", "O1b: Grass - Standing", FTlabs)
+FTlabs <- sub("NF", "NF: Non-fuel", FTlabs)
+FTlabs <- sub("C2", "C2: Boreal spruce", FTlabs)
+FTlabs <- sub("C3", "C3: Mature Jack or Lodgepole pine", FTlabs)
+FTlabs <- sub("C4", "C4: Immature Jack or Lodgepole pine", FTlabs)
+FTlabs <- sub("C7", "C7: Ponderosa pine/Douglas-fir", FTlabs)
+FTlabs <- sub("M2", "M2: Boreal mixedwood – green", FTlabs)
+FTlabs <- sub("D2", "D2: Green Aspen", FTlabs)
+
+fuelTypes <- ggplot() +
+  layer_spatial(rasFuels, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "transparent", colour = "black") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right", margin = FALSE) +
+  scale_fill_distiller(palette = "Paired", breaks = sort(unique(rasFuels[])),
+                       na.value = "transparent", guide = "legend",
+                       labels = FTlabs) +
+  labs(x = "longitude", y = "latitude", fill = "Fuel type") +
+  guides(guide_legend(ncol = 1))
+
+fuelTypes
+
+ggsave(file.path(figOutputPath, "fuelsMap.tiff"), fuelTypes,
+       width = 7, height = 7, dpi = 300)
+```
+
+### FUEL TYPE COVER
+```{r fuelTypeCover}
+plotList <- lapply(unstack(simOutPreSim$fuelTypesCoverStk), plotFunction,
+                   studyArea = simOutPreSim$studyArea, limits = c(0,1))
+fuelTypesCover <- ggarrange(plotlist = plotList, ncol = 3, nrow = 3,
+                   legend = "bottom", common.legend = TRUE)
+
+fuelTypesCover
+
+ggsave(file.path(figOutputPath, "Fueltype_cover.tiff"), fuelTypesCover,
+       width = 9, height = 14, dpi = 300)
+```
+
+### TOPO, VEG, CLIMATE MAPS
+```{r topoVegClim, fig.show='hold'}
+## elevation
+## if simLists are from experiment(), they will have no objects.
+if (!is.null(simOutPreSim$DEMRas)) {
+  if (!inMemory(simOutPreSim$DEMRas)) {
+    DEMRas <- sub(".*LandscapesInMotion/", "",
+                  normPath(filename(simOutPreSim$DEMRas)))
+    DEMRas <- raster(DEMRas)
+  } else
+    DEMRas <- simOutPreSim$DEMRas
+} else {
+  tempDT <- as.data.table(showCache(cachePath(simOutPreSim), "DEMRas"))
+  DEMRas <- unique(tempDT[createdDate == max(createdDate)]$cacheId) %>%
+    reproducible::loadFromCache(cachePath = cachePath(simOutPreSim), cacheId = .)
+}
+
+elevPlot <- ggplot() +
+  layer_spatial(DEMRas, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "transparent") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right") +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "Spectral", na.value = "transparent",
+                       direction = -1) +
+  labs(x = "longitude", y = "latitude", fill = "m a.s.l.",
+       title = "Elevation")
+
+elevPlot
+
+## stand biomass (after imputation as adjustments)
+biomassRas <- SpaDES.tools::rasterizeReduced(simOutPreSim$cohortData[, list(standB = sum(B)), by = pixelGroup],
+                                         fullRaster = simOutPreSim$pixelGroupMap,
+                                         newRasterCols = "standB", mapcode = "pixelGroup")
+
+biomassPlot <- ggplot() +
+  layer_spatial(log(biomassRas), aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "transparent") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right") +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "Greens", na.value = "transparent",
+                       direction = 1) +
+  labs(x = "longitude", y = "latitude", fill = expression(atop("g/m"^2,"(log scale)")),
+       title = "Stand biomass")
+
+biomassPlot
+
+## Stand age - after corrections/imputation
+ageRas <- SpaDES.tools::rasterizeReduced(unique(simOutPreSim$cohortData[, .(pixelGroup, age)]),
+                                         fullRaster = simOutPreSim$pixelGroupMap,
+                                         newRasterCols = "age", mapcode = "pixelGroup")
+agePlot <- ggplot() +
+  layer_spatial(ageRas, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "transparent") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right") +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "Greens", na.value = "transparent",
+                       direction = 1) +
+  labs(x = "longitude", y = "latitude", fill = "years",
+       title = "Stand age")
+
+agePlot
+
+## meanMDC
+if (!is.null(simOutPreSim$fireSense_IgnitionAndEscapeCovariates$meanMDC)) {
+  if (!inMemory(simOutPreSim$fireSense_IgnitionAndEscapeCovariates$meanMDC)) {
+    meanMDCRas <- sub(".*LandscapesInMotion/", "",
+                  normPath(filename(simOutPreSim$fireSense_IgnitionAndEscapeCovariates$meanMDC)))
+    meanMDCRas <- raster(meanMDCRas)
+  } else
+    meanMDCRas <- simOutPreSim$fireSense_IgnitionAndEscapeCovariates$meanMDC
+} else {
+  stop("can't find meanMDC raster")
+}
+
+meanMDCPlot <- ggplot() +
+  layer_spatial(meanMDCRas, aes(fill = stat(band1))) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "transparent") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right") +
+  theme(plot.margin = unit(c(0,0,0,0), units = "mm")) +
+  scale_fill_distiller(palette = "RdYlBu", na.value = "transparent",
+                       direction = -1) +
+  labs(x = "longitude", y = "latitude", fill = "MDC",
+       title = "Mean monthly drought code (MDC)")
+
+meanMDCPlot
+
+plotSave <- ggarrange(elevPlot, agePlot, biomassPlot, meanMDCPlot, ncol = 2, nrow = 2)
+ggsave(file.path(figOutputPath, "elev_StandAge_B_MDC.tiff"), plotSave,
+       width = 10, height = 14, dpi = 300)
+
+```
+
+### SPECIES COVER MAPS 
+```{r sppLayers}
+if (!is.null(simOutPreSim$speciesLayers)){
+  if (!inMemory(simOutPreSim$speciesLayers)) {
+    sppStk <- unstack(simOutPreSim$speciesLayers)
+    sppStk <- sub(".*LandscapesInMotion/", "",
+                  sapply(sppStk, function(x) normPath(filename(x))))
+    sppStk <- stack(sppStk)
+    names(sppStk) <- sub(".*\\.", "", sub(".tif", "", names(sppStk)))
+  } else
+    sppStk <- simOutPreSim$speciesLayers
+}  else {
+  tempDT <- as.data.table(showCache(cachePath(simOutPreSim), "speciesLayers"))
+  sppStk <- unique(tempDT[createdDate == max(createdDate)]$cacheId) %>%
+    reproducible::loadFromCache(cachePath = cachePath(simOutPreSim), cacheId = .)
+}
+
+names(sppStk) <- LandR::equivalentName(value = names(sppStk), column = "EN_generic_full",
+                                       df = simOutPreSim$sppEquiv)
+
+## mask spp layers to remove 0s around SA
+sppStk <- mask(sppStk, ageRas)
+
+plotList <- lapply(unstack(sppStk), plotFunction,
+                   palette = "Greens",
+                   studyArea = simOutPreSim$studyArea, limits = c(0, 100))
+plotSave <- ggarrange(plotlist = plotList, ncol = 3, nrow = 2,
+                      legend = "bottom", common.legend = TRUE)
+
+ggsave(file.path(figOutputPath, "Species_cover.tiff"), plotSave,
+       width = 11, height = 14, dpi = 300)
+```
+
+## STUDY AREA WITHIN PROVINCE
+```{r studyArea}
+canada <- sf::st_as_sf(shapefile("data/CA_admin/gpr_000a11a_e.shp"))
+canada <- sf::st_transform(canada, crs = crs(ecoDistSF))
+alberta <- canada[canada$PRENAME %in% "Alberta",]
+
+## STUDY AREA IN ALBERTA ---------------------------
+SAPlot <- ggplot() +
+  geom_sf(data = alberta) +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "forestgreen", colour = "black") +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right") +
+  theme(plot.background = element_rect(fill = "transparent")) +
+  labs(x = "longitude", y = "latitude",
+       title = "Study area")
+
+ggsave(file.path(figOutputPath, "LIM_studyArea.tiff"), SAPlot,
+       width = 4, height = 7, dpi = 300)
+```
+
+## ECOREGIONS AND LAND COVER
+```{r ecoregionLC}
+## ECOREGIONS ---------------------------
+## ecological zones
+if (!is.null(simOutPreSim$ecoregionLayer)) {
+    ecoDistSF <- sf::st_as_sf(simOutPreSim$ecoregionLayer)
+} else {
+  tempDT <- as.data.table(showCache(cachePath(simOutPreSim), "ecoregionLayer"))
+  ecoDistSF <- unique(tempDT[createdDate == max(createdDate)]$cacheId) %>%
+    reproducible::loadFromCache(cachePath = cachePath(simOutPreSim), cacheId = .) %>%
+    sf::st_as_sf(.)
+}
+
+ecoDistSF$ecozoneCode2 <- factor(paste(ecoDistSF$NRNAME, ecoDistSF$NSRNAME, sep = " - "))
+
+ecoDistPlot <- ggplot(ecoDistSF) +
+  # geom_sf(data = alberta) +
+  geom_sf(data = ecoDistSF, aes(fill = ecozoneCode2)) +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "transparent", colour = "black") +
+  scale_fill_brewer(palette = "RdYlGn", direction = 1) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  theme_pubr(legend = "right", base_size = 16) +
+  theme(plot.margin = margin(0,0,0,0, unit = "mm")) +
+  labs(x = "longitude", y = "latitude", fill = "",
+       title = "Natural Regions and Subregions of Alberta")
+
+## land-cover classes
+if (!is.null(simOutPreSim$rstLCCRTM)) {
+  if (!inMemory(simOutPreSim$rstLCCRTM)) {
+    lccRas <- sub(".*LandscapesInMotion/", "",
+                   normPath(filename(simOutPreSim$rstLCCRTM)))
+    lccRas <- raster(lccRas)
+  } else
+    lccRas <- simOutPreSim$rstLCCRTM
+} else {
+  tempDT <- as.data.table(showCache(cachePath(simOutPreSim), "rstLCCRTM"))
+  lccRas <- unique(tempDT[createdDate == max(createdDate)]$cacheId) %>%
+    reproducible::loadFromCache(cachePath = cachePath(simOutPreSim), cacheId = .)
+}
+
+## get original lcc, for colortable
+tempLCC <- raster("R/SpaDES/inputs/LCC2005_V1_4a.tif")
+colortable(lccRas) <- colortable(tempLCC)
+rm(tempLCC)
+
+lccLabels <- c("Temperate/subpolar needle-leaved evergreen, closed canopy",
+               "Cold deciduous closed canopy",
+               "Mixed needle-leaved evergreen > deciduous closed canopy",
+               "Mixed needle-leaved evergreen > deciduous closed young canopy",
+               "Mixed cold deciduous > needle-leaved evergreen closed canopy",
+               "Temperate/subpolar needle-leaved evergreen medium density, moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen medium density, lichen-shrub",
+               "Temperate/subpolar needle-leaved evergreen low density, moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen low density, lichen-rock",
+               "Temperate/subpolar needle-leaved evergreen low density, poorly drained",
+               "Cold deciduous broadleaved, low-medium density",
+               "Cold deciduous broadleaved, medium density, young regenerating",
+               "Mixed needle-leaved evergreen > deciduous, low-medium density",
+               "Mixed needle-leaved deciduous > evergreen, low-medium density",
+               "Low regenerating young mixed cover",
+               "High-low shrub dominated",
+               "Grassland",
+               "Herb-shrub-bare cover",
+               "Wetlands",
+               "Sparse needle-leaved evergreen, herb-shrub cover",
+               "Polar grassland, herb-shrub",
+               "Shrub-herb-lichen-bare",
+               "Herb-shrub poorly drained",
+               "Lichen-shrub-herb-bare soil",
+               "Low vegetation cover",
+               "Cropland-woodland",
+               "High biomass cropland",
+               "Medium biomass cropland",
+               "Low biomass cropland",
+               "Lichen barren",
+               "Lichen-sedge-moss-low shrub wetland",
+               "Lichen-spruce bog",
+               "Rock outcrops",
+               "Recent burns",
+               "Old burns",
+               "Urban and built-up",
+               "Water bodies",
+               "Mixes of water and land",
+               "Snow/ice")
+lccLabels <- paste(as.character(seq_along(lccLabels)),
+                   lccLabels, sep = " - ")
+names(lccLabels) <- as.character(seq_along(lccLabels))
+
+## colour vector
+lccColours <- colortable(lccRas)
+names(lccColours) <- as.character(0:255)
+
+## plot using DT
+rasData <- data.table(coordinates(lccRas), vals = as.factor(getValues(lccRas)))
+lccPlot <- ggplot() +
+  layer_spatial(data = simOutPreSim$studyArea, col = "black",
+                fill = "black", size = 1.5) +
+  geom_raster(data = rasData, mapping = aes(x, y, fill = vals)) +
+  annotation_north_arrow(style = north_arrow_minimal,
+                         height = unit(1, "cm"), width = unit(1, "cm"),
+                         location = "tr", which_north = "true") +
+  scale_fill_manual(values = lccColours, na.value = "transparent",
+                    labels = lccLabels, breaks = as.integer(names(lccLabels))) +
+  theme_pubr(legend = "right", base_size = 16) +
+  theme(plot.margin = margin(0,0,0,0.5, unit = "mm"),
+        legend.key = element_rect(colour = "black")) +
+  labs(x = "longitude", y = "latitude", fill = "",
+       title = "Land cover") +
+  guides(fill = guide_legend(ncol = 1))
+
+plotSave <- ggarrange(ecoDistPlot, lccPlot, ncol = 2, nrow = 1,
+                   widths = c(0.6,1), labels = "auto",
+                   font.label = list(size = 20))
+ggsave(file.path(figOutputPath, "Ecologicalzones_LCC.tiff"), plotSave,
+       width = 20, height = 10, dpi = 300)
+
+## make a second SAplot with no north arrow and no title
+SAPlot2 <- ggplot() +
+  geom_sf(data = alberta) +
+  layer_spatial(data = simOutPreSim$studyArea, fill = "forestgreen", colour = "black") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "transparent", colour = "transparent"), title = element_blank()) +
+  labs(x = "longitude", y = "latitude")
+
+insetMap <- ggdraw() +
+  draw_plot(ecoDistPlot + 
+              theme(title = element_blank(), legend.position = "bottom") +
+              guides(fill = guide_legend(ncol = 2))) +
+  draw_plot(SAPlot2,
+            x = 0.75, y = 0.7, 
+            width = 0.3, height = 0.3)
+ggsave(plot = insetMap, filename = file.path(figOutputPath, "Ecologicalzones_inset.tiff"), bg = "white",
+       width = 9, height = 10, units = "in", dpi = 300)
+
+```
+
+
+
+
+```{r GIFsdataprep}
+outputs_PM <- list.dirs(simPaths$outputPath, full.names = TRUE, recursive = TRUE) %>%
+  grep("/PM_rep01$", ., value = TRUE)
+outputs_noPM <- list.dirs(simPaths$outputPath, full.names = TRUE, recursive = TRUE) %>%
+  grep("/noPM_rep01$", ., value = TRUE)
+
+vegTypeMapFiles <- c(sapply(outputs_PM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE)),
+                     sapply(outputs_noPM, FUN = function(x) list.files(x, pattern = "vegTypeMap", full.names = TRUE))) %>%
+  unique(.)
+
+vegTypeMapStk_noPM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE), readRDS) %>%
+  stack(.)
+vegTypeMapStk_PM <- lapply(grep("noPM", vegTypeMapFiles, value = TRUE, invert = TRUE), readRDS) %>%
+  stack(.)
+names(vegTypeMapStk_noPM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, value = TRUE)))
+names(vegTypeMapStk_PM) <- sub(".*year", "year", sub("\\.rds", "", grep("noPM", vegTypeMapFiles, invert = TRUE, value = TRUE)))
+
+
+speciesLabels <- LandR::equivalentName(value = levels(vegTypeMapStk_noPM[[1]])[[1]]$VALUE,
+                                       column = "EN_generic_full", df = simOutPreSim$sppEquiv)
+names(speciesLabels) <- unique(levels(vegTypeMapStk_noPM[[1]])[[1]]$ID)
+
+speciesColours <- levels(vegTypeMapStk_noPM[[1]])[[1]]$colors
+names(speciesColours) <- levels(vegTypeMapStk_noPM[[1]])[[1]]$ID
+
+foothillsMask <- simOutPreSim$rasterToMatch
+foothillsMask[!is.na(foothillsMask[])] <- 1
+foothillsMaskDF <- as.data.frame(as(foothillsMask, "SpatialPixelsDataFrame"))
+names(foothillsMaskDF) <- c("value", "x", "y")
+``` 
+
+```{r GIFsdataprep}
+makePNGs <- function(id, rasterStack, labPrefix, labSufix, filePrefix, gif.dir) {
+  suppressWarnings(dir.create(gif.dir, recursive = TRUE))
+  cat("Making ", id, "\n")
+  rasterVis::gplot(rasterStack[[id]],
+                   maxpixels = ncell(rasterStack[[id]])) +
+    geom_tile(data = foothillsMaskDF,
+              aes(x = x, y = y), fill = "grey95") +
+    geom_tile(aes(fill = as.factor(value))) +
+    scale_fill_manual(values = speciesColours,
+                      labels = speciesLabels) +
+    theme_void() + theme(legend.position = "none", text = element_text(size = 20)) +
+    labs(title = paste(labPrefix, sub("year", "year ", names(rasterStack)[id]), labSufix, sep = "")) +
+    coord_equal()
+  ggsave(file.path(gif.dir, paste0(filePrefix, id, ".png")),
+         device = "png", width=5, height=10, dpi = 300, units = "in")
+}
+
+map_df(.x = 1:nlayers(vegTypeMapStk_noPM), .f = makePNGs,
+       rasterStack = vegTypeMapStk_noPM,
+       labPrefix = "stand replacement\n",
+       labSufix = "",
+       filePrefix = "vegTypeMapStk_noPM",
+       gif.dir = file.path(figOutputPath, "gifs", "noPM_rep1"))
+map_df(.x = 1:nlayers(vegTypeMapStk_PM), .f = makePNGs,
+       rasterStack = vegTypeMapStk_PM,
+       labPrefix = "partial mortality\n",
+       labSufix = "",
+       filePrefix = "vegTypeMapStk_PM",
+       gif.dir = file.path(figOutputPath, "gifs", "PM_rep1"))
+
+makeGIF <- function(gif.dir, gifPrefix, ...) {
+  ## get file list and the file numbers (to sort numerically, rather than alphabetically)
+  PNGlist <- list.files(path = gif.dir, pattern = "*.png")
+  fileNos <- as.numeric(sub("\\.png", "", sub("^\\D*(\\d)", "\\1", PNGlist)))
+
+  ## make GIF
+  file.path(gif.dir, PNGlist[order(fileNos)]) %>%
+    map(image_read) %>% # reads each path file
+    image_join() %>% # joins image
+    image_animate(...) %>% # animates, can opt for number of loops
+    image_write(file.path(gif.dir, paste0(gifPrefix, ".gif")))
+}
+
+makeGIF(gif.dir = file.path(figOutputPath, "gifs", "PM_rep1"),
+        gifPrefix = "vegTypeMapStk_noPM",
+        fps = 2)
+makeGIF(gif.dir = file.path(figOutputPath, "gifs", "noPM_rep1"),
+        gifPrefix = "vegTypeMapStk_PM",
+        fps = 2)
+
+```
+
+![](name-of-giphy.gif)
