@@ -37,3 +37,6 @@
 [submodule "R/SpaDES/m/fireSense_dataPrep"]
 	path = R/SpaDES/m/fireSense_dataPrep
 	url = https://github.com/CeresBarros/fireSense_dataPrep.git
+[submodule "R/SpaDES/m/FavierFireSpread"]
+	path = R/SpaDES/m/FavierFireSpread
+	url = https://github.com/CeresBarros/FavierFireSpread.git
