@@ -80,13 +80,13 @@ if (mergeDMCPSME) {
   ageDataCN[Cover.dendro %in% c("DMCPSME", "PSME", "dryPSME"), Cover.dendro := "DMCPSME"]
 }
 
-## add vegTypes and pixels with no fires to burn data - note that we loose the yearly fire data.
-allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[, .(scenario, rep, year, pixelIndex, vegTypeCN)]), 
-                                     on = .(scenario, rep, year, pixelIndex)]
+## add vegTypes at the initial year - these are the ones we track in time, the final year may have changed completely -
+## and pixels with no fires to burn data - note that we loose the yearly fire data.
+allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[year == startYear, 
+                                                                  .(scenario, rep, pixelIndex, vegTypeCN)]), 
+                                     on = .(scenario, rep, pixelIndex)]
 cols <- c("fireID", "noFires", "severity", "severityB", "fireSize", "patchSize", "fireInt", "fireFreq")
 allPixelBurnData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
-## drop pixelGroup
-allPixelBurnData[, pixelGroup := NULL]
 
 ```
 
