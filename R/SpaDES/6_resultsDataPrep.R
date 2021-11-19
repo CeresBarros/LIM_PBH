@@ -50,6 +50,11 @@ allPixelBurnData <- readRDS(list.files(simPaths$outputPath, "allPixelBurnData", 
 allPixelCohortData <- readRDS(list.files(simPaths$outputPath, "allPixelCohortData_", full.names = TRUE))
 allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
 
+## not sure with the veg type isn't there..
+if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
+  allPixelCohortDataMnt <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, vegType)])[allPixelCohortDataMnt, on = .(scenario, rep, year, pixelIndex)]
+}
+
 amc::.gc()
 
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES -----------------------
@@ -69,3 +74,4 @@ rm(patchVegTypeCN)
 ageDataCN[, noCohorts := length(unique(Est.bin)) , by = .(Patch.ID)]
 
 ageDataCN[, firePresAbs := ifelse(is.na(mean.FI), 0, 1)]
+
