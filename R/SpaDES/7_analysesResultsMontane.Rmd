@@ -88,6 +88,8 @@ allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[year == startY
 cols <- c("fireID", "noFires", "severity", "severityB", "fireSize", "patchSize", "fireInt", "fireFreq")
 allPixelBurnData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
 
+## summarise fire data
+source("R/R_tools/prepFireData4HVs.R")
 ```
 
 ```{r summaryTables, cache=FALSE, include=FALSE}
