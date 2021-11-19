@@ -42,40 +42,8 @@ if (mergeDMCPSME) {
 
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
-
-## summarize data first - as in Steel et al 2021, fire properties are summarized across time, but by pixel
-## (and by scenario/rep)
-## only look at pixels with vegetation dynamics so that we can compare with biodiv. HVs
-summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = mean(fireFreq),
-                                                                   meanSev = mean(severity),
-                                                                   meanSevB = mean(severityB),
-                                                                   meanPatchS = mean(patchSize)),
-                                          by = .(scenario, rep, pixelIndex)]
-## add vegType per pixel at the first year of fire,
-## and add pixels that had no fires
-firstFireYr <- P(preSimList)$fireSpread$fireInitialTime
-cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
-summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == firstFireYr, ..cols]),
-                                               on = c("scenario", "rep", "pixelIndex")]
-## checks
-test1 <- any(is.na(summaryFireAttributes$vegTypeCN))
-if (test1) {
-  stop("NA vegTypeCNs where pixelGroup - i.e. vegetation - exists")
-}
-
-test2 <- allPixelBurnData[!is.na(pixelGroup)][summaryFireAttributes[is.na(meanFreq), .(scenario, rep, pixelIndex)],
-                                              on = .(scenario, rep, pixelIndex), nomatch = 0]
-if (dim(test2)[1]) {
-  stop("pixels that had fire and veg data in allPixelBurnData were ",
-       "accidentally dropped when adding vegTypeCN")
-}
-
-
-
-## set fire attributes to 0 in pixels that had no fires
-cols <- c("meanFreq", "meanSev", "meanSevB", "meanPatchS")
-summaryFireAttributes[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
-amc::.gc()
+## FIRE DATA SUMMARY FOR HVs -----------------------
+source("R/R_tools/prepFireData4HVs.R")
 
 ## Hypervolumes by vegetation type ----------
 ## only montane belt
