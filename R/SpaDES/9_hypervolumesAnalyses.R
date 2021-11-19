@@ -291,7 +291,7 @@ par(sets)
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVVolumeLandscapelmSUMMARY.txt"))
-summary(vegHVVolumeLandscapelm)
+summary(vegHVVolumeLandscape.lm)
 sink()
 
 
