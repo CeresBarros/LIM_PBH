@@ -19,7 +19,7 @@ if (!file.exists("E:/GitHub/LandscapesInMotion/R/SpaDES/moduleStickers/moduleTab
 
 moduleList <- unlist(modules(simList_noPM))
 names(moduleList) <- NULL
-moduleList[6] <- "fireSpread"
+moduleList[6] <- "FavierFireSpread"
 
 lapply(moduleList, moduleSticker, moduleTable = moduleTable,
        directory = "E:/GitHub/LandscapesInMotion/R/SpaDES/moduleStickers/",
