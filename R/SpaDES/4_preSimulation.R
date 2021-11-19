@@ -50,7 +50,7 @@ simModules <- list("noPM" = list(
   , "fireSense_IgnitionFit"
   , "fireSense_IgnitionPredict"
   , "Biomass_fireProperties"
-  , "fireSpread"
+  , "FavierFireSpread"
   , "Biomass_regeneration"
 )
 , "PM" = list(
@@ -62,7 +62,7 @@ simModules <- list("noPM" = list(
   , "fireSense_IgnitionFit"
   , "fireSense_IgnitionPredict"
   , "Biomass_fireProperties"
-  , "fireSpread"
+  , "FavierFireSpread"
   , "Biomass_regenerationPM"
 )
 )
@@ -168,7 +168,7 @@ simParams <- list(
   , fireSense_IgnitionPredict = list(
     ".runInterval" = NA    ## only run once at the start
   )
-  , fireSpread = list(
+  , FavierFireSpread = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
@@ -217,12 +217,12 @@ outputs <- data.frame(expand.grid(objectName = c("cohortData"),
                                   eventPriority = 10,
                                   stringsAsFactors = FALSE))
 outputs <- rbind(outputs, data.frame(objectName = "rstCurrentFires",
-                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     saveTime = seq(simParams$FavierFireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$FavierFireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "severityData",
-                                     saveTime = seq(simParams$fireSpread$fireInitialTime,
-                                                    simTimes$end, by = simParams$fireSpread$fireTimestep),
+                                     saveTime = seq(simParams$FavierFireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$FavierFireSpread$fireTimestep),
                                      eventPriority = 10))
 outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
                                      saveTime = unique(sort(c(simTimes$end,
