@@ -1,49 +1,32 @@
 Require("dplyr")
 
 #' Wrapper function to calculate vegetation attributess hypervolumes
-vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
+vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, addNoise = TRUE, ...) {
   ## a bit of prep
   HVnames <- unique(allData[[HVIDcol]])
   if (length(HVnames) != 2) {
     stop("There should be 2 values in,", HVIDcol)
   }
 
-  ## calculate stand-age as the mean biomass-weighted age
-  allData[, `:=`(meanStandAge = mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                          sum((B/100), na.rm = TRUE))),
-                 sdStandAge = sd(as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                  sum((B/100), na.rm = TRUE)))),
-          by = IDcols]
-  allData[is.na(meanStandAge), meanStandAge := 0]  ## NAs come from stands with 0 B and 0 age
-  allData[is.na(sdStandAge), sdStandAge := 0]  ## NAs come from stands with 0 B and 0 age or just one value of standAge
-
-  ## calculate relative species B (across speciesCohorts)
-  allData[, standB := sum(B, na.rm = TRUE), by = IDcols]
-  allData[, relB := sum(B) / standB, by = c(IDcols, "speciesCode")]
-  allData[relB == "NaN", relB := 0]
-
-  ## expand data
-  cols <- c("meanStandAge", "sdStandAge", "relB", "speciesCode", IDcols)   ## keep rep for wrapper.
-  allData <- unique(allData[, ..cols])
-  allData <- dcast.data.table(allData, as.formula("... ~ speciesCode"),
-                              value.var = "relB")
-
-  ## still use 4 axes.
+  ## subset variables for HVs
   cols <- setdiff(names(allData), IDcols)
 
   ## add noise to data if all dimensions have zero variance
-  IDcols2 <- setdiff(IDcols, "pixelIndex")
-  needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = IDcols2]
-  needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = IDcols2]
+  if (addNoise) {
+    IDcols2 <- setdiff(IDcols, "pixelIndex")
+    needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = IDcols2]
+    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = IDcols2]
 
-  if (any(needsNoise$V1)) {
-    tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
-                        on = IDcols2]
-    tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
-                                n = .N), .SDcols = cols, by = IDcols2]
-    allData <- rbind(allData[!tempData, on = IDcols2],
-                     tempData, fill = TRUE, use.names = TRUE)
+    if (any(needsNoise$V1)) {
+      tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
+                          on = IDcols2]
+      tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
+                                  n = .N), .SDcols = cols, by = IDcols2]
+      allData <- rbind(allData[!tempData, on = IDcols2],
+                       tempData, fill = TRUE, use.names = TRUE)
+    }
   }
+
   ## HV calculation
   out <- tryCatch(hypervolumes(HVdata1 = as.data.frame(allData[get(HVIDcol) == HVnames[1]]),
                                HVdata2 = as.data.frame(allData[get(HVIDcol) == HVnames[2]]),
@@ -66,20 +49,24 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, ...) {
 }
 
 #' Wrapper function to calculate fire attributes hypervolumes
-fireHVWrapper <- function(allData, cols, file.suffix, ...) {
+fireHVWrapper <- function(allData, cols, file.suffix, addNoise = TRUE, ...) {
   print(file.suffix)
-  ## add noise to data if all dimensions have zero variance
-  needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = .(scenario, rep)]
-  needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = .(scenario, rep)]
 
-  if (any(needsNoise$V1)) {
-    tempData <- allData[needsNoise[V1 == TRUE, .(scenario, rep)],
-                        on = .(scenario, rep)]
-    tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
-                                n = .N), .SDcols = cols]
-    allData <- rbind(allData[!tempData, on = .(scenario, rep)],
-                     tempData, fill = TRUE, use.names = TRUE)
+  if (addNoise) {
+    ## add noise to data if all dimensions have zero variance
+    needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = .(scenario, rep)]
+    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = .(scenario, rep)]
+
+    if (any(needsNoise$V1)) {
+      tempData <- allData[needsNoise[V1 == TRUE, .(scenario, rep)],
+                          on = .(scenario, rep)]
+      tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
+                                  n = .N), .SDcols = cols]
+      allData <- rbind(allData[!tempData, on = .(scenario, rep)],
+                       tempData, fill = TRUE, use.names = TRUE)
+    }
   }
+
   out <- tryCatch(hypervolumes(HVdata1 = as.data.frame(allData[scenario == "noPM"]),
                                HVdata2 = as.data.frame(allData[scenario == "PM"]),
                                HVidvar = which(names(allData) == "scenario"),

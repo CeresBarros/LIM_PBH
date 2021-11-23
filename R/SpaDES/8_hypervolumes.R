@@ -45,53 +45,82 @@ if (mergeDMCPSME) {
 ## FIRE DATA SUMMARY FOR HVs -----------------------
 source("R/R_tools/prepFireData4HVs.R")
 
+## Global pyrodiversity PCA ----------
+## a large PCA on the pooled dataset is needed to ensure that
+## hypervolume sizes can be compared across repetitions and forest types.
+summaryFireAttributes[, dummyHVid := paste(scenario, rep, vegTypeCN, sep = "_")]
+cols <- c("meanFreq", "meanSevB", "meanPatchS", "dummyHVid")
+firePCA <- summaryFireAttributes[, ..cols] %>%
+  ToolsCB:::.scaleVars(., init.vars = c(1:3)) %>%
+  Cache(HVordination,
+        datatable = .,
+        HVidvar = 4,
+        noAxes = 3,
+        plotOrdi = FALSE,
+        saveOrdi = TRUE,
+        saveOrdiSumm = TRUE,
+        file.suffix = "fireHVs_FULLPCA",
+        outputs.dir = file.path(simPaths$outputPath, "hypervolumes"),
+        cacheRepo = simPaths$cachePath,
+        omitArgs = c("plotOrdi", "saveOrdi"),
+        userTags = c("hypervolumes", "pyrodivPCA"))
+
+fireHVdata <- as.data.table(firePCA$HVpoints)
+fireHVdata <- cbind(fireHVdata, summaryFireAttributes[, .(scenario, rep, pixelIndex, vegTypeCN)])
+
 ## Hypervolumes by vegetation type ----------
 ## only montane belt
 if (mergeDMCPSME) {
-  summaryFireAttributes <- summaryFireAttributes[vegTypeCN == "DMCPSME"]
+  fireHVdata <- fireHVdata[vegTypeCN == "DMCPSME"]
 }
-lapply(split(summaryFireAttributes, by = c("rep", "vegTypeCN")), FUN = function(allData, HVoutputPath) {
-  r <- unique(allData$rep)
-  veg <- unique(allData$vegTypeCN)
-  file.suffix <- paste0("fireHVs_", veg, "_rep", r)
 
-  noAxes <- 3
-  cols <- c("meanFreq", "meanSevB", "meanPatchS")
+lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
+       FUN = function(allData, HVoutputPath) {
+         r <- unique(allData$rep)
+         veg <- unique(allData$vegTypeCN)
+         file.suffix <- paste0("fireHVs_", veg, "_rep", r)
+         cols <- c("PC1", "PC2", "PC3")
+         no.runs <- 3
 
-  fireHVWrapper(allData, cols, file.suffix,
-                noAxes = noAxes,
-                HVmethod = "svm",
-                no.runs = 3,
-                svm.gamma = 0.01,
-                do.scale = TRUE,
-                outputs.dir = HVoutputPath,
-                saveOrdi = TRUE,
-                plotOrdi = TRUE,
-                plotHV = TRUE,
-                verbose = FALSE)
-}, HVoutputPath = HVoutputPath)
+           fireHVWrapper(allData, cols, file.suffix,
+                         # noAxes = 3,
+                         ordination = "none",
+                         HVmethod = "svm",
+                         no.runs = no.runs,
+                         svm.gamma = 0.01,
+                         outputs.dir = HVoutputPath,
+                         do.scale = FALSE,
+                         # do.scale = TRUE,
+                         # saveOrdi = TRUE,
+                         # plotOrdi = TRUE,
+                         plotHV = TRUE,
+                         verbose = FALSE,
+                         addNoise = TRUE)
+         }
 
 
 ## Hypervolumes across the landscape ----------------
 ## only montane belt
-lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allData, HVoutputPath) {
-  r <- unique(allData$rep)
-  file.suffix <- paste0("fireHVs_landscape_rep", r)
+lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
+       FUN = function(allData, HVoutputPath) {
+         r <- unique(allData$rep)
+         file.suffix <- paste0("fireHVs_landscape_rep", r)
+         cols <- c("PC1", "PC2", "PC3")
+         no.runs <- 3
 
-  noAxes <- 3
-  cols <- c("meanFreq", "meanSevB", "meanPatchS")
-
-  fireHVWrapper(allData, cols, file.suffix,
-                noAxes = noAxes,
-                HVmethod = "svm",
-                no.runs = 3,
-                svm.gamma = 0.01,
-                do.scale = TRUE,
-                outputs.dir = HVoutputPath,
-                saveOrdi = TRUE,
-                plotOrdi = TRUE,
-                plotHV = TRUE,
-                verbose = FALSE)
+           fireHVWrapper(allData, cols, file.suffix,
+                         # noAxes = 3,
+                         ordination = "none",
+                         HVmethod = "svm",
+                         no.runs = no.runs,
+                         svm.gamma = 0.01,
+                         outputs.dir = HVoutputPath,
+                         do.scale = FALSE,
+                         # do.scale = TRUE,
+                         # saveOrdi = TRUE,
+                         # plotOrdi = TRUE,
+                         plotHV = TRUE,
+                         verbose = FALSE,
 }, HVoutputPath = HVoutputPath)
 
 
@@ -104,15 +133,11 @@ lapply(split(summaryFireAttributes, by = c("rep")), FUN = function(allData, HVou
 ## we select the start year and end years of the simulation
 ## the join shouldn't actually change anything because we already subset the pixels with veg
 ## in the montane belt (regardless of fire)
-pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
 
-if (mergeDMCPSME) {  ## only do the the merged vegTypes
-  vegDataForHVs <- allPixelCohortDataMnt[vegTypeCN == "DMCPSME" & year %in% c(start(preSimList), end(preSimList))]
-} else {
-  vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
-}
+vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
 
 if (getOption("LandR.assertions")) {
+  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
   temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
   setkey(temp, scenario, rep, pixelIndex)
   setkey(vegDataForHVs, scenario, rep, pixelIndex)
@@ -151,6 +176,62 @@ if (getOption("LandR.assertions")) {
     stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
 }
 
+## prep data for hypervolumes
+## calculate stand-age as the mean biomass-weighted age
+vegDataForHVs[, `:=`(meanStandAge = mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                      sum((B/100), na.rm = TRUE))),
+                     sdStandAge = sd(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                  sum((B/100), na.rm = TRUE)))),
+              by = c("scenario", "rep", "year", "pixelIndex", "vegTypeCN")]
+vegDataForHVs[is.na(meanStandAge), meanStandAge := 0]  ## NAs come from stands with 0 B and 0 age
+vegDataForHVs[is.na(sdStandAge), sdStandAge := 0]  ## NAs come from stands with 0 B and 0 age or just one value of standAge
+
+## calculate relative species B (across speciesCohorts)
+vegDataForHVs[, standB := sum(B, na.rm = TRUE), by =  c("scenario", "rep", "year", "pixelIndex", "vegTypeCN")]
+vegDataForHVs[, relB := sum(B) / standB, by = c("scenario", "rep", "year", "pixelIndex", "vegTypeCN", "speciesCode")]
+vegDataForHVs[relB == "NaN", relB := 0]
+
+## expand data
+cols <- c("meanStandAge", "sdStandAge", "relB", "speciesCode", "scenario", "rep", "year", "pixelIndex", "vegTypeCN")   ## keep rep for wrapper.
+vegDataForHVs <- unique(vegDataForHVs[, ..cols])
+vegDataForHVs <- dcast.data.table(vegDataForHVs, as.formula("... ~ speciesCode"),
+                                  value.var = "relB")
+
+## Global biodiversity PCA ----------
+## a large PCA on the pooled dataset is needed to ensure that
+## hypervolume sizes can be compared across repetitions and forest types.
+vegDataForHVs[, dummyHVid := paste(scenario, rep, year, vegTypeCN, sep = "_")]
+cols <- setdiff(names(vegDataForHVs),
+                c("scenario", "rep", "year", "pixelIndex", "vegTypeCN"))
+vegPCA <- vegDataForHVs[, ..cols] %>%
+  ToolsCB:::.scaleVars(., init.vars = c(1:3)) %>%
+  Cache(HVordination,
+        datatable = .,
+        HVidvar = 9,
+        noAxes = 4,
+        plotOrdi = TRUE,
+        saveOrdiSumm = TRUE,
+        saveOrdi = TRUE,   ## save actual PCA
+        file.suffix = "vegHVs_FULLPCA",
+        outputs.dir = file.path(simPaths$outputPath, "hypervolumes"),
+        cacheRepo = simPaths$cachePath,
+        omitArgs = c("plotOrdi", "saveOrdi"),
+        userTags = c("hypervolumes", "biodivPCA"))
+vegHVdata <- as.data.table(vegPCA$HVpoints)
+vegHVdata <- cbind(vegHVdata, vegDataForHVs[, .(scenario, rep, year, pixelIndex, vegTypeCN)])
+
+if (mergeDMCPSME) {  ## only do the the merged vegTypes
+  vegHVdata <- vegHVdata[vegTypeCN == "DMCPSME" & year %in% c(start(preSimList), end(preSimList))]
+} else {
+  if (mergePSME) {  ## only do the the merged vegTypes
+}
+
+
+## subset first 4 axes:
+cols <- c(grep("PC(1|2|3|4)", names(vegHVdata), value = TRUE),
+          grep("^PC", names(vegHVdata), value = TRUE, invert = TRUE))
+vegHVdata <- vegHVdata[, ..cols]
+
 ## HV comparisons per year, between scenarios --------------
 ## note that splitting by veg type has to be done on the first
 ## year as vegTypes can change (cannot use first fire year, because cohortData will have
@@ -158,73 +239,83 @@ if (getOption("LandR.assertions")) {
 ## as vegTypeCN/pixelIndex combos for the first year have to be
 ## identical between scenarios (tested above)
 ## gaussian HVs were extremely slow
+pixelIndexList <- split(vegHVdata[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)],
+                        by = c("rep", "vegTypeCN"), drop = TRUE)
+lapply(pixelIndexList,
+       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
+         r <- unique(pixelIndexDT$rep)
+         veg <- unique(pixelIndexDT$vegTypeCN)
 
-pixelIndexList <- split(vegDataForHVs[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)],
-                        by = c("rep", "vegTypeCN"))
-lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath) {
-  r <- unique(pixelIndexDT$rep)
-  veg <- unique(pixelIndexDT$vegTypeCN)
+         ## filter data to appropriate pixels, note that vegType may change in the second year
+         allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  ## filter data to appropriate pixels, note that vegType may change in the second year
-  allData <- vegDataForHVs[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+         ## now split by year to calculate and compare hypervolumes between
+         ## scenarios for each year
+         lapply(split(allData, by = "year"),
+                  yr <- unique(allData$year)
+                  file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
+                  IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
 
-  ## now split by year to calculate and compare hypervolumes between
-  ## scenarios for each year
-  lapply(split(allData, by = "year"), FUN = function(allData, HVoutputPath, r, veg) {
-    yr <- unique(allData$year)
-    file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
-    IDcols <- c("scenario", "rep", "pixelIndex")
-    print(file.suffix)
+                  no.runs <- 3
 
-    vegHVWrapper(allData,
-                 IDcols,
-                 "scenario",
-                 file.suffix,
-                 noAxes = 4,
-                 HVmethod = "svm",
-                 no.runs = 3,
-                 svm.gamma = 0.01,
-                 do.scale = TRUE,
-                 outputs.dir = HVoutputPath,
-                 saveOrdi = TRUE,
-                 plotOrdi = TRUE,
-                 plotHV = TRUE,
-                 verbose = FALSE)
-  }, HVoutputPath = HVoutputPath, r = r, veg = veg)
+                    vegHVWrapper(allData,
+                                 IDcols,
+                                 HVIDcol = "scenario",
+                                 file.suffix,
+                                 # noAxes = 4,
+                                 ordination = "none",
+                                 HVmethod = "svm",
+                                 no.runs = no.runs,
+                                 svm.gamma = 0.01,
+                                 outputs.dir = HVoutputPath,
+                                 do.scale = FALSE,
+                                 addNoise = TRUE,
+                                 # do.scale = TRUE,
+                                 # saveOrdi = TRUE,
+                                 # plotOrdi = TRUE,
+                                 plotHV = TRUE,
+                                 verbose = FALSE)
+                  }
 }, vegDataForHVs = vegDataForHVs, HVoutputPath = HVoutputPath)
 
 
 ## HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
 lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath) {
-  r <- unique(pixelIndexDT$rep)
-  veg <- unique(pixelIndexDT$vegTypeCN)
+lapply(pixelIndexList,
+       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
+         r <- unique(pixelIndexDT$rep)
+         veg <- unique(pixelIndexDT$vegTypeCN)
 
-  ## filter data to appropriate pixels, note that vegType may change in the second year
-  allData <- vegDataForHVs[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+         ## filter data to appropriate pixels, note that vegType may change in the second year
+         allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  ## now split by scenario to calculate and compare hypervolumes between
-  ## scenarios for each scenario
-  lapply(split(allData, by = "scenario"), FUN = function(allData, HVoutputPath, r, veg) {
-    scen <- unique(allData$scenario)
-    file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
-    IDcols <- c("year", "rep", "pixelIndex")
-    print(file.suffix)
+         ## now split by scenario to calculate and compare hypervolumes between
+         ## scenarios for each scenario
+         lapply(split(allData, by = "scenario"),
+                  scen <- unique(allData$scenario)
+                  file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
+                  IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
 
-    vegHVWrapper(allData,
-                 IDcols,
-                 "year",
-                 file.suffix,
-                 noAxes = 4,
-                 HVmethod = "svm",
-                 no.runs = 3,
-                 svm.gamma = 0.01,
-                 do.scale = TRUE,
-                 outputs.dir = HVoutputPath,
-                 saveOrdi = TRUE,
-                 plotOrdi = TRUE,
-                 plotHV = TRUE,
-                 verbose = FALSE)
+                  no.runs <- 3
+
+                    vegHVWrapper(allData,
+                                 IDcols,
+                                 HVIDcol = "year",
+                                 file.suffix,
+                                 # noAxes = 4,
+                                 ordination = "none",
+                                 HVmethod = "svm",
+                                 no.runs = no.runs,
+                                 svm.gamma = 0.01,
+                                 outputs.dir = HVoutputPath,
+                                 do.scale = FALSE,
+                                 addNoise = TRUE,
+                                 # do.scale = TRUE,
+                                 # saveOrdi = TRUE,
+                                 # plotOrdi = TRUE,
+                                 plotHV = TRUE,
+                                 verbose = FALSE)
   }, HVoutputPath = HVoutputPath, r = r, veg = veg)
 }, vegDataForHVs = vegDataForHVs, HVoutputPath = HVoutputPath)
 
@@ -237,6 +328,7 @@ lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath)
 vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
 
 if (getOption("LandR.assertions")) {
+  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
   pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
   temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
   setkey(temp, scenario, rep, pixelIndex)
@@ -266,27 +358,32 @@ if (getOption("LandR.assertions")) {
 ## split by year and rep to calculate and compare hypervolumes between
 ## scenarios for each year
 lapply(split(vegDataForHVs, by = c("rep", "year")), FUN = function(allData, HVoutputPath) {
-  r <- unique(allData$rep)
-  yr <- unique(allData$year)
-  file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
-  IDcols <- c("scenario", "rep", "pixelIndex")
-  print(file.suffix)
+lapply(split(vegHVdata, by = c("rep", "year")),
+       FUN = function(allData, HVoutputPath, doAll) {
+         r <- unique(allData$rep)
+         yr <- unique(allData$year)
+         file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
+         IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
+         no.runs <- 3
 
-  vegHVWrapper(allData,
-               IDcols,
-               "scenario",
-               file.suffix,
-               noAxes = 4,
-               HVmethod = "svm",
-               no.runs = 3,
-               svm.gamma = 0.01,
-               do.scale = TRUE,
-               outputs.dir = HVoutputPath,
-               saveOrdi = TRUE,
-               plotOrdi = TRUE,
-               plotHV = TRUE,
-               verbose = FALSE)
-}, HVoutputPath = HVoutputPath)
+           vegHVWrapper(allData,
+                        IDcols,
+                        HVIDcol = "scenario",
+                        file.suffix,
+                        # noAxes = 4,
+                        ordination = "none",
+                        HVmethod = "svm",
+                        no.runs = no.runs,
+                        svm.gamma = 0.01,
+                        outputs.dir = HVoutputPath,
+                        do.scale = FALSE,
+                        addNoise = TRUE,
+                        # do.scale = TRUE,
+                        # saveOrdi = TRUE,
+                        # plotOrdi = TRUE,
+                        plotHV = TRUE,
+                        verbose = FALSE)
+         }
 
 
 ## HV comparisons per scenario, between years --------------
@@ -294,24 +391,28 @@ lapply(split(vegDataForHVs, by = c("rep", "year")), FUN = function(allData, HVou
 ## now split by scenario and rep to calculate and compare hypervolumes between
 ## years for each scenario
 lapply(split(vegDataForHVs, by = c("rep","scenario")), FUN = function(allData, HVoutputPath) {
-  r <- unique(allData$rep)
-  scen <- unique(allData$scenario)
-  file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
-  IDcols <- c("year", "rep", "pixelIndex")
-  print(file.suffix)
+lapply(split(vegHVdata, by = c("rep","scenario")),
+         r <- unique(allData$rep)
+         scen <- unique(allData$scenario)
+         file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
+         IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
+         no.runs <- 3
 
-  vegHVWrapper(allData,
-               IDcols,
-               "year",
-               file.suffix,
-               noAxes = 4,
-               HVmethod = "svm",
-               no.runs = 3,
-               svm.gamma = 0.01,
-               do.scale = TRUE,
-               outputs.dir = HVoutputPath,
-               saveOrdi = TRUE,
-               plotOrdi = TRUE,
-               plotHV = TRUE,
-               verbose = FALSE)
+           vegHVWrapper(allData,
+                        IDcols,
+                        HVIDcol = "year",
+                        file.suffix,
+                        # noAxes = 4,
+                        ordination = "none",
+                        HVmethod = "svm",
+                        no.runs = no.runs,
+                        svm.gamma = 0.01,
+                        outputs.dir = HVoutputPath,
+                        do.scale = FALSE,
+                        addNoise = TRUE,
+                        # do.scale = TRUE,
+                        # saveOrdi = TRUE,
+                        # plotOrdi = TRUE,
+                        plotHV = TRUE,
+                        verbose = FALSE)
 }, HVoutputPath = HVoutputPath)
