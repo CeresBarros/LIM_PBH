@@ -200,6 +200,7 @@ if (getOption("LandR.assertions")) {
 ## bind the two tables
 allHVData <- rbindlist(list("fireHV" = fireHVData, "vegHV" = vegHVData),
                        use.names = TRUE, fill = TRUE, idcol = "HVtype")
+allHVData$vegType <- as.factor(allHVData$vegType)
 
 ## calculate overlap following Barros et al 2016
 allHVData[, overlap := Intersection/Union]
@@ -248,40 +249,54 @@ modelData[, vegType := relevel(vegType, "No veg.")]
 
 ## model landscape separately
 fireHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData[vegType == "landscape"])
+## the data seems very dispersed - some reps are extreme outliers - logging helps
+hist(modelData[vegType == "landscape", Volume], breaks = 1000)
+fireHVVolumeLandscape.lm2 <- lm(log(Volume) ~ scenario, modelData[vegType == "landscape"])
 summary(fireHVVolumeLandscape.lm)
 
-## a bit heteroskedastic
-sets <- par(mfrow = c(2,2))
-plot(fireHVVolumeLandscape.lm)
-par(sets)
-
-fireHVVolumeLandscape.gls <- gls(Volume ~ scenario, weights = varIdent(form = ~ 1 | scenario),
+fireHVVolumeLandscape.gls <- gls(log(Volume) ~ scenario, weights = varIdent(form = ~ 1 | scenario),
                                  modelData[vegType == "landscape"])
+## no big improvements, result is similar and AIC is slightly worse
+plot(fireHVVolumeLandscape.gls)
 
-tiff(file.path(figOutputPath, "fireHVVolumeLandscapeglsRESIDUALS.tiff"))
-plot(fireHVVolumeLandscape.gls) ## much better :)
+tiff(file.path(figOutputPath, "fireHVVolumeLandscapelmRESIDUALS.tiff"))
+## a bit heteroskedastic, but not that much
+sets <- par(mfrow = c(2,2))
+plot(fireHVVolumeLandscape.lm2)
+par(sets)
 dev.off()
 
-sink(file.path(statsOutputPath, "fireHVVolumeLandscapeglsSUMMARY.txt"))
-summary(fireHVVolumeLandscape.gls)   ## same p-value estimate.
+sink(file.path(statsOutputPath, "fireHVVolumeLandscapelmSUMMARY.txt"))
+summary(fireHVVolumeLandscape.lm2)   ## same p-value estimate.
 sink()
 
-## model vegTypes - go directly to gls
-fireHVVolumeVegTypes.gls <- gls(Volume ~ scenario * vegType, weights = varIdent(form = ~ 1 | scenario * vegType),
+## model vegTypes
+fireHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != "landscape"])
+## same issue as before
+fireHVVolumeVegTypes.lm2 <- lm(log(Volume) ~ scenario * vegType, modelData[vegType != "landscape"])
+
+sets <- par(mfrow = c(2,2))
+plot(fireHVVolumeVegTypes.lm2) ## not much better
+par(sets)
+
+
+fireHVVolumeVegTypes.gls <- gls(log(Volume) ~ scenario * vegType, weights = varIdent(form = ~ 1 | scenario * vegType),
                                 modelData[vegType != "landscape"])
+plot(fireHVVolumeVegTypes.gls)  ## looks better
 anova(fireHVVolumeVegTypes.gls)   ## no significant interaction between scenario and vegtype. let's drop it
 # Denom. DF: 522
 # numDF  F-value p-value
-# (Intercept)          1 52.52881  <.0001
-# scenario             1 39.63523  <.0001
-# vegType              8 78.44978  <.0001
-# scenario:vegType     8  1.21105  0.2901
+# (Intercept)          1 9599.827  <.0001
+# scenario             1   96.784  <.0001
+# vegType              8  153.635  <.0001
+# scenario:vegType     8    1.500  0.1542
+
 
 ## glht can't see the missing levels, so we fit the model on a separate data table
 modelData2 <- as.data.frame(modelData[vegType != "landscape"])
 modelData2$scenario <- factor(modelData2$scenario)
 modelData2$vegType <- factor(modelData2$vegType)
-fireHVVolumeVegTypes.gls2 <- gls(Volume ~ scenario + vegType,
+fireHVVolumeVegTypes.gls2 <- gls(log(Volume) ~ scenario + vegType,
                                  weights = varIdent(form = ~ 1 | scenario*vegType),
                                  data = modelData2)
 
@@ -311,11 +326,8 @@ modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
 modelData[, scenario := relevel(scenario, "HV_noPM")]
 modelData[, vegType := relevel(vegType, "No veg.")]
 
-
 ## model landscape separately
 vegHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData[vegType == "landscape"])
-summary(vegHVVolumeLandscape.lm)
-
 
 tiff(file.path(figOutputPath, "vegHVVolumeLandscapelmRESIDUALS.tiff"))
 sets <- par(mfrow = c(2,2))
@@ -327,11 +339,10 @@ sink(file.path(statsOutputPath, "vegHVVolumeLandscapelmSUMMARY.txt"))
 summary(vegHVVolumeLandscape.lm)
 sink()
 
-
 ## model vegTypes
 vegHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != "landscape"])
 
-## evidence of heteroscedasticity
+## some heteroscedasticity
 sets <- par(mfrow = c(2,2))
 plot(vegHVVolumeVegTypes.lm)
 par(sets)
@@ -343,10 +354,8 @@ vegHVVolumeVegTypes.gls <- gls(Volume ~ scenario * vegType,
                                weights = varIdent(form = ~ 1 | scenario * vegType),
                                modelData2)
 
-summary(glht(cell, linfct = K))
-
 tiff(file.path(figOutputPath, "vegHVVolumeVegTypesglsRESIDUALS.tiff"))
-plot(vegHVVolumeVegTypes.gls)
+plot(vegHVVolumeVegTypes.gls) ## better
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVVolumeVegTypesglsSUMMARY.txt"))
@@ -370,21 +379,20 @@ modelData[, vegType := relevel(vegType, "No veg.")]
 ## across the landscape
 vegHVOverlapLandscape.lm <- lm(overlap ~ scenario, modelData[vegType == "landscape"])
 
-## heteroscedasticity
+## some heteroscedasticity, but not lots and gls is no big improvement and results are similar
+sets <- par(mfrow = c(2,2))
 plot(vegHVOverlapLandscape.lm)
-
+par(sets)
 
 vegHVOverlapLandscape.gls <- gls(overlap ~ scenario, weights = varIdent(form = ~1 | scenario),
                                  data = modelData[vegType == "landscape"])
 
-
-tiff(file.path(figOutputPath, "vegHVOverlapLandscapeglsRESIDUALS.tiff"))
-plot(vegHVOverlapLandscape.gls) ## still not great
+tiff(file.path(figOutputPath, "vegHVOverlapLandscapelmRESIDUALS.tiff"))
+plot(vegHVOverlapLandscape.lm) ## still not great
 dev.off()
 
-
-sink(file.path(statsOutputPath, "vegHVOverlapLandscapeglsSUMMARY.txt"))
-summary(vegHVOverlapLandscape.gls)
+sink(file.path(statsOutputPath, "vegHVOverlapLandscapelmSUMMARY.txt"))
+summary(vegHVOverlapLandscape.lm)
 sink()
 
 
@@ -411,7 +419,7 @@ vegHVOverlapVegTypes.gls <- gls(overlap ~ scenario * vegType,
                                 modelData2)
 
 tiff(file.path(figOutputPath, "vegHVOvelapVegTypesglsRESIDUALS.tiff"))
-plot(vegHVOverlapVegTypes.gls) ## not too bad
+plot(vegHVOverlapVegTypes.gls) ## a bit better
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVOverlapVegTypesglsSUMMARY.txt"))
@@ -436,51 +444,47 @@ modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
 
 ## model landscape separately
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData[vegType == "landscape"])
-
+## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps
+hist(modelData[vegType == "landscape", fireHV], breaks = 1000)
+hist(modelData[vegType == "landscape" & fireHV > 500, fireHV], breaks = 1000)
+pyroVSbiodiversityLandscape.lm2 <- lm(log(vegHV) ~ log(fireHV)*scenario, data = modelData[vegType == "landscape"])
 
 tiff(file.path(figOutputPath, "pyroVSbiodiversityLandscapelmRESIDUALS.tiff"))
 sets <- par(mfrow = c(2,2))
-plot(pyroVSbiodiversityLandscape.lm)  ## not too bad
+plot(pyroVSbiodiversityLandscape.lm2)
 par(sets)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityLandscapelmSUMMARY.txt"))
-anova(pyroVSbiodiversityLandscape.lm)
+anova(pyroVSbiodiversityLandscape.lm2)
 cat("\n*********************\n")
-summary(pyroVSbiodiversityLandscape.lm)
+summary(pyroVSbiodiversityLandscape.lm2)
 sink()
 
 ## by vetType
 pyroVSbiodiversityVegTypes.lm <- lm(vegHV ~ fireHV*scenario*vegType, data = modelData[vegType != "landscape"])
+## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps
+hist(modelData[vegType != "landscape", fireHV], breaks = 1000)
+hist(modelData[vegType != "landscape" & fireHV > 500, fireHV], breaks = 1000)
+hist(modelData[vegType != "landscape" & fireHV < 500, fireHV], breaks = 1000)
+pyroVSbiodiversityVegTypes.lm2 <- lm(log(vegHV) ~ log(fireHV)*scenario*vegType, data = modelData[vegType != "landscape"])
 
-## very heteroscedastic
-sets <- par(mfrow = c(2,2))
-plot(pyroVSbiodiversityVegTypes.lm)  ## not too bad
-par(sets)
-
-
-modelData2 <- as.data.frame(modelData[vegType != "landscape"])
-modelData2$scenario <- factor(modelData2$scenario)
-modelData2$vegType <- factor(modelData2$vegType)
-
-pyroVSbiodiversityVegTypes.gls <- gls(vegHV ~ fireHV*scenario*vegType,
-                                      weights = varIdent(form = ~ 1 | scenario * vegType),
-                                      data = modelData2)
 tiff(file.path(figOutputPath, "pyroVSbiodiversityVegTypeslmRESIDUALS.tiff"))
-plot(pyroVSbiodiversityVegTypes.gls) ## not great but best structure possible (tried all combos in varIdent)
+sets <- par(mfrow = c(2,2))
+plot(pyroVSbiodiversityVegTypes.lm2)
+par(sets)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityVegTypeslmSUMMARY.txt"))
-anova(pyroVSbiodiversityVegTypes.gls)
+anova(pyroVSbiodiversityVegTypes.lm2)
 cat("\n*********************\n")
-summary(pyroVSbiodiversityVegTypes.gls)
+summary(pyroVSbiodiversityVegTypes.lm2)
 cat("\n*********************\n")
-emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ scenario | vegType,
-         var = "fireHV", mode = "df.error", data = modelData2)
-emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ vegType | scenario,
-         var = "fireHV", mode = "df.error", data = modelData2)
+emtrends(pyroVSbiodiversityVegTypes.lm2, pairwise ~ scenario | vegType,
+         var = "fireHV", mode = "df.error", data = modelData[vegType != "landscape"])
+emtrends(pyroVSbiodiversityVegTypes.lm2, pairwise ~ vegType | scenario,
+         var = "fireHV", mode = "df.error", data = modelData[vegType != "landscape"])
 sink()
-
 
 
 ## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
@@ -496,6 +500,9 @@ plotData <- allHVData[year == end(preSimList),
                         rep, repHV, vegType)]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
+
+## log fire volumes
+plotData[HVtype == "fireHV", Volume := log(Volume)]
 
 HVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
                                aes(x = vegType, y = Volume, alpha = scenario, fill = vegType)) +
@@ -530,7 +537,6 @@ HVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape"],
 plotSave <- ggarrange(HVvolumeVegTypesPlot, HVvolumeLandscapePlot + labs(y = ""),
                       ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
                       common.legend = TRUE, legend = "bottom")
-
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
        width = 10, height = 8)
 
@@ -590,7 +596,6 @@ HVOverlapLandscapePlot <- ggplot(plotData[vegType == "landscape"],
 plotSave <- ggarrange(HVOverlapVegTypesPlot, HVOverlapLandscapePlot + labs(y = ""),
                       ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
                       common.legend = TRUE, legend = "bottom")
-
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVOverlap.tiff"),
        width = 10, height = 8)
 
@@ -609,16 +614,14 @@ plotData2$scenario <- factor(plotData2$scenario)
 plotData2$vegType <- factor(plotData2$vegType)
 
 ## refit models for plot
-pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = plotData[vegType == "landscape"])
-pyroVSbiodiversityVegTypes.gls <- gls(vegHV ~ fireHV*scenario*vegType,
-                                      weights = varIdent(form = ~ 1 | scenario * vegType),
-                                      data = plotData2)
+pyroVSbiodiversityLandscape.lm2 <- lm(log(vegHV) ~ log(fireHV)*scenario, data = plotData[vegType == "landscape"])
+pyroVSbiodiversityVegTypes.lm2 <- lm(log(vegHV) ~ log(fireHV)*scenario*vegType, data = plotData[vegType != "landscape"])
 
-plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm)]
-plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls)]
+plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm2)]
+plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.lm2)]
 
-pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
-                                   aes(x = fireHV, y = vegHV,
+pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape" & fireHV < 1000],
+                                   aes(x = log(fireHV), y = log(vegHV),
                                        linetype = scenario, shape = scenario,
                                        colour = vegType)) +
   geom_point() +
@@ -626,7 +629,7 @@ pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
   scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_linetype_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
   scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
+  theme_pubr(base_size = 12, margin = TRUE) +
   theme(legend.box = "vertical",
         strip.background = element_blank()) +
   labs(x = "pyrodiversity", y = "forest diversity", colour = "", linetype = "", shape = "") +
@@ -634,7 +637,7 @@ pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
               scales = "free")
 
 pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
-                                       aes(x = fireHV, y = vegHV, shape = scenario,
+                                       aes(x = log(fireHV), y = log(vegHV), shape = scenario,
                                            linetype = scenario, colour = vegType)) +
   geom_point() +
   geom_line(aes(y = pred)) +
@@ -649,8 +652,19 @@ pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
        colour = "", linetype = "", shape = "")
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlot, pyroVSbioDivVegLandscapePlot + labs(y = ""),
-                      ncol = 2, nrow = 1, widths = c(1, 0.6),
+                      ncol = 2, nrow = 1, widths = c(1.1, 0.6),
                       common.legend = TRUE, legend = "bottom")
 
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversity.tiff"),
        width = 12, height = 7)
+
+## ------------------------------------
+## ANALYSING PCAs
+## ------------------------------------
+lastPCACacheId <- tail(showCache(simPaths$cachePath, userTags = c("hypervolumes", "pyrodivPCA"))[order(createdDate)], 1)[, cacheId]
+fireHVPCA <- loadFromCache(simPaths$cachePath, cacheId = lastPCACacheId)
+lastPCACacheId <- tail(showCache(simPaths$cachePath, userTags = c("hypervolumes", "biodivPCA"))[order(createdDate)], 1)[, cacheId]
+vegHVPCA <- loadFromCache(simPaths$cachePath, cacheId = lastPCACacheId)
+
+
+
