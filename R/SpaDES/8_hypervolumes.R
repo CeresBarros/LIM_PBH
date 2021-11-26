@@ -62,13 +62,13 @@ firePCA <- summaryFireAttributes[, ..cols] %>%
         datatable = .,
         HVidvar = 4,
         noAxes = 3,
-        plotOrdi = FALSE,
+        plotOrdi = TRUE,
         saveOrdi = TRUE,
         saveOrdiSumm = TRUE,
         file.suffix = "fireHVs_FULLPCA",
         outputs.dir = file.path(simPaths$outputPath, "hypervolumes"),
         cacheRepo = simPaths$cachePath,
-        omitArgs = c("plotOrdi", "saveOrdi"),
+        omitArgs = c("plotOrdi", "saveOrdi", "saveOrdiSumm"),
         userTags = c("hypervolumes", "pyrodivPCA"))
 
 fireHVdata <- as.data.table(firePCA$HVpoints)
@@ -191,7 +191,7 @@ vegPCA <- vegDataForHVs[, ..cols] %>%
         file.suffix = "vegHVs_FULLPCA",
         outputs.dir = file.path(simPaths$outputPath, "hypervolumes"),
         cacheRepo = simPaths$cachePath,
-        omitArgs = c("plotOrdi", "saveOrdi"),
+        omitArgs = c("plotOrdi", "saveOrdi", "saveOrdiSumm"),
         userTags = c("hypervolumes", "biodivPCA"))
 vegHVdata <- as.data.table(vegPCA$HVpoints)
 vegHVdata <- cbind(vegHVdata, vegDataForHVs[, .(scenario, rep, year, pixelIndex, vegTypeCN)])
