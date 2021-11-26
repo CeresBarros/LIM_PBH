@@ -1945,7 +1945,7 @@ plotData <- allPixelCohortDataMnt[year %in% c(startYear, endYear),
 
 plotData <- lapply(split(plotData[B > 0], by = c("scenario", "year")), vegTypeGenerator,
                    vegLeadingProportion = 0, sppEquiv = preSimList$sppEquiv,
-                   sppEquivCol = P(preSimList)$Biomass_borealDataPrep$sppEquivCol,
+                   sppEquivCol = params(preSimList)$Biomass_borealDataPrep$sppEquivCol,
                    pixelGroupColName = "pixelIndex", doAssertion = FALSE)  ## turn assertions off so that the algorythm choice is based on table size
 plotData <- rbindlist(plotData, use.names = TRUE)
 setnames(plotData, "leading", "vegType")
