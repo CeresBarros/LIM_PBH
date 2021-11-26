@@ -32,12 +32,18 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 yearSubset <- c(seq(2011, 2111, 5), 2111)
 source("R/SpaDES/6_resultsDataPrep.R")
 
-## MERGE DOUGLAS-FIR/DRY-CONIFER STANDS?
-mergeDMCPSME <- TRUE
-
+## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
+mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
+mergePSME <- TRUE ## merge PSME dryPSME
+options("LandR.assertions" = FALSE)
 if (mergeDMCPSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
+}
+
+if (mergePSME) {
+  HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergePSME")
+  allPixelCohortDataMnt[vegTypeCN %in% c("PSME", "dryPSME"), vegTypeCN := "PSME"]
 }
 
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
@@ -72,6 +78,10 @@ fireHVdata <- cbind(fireHVdata, summaryFireAttributes[, .(scenario, rep, pixelIn
 ## only montane belt
 if (mergeDMCPSME) {
   fireHVdata <- fireHVdata[vegTypeCN == "DMCPSME"]
+}
+
+if (mergePSME) {
+  fireHVdata <- fireHVdata[vegTypeCN == "PSME"]
 }
 
 doAll <- FALSE
@@ -284,6 +294,10 @@ if (mergeDMCPSME) {  ## only do the the merged vegTypes
   vegHVdata <- vegHVdata[vegTypeCN == "DMCPSME" & year %in% c(start(preSimList), end(preSimList))]
 } else {
   if (mergePSME) {  ## only do the the merged vegTypes
+    vegHVdata <- vegHVdata[vegTypeCN == "PSME" & year %in% c(start(preSimList), end(preSimList))]
+  } else {
+    vegHVdata <- vegHVdata[year %in% c(start(preSimList), end(preSimList))]
+  }
 }
 
 

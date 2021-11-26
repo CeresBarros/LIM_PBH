@@ -49,9 +49,13 @@ figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane")
 cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 
 ## merge Douglas-fir/dry-conifer stands?
-mergeDMCPSME <- TRUE
+mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
+mergePSME <- TRUE ## merge PSME dryPSME
 if (mergeDMCPSME) {
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
+}
+if (mergePSME) {
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergePSME")
 }
 dir.create(figOutputPath, recursive = TRUE)
 ```
@@ -78,6 +82,11 @@ if (startYear != min(allPixelCohortDataMnt$year, na.rm = TRUE)) {
 if (mergeDMCPSME) {
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
   ageDataCN[Cover.dendro %in% c("DMCPSME", "PSME", "dryPSME"), Cover.dendro := "DMCPSME"]
+}
+
+if (mergePSME) {
+  allPixelCohortDataMnt[vegTypeCN %in% c("PSME", "dryPSME"), vegTypeCN := "PSME"]
+  ageDataCN[Cover.dendro %in% c("PSME", "dryPSME"), Cover.dendro := "PSME"]
 }
 
 ## add vegTypes at the initial year - these are the ones we track in time, the final year may have changed completely -

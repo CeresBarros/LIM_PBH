@@ -33,11 +33,18 @@ statsOutputPath <- file.path(simPaths$outputPath, "statsAnalysis")
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 
 ## are we using the merged douglas-fir/dry-conifer stands?
-mergeDMCPSME <- TRUE
+mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
+mergePSME <- TRUE ## merge PSME dryPSME
 if (mergeDMCPSME) {
   HVoutputPathMergedVegType <- file.path(simPaths$outputPath, "hypervolumes", "mergeDMCPSME")
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
   statsOutputPath <- file.path(simPaths$outputPath, "statsAnalysis/mergeDMCPSME")
+}
+
+if (mergePSME) {
+  HVoutputPathMergedVegType <- file.path(simPaths$outputPath, "hypervolumes", "mergePSME")
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergePSME")
+  statsOutputPath <- file.path(simPaths$outputPath, "statsAnalysis/mergePSME")
 }
 
 dir.create(figOutputPath, recursive = TRUE)
@@ -52,6 +59,12 @@ if (mergeDMCPSME) {
   allFiles <- grep("_DMCPSME_|_PSME_|_dryPSME_", allFiles, value = TRUE, invert = TRUE) ## remove HV for vegTypes that were merged
   allFiles <- c(allFiles, list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE)) ## add HV for merged vegType
 }
+
+if (mergePSME) {
+  allFiles <- grep("_PSME_|_dryPSME_", allFiles, value = TRUE, invert = TRUE) ## remove HV for vegTypes that were merged
+  allFiles <- c(allFiles, list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE)) ## add HV for merged vegType
+}
+
 
 fireHVData <- loadHVResultsFromRDS("fireHVs", allFiles)
 if ("HVid" %in% names(fireHVData)) {
