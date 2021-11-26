@@ -234,6 +234,244 @@ rm(plotTest1)  ## plotTest1.2 is used again later
 gc()
 ```
 
+## SCENARIO LIKELIHOOD
+Species B-weighted ages
+```{r likelihoodAgeSpp, echo = FALSE}
+spAgeSim <- allPixelCohortDataMnt[year == endYear & B > 0,  ## absences can't lower the average ages
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+
+spAgeObs <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
+spAgeObs[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
+spAgeObs[grepl("ABLA", Species), speciesCode := "Abie_sp"]
+spAgeObs[grepl("PIEN", Species), speciesCode := "Pice_eng"]
+spAgeObs[grepl("PICO", Species), speciesCode := "Pinu_sp"]
+spAgeObs[grepl("PSME", Species), speciesCode := "Pseu_men"]
+spAgeObs <- spAgeObs[!is.na(speciesCode)]
+
+## calculate log sim age 
+if (any(spAgeSim$AgeBySppWeighted == 0) | any(spAgeObs$Reconstructed.age == 0)) {
+  warnings("there are zero ages, which can't be logged. Removing ages = 0 ")
+  spAgeSim <- spAgeSim[AgeBySppWeighted > 0]
+  spAgeObs <- spAgeObs[Reconstructed.age > 0]
+}
+
+spAgeSim[, logAgeBySppWeighted := log(AgeBySppWeighted)]
+
+## calculate log obs age and mean/sd
+obslogMeanSD <- cbind(spAgeObs, data.table(logReconstructed.age = log(spAgeObs$Reconstructed.age)))
+obslogMeanSD <- obslogMeanSD[, list(mean = mean(logReconstructed.age, na.rm = TRUE), 
+                                    sd = sd(logReconstructed.age, na.rm = TRUE)),
+                             by = .(speciesCode, firePresAbs)]
+
+combos <- unique(spAgeSim[, .(scenario, rep, speciesCode, firePresAbs)])
+negSumLogliks <- apply(as.data.frame(combos), 1, FUN = function(combo, spAgeSim, obslogMeanSD) {
+  combo <- as.data.table(as.list(combo))
+  cols <- c("rep", "firePresAbs")
+  combo[, (cols) := lapply(.SD, as.numeric), .SDcols = cols] 
+  
+  ## subset data
+  simData <- spAgeSim[combo, on = names(combo)]
+  cols <- intersect(names(obslogMeanSD), names(combo))
+  obsData <- obslogMeanSD[combo[, ..cols], on = cols]
+  if (is.na(obsData$mean)) {
+    message(paste("no observed data for:", paste(combo, collapse = " ")))
+    return(cbind(combo, data.table(NSLL = NA)))
+  } else {
+    logLiks <- dlnorm(x = simData$logAgeBySppWeighted, meanlog = obsData$mean, sdlog = obsData$sd, log = TRUE)
+    return(cbind(combo, data.table(NSLL = -sum(logLiks))))
+  }
+}, obslogMeanSD = obslogMeanSD, spAgeSim = spAgeSim)
+
+NSLLAgeSp <- rbindlist(negSumLogliks)
+NSLLAgeSp[, mean(NSLL, na.rm = TRUE), by = .(scenario)]
+NSLLAgeSp[, mean(NSLL, na.rm = TRUE), by = .(speciesCode, scenario)]
+```
+
+Forest type B-weighted ages
+```{r likelihoodAgeVegTypeCN, echo = FALSE}
+spAgeSim <- allPixelCohortDataMnt[year == endYear & B > 0,  ## absences can't lower the average ages
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+
+spAgeObs <- copy(ageDataCN[, .(Cover.dendro, Reconstructed.age, firePresAbs)])
+setnames(spAgeObs, "Cover.dendro", "vegTypeCN")
+
+## calculate log sim age 
+if (any(spAgeSim$AgeBySppWeighted == 0) | any(spAgeObs$Reconstructed.age == 0)) {
+  warnings("there are zero ages, which can't be logged. Removing ages = 0 ")
+  spAgeSim <- spAgeSim[AgeBySppWeighted > 0]
+  spAgeObs <- spAgeObs[Reconstructed.age > 0]
+}
+
+spAgeSim[, logAgeBySppWeighted := log(AgeBySppWeighted)]
+
+## calculate log obs age and mean/sd
+obslogMeanSD <- cbind(spAgeObs, data.table(logReconstructed.age = log(spAgeObs$Reconstructed.age)))
+obslogMeanSD <- obslogMeanSD[, list(mean = mean(logReconstructed.age, na.rm = TRUE), 
+                                    sd = sd(logReconstructed.age, na.rm = TRUE)),
+                             by = .(vegTypeCN, firePresAbs)]
+
+combos <- unique(spAgeSim[, .(scenario, rep, vegTypeCN, firePresAbs)])
+negSumLogliks <- apply(as.data.frame(combos), 1, FUN = function(combo, spAgeSim, obslogMeanSD) {
+  combo <- as.data.table(as.list(combo))
+  cols <- c("rep", "firePresAbs")
+  combo[, (cols) := lapply(.SD, as.numeric), .SDcols = cols] 
+  
+  ## subset data
+  simData <- spAgeSim[combo, on = names(combo)]
+  cols <- intersect(names(obslogMeanSD), names(combo))
+  obsData <- obslogMeanSD[combo[, ..cols], on = cols]
+  if (is.na(obsData$mean)) {
+    message(paste("no observed data for:", paste(combo, collapse = " ")))
+    return(cbind(combo, data.table(NSLL = NA)))
+  } else {
+    logLiks <- dlnorm(x = simData$logAgeBySppWeighted, meanlog = obsData$mean, sdlog = obsData$sd, log = TRUE)
+    return(cbind(combo, data.table(NSLL = -sum(logLiks))))
+  }
+}, obslogMeanSD = obslogMeanSD, spAgeSim = spAgeSim)
+
+NSLLAgeVegTypeCN <- rbindlist(negSumLogliks)
+NSLLAgeVegTypeCN[, mean(NSLL, na.rm = TRUE), by = .(scenario)]
+NSLLAgeVegTypeCN[, mean(NSLL, na.rm = TRUE), by = .(vegTypeCN, scenario)]
+```
+
+Species no. cohorts
+```{r likelihoodCohortsSpp, echo = FALSE}
+spCohortSim <- allPixelCohortDataMnt[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                                     list(noCohorts = length(unique(age))),
+                                     by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+
+spCohortObs <- copy(ageDataCN[, .(Species, noCohorts, firePresAbs)])
+spCohortObs[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
+spCohortObs[grepl("ABLA", Species), speciesCode := "Abie_sp"]
+spCohortObs[grepl("PIEN", Species), speciesCode := "Pice_eng"]
+spCohortObs[grepl("PICO", Species), speciesCode := "Pinu_sp"]
+spCohortObs[grepl("PSME", Species), speciesCode := "Pseu_men"]
+spCohortObs <- spCohortObs[!is.na(speciesCode)]
+
+## calculate log sim no Cohorts 
+if (any(spCohortSim$noCohorts == 0) | any(spCohortObs$noCohorts == 0)) {
+  warnings("there are zero noCohorts, which can't be logged. Removing noCohorts = 0 ")
+  spCohortSim <- spCohortSim[noCohorts > 0]
+  spCohortObs <- spCohortObs[noCohorts > 0]
+}
+
+spCohortSim[, logNoCohorts := log(noCohorts)]
+
+## calculate log obs age and mean/sd
+obslogMeanSD <- cbind(spCohortObs, data.table(logNoCohorts = log(spCohortObs$noCohorts)))
+obslogMeanSD <- obslogMeanSD[, list(mean = mean(logNoCohorts, na.rm = TRUE), 
+                                    sd = sd(logNoCohorts, na.rm = TRUE)),
+                             by = .(speciesCode, firePresAbs)]
+
+combos <- unique(spCohortSim[, .(scenario, rep, speciesCode, firePresAbs)])
+negSumLogliks <- apply(as.data.frame(combos), 1, FUN = function(combo, spCohortSim, obslogMeanSD) {
+  combo <- as.data.table(as.list(combo))
+  cols <- c("rep", "firePresAbs")
+  combo[, (cols) := lapply(.SD, as.numeric), .SDcols = cols] 
+  
+  ## subset data
+  simData <- spCohortSim[combo, on = names(combo)]
+  cols <- intersect(names(obslogMeanSD), names(combo))
+  obsData <- obslogMeanSD[combo[, ..cols], on = cols]
+  if (is.na(obsData$mean)) {
+    message(paste("no observed data for:", paste(combo, collapse = " ")))
+    return(cbind(combo, data.table(NSLL = NA)))
+  } else {
+    logLiks <- dlnorm(x = simData$logNoCohorts, meanlog = obsData$mean, sdlog = obsData$sd, log = TRUE)
+    return(cbind(combo, data.table(NSLL = -sum(logLiks))))
+  }
+}, obslogMeanSD = obslogMeanSD, spCohortSim = spCohortSim)
+
+NSLLCohortSp <- rbindlist(negSumLogliks)
+NSLLCohortSp[, mean(NSLL, na.rm = TRUE), by = .(scenario)]
+```
+
+Forest type no. cohorts
+```{r likelihoodCohortsVegTypeCN, echo = FALSE}
+spCohortSim <- allPixelCohortDataMnt[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                                     list(noCohorts = length(unique(age))),
+                                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+
+spCohortObs <- copy(ageDataCN[, .(Cover.dendro, noCohorts, firePresAbs)])
+setnames(spCohortObs, "Cover.dendro", "vegTypeCN")
+
+## calculate log sim no Cohorts 
+if (any(spCohortSim$noCohorts == 0) | any(spCohortObs$noCohorts == 0)) {
+  warnings("there are zero noCohorts, which can't be logged. Removing noCohorts = 0 ")
+  spCohortSim <- spCohortSim[noCohorts > 0]
+  spCohortObs <- spCohortObs[noCohorts > 0]
+}
+
+spCohortSim[, logNoCohorts := log(noCohorts)]
+
+## calculate log obs age and mean/sd
+obslogMeanSD <- cbind(spCohortObs, data.table(logNoCohorts = log(spCohortObs$noCohorts)))
+obslogMeanSD <- obslogMeanSD[, list(mean = mean(logNoCohorts, na.rm = TRUE), 
+                                    sd = sd(logNoCohorts, na.rm = TRUE)),
+                             by = .(vegTypeCN, firePresAbs)]
+
+combos <- unique(spCohortSim[, .(scenario, rep, vegTypeCN, firePresAbs)])
+negSumLogliks <- apply(as.data.frame(combos), 1, FUN = function(combo, spCohortSim, obslogMeanSD) {
+  combo <- as.data.table(as.list(combo))
+  cols <- c("rep", "firePresAbs")
+  combo[, (cols) := lapply(.SD, as.numeric), .SDcols = cols] 
+  
+  ## subset data
+  simData <- spCohortSim[combo, on = names(combo)]
+  cols <- intersect(names(obslogMeanSD), names(combo))
+  obsData <- obslogMeanSD[combo[, ..cols], on = cols]
+  if (is.na(obsData$mean)) {
+    message(paste("no observed data for:", paste(combo, collapse = " ")))
+    return(cbind(combo, data.table(NSLL = NA)))
+  } else {
+    logLiks <- dlnorm(x = simData$logNoCohorts, meanlog = obsData$mean, sdlog = obsData$sd, log = TRUE)
+    return(cbind(combo, data.table(NSLL = -sum(logLiks))))
+  }
+}, obslogMeanSD = obslogMeanSD, spCohortSim = spCohortSim)
+
+NSLLCohortTypeCN <- rbindlist(negSumLogliks)
+NSLLCohortTypeCN[, mean(NSLL, na.rm = TRUE), by = .(scenario)]
+NSLLCohortTypeCN[, mean(NSLL, na.rm = TRUE), by = .(vegTypeCN, scenario)]
+```
+
+Forest type mean fire interval
+```{r likelihoodFIVegTypeCN, echo = FALSE}
+spFISim <- summaryFireAttributes
+spFIObs <- copy(ageDataCN[, .(Cover.dendro, mean.FI)])
+setnames(spFIObs, "Cover.dendro", "vegTypeCN")
+
+## calculate obs meanFI and mean/sd
+obsMeanSD <- spFIObs[, list(mean = mean(mean.FI, na.rm = TRUE), 
+                            sd = sd(mean.FI, na.rm = TRUE)),
+                     by = .(vegTypeCN)]
+
+combos <- unique(spFISim[, .(scenario, rep, vegTypeCN)])
+negSumLogliks <- apply(as.data.frame(combos), 1, FUN = function(combo, spFISim, obsMeanSD) {
+  combo <- as.data.table(as.list(combo))
+  cols <- c("rep")
+  combo[, (cols) := lapply(.SD, as.numeric), .SDcols = cols] 
+  
+  ## subset data
+  simData <- spFISim[combo, on = names(combo)]
+  cols <- intersect(names(obsMeanSD), names(combo))
+  obsData <- obsMeanSD[combo[, ..cols], on = cols]
+  if (is.na(obsData$mean)) {
+    message(paste("no observed data for:", paste(combo, collapse = " ")))
+    return(cbind(combo, data.table(NSLL = NA)))
+  } else {
+    logLiks <- dexp(x = simData$meanFreq, rate = obsData$mean, log = TRUE)
+    return(cbind(combo, data.table(NSLL = -sum(logLiks))))
+  }
+}, obsMeanSD = obsMeanSD, spFISim = spFISim)
+
+NSLLFITypeCN <- rbindlist(negSumLogliks)
+NSLLFITypeCN[, mean(NSLL, na.rm = TRUE), by = .(scenario)]
+NSLLFITypeCN[, mean(NSLL, na.rm = TRUE), by = .(vegTypeCN, scenario)]
+```
 
 ### SCENARIO EFFECTS ON STAND AGE, ALPHA DIVERSITY AND BETA DIVERSITY
 Across the landscape in pixels with/without fire
