@@ -74,14 +74,29 @@ if (mergeDMCPSME) {
   fireHVdata <- fireHVdata[vegTypeCN == "DMCPSME"]
 }
 
+doAll <- FALSE
 lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
-       FUN = function(allData, HVoutputPath) {
+       FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
          veg <- unique(allData$vegTypeCN)
          file.suffix <- paste0("fireHVs_", veg, "_rep", r)
          cols <- c("PC1", "PC2", "PC3")
          no.runs <- 3
 
+         skip <- FALSE
+         if (!doAll) {
+           ## check if all HV intersections were computed already
+           computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                   list.files(HVoutputPath), value = TRUE)
+           if (length(computedHVpairs) == no.runs) {
+             skip <- TRUE
+           }
+         }
+
+         if (skip) {
+           message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                "'doAll' is", doAll,"... Skipping"))
+         } else {
            fireHVWrapper(allData, cols, file.suffix,
                          # noAxes = 3,
                          ordination = "none",
@@ -97,17 +112,33 @@ lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
                          verbose = FALSE,
                          addNoise = TRUE)
          }
+       }, HVoutputPath = HVoutputPath, doAll = doAll)   ## if doAll == FALSE, only missing HV intersection pairs will be computed
 
 
 ## Hypervolumes across the landscape ----------------
 ## only montane belt
+doAll <- FALSE
 lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
-       FUN = function(allData, HVoutputPath) {
+       FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
          file.suffix <- paste0("fireHVs_landscape_rep", r)
          cols <- c("PC1", "PC2", "PC3")
          no.runs <- 3
 
+         skip <- FALSE
+         if (!doAll) {
+           ## check if all HV intersections were computed already
+           computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                   list.files(HVoutputPath), value = TRUE)
+           if (length(computedHVpairs) == no.runs) {
+             skip <- TRUE
+           }
+         }
+
+         if (skip) {
+           message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                "'doAll' is", doAll,"... Skipping"))
+         } else {
            fireHVWrapper(allData, cols, file.suffix,
                          # noAxes = 3,
                          ordination = "none",
@@ -121,7 +152,9 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
                          # plotOrdi = TRUE,
                          plotHV = TRUE,
                          verbose = FALSE,
-}, HVoutputPath = HVoutputPath)
+                         addNoise = TRUE)
+         }
+       }, HVoutputPath = HVoutputPath, doAll = doAll)
 
 
 ## VEGETATION ATTRIBUTES HYPERVOLUMES -----------
@@ -241,6 +274,7 @@ vegHVdata <- vegHVdata[, ..cols]
 ## gaussian HVs were extremely slow
 pixelIndexList <- split(vegHVdata[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)],
                         by = c("rep", "vegTypeCN"), drop = TRUE)
+doAll <- FALSE
 lapply(pixelIndexList,
        FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
          r <- unique(pixelIndexDT$rep)
@@ -252,12 +286,27 @@ lapply(pixelIndexList,
          ## now split by year to calculate and compare hypervolumes between
          ## scenarios for each year
          lapply(split(allData, by = "year"),
+                FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   yr <- unique(allData$year)
                   file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
                   IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
 
                   no.runs <- 3
+                  skip <- FALSE
+                  if (!doAll) {
+                    ## check if all HV intersections were computed already
+                    computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                            list.files(HVoutputPath), value = TRUE)
+                    if (length(computedHVpairs) == no.runs) {
+                      skip <- TRUE
+                    }
+                  }
 
+                  if (skip) {
+                    message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                         "'doAll' is", doAll,"... Skipping"))
+                  } else {
+                    print(file.suffix)
                     vegHVWrapper(allData,
                                  IDcols,
                                  HVIDcol = "scenario",
@@ -276,12 +325,13 @@ lapply(pixelIndexList,
                                  plotHV = TRUE,
                                  verbose = FALSE)
                   }
-}, vegDataForHVs = vegDataForHVs, HVoutputPath = HVoutputPath)
+                }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
+       }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
 
 
 ## HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
-lapply(pixelIndexList, FUN = function(pixelIndexDT, vegDataForHVs, HVoutputPath) {
+doAll <- FALSE
 lapply(pixelIndexList,
        FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
          r <- unique(pixelIndexDT$rep)
@@ -293,12 +343,27 @@ lapply(pixelIndexList,
          ## now split by scenario to calculate and compare hypervolumes between
          ## scenarios for each scenario
          lapply(split(allData, by = "scenario"),
+                FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   scen <- unique(allData$scenario)
                   file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
                   IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
 
                   no.runs <- 3
+                  skip <- FALSE
+                  if (!doAll) {
+                    ## check if all HV intersections were computed already
+                    computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                            list.files(HVoutputPath), value = TRUE)
+                    if (length(computedHVpairs) == no.runs) {
+                      skip <- TRUE
+                    }
+                  }
 
+                  if (skip) {
+                    message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                         "'doAll' is", doAll,"... Skipping"))
+                  } else {
+                    print(file.suffix)
                     vegHVWrapper(allData,
                                  IDcols,
                                  HVIDcol = "year",
@@ -316,9 +381,9 @@ lapply(pixelIndexList,
                                  # plotOrdi = TRUE,
                                  plotHV = TRUE,
                                  verbose = FALSE)
-  }, HVoutputPath = HVoutputPath, r = r, veg = veg)
-}, vegDataForHVs = vegDataForHVs, HVoutputPath = HVoutputPath)
-
+                  }
+                }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
+       }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
 
 
 ## Hypervolumes across the landscape ----------------
@@ -357,7 +422,7 @@ if (getOption("LandR.assertions")) {
 ## HV comparisons per year, between scenarios --------------
 ## split by year and rep to calculate and compare hypervolumes between
 ## scenarios for each year
-lapply(split(vegDataForHVs, by = c("rep", "year")), FUN = function(allData, HVoutputPath) {
+doAll <- FALSE
 lapply(split(vegHVdata, by = c("rep", "year")),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
@@ -365,6 +430,21 @@ lapply(split(vegHVdata, by = c("rep", "year")),
          file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
          IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
          no.runs <- 3
+         skip <- FALSE
+         if (!doAll) {
+           ## check if all HV intersections were computed already
+           computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                   list.files(HVoutputPath), value = TRUE)
+           if (length(computedHVpairs) == no.runs) {
+             skip <- TRUE
+           }
+         }
+
+         if (skip) {
+           message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                "'doAll' is", doAll,"... Skipping"))
+         } else {
+           print(file.suffix)
 
            vegHVWrapper(allData,
                         IDcols,
@@ -384,19 +464,36 @@ lapply(split(vegHVdata, by = c("rep", "year")),
                         plotHV = TRUE,
                         verbose = FALSE)
          }
+       }, HVoutputPath = HVoutputPath, doAll = doAll)
 
 
 ## HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
 ## now split by scenario and rep to calculate and compare hypervolumes between
 ## years for each scenario
-lapply(split(vegDataForHVs, by = c("rep","scenario")), FUN = function(allData, HVoutputPath) {
+doAll <- FALSE
 lapply(split(vegHVdata, by = c("rep","scenario")),
+       FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
          scen <- unique(allData$scenario)
          file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
          IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
          no.runs <- 3
+         skip <- FALSE
+         if (!doAll) {
+           ## check if all HV intersections were computed already
+           computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                   list.files(HVoutputPath), value = TRUE)
+           if (length(computedHVpairs) == no.runs) {
+             skip <- TRUE
+           }
+         }
+
+         if (skip) {
+           message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                "'doAll' is", doAll,"... Skipping"))
+         } else {
+           print(file.suffix)
 
            vegHVWrapper(allData,
                         IDcols,
@@ -415,4 +512,5 @@ lapply(split(vegHVdata, by = c("rep","scenario")),
                         # plotOrdi = TRUE,
                         plotHV = TRUE,
                         verbose = FALSE)
-}, HVoutputPath = HVoutputPath)
+         }
+       }, HVoutputPath = HVoutputPath, doAll = doAll)
