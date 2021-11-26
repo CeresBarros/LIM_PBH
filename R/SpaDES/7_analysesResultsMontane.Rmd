@@ -177,7 +177,7 @@ plotData <- allPixelCohortDataMnt[year == endYear & B > 0,  ## absences can't lo
                                                                        sum((B/100), na.rm = TRUE))),
                                   by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
 
-plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age)])
+plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
 plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
 plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
 plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
