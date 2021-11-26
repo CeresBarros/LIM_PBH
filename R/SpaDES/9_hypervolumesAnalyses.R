@@ -167,7 +167,7 @@ comp <- sort(unique(sub(".*_", "", grep("Volume", names(vegHVDataBYrComparisons)
 comp <- paste(comp, collapse = "_")
 vegHVDataBYrComparisons[, compare := comp]
 
-## break into 2 tables, remove empty volluem columns,
+## break into 2 tables, remove empty volume columns,
 ## make column of comparison ID, change names and re-rbind
 tempData  <- vegHVDataBYrComparisons[is.na(Volume_HV1_2011),]
 tempData2  <- vegHVDataBYrComparisons[!is.na(Volume_HV1_2011),]
