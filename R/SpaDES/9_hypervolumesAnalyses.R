@@ -228,9 +228,10 @@ vegTypeCNLabels <- vegTypeCNLabels[c(grep("No veg.|landscape", vegTypeCNLabels, 
                                      grep("landscape", vegTypeCNLabels))]
 
 ## landscape gets a different colour
-vegTypeCNColours <- vegTypeCNLabels
-vegTypeCNColours[1:length(vegTypeCNColours)-1] <- RColorBrewer::brewer.pal(length(vegTypeCNColours)-1, name = "Set1")
+vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNLabels) - 2, name = "Dark2")
 vegTypeCNColours["landscape"] <- "darkgreen"
+vegTypeCNColours["No veg."] <- "grey40"
+names(vegTypeCNColours) <- names(vegTypeCNLabels)
 
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------

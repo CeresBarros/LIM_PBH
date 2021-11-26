@@ -20,7 +20,7 @@ vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
 names(vegTypeColours) <- c(levels(preSimList$vegTypeMap)[[1]]$ID, "0")
 
 
-vegTypeCNLabels <- unique(as.character(allHVData$vegType))
+vegTypeCNLabels <- unique(as.character(allPixelCohortDataMnt$vegTypeCN))
 names(vegTypeCNLabels) <- vegTypeCNLabels
 vegTypeCNLabels <- sub("PIEN", "Spruce", vegTypeCNLabels)
 vegTypeCNLabels <- sub("MMC", "Moist conif.", vegTypeCNLabels)
@@ -30,6 +30,7 @@ vegTypeCNLabels <- sub("PICO", "Pine", vegTypeCNLabels)
 vegTypeCNLabels <- sub("DMCPSME", "Dry conif./Douglas-fir", vegTypeCNLabels)
 vegTypeCNLabels <- sub("^PSME$", "Douglas-fir", vegTypeCNLabels)
 vegTypeCNLabels <- sub("dryPSME", "Dry Douglas-fir", vegTypeCNLabels)
+vegTypeCNLabels["landscape"] <- "landscape"
 
 ## reorder
 vegTypeCNLabels <- vegTypeCNLabels[c(grep("No veg.|landscape", vegTypeCNLabels, invert = TRUE),
@@ -37,6 +38,7 @@ vegTypeCNLabels <- vegTypeCNLabels[c(grep("No veg.|landscape", vegTypeCNLabels, 
                                      grep("landscape", vegTypeCNLabels))]
 
 ## landscape gets a different colour
-vegTypeCNColours <- vegTypeCNLabels
-vegTypeCNColours[1:length(vegTypeCNColours)-1] <- RColorBrewer::brewer.pal(length(vegTypeCNColours)-1, name = "Set1")
+vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNLabels)-2, name = "Dark2")
+names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels)-2)]
 vegTypeCNColours["landscape"] <- "darkgreen"
+vegTypeCNColours["No veg."] <- "grey40"
