@@ -109,7 +109,20 @@ set(vegHVDataWYrComparisons, NULL, grep("Unique", names(vegHVDataWYrComparisons)
 comp <- sub(".*_", "", grep("Volume", names(vegHVDataWYrComparisons), value = TRUE))
 comp <- paste(comp, collapse = "_")
 vegHVDataWYrComparisons[, compare := comp]
-setnames(vegHVDataWYrComparisons, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(vegHVDataWYrComparisons)))
+
+## break into 2 tables, remove empty volume columns,
+## make column of comparison ID, change names and re-rbind
+tempData  <- vegHVDataWYrComparisons[is.na(Volume_HV1_PM),]
+tempData2  <- vegHVDataWYrComparisons[!is.na(Volume_HV1_PM),]
+
+cols <- grep("Volume", names(tempData), value = TRUE)
+set(tempData, NULL, cols[which(is.na(colSums(tempData[, ..cols])))], NULL)
+set(tempData2, NULL, cols[which(is.na(colSums(tempData2[, ..cols])))], NULL)
+
+setnames(tempData, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData)))
+setnames(tempData2, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData2)))
+
+vegHVDataWYrComparisons <- rbind(tempData, tempData2, use.names = TRUE)
 
 ## between year comparisons data
 betweenYearFiles <- grep("yr", allFiles, value = TRUE, invert = TRUE)
@@ -190,6 +203,12 @@ allHVData <- rbindlist(list("fireHV" = fireHVData, "vegHV" = vegHVData),
 
 ## calculate overlap following Barros et al 2016
 allHVData[, overlap := Intersection/Union]
+
+## check for missing data
+if (nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM)) & (is.na(HV_2011)|is.na(HV_2111))])) {
+  stop("There seems to be missing data")
+}
+
 
 ## LABELS AND COLOURS FOR PLOTTING ----------------
 vegTypeCNLabels <- unique(as.character(allHVData$vegType))
