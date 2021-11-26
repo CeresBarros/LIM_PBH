@@ -658,13 +658,11 @@ plotSave <- ggarrange(pyroVSbioDivVegTypesPlot, pyroVSbioDivVegLandscapePlot + l
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversity.tiff"),
        width = 12, height = 7)
 
-## ------------------------------------
-## ANALYSING PCAs
-## ------------------------------------
-lastPCACacheId <- tail(showCache(simPaths$cachePath, userTags = c("hypervolumes", "pyrodivPCA"))[order(createdDate)], 1)[, cacheId]
-fireHVPCA <- loadFromCache(simPaths$cachePath, cacheId = lastPCACacheId)
-lastPCACacheId <- tail(showCache(simPaths$cachePath, userTags = c("hypervolumes", "biodivPCA"))[order(createdDate)], 1)[, cacheId]
-vegHVPCA <- loadFromCache(simPaths$cachePath, cacheId = lastPCACacheId)
+
+
+
+
+
 
 
 
