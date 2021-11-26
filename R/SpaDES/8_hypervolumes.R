@@ -207,6 +207,33 @@ if (getOption("LandR.assertions")) {
 
   if (any(test) | any(test2))
     stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
+
+
+  ## checks at landscape scale:
+  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
+  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
+  temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
+  setkey(temp, scenario, rep, pixelIndex)
+  setkey(vegDataForHVs, scenario, rep, pixelIndex)
+
+  if (isFALSE(identical(temp, vegDataForHVs))) {
+    stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
+         "Combinations as allPixelCohortDataMnt")
+  }
+
+  temp <- vegDataForHVs[, length(unique(pixelIndex)), by = .(scenario, rep, year)]
+  if (unique(temp$V1) > 1) {
+    stop("There should be the same number of pixels every year.")
+  }
+
+  temp <- split(vegDataForHVs[, .(pixelIndex, scenario, rep, year)],
+                by = c("scenario", "rep", "year"), keep.by = FALSE)
+  temp <- lapply(temp, FUN = function(x) unique(x[["pixelIndex"]]))
+  test <- lapply(1:length(temp), function(n) setdiff(temp[[n]], unlist(temp[-n])))
+
+  test <- sapply(test, length)
+  if (any(test))
+    stop("Different pixelIndex between scenario/rep/year combinations")
 }
 
 ## prep data for hypervolumes
@@ -390,34 +417,6 @@ lapply(pixelIndexList,
 ## only montane belt
 ## Now we follow all pixels, so there is no need to subset pixels by veg type in
 ## in the first year
-vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
-
-if (getOption("LandR.assertions")) {
-  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
-  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
-  temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
-  setkey(temp, scenario, rep, pixelIndex)
-  setkey(vegDataForHVs, scenario, rep, pixelIndex)
-
-  if (isFALSE(identical(temp, vegDataForHVs))) {
-    stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
-         "Combinations as allPixelCohortDataMnt")
-  }
-
-  temp <- vegDataForHVs[, length(unique(pixelIndex)), by = .(scenario, rep, year)]
-  if (unique(temp$V1) > 1) {
-    stop("There should be the same number of pixels every year.")
-  }
-
-  temp <- split(vegDataForHVs[, .(pixelIndex, scenario, rep, year)],
-                by = c("scenario", "rep", "year"), keep.by = FALSE)
-  temp <- lapply(temp, FUN = function(x) unique(x[["pixelIndex"]]))
-  test <- lapply(1:length(temp), function(n) setdiff(temp[[n]], unlist(temp[-n])))
-
-  test <- sapply(test, length)
-  if (any(test))
-    stop("Different pixelIndex between scenario/rep/year combinations")
-}
 
 ## HV comparisons per year, between scenarios --------------
 ## split by year and rep to calculate and compare hypervolumes between
