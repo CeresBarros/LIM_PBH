@@ -185,9 +185,12 @@ plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
 plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
 plotData2 <- plotData2[!is.na(speciesCode)]
 
-plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age)), by = speciesCode][plotData, on = .(speciesCode)]
+plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)), 
+                       by = .(speciesCode, firePresAbs)]
+plotData2 <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
 plotData2[, firePresAbs := as.factor(firePresAbs)]
 plotData2[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppObs]
+plotData2 <- plotData2[!is.na(ageDiffSimObs)]
 
 plotData2 <- plotData2[!is.na(ageDiffSimObs)]
 ageDiffLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
@@ -1687,7 +1690,7 @@ gc()
 ```
 
 ### COMPARING SIMULATED AND OBSERVED DATA
-Age distributions:
+Age means CIs - by species
 ```{r simVsObsAges, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's
@@ -2016,24 +2019,109 @@ plot31.3 <- ggplot(plotData2,
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
-```
-
 ```{r plot&savePlots6, echo = FALSE}
-plotSave <- ggarrange(plot31.2 + theme(legend.position = "none"),
-                      get_legend(plot31.3 + theme(legend.position = c(0.5,0)) +
-                                   guides(colour = guide_legend(ncol = 1, override.aes = list(shape = 15, size = 4)))),
-                      plot31.3 + theme(legend.position = "none"),
-                      widths = c(0.8, 0.2),
-                      labels = c("a", "", "b"), font.label = list(size = 20))
+plot31.2
+ggsave(plot = plot31.2 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanCohortDiffVegTypeCN.tiff"),
+       width = 14, height = 7)
+plot31.3
+ggsave(plot = plot31.3 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAbsCohortDevVegTypeCN.tiff"),
+       width = 10, height = 5)
+
+plotSave <- plot_grid(
+  plot_grid(plot31 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot31.3 + theme(legend.position = "none", plot.title = element_blank()),
+            nrow = 2, axis = "l", align = "v", rel_heights = c(1, 0.7),
+            labels = "auto", label_size = 20),
+  get_legend(plot29 + theme(legend.direction = "vertical")),
+  nrow = 1, rel_widths = c(1, 0.15))
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanCohortDiff.tiff"),
-       width = 10, height = 8)
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsSimVsObsTest_MAD_VegTypeCN.tiff"),
+       width = 10, height = 10)
 
 rm(plot31.2, plot31.3)
 gc()
 ```
 
-Mean age differences
+Mean absolute deviation of simulated no. cohorts with respect to average observed no. cohorts for a given species
+```{r simVsObsCohortsDif, cache = FALSE}
+## Cohorts mean absolute deviation 
+## calculate the mean absolute deviation of each stand to the observed average (per veg type) across reps
+plotData <- allPixelCohortDataMnt[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                                  list(noCohorts = length(unique(age))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+plotData2 <- copy(ageDataCN[, .(Species, noCohorts, firePresAbs)])
+plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
+plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
+plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
+plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
+plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData2 <- plotData2[!is.na(speciesCode)]
+plotData2 <- plotData2[, list(avgNoCohortsObs = mean(noCohorts, na.rm = TRUE)),
+                       by = .(speciesCode, firePresAbs)]
+plotData <- plotData2[plotData, on = c("speciesCode", "firePresAbs")]
+plotData <- plotData[!is.na(avgNoCohortsObs) & !is.na(noCohorts)]
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(noCohorts - mean(avgNoCohortsObs)), na.rm = TRUE)),
+                      by = .(scenario, rep, speciesCode, firePresAbs)]
+
+## differences
+plot31.5 <- ggplot(plotData,
+                   aes(x = speciesCode,
+                       y = noCohorts - avgNoCohortsObs,
+                       fill = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = speciesLabels) +
+  labs(title = "Avg differences from observed no. cohorts",
+       y = expression("sim." - bar("obs.")), x = "") +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## mean absolute deviation across reps
+plot31.6 <- ggplot(plotData2,
+                   aes(x = speciesCode, y = meanAbsDevSimObs,
+                       colour = scenario)) +
+  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
+  scale_x_discrete(labels = speciesLabels) +
+  labs(title = "Mean abs. deviation from observed no. cohorts",
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
+  coord_flip() +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+```
+
+```{r plot&savePlots6, echo = FALSE}
+plot31.5
+ggsave(plot = plot31.5 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanCohortDiffSpecies.tiff"),
+       width = 14, height = 7)
+plot31.6
+ggsave(plot = plot31.6 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAbsCohortDevSpecies.tiff"),
+       width = 10, height = 5)
+
+plotSave <- plot_grid(
+  plot_grid(plot31.4 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot31.6 + theme(legend.position = "none", plot.title = element_blank()),
+            nrow = 2, axis = "l", align = "v", rel_heights = c(1, 0.7),
+            labels = "auto", label_size = 20),
+  get_legend(plot29 + theme(legend.direction = "vertical")),
+  nrow = 1, rel_widths = c(1, 0.15))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsSimVsObsTest_MAD_Species.tiff"),
+       width = 10, height = 10)
+
+gc()
+```
+
+Mean absolute deviation simulated age with respect to average observed age for a given stand type
 ```{r simVsObsAgesDif, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
@@ -2073,11 +2161,10 @@ plot32.2 <- ggplot(plotData2,
   stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
-        panel.grid.major.x = element_line(colour = "grey", size = 11/22),
-        panel.grid.minor.x = element_line(colour = "grey", size = 11/22)) +
+        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  labs(title = "Mean abs. age deviation from field data",
+  labs(title = "Mean abs. deviation from observed ages",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
@@ -2089,19 +2176,121 @@ plot32
 ggsave(plot = plot32 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_meanAgeDiffVegTypeCN.tiff"),
        width = 14, height = 7)
-
+plot32.2
 ggsave(plot = plot32.2 + theme(legend.position = "right"),
-       filename = file.path(figOutputPath, "results_meanAbsAgeDev.tiff"),
+       filename = file.path(figOutputPath, "results_meanAbsAgeDevVegTypeCN.tiff"),
        width = 10, height = 5)
 
-plotSave <- ggarrange(plot32.2 + theme(legend.position = "bottom"),
-                      plotTest1.2 + theme(legend.position = "bottom"),
-                      labels = "auto", font.label = list(size = 20))
+plotSave <- plot_grid(
+  plot_grid(plot29.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30.2 + theme(legend.position = "none", plot.title = element_blank()),
+            nrow = 1, rel_widths = c(1, 0.7), axis = "b", align = "h",
+            labels = "auto", label_size = 20),
+  plot_grid(plot32.2 + theme(legend.position = "none", plot.title = element_blank()),
+            get_legend(plot29 + theme(legend.direction = "vertical")),
+            nrow = 1, rel_widths = c(1, 0.7), axis = "t", align = "v",
+            labels = c("c", ""), label_size = 20),
+  nrow = 2, rel_heights = c(1, 0.7), axis = "l", align = "h")
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDev_ageSimVsObsTest.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MAD_VegTypeCN.tiff"),
+       width = 10, height = 10)
+
+gc()
+```
+
+Mean absolute deviation simulated age with respect to average observed age for a given species
+```{r simVsObsAgesDif, cache = FALSE}
+## mean age differences
+## calculate avg weighted ages across observed stands first
+## then the absolute difference of each stand to the observed average (per veg type) across reps
+plotData <- allPixelCohortDataMnt[year == endYear & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+
+plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
+plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
+plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
+plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
+plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
+plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData2 <- plotData2[!is.na(speciesCode)]
+plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
+                       by = .(speciesCode, firePresAbs)]
+
+plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
+plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(AgeBySppWeighted)]
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs)))),
+                      by = .(scenario, rep, speciesCode, firePresAbs)]
+
+## differences
+plot43 <- ggplot(plotData,
+                 aes(x = speciesCode,
+                     y = AgeBySppWeighted - avgAgeBySppObs,
+                     fill = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  scale_x_discrete(labels = speciesLabels) +
+  theme(legend.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Avg. differences from observed ages",
+       y = expression("sim." - bar("obs.")), x = "") +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## mean absolute differences
+plot43.2 <- ggplot(plotData2,
+                   aes(x = speciesCode, y = meanAbsDevSimObs,
+                       colour = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = speciesLabels) +
+  labs(title = "Mean abs. deviation from observed ages",
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
+  coord_flip() +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+```
+
+```{r plot&savePlots7, echo = FALSE}
+plot43
+ggsave(plot = plot43 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAgeDiffSpecies.tiff"),
+       width = 14, height = 7)
+plot43.2
+ggsave(plot = plot43.2 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAbsAgeDevSpecies.tiff"),
+       width = 10, height = 5)
+
+plotSave <- plot_grid(plot_grid(plot43 + theme(legend.position = "none"),
+                                plotTest1.2 + theme(legend.position = "none"),
+                                ncol = 2, nrow = 1, align = "h", axis = "b",
+                                labels = "auto", font.label = list(size = 20)), 
+                      get_legend(plot43 + theme(legend.direction = "vertical")),
+                      ncol = 2, nrow = 1, rel_widths = c(1, 0.15))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDev_ageSimVsObsTestSpecies.tiff"),
        width = 15, height = 7)
 
-rm(plot32, plot32.2, plotTest1.2)
+plotSave <- plot_grid(
+  plot_grid(plot29 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30 + theme(legend.position = "none", plot.title = element_blank()),
+            nrow = 1, rel_widths = c(1, 0.7), axis = "b", align = "h",
+            labels = "auto", label_size = 20),
+  plot_grid(plot43.2 + theme(legend.position = "none", plot.title = element_blank()),
+            get_legend(plot29 + theme(legend.direction = "vertical")),
+            nrow = 1, rel_widths = c(1, 0.7), axis = "t", align = "v",
+            labels = c("c", ""), label_size = 20),
+  nrow = 2, rel_heights = c(1, 0.7), axis = "l", align = "h")
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MAD_Species.tiff"),
+       width = 10, height = 10)
+
+rm(plot43, plot43.2, plotTest1.2)
 gc()
 ```
 
@@ -2197,7 +2386,7 @@ plot41 <- ggplot(data = summaryFireAttributes) +
   geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
   facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
@@ -2209,23 +2398,28 @@ plot42 <- ggplot(data = plotData) +
   geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
   facet_wrap(~ vegTypeCN, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 ```
 
 ```{r plot&savePlots15, echo = FALSE}
-ggsave(plot = plot37 + theme(legend.position = c(0.1, 0.9), legend.background = element_blank()),
+ggsave(plot = plot37 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
        filename = file.path(figOutputPath, "results_fireSizeDist.tiff"),
        width = 8, height = 6)
 ggsave(plot = plot38 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
        filename = file.path(figOutputPath, "results_noPixelsVsnoFires.tiff"),
        width = 8, height = 7)
-ggsave(plot = plot39 + theme(axis.title.x = element_blank(), 
-                             legend.position = "right",
-                             legend.direction = "vertical", legend.box = "vertical"),
-       filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
-       width = 10, height = 7)
+plotSave <- plot_grid(
+  plot_grid(plot39 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot39.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            nrow = 1, rel_widths = c(1, 0.7),
+            labels = "auto", label_size = 20, axis = "b", align = "h"),
+  get_legend(plot39 + theme(legend.direction = "vertical")), 
+  rel_widths = c(1, 0.15))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
+       width = 14, height = 7)
 
 ggsave(plot = plot40 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
        filename = file.path(figOutputPath, "results_meanSevDistLandscape.tiff"),
@@ -2237,6 +2431,70 @@ ggsave(plot = plot42 + theme(legend.position = c(0.5, 0.1), legend.background = 
        filename = file.path(figOutputPath, "results_meanSevDistVegTypeCN.tiff"),
        width = 10, height = 8)
 
+```
+
+Mean absolute deviation simulated fire intervals with respect to  observed fire intervals for a given stand type
+```{r simVsObsAgesDif, cache = FALSE}
+## mean age differences
+## calculate avg weighted ages across observed stands first
+## then the absolute difference of each stand to the observed average (per veg type) across reps
+plotData <- summaryFireAttributes
+plotData2 <- ageDataCN[, list(avgMean.FIObs = mean(mean.FI, na.rm = TRUE)),
+                       by = .(Cover.dendro)]
+plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN")]
+setnames(plotData, "Cover.dendro", "vegTypeCN")
+plotData <- plotData[!is.na(avgMean.FIObs) & !is.na(meanFreq)]
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - mean(avgMean.FIObs)))),
+                      by = .(scenario, rep, vegTypeCN)]
+
+## differences
+plot44 <- ggplot(plotData,
+                 aes(x = vegTypeCN,
+                     y = meanFreq - avgMean.FIObs,
+                     fill = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  geom_boxplot() +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  labs(title = "Avg. differences from observed fire intervals",
+       y = expression("sim." - bar("obs.")), x = "")
+
+## mean absolute differences
+plot44.2 <- ggplot(plotData2,
+                   aes(x = vegTypeCN, y = meanAbsDevSimObs,
+                       colour = scenario)) +
+  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  labs(title = "Mean abs. deviation from fire intervals",
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
+  coord_flip()
+```
+
+```{r plot&savePlots7, echo = FALSE}
+plot44
+ggsave(plot = plot44 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanFIDiff.tiff"),
+       width = 14, height = 7)
+plot44.2
+ggsave(plot = plot44.2 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_meanAbsFIDev.tiff"),
+       width = 10, height = 5)
+
+plotSave <- plot_grid(
+  plot_grid(plot39 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot44.2 + theme(legend.position = "none", plot.title = element_blank()),
+            rel_heights = c(1, 0.7), nrow = 2, axis = "l", align = "v",
+            labels = "auto", label_size = 20),
+  get_legend(plot39 + theme(legend.direction = "vertical")),
+  nrow = 1, rel_widths = c(1, 0.15))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN.tiff"),
+       width = 10, height = 10)
+gc()
 ```
 
 
