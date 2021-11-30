@@ -20,7 +20,7 @@ if (getOption("LandR.assertions")) {
   }
 
   temp <- vegDataForHVs[, length(unique(pixelIndex)), by = .(scenario, rep, year)]
-  if (unique(temp$V1) > 1) {
+  if (length(unique(temp$V1)) > 1) {
     stop("There should be the same number of pixels every year.")
   }
 
@@ -55,7 +55,7 @@ if (getOption("LandR.assertions")) {
   setkey(temp, scenario, rep, pixelIndex)
   setkey(vegDataForHVs, scenario, rep, pixelIndex)
 
-  if (isFALSE(identical(temp, vegDataForHVs))) {
+  if (isTRUE(any(temp != vegDataForHVs))) {
     stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
          "Combinations as allPixelCohortDataMnt")
   }
