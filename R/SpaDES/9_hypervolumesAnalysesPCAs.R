@@ -29,7 +29,7 @@ figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 # bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
-## LOAD DATA (RESULTS)  -------------------
+## LOAD DATA (RESULTS)  ---------------------
 yearSubset <- c(seq(2011, 2111, 5), 2111)
 source("R/SpaDES/6_resultsDataPrep.R")
 
@@ -42,7 +42,7 @@ if (mergeDMCPSME) {
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
 }
 
-if (mergePSME) {
+## PREP FIRE AND VEG DATA -------------------
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergePSME")
   allPixelCohortDataMnt[vegTypeCN %in% c("PSME", "dryPSME"), vegTypeCN := "PSME"]
 }

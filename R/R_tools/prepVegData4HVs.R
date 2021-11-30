@@ -47,9 +47,7 @@ if (getOption("LandR.assertions")) {
   if (any(test) | any(test2))
     stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
 
-
   ## checks at landscape scale:
-  pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
   pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
   temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
   setkey(temp, scenario, rep, pixelIndex)

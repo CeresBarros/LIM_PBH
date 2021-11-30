@@ -212,27 +212,7 @@ if (nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM)) & (is.na(HV_2011)|is.na(HV_2111
 
 
 ## LABELS AND COLOURS FOR PLOTTING ----------------
-vegTypeCNLabels <- unique(as.character(allHVData$vegType))
-names(vegTypeCNLabels) <- vegTypeCNLabels
-vegTypeCNLabels <- sub("PIEN", "Spruce", vegTypeCNLabels)
-vegTypeCNLabels <- sub("MMC", "Moist conif.", vegTypeCNLabels)
-vegTypeCNLabels <- sub("mixedwood", "Mixed", vegTypeCNLabels)
-vegTypeCNLabels <- sub("broadleaf", "Deciduous", vegTypeCNLabels)
-vegTypeCNLabels <- sub("PICO", "Pine", vegTypeCNLabels)
-vegTypeCNLabels <- sub("DMCPSME", "Dry conif./Douglas-fir", vegTypeCNLabels)
-vegTypeCNLabels <- sub("^PSME$", "Douglas-fir", vegTypeCNLabels)
-vegTypeCNLabels <- sub("dryPSME", "Dry Douglas-fir", vegTypeCNLabels)
-
-## reorder
-vegTypeCNLabels <- vegTypeCNLabels[c(grep("No veg.|landscape", vegTypeCNLabels, invert = TRUE),
-                                     grep("No veg.", vegTypeCNLabels),
-                                     grep("landscape", vegTypeCNLabels))]
-
-## landscape gets a different colour
-vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNLabels) - 2, name = "Dark2")
-vegTypeCNColours["landscape"] <- "darkgreen"
-vegTypeCNColours["No veg."] <- "grey40"
-names(vegTypeCNColours) <- names(vegTypeCNLabels)
+source("R/R_tools/plotLabels&Cols.R")
 
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------
