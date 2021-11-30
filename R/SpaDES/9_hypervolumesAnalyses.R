@@ -368,7 +368,9 @@ vegHVOverlapLandscape.gls <- gls(overlap ~ scenario, weights = varIdent(form = ~
                                  data = modelData[vegType == "landscape"])
 
 tiff(file.path(figOutputPath, "vegHVOverlapLandscapelmRESIDUALS.tiff"))
+sets <- par(mfrow = c(2,2))
 plot(vegHVOverlapLandscape.lm) ## still not great
+par(sets)
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVOverlapLandscapelmSUMMARY.txt"))
@@ -493,7 +495,8 @@ HVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
                      labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
   theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", fill = "", alpha = "") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
   facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
@@ -507,7 +510,8 @@ HVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape"],
   scale_fill_brewer(palette = "Greys",
                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
   theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank()) +
+  theme(strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", fill = "") +
   guides(alpha = "none", fill = "none") +
   facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
@@ -536,7 +540,8 @@ HVvolumeVegTypesStartPlot <- ggplot(plotData[HVtype == "vegHV"],
   theme_pubr(base_size = 12, x.text.angle = 30,
              margin = FALSE, legend = "right") +
   theme(legend.box = "vertical",
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", fill = "", alpha = "") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
 
@@ -558,7 +563,8 @@ HVOverlapVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
                      labels = c("noPM" = "no PM", "PM" = "PM")) +
   theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", y = "Overlap", fill = "", alpha = "") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
 
@@ -569,7 +575,8 @@ HVOverlapLandscapePlot <- ggplot(plotData[vegType == "landscape"],
   scale_fill_brewer(palette = "Greys",
                     labels = c("noPM" = "no PM", "PM" = "PM")) +
   theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank()) +
+  theme(strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", y = "Overlap", fill = "") +
   guides(alpha = "none", fill = "none")
 
@@ -611,7 +618,8 @@ pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape" & fireHV < 10
   scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
   theme_pubr(base_size = 12, margin = TRUE) +
   theme(legend.box = "vertical",
-        strip.background = element_blank()) +
+        strip.background = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "pyrodiversity", y = "forest diversity", colour = "", linetype = "", shape = "") +
   facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
               scales = "free")
@@ -627,7 +635,8 @@ pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(legend.box = "vertical",
         strip.background = element_blank(),
-        plot.title = element_text(size = 12, hjust = 0.5)) +
+        plot.title = element_text(size = 12, hjust = 0.5),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "pyrodiversity", y = "forest diversity", title = "landscape",
        colour = "", linetype = "", shape = "")
 
