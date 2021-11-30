@@ -1,9 +1,14 @@
 ## PLOT LABELS AND COLOURS --------------------------------
 
 ## make species labels/colours
-speciesLabels <- LandR::equivalentName(value = unique(summaryBurnCohortDataSpp$speciesCode), column = "EN_generic_full",
+if (exists("summaryBurnCohortDataSpp")) {
+allSpeciesCodes <- unique(summaryBurnCohortDataSpp$speciesCode)
+} else {
+  allSpeciesCodes <- unique(allPixelCohortDataMnt$speciesCode)
+}
+speciesLabels <- LandR::equivalentName(value = allSpeciesCodes, column = "EN_generic_full",
                                        df = preSimList$sppEquiv)
-names(speciesLabels) <- unique(summaryBurnCohortDataSpp$speciesCode)
+names(speciesLabels) <- allSpeciesCodes
 
 speciesColours <- levels(preSimList$vegTypeMap)[[1]]$colors
 names(speciesColours) <- levels(preSimList$vegTypeMap)[[1]]$VALUE
@@ -38,7 +43,7 @@ vegTypeCNLabels <- vegTypeCNLabels[c(grep("No veg.|landscape", vegTypeCNLabels, 
                                      grep("landscape", vegTypeCNLabels))]
 
 ## landscape gets a different colour
-vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNLabels)-2, name = "Dark2")
-names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels)-2)]
+vegTypeCNColours <- RColorBrewer::brewer.pal(length(vegTypeCNLabels) - 2, name = "Dark2")
+names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels) - 2)]
 vegTypeCNColours["landscape"] <- "darkgreen"
 vegTypeCNColours["No veg."] <- "grey40"
