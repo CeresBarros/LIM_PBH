@@ -383,3 +383,57 @@ estimateBW_wrapper <- function(allData, HVidvar, ...) {
   temp$HVpair = paste0(HVnames[1], "_", HVnames[2])
   return(temp)
 }
+
+## GET PCA LOADINGS -----------------------
+## code from \code{biplot.prcomp} and \code{biplot.default}
+## x is \code{prcomp} object
+getLoadings4Plot <- function(x, choices = c(1,2), scale = 1, pc.biplot = FALSE,
+                             xlim, ylim, expand = 1) {
+  if (!length(scores <- x$x[,choices])) {
+    stop(gettextf("object '%s' has no scores", deparse1(substitute(x))),
+         domain = NA)
+  }
+  if (is.complex(scores)) {
+    stop("biplots are not defined for complex PCA")
+  }
+  lam <- x$sdev[choices]
+  n <- NROW(scores)
+  lam <- lam * sqrt(n)
+  if (scale < 0 || scale > 1) {
+    warning("'scale' is outside [0, 1]")
+  }
+  if (scale != 0) {
+    lam <- lam^scale
+  } else {
+    lam <- 1
+  }
+  if (pc.biplot) {
+    lam <- lam/sqrt(n)
+  }
+  loadings <- t(t(x$rotation[,choices]) * lam)
+  scores <- t(t(scores[, choices])/lam)
+
+  ## rescale the loadings to plot within the PCA scores plot
+  ## from biplot.default
+  unsigned.range <- function(x) c(-abs(min(x, na.rm = TRUE)),
+                                  abs(max(x, na.rm = TRUE)))
+  rangx1 <- unsigned.range(scores[, 1L])
+  rangx2 <- unsigned.range(scores[, 2L])
+  rangy1 <- unsigned.range(loadings[, 1L])
+  rangy2 <- unsigned.range(loadings[, 2L])
+  if (missing(xlim) && missing(ylim)) {
+    xlim <- ylim <- rangx1 <- rangx2 <- range(rangx1, rangx2)
+  } else {
+    if (missing(xlim)) {
+      xlim <- rangx1
+    } else {
+      if (missing(ylim)) {
+        ylim <- rangx2
+      }
+    }
+  }
+
+  ratio <- max(rangy1/rangx1, rangy2/rangx2)/expand
+  loadings <- loadings/ratio
+  return(loadings)
+}
