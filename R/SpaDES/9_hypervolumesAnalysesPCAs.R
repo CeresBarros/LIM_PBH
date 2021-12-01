@@ -118,15 +118,29 @@ vegHVPCA <- grep("vegHVs", list.files(HVoutputPath, "OrdinationObj", full.names 
 vegHVPCA <- readRDS(vegHVPCA)
 vegHVPCAscores <- cbind(as.data.table(vegHVPCA$x), vegDataForHVs)
 
+## get highest/lowest 3 factor loadings from PCA
+loadings_coords <- NULL
+for (i in 1:nrow(vegHVPCA$rotation)) {
+  loadings_coords <- rbind(loadings_coords, rbind(c(0,0,0), vegHVPCA$rotation[i, 1:3]))
+}
+loadings_coords <- as.data.table(cbind(as.data.frame(loadings_coords), rep(rownames(vegHVPCA$rotation), each = 2)))
+names(loadings_coords)[4] <- "Var"
+
+## most influential variables across PCs
+Vars <- unique(unlist(loadings_coords[, lapply(.SD, function(x) which(abs(x) >= 0.5)), .SDcols = c("PC1", "PC2", "PC3")]))
+Vars <- loadings_coords$Var[Vars]
+
 ## clean wd
 rm(summaryFireAttributes)
 gc()
 
 ## FIT TRAIT VECTORS TO PCA ------------
+## treat all ordered vectors as continuous
+traitCWMs[, firetoleranceCont := as.numeric(firetolerance)]
 trait.fit <- Cache(
   envfit,
   ord = vegHVPCA,
-  env = traitCWMs,
+  env = traitCWMs[, .(longevity, shadetolerance, firetoleranceCont, postfireregen)],
   choices = c(1:3),
   cacheRepo = simPaths$cachePath,
   userTags = c("traitCWMs", "envfitPCA"),
@@ -134,16 +148,21 @@ trait.fit <- Cache(
 
 
 ## get vector coordinates (adding the origin to each vector value)
-trait_coords <- NULL
-traits_loads <- as.data.frame(trait.fit$vectors$arrows*sqrt(trait.fit$vectors$r))
-for (i in 1:nrow(traits_loads)) {
-  trait_coords <- rbind(trait_coords, rbind(c(0,0,0,0), traits_loads[i,1:4]))
+traits_coords <- NULL  ## automatically scales by correlation
+for (i in 1:nrow(fortify(trait.fit))) {
+  traits_coords <- rbind(traits_coords, rbind(c(0,0,0), as.data.frame(fortify(trait.fit))[i, c("PC1", "PC2", "PC3")]))
 }
-trait_coords <- cbind(as.data.frame(trait_coords), rep(rownames(traits_loads), each = 2))
-colnames(trait_coords)[4] <- "Trait"
+traits_coords <- as.data.table(traits_coords)
+## rename traits
+traits_coords$Label <- rep(fortify(trait.fit)$Label, each = 2)
+traits_coords[, Label := sub("postfireregen", "", Label)]
+traits_coords[, Label := sub("Cont", "", Label)]
+traits_coords[, Label := sub("tolerance", "_tol.", Label)]
 
-## get highest environmental loadings from PCA
-trts <- as.character(trait_coords$Trait[abs(trait_coords$PC1) >= 0.8])
+## all have very low correlations, so use all
+trts <- unique(unlist(traits_coords[, lapply(.SD, function(x) which(abs(x) >= 0)), .SDcols = c("PC1", "PC2", "PC3")]))
+trts <- na.omit(traits_coords$Label[trts])
+trts <- trts[trts != "0"]  ## exclude this - it's only in pixels where there is no B
 
 ## -----------------------------------------------
 ## HYPERVOLUMES 3D PLOTS WITH LOADINGS AND TRAITS
