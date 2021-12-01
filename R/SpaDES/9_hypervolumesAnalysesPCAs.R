@@ -181,15 +181,39 @@ if (mergePSME) {
 
 vegTypes <- vegTypes[vegTypes != "No veg."]
 
+pixelIndexDT <- unique(vegHVPCAscores[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)])
+
 lapply(vegTypes, FUN = plotHVs3DWrapper,
-       vegHVPCAscores = vegHVPCAscores,
+       vegHVPCAscores = vegHVPCAscores[rep == 1],
+       pixelIndexDT = pixelIndexDT[rep == 1],
+       vegTypeCNLabels = vegTypeCNLabels,
+       figOutputPath = figOutputPath,
+       cacheRepo = simPaths$cachePath,
+       mergeVegType = "mergePSME",
+       colsHV = c("PC1", "PC2", "PC3", "PC4"),
+       ## plotHypervolumes3D args:
        loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]),
-       PHvect_coords = as.data.frame(traits_coords[Label %in% trts, .(PC1, PC2, PC3)] * ordiArrowMul(trait.fit, fill = 0.2,choices = 1:3)),
+       PHvect_coords = as.data.frame(traits_coords[Label %in% trts, .(PC1, PC2, PC3)] * ordiArrowMul(trait.fit, fill = 0.2,choices = 1:3)), ## ordiArrowMul finds the appropriate multiplifer to plot axes.
        loadings_labels = loadings_coords[Var %in% Vars, Var],
        PHvect_labels = traits_coords[Label %in% trts, Label],
-       vegTypeCNLabels,
-       cacheRepo = simPaths$cachePath,
-       mergeVegType = "mergePSME", colsHV = c("PC1", "PC2", "PC3", "PC4"))
+       show.random = TRUE,
+       show.data = FALSE,
+       show.legend = FALSE,
+       cex.axis = 1,
+       cex.lab = 1,
+       cex.random = 0.5,
+       cex.centroid = 1,
+       lwd = 2,
+       colors = c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2]),
+       centroid.cols = rep("blue", 3),
+       grid = FALSE,
+       box = TRUE,
+       names = c("PC1\n", "PC2\n", "\nPC3"),
+       limits = c(-1, 1),
+       y.margin.add = 0.6,
+       angle = 50,
+       pch = 16)
+
 
 ## HOW SIMILAR ARE DOUG-FIR FOREST TYPES?
 ## If we look at the first year (top row), there seems to be an indication that they

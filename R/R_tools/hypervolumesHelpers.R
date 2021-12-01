@@ -154,6 +154,7 @@ loadHVResultsFromRDS <- function(x, files) {
 #'   Used to for plot title
 #' @param cacheRepo passed to \code{reproducible::Cache}
 #' @param figOutputPath folder where to save hypervolume plot.
+#' @param ... more arguments passed to \code{ToolsCB::plotHypervolumes3D}
 
 plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLabels,
                              mergeVegType = NULL, colsHV, cacheRepo, figOutputPath,
@@ -240,21 +241,13 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
 
   HVls <- hypervolume::hypervolume_join(HV2011_noPM, HV2011_PM, HV2111_noPM, HV2111_PM)
 
+  args <- c(HVlist = HVls, list(...))
+  args$main <- vegTypeCNLabels[vegType]
+
   tiff(file.path(figOutputPath, paste0("HV3DplotWvectors_", vegType, ".tiff")), width = 7, heigh = 7,
        units = "in", res = 300)
-  plotHypervolumes3D(HVls, loadings_coords = loadings_coords,
-                     PHvect_coords = PHvect_coords,   ## ordiArrowMul finds the appropriate multiplifer to plot axes.
-                     loadings_labels = loadings_labels,
-                     PHvect_labels = PHvect_labels,
-                     show.random = TRUE, show.data = FALSE,
-                     show.legend = TRUE, cex.axis = 1, cex.lab = 1, cex.random = 0.5, cex.centroid = 1,
-                     show.contour = TRUE, lwd = 2,
-                     colors = c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2]),
-                     centroid.cols = rep("blue", 3), grid = FALSE, box = TRUE,
-                     names = c("PC1\n", "PC2\n", "\nPC3"), limits = c(-1, 1), y.margin.add = 0.6,
-                     angle = 50, pch = 16, main = vegTypeCNLabels[vegType])
+  do.call(plotHypervolumes3D, args)
   dev.off()
-
 }
 
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
