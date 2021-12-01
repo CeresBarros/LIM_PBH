@@ -136,72 +136,30 @@ trts <- as.character(trait_coords$Trait[abs(trait_coords$PC1) >= 0.8])
 
 ## -----------------------------------------------
 ## HYPERVOLUMES 3D PLOTS WITH LOADINGS AND TRAITS
-colsHV <- c("PC1", "PC2", "PC3", "PC4")
-userTags <- c("hypervolume", "PSME", "averagePlots", "2011", "noPM")
-HV2011_noPM  <- Cache(hypervolume::hypervolume,
-                      data = plotData[grepl("^dryPSME|^PSME", vegTypeCN) & year == "2011" & scenario == "noPM", ..colsHV],
-                      method = "svm",
-                      .cacheExtra = paste(userTags, collapse = "_"),
-                      cacheRepo = simPaths$cachePath,
-                      userTags = userTags,
-                      omitArgs = c("userTags"))
 
-userTags <- c("hypervolume", "PSME", "averagePlots", "2111", "noPM")
-HV2111_noPM  <- Cache(hypervolume::hypervolume,
-                      data = plotData[grepl("^dryPSME|^PSME", vegTypeCN) & year == "2111" & scenario == "noPM", ..colsHV],
-                      method = "svm",
-                      .cacheExtra = paste(userTags, collapse = "_"),
-                      cacheRepo = simPaths$cachePath,
-                      userTags = userTags,
-                      omitArgs = c("userTags"))
+## loop through all vegTypes
+vegTypes <- unique(vegHVPCAscores$vegTypeCN)
 
-userTags <- c("hypervolume", "PSME", "averagePlots", "2011", "PM")
-HV2011_PM  <- Cache(hypervolume::hypervolume,
-                    data = plotData[grepl("^dryPSME|^PSME", vegTypeCN) & year == "2011" & scenario == "PM", ..colsHV],
-                    method = "svm",
-                    .cacheExtra = paste(userTags, collapse = "_"),
-                    cacheRepo = simPaths$cachePath,
-                    userTags = userTags,
-                    omitArgs = c("userTags"))
+if (mergeDMCPSME) {
+  vegTypes[grep("PSME", vegTypes)] <- "PSME"
+  vegTypes <- unique(vegTypes)
+}
+if (mergePSME) {
+  vegTypes[grep("^dryPSME|^PSME", vegTypes)] <- "PSME"
+  vegTypes <- unique(vegTypes)
+}
 
-userTags <- c("hypervolume", "PSME", "averagePlots", "2111", "PM")
-HV2111_PM  <- Cache(hypervolume::hypervolume,
-                    data = plotData[grepl("^dryPSME|^PSME", vegTypeCN) & year == "2111" & scenario == "PM", ..colsHV],
-                    method = "svm",
-                    .cacheExtra = paste(userTags, collapse = "_"),
-                    cacheRepo = simPaths$cachePath,
-                    userTags = userTags,
-                    omitArgs = c("userTags"))
+vegTypes <- vegTypes[vegTypes != "No veg."]
 
-HVls_noPM <- hypervolume::hypervolume_join(HV2011_noPM, HV2111_noPM)
-HVls_PM <- hypervolume::hypervolume_join(HV2011_PM, HV2111_PM)
-
-plotHypervolumes3D(HVls_noPM, loadings_coords = , PHvect_coords = ,
-                   show.random = TRUE, show.data = FALSE,
-                   show.legend = FALSE, cex.axis = 1, cex.lab = 1.5, cex.random = 0.5, cex.centroid = 1,
-                   show.contour = TRUE,
-                   colors = c("black", scales::hue_pal()(2)[1]), centroid.cols = rep("blue", 3), grid = FALSE, box = TRUE,
-                   names = c("PC1\n", "PC2\n", "\nPC3"), limits = c(-1, 1), y.margin.add = 0.6,
-                   angle = 40, pch = 16)
-
-randomPoints <- rbindlist(list(
-  HV2011_noPM = as.data.table(HV2011_noPM@RandomPoints),
-  HV2111_noPM = as.data.table(HV2111_noPM@RandomPoints),
-  HV2011_PM = as.data.table(HV2011_PM@RandomPoints),
-  HV2111_PM = as.data.table(HV2111_PM@RandomPoints)), idcol = "yrScen")
-
-dataPoints <- rbindlist(list(
-  HV2011_noPM = as.data.table(HV2011_noPM@Data),
-  HV2111_noPM = as.data.table(HV2111_noPM@Data),
-  HV2011_PM = as.data.table(HV2011_PM@Data),
-  HV2111_PM = as.data.table(HV2111_PM@Data)), idcol = "yrScen")
-
-allPoints <- rbindlist(list(randomPoints = randomPoints, dataPoints = dataPoints), idcol = "type")
-allPoints <- cbind(allPoints, as.data.table(do.call(rbind, strsplit(allPoints$yrScen, split = "_"))))
-setnames(allPoints, c("V1", "V2"), c("year", "scen"))
-set(allPoints, j = "yrScen", value = NULL)
-
-
+lapply(vegTypes, FUN = plotHVs3DWrapper,
+       vegHVPCAscores = vegHVPCAscores,
+       loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]),
+       PHvect_coords = as.data.frame(traits_coords[Label %in% trts, .(PC1, PC2, PC3)] * ordiArrowMul(trait.fit, fill = 0.2,choices = 1:3)),
+       loadings_labels = loadings_coords[Var %in% Vars, Var],
+       PHvect_labels = traits_coords[Label %in% trts, Label],
+       vegTypeCNLabels,
+       cacheRepo = simPaths$cachePath,
+       mergeVegType = "mergePSME", colsHV = c("PC1", "PC2", "PC3", "PC4"))
 
 ## HOW SIMILAR ARE DOUG-FIR FOREST TYPES?
 ## If we look at the first year (top row), there seems to be an indication that they

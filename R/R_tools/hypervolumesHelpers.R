@@ -139,6 +139,101 @@ loadHVResultsFromRDS <- function(x, files) {
 }
 
 
+#' Wrapper function to plot hypervolumes with PCA factor vectors
+#' and vectors fitted post-hoc
+#'
+#' @param vegType
+#' @param vegHVPCAscores a table of factor scores from PCA
+#' @param loadings_coords passed to \code{ToolsCB::plotHypervolumes3D}
+#' @param PHvect_coords passed to \code{ToolsCB::plotHypervolumes3D}
+#' @param loadings_labels passed to \code{ToolsCB::plotHypervolumes3D}
+#' @param PHvect_labels passed to \code{ToolsCB::plotHypervolumes3D}
+#' @param vegTypeCNLabels named vector containing vegType labels (names must correspond to \code{vegType}.
+#' @param mergeVegType character. Can be "mergeDMCPSME", "mergePSME" of NULL to merge
+#'   dry mixed conifer and any Doug-fir dominated stands, just Doug-fir dominated stands
+#'   or no merging.
+#' @param colsHV names of PCA axes used to make hypervolumes
+#'   Used to for plot title
+#' @param cacheRepo passed to \code{reproducible::Cache}
+#' @param figOutputPath folder where to save hypervolume plot.
+
+plotHVs3DWrapper <- function(vegType, vegHVPCAscores,
+                             loadings_coords, PHvect_coords,
+                             loadings_labels, PHvect_labels, vegTypeCNLabels,
+                             mergeVegType = NULL, colsHV, cacheRepo, figOutputPath) {
+
+  grepStr <- vegType
+
+  if (grepl("PSME", vegType)) {
+    if (mergeVegType == "mergeDMCPSME") {
+      grepStr <- "PSME"
+    } else {
+      if (mergeVegType == "mergePSME") {
+        grepStr <- "^dryPSME|^PSME"
+      }
+    }
+  }
+
+
+  userTags <- c("hypervolume", vegType, "2011", "noPM")
+  HV2011_noPM  <- Cache(hypervolume::hypervolume,
+                        data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2011" & scenario == "noPM", ..colsHV],
+                        method = "svm",
+                        svm.gamma = 0.01,
+                        .cacheExtra = paste(userTags, collapse = "_"),
+                        cacheRepo = cacheRepo,
+                        userTags = userTags,
+                        omitArgs = c("userTags"))
+
+  userTags <- c("hypervolume", vegType, "2111", "noPM")
+  HV2111_noPM  <- Cache(hypervolume::hypervolume,
+                        data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2111" & scenario == "noPM", ..colsHV],
+                        method = "svm",
+                        svm.gamma = 0.01,
+                        .cacheExtra = paste(userTags, collapse = "_"),
+                        cacheRepo = cacheRepo,
+                        userTags = userTags,
+                        omitArgs = c("userTags"))
+
+  userTags <- c("hypervolume", vegType, "2011", "PM")
+  HV2011_PM  <- Cache(hypervolume::hypervolume,
+                      data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2011" & scenario == "PM", ..colsHV],
+                      method = "svm",
+                      svm.gamma = 0.01,
+                      .cacheExtra = paste(userTags, collapse = "_"),
+                      cacheRepo = cacheRepo,
+                      userTags = userTags,
+                      omitArgs = c("userTags"))
+
+  userTags <- c("hypervolume", vegType, "2111", "PM")
+  HV2111_PM  <- Cache(hypervolume::hypervolume,
+                      data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2111" & scenario == "PM", ..colsHV],
+                      method = "svm",
+                      svm.gamma = 0.01,
+                      .cacheExtra = paste(userTags, collapse = "_"),
+                      cacheRepo = cacheRepo,
+                      userTags = userTags,
+                      omitArgs = c("userTags"))
+
+  HVls <- hypervolume::hypervolume_join(HV2011_noPM, HV2011_PM, HV2111_noPM, HV2111_PM)
+
+  tiff(file.path(figOutputPath, paste0("HV3DplotWvectors_", vegType, ".tiff")), width = 7, heigh = 7,
+       units = "in", res = 300)
+  plotHypervolumes3D(HVls, loadings_coords = loadings_coords,
+                     PHvect_coords = PHvect_coords,   ## ordiArrowMul finds the appropriate multiplifer to plot axes.
+                     loadings_labels = loadings_labels,
+                     PHvect_labels = PHvect_labels,
+                     show.random = TRUE, show.data = FALSE,
+                     show.legend = TRUE, cex.axis = 1, cex.lab = 1, cex.random = 0.5, cex.centroid = 1,
+                     show.contour = TRUE, lwd = 2,
+                     colors = c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2]),
+                     centroid.cols = rep("blue", 3), grid = FALSE, box = TRUE,
+                     names = c("PC1\n", "PC2\n", "\nPC3"), limits = c(-1, 1), y.margin.add = 0.6,
+                     angle = 50, pch = 16, main = vegTypeCNLabels[vegType])
+  dev.off()
+
+}
+
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
 ## BANDWITH ESTIMATES ----
 # amc::.gc()
@@ -180,7 +275,7 @@ loadHVResultsFromRDS <- function(x, files) {
 #                       ncores = 10,
 #                       byVars = c("rep", "vegTypeCN"),
 #                       bw.outputPath = bw.outputPath,
-#                       cacheRepo = simPaths$cachePath,
+#                       cacheRepo = cacheRepo,
 #                       userTags = c("bw_estimates", "hypervolumes", "vegTypeCN"),
 #                       omitArgs = c("userTags", "ncores", "bw.outputPath"))
 #
@@ -243,7 +338,7 @@ loadHVResultsFromRDS <- function(x, files) {
 #                       summaryFireAttributes = summaryFireAttributes,
 #                       byVars = c("rep"),
 #                       bw.outputPath = bw.outputPath,
-#                       cacheRepo = simPaths$cachePath,
+#                       cacheRepo = cacheRepo,
 #                       userTags = c("bw_estimates", "hypervolumes", "landscape"),
 #                       omitArgs = c("userTags", "ncores", "bw.outputPath"))
 #
