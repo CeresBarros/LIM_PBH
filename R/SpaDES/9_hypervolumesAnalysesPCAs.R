@@ -34,6 +34,17 @@ figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 # bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
+## merge Douglas-fir/dry-conifer stands?
+mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
+mergePSME <- TRUE ## merge PSME dryPSME
+if (mergeDMCPSME) {
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
+}
+if (mergePSME) {
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergePSME")
+}
+dir.create(figOutputPath, recursive = TRUE)
+
 ## LOAD DATA (RESULTS)  ---------------------
 yearSubset <- c(seq(2011, 2111, 5), 2111)
 source("R/SpaDES/6_resultsDataPrep.R")
