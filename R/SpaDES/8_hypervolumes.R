@@ -300,7 +300,7 @@ lapply(pixelIndexList,
          allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
          ## now split by scenario to calculate and compare hypervolumes between
-         ## scenarios for each scenario
+         ## years for each scenario
          lapply(split(allData, by = "scenario"),
                 FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   scen <- unique(allData$scenario)
