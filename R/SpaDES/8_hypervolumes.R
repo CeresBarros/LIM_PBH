@@ -247,7 +247,7 @@ lapply(pixelIndexList,
                 FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   yr <- unique(allData$year)
                   file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
-                  IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
+                  IDcols <- c("scenario", "rep", "pixelIndex")
 
                   no.runs <- 3
                   skip <- FALSE
@@ -267,6 +267,7 @@ lapply(pixelIndexList,
                     print(file.suffix)
                     vegHVWrapper(allData,
                                  IDcols,
+                                 HVcols = c("PC1", "PC2", "PC3", "PC4"),
                                  HVIDcol = "scenario",
                                  file.suffix,
                                  # noAxes = 4,
@@ -304,7 +305,7 @@ lapply(pixelIndexList,
                 FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   scen <- unique(allData$scenario)
                   file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
-                  IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
+                  IDcols <- c("year", "rep", "pixelIndex")
 
                   no.runs <- 3
                   skip <- FALSE
@@ -324,6 +325,7 @@ lapply(pixelIndexList,
                     print(file.suffix)
                     vegHVWrapper(allData,
                                  IDcols,
+                                 HVcols = c("PC1", "PC2", "PC3", "PC4"),
                                  HVIDcol = "year",
                                  file.suffix,
                                  # noAxes = 4,
@@ -358,7 +360,7 @@ lapply(split(vegHVdata, by = c("rep", "year")),
          r <- unique(allData$rep)
          yr <- unique(allData$year)
          file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
-         IDcols <- c("scenario", "rep", "pixelIndex", "year", "vegTypeCN")
+         IDcols <- c("scenario", "rep", "pixelIndex")
          no.runs <- 3
          skip <- FALSE
          if (!doAll) {
@@ -378,6 +380,7 @@ lapply(split(vegHVdata, by = c("rep", "year")),
 
            vegHVWrapper(allData,
                         IDcols,
+                        HVcols = c("PC1", "PC2", "PC3", "PC4"),
                         HVIDcol = "scenario",
                         file.suffix,
                         # noAxes = 4,
@@ -407,7 +410,7 @@ lapply(split(vegHVdata, by = c("rep","scenario")),
          r <- unique(allData$rep)
          scen <- unique(allData$scenario)
          file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
-         IDcols <- c("year", "rep", "pixelIndex", "scenario", "vegTypeCN")
+         IDcols <- c("year", "rep", "pixelIndex")
          no.runs <- 3
          skip <- FALSE
          if (!doAll) {
@@ -427,6 +430,7 @@ lapply(split(vegHVdata, by = c("rep","scenario")),
 
            vegHVWrapper(allData,
                         IDcols,
+                        HVcols = c("PC1", "PC2", "PC3", "PC4"),
                         HVIDcol = "year",
                         file.suffix,
                         # noAxes = 4,

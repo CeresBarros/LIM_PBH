@@ -1,27 +1,24 @@
 Require("dplyr")
 
-#' Wrapper function to calculate vegetation attributess hypervolumes
-vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, addNoise = TRUE, ...) {
+#' Wrapper function to calculate vegetation attributes hypervolumes
+vegHVWrapper <- function(allData, HVcols, IDcols, HVIDcol, file.suffix, addNoise = TRUE, ...) {
   ## a bit of prep
   HVnames <- unique(allData[[HVIDcol]])
   if (length(HVnames) != 2) {
     stop("There should be 2 values in,", HVIDcol)
   }
 
-  ## subset variables for HVs
-  cols <- setdiff(names(allData), IDcols)
-
   ## add noise to data if all dimensions have zero variance
   if (addNoise) {
-    IDcols2 <- setdiff(IDcols, "pixelIndex")
-    needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = IDcols2]
-    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = IDcols2]
+    IDcols2 <- unique(c(HVIDcol, setdiff(IDcols, "pixelIndex")))
+    needsNoise <- allData[, lapply(.SD, sd), .SDcols = HVcols, by = IDcols2]
+    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = HVcols, by = IDcols2]
 
     if (any(needsNoise$V1)) {
       tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
                           on = IDcols2]
-      tempData[, (cols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
-                                  n = .N), .SDcols = cols, by = IDcols2]
+      tempData[, (HVcols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
+                                  n = .N), .SDcols = HVcols, by = IDcols2]
       allData <- rbind(allData[!tempData, on = IDcols2],
                        tempData, fill = TRUE, use.names = TRUE)
     }
@@ -31,7 +28,7 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, addNoise = TRUE,
   out <- tryCatch(hypervolumes(HVdata1 = as.data.frame(allData[get(HVIDcol) == HVnames[1]]),
                                HVdata2 = as.data.frame(allData[get(HVIDcol) == HVnames[2]]),
                                HVidvar = which(names(allData) == HVIDcol),
-                               init.vars = which(names(allData) %in% cols),
+                               init.vars = which(names(allData) %in% HVcols),
                                file.suffix = file.suffix,
                                ...), error = function(e) e)
 
@@ -40,7 +37,7 @@ vegHVWrapper <- function(allData, IDcols, HVIDcol, file.suffix, addNoise = TRUE,
       hypervolumes(HVdata1 = as.data.frame(allData[get(HVIDcol) == HVnames[1]]),
                    HVdata2 = as.data.frame(allData[get(HVIDcol) == HVnames[2]]),
                    HVidvar = which(names(allData) == HVIDcol),
-                   init.vars = which(names(allData) %in% cols),
+                   init.vars = which(names(allData) %in% HVcols),
                    file.suffix = file.suffix,
                    plotHVDots = list(contour.type = "ball"),
                    ...)
