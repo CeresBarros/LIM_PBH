@@ -196,7 +196,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
   HV2111_noPM  <- Cache(hypervolume::hypervolume,
-                        data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2111" & scenario == "noPM", ..colsHV],
+                        data = tempData[, ..colsHV],
                         method = "svm",
                         svm.gamma = 0.01,
                         .cacheExtra = paste(userTags, collapse = "_"),
@@ -212,7 +212,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
   HV2011_PM  <- Cache(hypervolume::hypervolume,
-                      data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2011" & scenario == "PM", ..colsHV],
+                      data = tempData[, ..colsHV],
                       method = "svm",
                       svm.gamma = 0.01,
                       .cacheExtra = paste(userTags, collapse = "_"),
@@ -228,7 +228,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
   HV2111_PM  <- Cache(hypervolume::hypervolume,
-                      data = vegHVPCAscores[grepl(grepStr, vegTypeCN) & year == "2111" & scenario == "PM", ..colsHV],
+                      data = tempData[, ..colsHV],
                       method = "svm",
                       svm.gamma = 0.01,
                       .cacheExtra = paste(userTags, collapse = "_"),
