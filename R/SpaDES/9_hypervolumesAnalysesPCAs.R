@@ -11,6 +11,7 @@ library(ggplot2)
 library(ggpubr)
 library(FD)
 library(vegan)
+library(ggvegan)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
@@ -126,6 +127,10 @@ for (i in 1:nrow(vegHVPCA$rotation)) {
 loadings_coords <- as.data.table(cbind(as.data.frame(loadings_coords), rep(rownames(vegHVPCA$rotation), each = 2)))
 names(loadings_coords)[4] <- "Var"
 
+## rename some of the variables for plotting
+loadings_coords$Var <- sub("meanStandAge", "mean_age", loadings_coords$Var)
+loadings_coords$Var <- sub("sdStandAge", "sd_age", loadings_coords$Var)
+
 ## most influential variables across PCs
 Vars <- unique(unlist(loadings_coords[, lapply(.SD, function(x) which(abs(x) >= 0.5)), .SDcols = c("PC1", "PC2", "PC3")]))
 Vars <- loadings_coords$Var[Vars]
@@ -155,14 +160,14 @@ for (i in 1:nrow(fortify(trait.fit))) {
 traits_coords <- as.data.table(traits_coords)
 ## rename traits
 traits_coords$Label <- rep(fortify(trait.fit)$Label, each = 2)
-traits_coords[, Label := sub("postfireregen", "", Label)]
+traits_coords[, Label := sub("postfireregen", "regen_", Label)]
 traits_coords[, Label := sub("Cont", "", Label)]
 traits_coords[, Label := sub("tolerance", "_tol.", Label)]
 
 ## all have very low correlations, so use all
 trts <- unique(unlist(traits_coords[, lapply(.SD, function(x) which(abs(x) >= 0)), .SDcols = c("PC1", "PC2", "PC3")]))
 trts <- na.omit(traits_coords$Label[trts])
-trts <- trts[trts != "0"]  ## exclude this - it's only in pixels where there is no B
+trts <- trts[trts != "regen_0"]  ## exclude this - comes from postfireregen in pixels where there is no B
 
 ## -----------------------------------------------
 ## HYPERVOLUMES 3D PLOTS WITH LOADINGS AND TRAITS
@@ -192,8 +197,8 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        mergeVegType = "mergePSME",
        colsHV = c("PC1", "PC2", "PC3", "PC4"),
        ## plotHypervolumes3D args:
-       loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]),
-       PHvect_coords = as.data.frame(traits_coords[Label %in% trts, .(PC1, PC2, PC3)] * ordiArrowMul(trait.fit, fill = 0.2,choices = 1:3)), ## ordiArrowMul finds the appropriate multiplifer to plot axes.
+       loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]) * ordiArrowMul(vegHVPCA, fill = 2, choices = 1:3, display = "species"),
+       PHvect_coords = as.data.frame(traits_coords[Label %in% trts, .(PC1, PC2, PC3)] * ordiArrowMul(trait.fit, choices = 1:3)), ## ordiArrowMul finds the appropriate multiplifer to plot axes.
        loadings_labels = loadings_coords[Var %in% Vars, Var],
        PHvect_labels = traits_coords[Label %in% trts, Label],
        show.random = TRUE,
@@ -202,14 +207,14 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        cex.axis = 1,
        cex.lab = 1,
        cex.random = 0.5,
-       cex.centroid = 1,
+       cex.centroid = 1.7,
        lwd = 2,
        colors = c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2]),
-       centroid.cols = rep("blue", 3),
+       centroid.cols = c("grey", "grey", "red", "blue"),
        grid = FALSE,
        box = TRUE,
        names = c("PC1\n", "PC2\n", "\nPC3"),
-       limits = c(-1, 1),
+       limits = c(round(min(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1, round(max(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) +0.1),
        y.margin.add = 0.6,
        angle = 50,
        pch = 16)
