@@ -168,7 +168,7 @@ trts <- trts[trts != "0"]  ## exclude this - it's only in pixels where there is 
 ## HYPERVOLUMES 3D PLOTS WITH LOADINGS AND TRAITS
 
 ## loop through all vegTypes
-vegTypes <- unique(vegHVPCAscores$vegTypeCN)
+vegTypes <- as.character(unique(vegHVPCAscores$vegTypeCN))
 
 if (mergeDMCPSME) {
   vegTypes[grep("PSME", vegTypes)] <- "PSME"
