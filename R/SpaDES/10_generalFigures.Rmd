@@ -108,7 +108,7 @@ fuelTypesCover <- ggarrange(plotlist = plotList, ncol = 3, nrow = 3,
 fuelTypesCover
 
 ggsave(file.path(figOutputPath, "Fueltype_cover.tiff"), fuelTypesCover,
-       width = 9, height = 14, dpi = 300)
+       width = 10, height = 18, dpi = 300)
 ```
 
 ### TOPO, VEG, CLIMATE MAPS
@@ -316,31 +316,34 @@ if (!is.null(simOutPreSim$rstLCCRTM)) {
     reproducible::loadFromCache(cachePath = cachePath(simOutPreSim), cacheId = .)
 }
 
+lccRas[lccRas[] == 0] <- NA
+
 ## get original lcc, for colortable
 tempLCC <- raster("R/SpaDES/inputs/LCC2005_V1_4a.tif")
 colortable(lccRas) <- colortable(tempLCC)
 rm(tempLCC)
 
-lccLabels <- c("Temperate/subpolar needle-leaved evergreen, closed canopy",
+## commented bits were the full legend title
+lccLabels <- c("Temperate/subpolar needle-leaved evergreen", #, closed canopy",
                "Cold deciduous closed canopy",
-               "Mixed needle-leaved evergreen > deciduous closed canopy",
-               "Mixed needle-leaved evergreen > deciduous closed young canopy",
-               "Mixed cold deciduous > needle-leaved evergreen closed canopy",
-               "Temperate/subpolar needle-leaved evergreen medium density, moss-shrub",
-               "Temperate/subpolar needle-leaved evergreen medium density, lichen-shrub",
-               "Temperate/subpolar needle-leaved evergreen low density, moss-shrub",
-               "Temperate/subpolar needle-leaved evergreen low density, lichen-rock",
-               "Temperate/subpolar needle-leaved evergreen low density, poorly drained",
-               "Cold deciduous broadleaved, low-medium density",
-               "Cold deciduous broadleaved, medium density, young regenerating",
-               "Mixed needle-leaved evergreen > deciduous, low-medium density",
-               "Mixed needle-leaved deciduous > evergreen, low-medium density",
+               "Mixed needle-leaved evergreen", #, > deciduous closed canopy",
+               "Mixed needle-leaved evergreen, young", #, > deciduous closed young canopy",
+               "Mixed cold deciduous", # > needle-leaved evergreen closed canopy",
+               "Temperate/subpolar needle-leaved evergreen, medium density", # moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen", #, medium density, lichen-shrub",
+               "Temperate/subpolar needle-leaved evergreen, low density", #, moss-shrub",
+               "Temperate/subpolar needle-leaved evergreen", #, low density, lichen-rock",
+               "Temperate/subpolar needle-leaved evergreen, poor drain.", #, low density, poorly drained",
+               "Cold deciduous broadleaved", #,, low-medium density",
+               "Cold deciduous broadleaved, young", #,, medium density, young regenerating",
+               "Mixed needle-leaved evergreen > deciduous", #,, low-medium density",
+               "Mixed needle-leaved deciduous > evergreen", #,, low-medium density",
                "Low regenerating young mixed cover",
                "High-low shrub dominated",
                "Grassland",
                "Herb-shrub-bare cover",
                "Wetlands",
-               "Sparse needle-leaved evergreen, herb-shrub cover",
+               "Sparse needle-leaved evergreen", #,, herb-shrub cover",
                "Polar grassland, herb-shrub",
                "Shrub-herb-lichen-bare",
                "Herb-shrub poorly drained",
@@ -364,21 +367,23 @@ lccLabels <- paste(as.character(seq_along(lccLabels)),
                    lccLabels, sep = " - ")
 names(lccLabels) <- as.character(seq_along(lccLabels))
 
-## colour vector
+## colour vector -- filter to existing values only
 lccColours <- colortable(lccRas)
 names(lccColours) <- as.character(0:255)
+lccColours <- lccColours[as.character(na.omit(unique(getValues(lccRas))))]
 
 ## plot using DT
 rasData <- data.table(coordinates(lccRas), vals = as.factor(getValues(lccRas)))
 lccPlot <- ggplot() +
-  layer_spatial(data = simOutPreSim$studyArea, col = "black",
-                fill = "black", size = 1.5) +
+  layer_spatial(data = simOutPreSim$studyArea, col = "transparent",
+                fill = "transparent", size = 1) +
   geom_raster(data = rasData, mapping = aes(x, y, fill = vals)) +
   annotation_north_arrow(style = north_arrow_minimal,
                          height = unit(1, "cm"), width = unit(1, "cm"),
                          location = "tr", which_north = "true") +
   scale_fill_manual(values = lccColours, na.value = "transparent",
-                    labels = lccLabels, breaks = as.integer(names(lccLabels))) +
+                    labels = lccLabels, 
+                    breaks = sort(as.integer(names(lccLabels)))) +
   theme_pubr(legend = "right", base_size = 16) +
   theme(plot.margin = margin(0,0,0,0.5, unit = "mm"),
         legend.key = element_rect(colour = "black")) +
@@ -387,10 +392,14 @@ lccPlot <- ggplot() +
   guides(fill = guide_legend(ncol = 1))
 
 plotSave <- ggarrange(ecoDistPlot, lccPlot, ncol = 2, nrow = 1,
-                   widths = c(0.6,1), labels = "auto",
+                   widths = c(0.7,1), labels = "auto",
                    font.label = list(size = 20))
 ggsave(file.path(figOutputPath, "Ecologicalzones_LCC.tiff"), plotSave,
-       width = 20, height = 10, dpi = 300)
+       width = 19, height = 10, dpi = 300)
+
+ggsave(file.path(figOutputPath, "LCC.tiff"), lccPlot + theme(legend.position = "right"),
+       width = 11, height = 11, dpi = 300)
+
 
 ## make a second SAplot with no north arrow and no title
 SAPlot2 <- ggplot() +
