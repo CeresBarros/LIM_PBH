@@ -48,15 +48,20 @@ cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 simOutPreSim <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
 ```
 
-### FIRE LOCATIONS
+### FIRE LOCATIONS AND IGNITIONS MAP
 ```{r fireLocations}
+## to get the ignitions map, we need to run the first year os a spades call
+
+simOutFS <- spades(simOutPreSim, events = c("init", "run"))
+
 fireLocations <- ggplot() +
-  layer_spatial(data = simOutPreSim$studyArea, fill = "grey", colour = "black") +
+  layer_spatial(data = simOutFS$fireSense_IgnitionPredicted) +
   layer_spatial(data = simOutPreSim$fireLocations, colour = "darkred") +
+  scale_fill_distiller(palette = "Greys", na.value = "transparent", direction = 1) +
   annotation_north_arrow(style = north_arrow_minimal,
                          location = "tr", which_north = "true") +
-  theme_pubr(margin = FALSE) +
-  labs(x = "longitude", y = "latitude")
+  theme_pubr(margin = FALSE, legend = "right") +
+  labs(x = "longitude", y = "latitude", fill = expression(lambda))
 
 fireLocations
 
