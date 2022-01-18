@@ -186,7 +186,7 @@ if (mergePSME) {
 
 vegTypes <- vegTypes[vegTypes != "No veg."]
 
-pixelIndexDT <- unique(vegHVPCAscores[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)])
+pixelIndexDT <- unique(vegHVPCAscores[year == end(preSimList), .(rep, vegTypeCN, pixelIndex)])
 
 lapply(vegTypes, FUN = plotHVs3DWrapper,
        vegHVPCAscores = vegHVPCAscores[rep == 1],
@@ -214,13 +214,14 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        grid = FALSE,
        box = TRUE,
        names = c("PC1\n", "PC2\n", "\nPC3"),
-       limits = c(round(min(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1, round(max(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) +0.1),
+       limits = c(round(min(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1, round(max(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) + 0.1),
        y.margin.add = 0.6,
        angle = 50,
        pch = 16)
 
 
 ## HOW SIMILAR ARE DOUG-FIR FOREST TYPES?
+
 ## If we look at the first year (top row), there seems to be an indication that they
 ## could all overlap a similar region in space, and that the fact that some have a smaller
 ## sample size may be not showing how much these forest types are overlapping in terms of forest composition.

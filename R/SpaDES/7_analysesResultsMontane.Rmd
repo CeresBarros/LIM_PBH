@@ -91,7 +91,7 @@ if (mergePSME) {
 
 ## add vegTypes at the initial year - these are the ones we track in time, the final year may have changed completely -
 ## and pixels with no fires to burn data - note that we loose the yearly fire data.
-allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[year == startYear, 
+allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[year == endYear, 
                                                                   .(scenario, rep, pixelIndex, vegTypeCN)]), 
                                      on = .(scenario, rep, pixelIndex)]
 cols <- c("fireID", "noFires", "severity", "severityB", "fireSize", "patchSize", "fireInt", "fireFreq")
@@ -1188,8 +1188,8 @@ rm(plot13, plot14, plot17, plot18, plot9.2, plot10.2, plot11, plot12)
 gc()
 ```
 
-#### Variability across repetitions
-```{r varRepsByDomSpecies, cache = FALSE}
+## BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY FUNCTIONAL VEG TYPE (Cameron's veg types)
+For biomass, mortality, age and no. cohorts forest types are defined at the last year of the simulation and pixels are kept constant.
 ## (DOMINANT SPECIES) ------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegType[year == endYear, list(BiomassBySpecies = sum(BiomassByVegType)),
@@ -1328,7 +1328,6 @@ rm(plot6var, plot8var, plot10var, plot11var)
 gc()
 ```
 
-### BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY FUNCTIONAL VEG TYPE (Cameron's veg types)
 ```{r plotsByFunctVegType, cache = FALSE}
 ## BY CAMERON'S VEG TYPE ------------
 ## no. pixels
@@ -1396,8 +1395,12 @@ plot20.2 <- ggplot(data = plotData,
   facet_grid(scenario ~ noFires)
 
 ## no. cohorts
-plotData <- allPixelCohortDataMnt[B > 0, list(noCohorts = length(unique(age))),
-                                  by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[B > 0, list(noCohorts = length(unique(age))),
+                     by = .(scenario, year, rep, pixelIndex, firePresAbs, noFires, vegTypeCN)]
 plot21 <- ggplot(plotData,
                  aes(x = year, y = noCohorts, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -1420,8 +1423,11 @@ plot22 <- ggplot(data = plotData,
   facet_grid(scenario ~ noFires)
 
 ## total biomass
-plotData <- summaryBurnCohortDataVegTypeCN[, list(BiomassByVegType = sum(BiomassByVegType)),
-                                           by = .(scenario, year, rep, vegTypeCN, firePresAbs)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
 plot23 <- ggplot(data = plotData,
                  aes(x = year, y = log(BiomassByVegType + 0.000001), colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -1471,9 +1477,14 @@ plot26 <- ggplot(data = summaryBurnCohortDataVegTypeCN,
   facet_grid(scenario ~ noFires)
 
 ## average age
-plotData <- allPixelCohortDataMnt[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                         sum((B/100), na.rm = TRUE))),
-                                  by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                            sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, year, rep, firePresAbs, vegTypeCN)]
 plot27 <- ggplot(data = plotData,
                  aes(x = year, y = AgeBySppWeighted, colour = vegTypeCN)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -1549,8 +1560,8 @@ rm(plot23, plot24, plot27, plot28, plot19.2, plot20.2, plot21, plot22)
 gc()
 ```
 
-#### Variability across repetitions
-```{r varRepsByFunctVegType, cache = FALSE}
+## SPECIES RELATIVE ABUNDANCE AND AVG. AGE AND NO COHORTS BY SPECIES WITHIN VEG TYPE
+Averaged across pixels, burnt and unburnt. Forest types are defined at the last year of the simulation and pixels are kept constant.
 ## BY CAMERON'S VEG TYPE ------------------------
 ## total biomass across landscape
 plotData <- summaryBurnCohortDataVegTypeCN[year == endYear, list(BiomassBySpecies = sum(BiomassByVegType)),
@@ -1691,7 +1702,7 @@ rm(plot12var, plot14var, plot16var, plot17var)
 gc()
 ```
 
-### COMPARING SIMULATED AND OBSERVED DATA
+## COMPARING SIMULATED AND OBSERVED DATA
 Age means CIs - by species
 ```{r simVsObsAges, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
@@ -1786,13 +1797,21 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 ```
 
 Age means CIs - by forest type
-```{r simVsObsAges, cache = FALSE}
+Forest types are defined at the LAST year of the simulation and pixels are kept constant.
+Choosing the last year is more similar to what happens in the field.
+
+```{r simVsObsAges_vegType, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's
-plotData <- allPixelCohortDataMnt[year == endYear & B > 0,  ## absences can't lower the average ages
-                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                       sum((B/100), na.rm = TRUE))),
-                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(scenario, rep, vegTypeCN, pixelIndex)])
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[year == endYear & B > 0,  ## absences can't lower the average ages
+                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                          sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
 
 plotData2 <- copy(ageDataCN[, .(Cover.dendro, Reconstructed.age, firePresAbs)])
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
@@ -1878,11 +1897,18 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 ```
 
 No. cohorts means CIs by forest type
+Forest types are defined at the LAST year of the simulation and pixels are kept constant.
+Choosing the last year is more similar to what happens in the field.
 ```{r simVsObsCohorts, cache = FALSE}
 ## no. cohorts at end of simulation vs cameron's - subset to common veg types
-plotData <- allPixelCohortDataMnt[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
-                                  list(noCohorts = length(unique(age))),
-                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(scenario, rep, vegTypeCN, pixelIndex)])
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                     list(noCohorts = length(unique(age))),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
 plot31 <- ggplot() +
   geom_violin(data = plotData,
               aes(x = vegTypeCN, y = noCohorts, fill = scenario, 
@@ -1974,12 +2000,19 @@ ggsave(plot = plot31.4, filename = file.path(figOutputPath, "results_noCohortsSi
 ```
 
 Mean absolute deviation of simulated no. cohorts with respect to average observed no. cohorts for a given stand type
+Forest types are defined at the LAST year of the simulation and pixels are kept constant.
+Choosing the last year is more similar to what happens in the field.
 ```{r simVsObsCohortsDif, cache = FALSE}
 ## Cohorts mean absolute deviation 
 ## calculate the mean absolute deviation of each stand to the observed average (per veg type) across reps
-plotData <- allPixelCohortDataMnt[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
-                                  list(noCohorts = length(unique(age))),
-                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(scenario, rep, vegTypeCN, pixelIndex)])
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[year == endYear & B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                     list(noCohorts = length(unique(age))),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
 plotData2 <- ageDataCN[, list(avgNoCohortsObs = mean(noCohorts, na.rm = TRUE)),
                        by = .(Cover.dendro, firePresAbs)]
 plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
@@ -2128,10 +2161,15 @@ Mean absolute deviation simulated age with respect to average observed age for a
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
-plotData <- allPixelCohortDataMnt[year == endYear & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
-                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                       sum((B/100), na.rm = TRUE))),
-                                  by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(scenario, rep, vegTypeCN, pixelIndex)])
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData <- plotData[year == endYear & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                          sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
 
 plotData2 <- ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
                        by = .(Cover.dendro, firePresAbs)]
@@ -2824,7 +2862,7 @@ rm(plotMap1, plotMap1hist, plotMap1.2, plotMap2, plotMap2hist, plotMap3, plotMap
 gc()
 ```
 
-## MAPS - veg type (functional veg types )
+## MAPS - veg type 
 It takes a long time to reclassify pixels into Cameron's functional veg. types, so instead of taking the average B across reps and reclassifying, I'll take the veg type that was more common across reps (per pixel)
 ```{r mapPlots2, cache = FALSE}
 ## MAPS ------------------------

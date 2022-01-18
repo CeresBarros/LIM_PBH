@@ -219,7 +219,7 @@ vegHVdata <- vegHVdata[, ..cols]
 ## as vegTypeCN/pixelIndex combos for the first year have to be
 ## identical between scenarios (tested above)
 ## gaussian HVs were extremely slow
-pixelIndexList <- split(unique(vegHVdata[year == start(preSimList), .(rep, vegTypeCN, pixelIndex)]),
+pixelIndexList <- split(unique(vegHVdata[year == end(preSimList), .(rep, vegTypeCN, pixelIndex)]),
                         by = c("rep", "vegTypeCN"), drop = TRUE)
 
 ## check that there is only one vegType at the start year across scenarios
