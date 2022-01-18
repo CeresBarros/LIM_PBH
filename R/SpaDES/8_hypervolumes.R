@@ -15,7 +15,6 @@ options("reproducible.useCache" = TRUE)
 options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
 options("reproducible.useGDAL" = FALSE)
 
-
 ## general paths
 simDirName <- "jun2021Runs"
 simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
@@ -168,8 +167,6 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
 
 
 ## VEGETATION ATTRIBUTES HYPERVOLUMES -----------
-## Hypervolumes by vegetation type --------------
-## only montane belt
 
 source("R/R_tools/prepVegData4HVs.R")
 
@@ -211,6 +208,9 @@ if (mergeDMCPSME) {  ## only do the the merged vegTypes
 cols <- c(grep("PC(1|2|3|4)", names(vegHVdata), value = TRUE),
           grep("^PC", names(vegHVdata), value = TRUE, invert = TRUE))
 vegHVdata <- vegHVdata[, ..cols]
+
+## Hypervolumes by vegetation type --------------
+## only montane belt
 
 ## HV comparisons per year, between scenarios --------------
 ## note that splitting by veg type has to be done on the first
