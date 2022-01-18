@@ -34,7 +34,7 @@ source("R/SpaDES/6_resultsDataPrep.R")
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
 mergePSME <- TRUE ## merge PSME dryPSME
-options("LandR.assertions" = FALSE)
+options("LandR.assertions" = TRUE)
 if (mergeDMCPSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
@@ -44,6 +44,8 @@ if (mergePSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergePSME")
   allPixelCohortDataMnt[vegTypeCN %in% c("PSME", "dryPSME"), vegTypeCN := "PSME"]
 }
+
+dir.create(HVoutputPath, recursive = TRUE)
 
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
@@ -61,7 +63,7 @@ firePCA <- summaryFireAttributes[, ..cols] %>%
         datatable = .,
         HVidvar = 4,
         noAxes = 3,
-        plotOrdi = TRUE,
+        plotOrdi = FALSE,
         saveOrdi = TRUE,
         saveOrdiSumm = TRUE,
         file.suffix = "fireHVs_FULLPCA",
