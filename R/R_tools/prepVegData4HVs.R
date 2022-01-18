@@ -58,11 +58,6 @@ if (getOption("LandR.assertions")) {
          "Combinations as allPixelCohortDataMnt")
   }
 
-  temp <- vegDataForHVs[, length(unique(pixelIndex)), by = .(scenario, rep, year)]
-  if (unique(temp$V1) > 1) {
-    stop("There should be the same number of pixels every year.")
-  }
-
   temp <- split(vegDataForHVs[, .(pixelIndex, scenario, rep, year)],
                 by = c("scenario", "rep", "year"), keep.by = FALSE)
   temp <- lapply(temp, FUN = function(x) unique(x[["pixelIndex"]]))
