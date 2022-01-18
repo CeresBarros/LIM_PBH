@@ -31,7 +31,7 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAna
                  , outputPath = file.path("R/SpaDES/outputs", simDirName))
 
 ## path to figure folder and cache folder
-figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
+figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis", "Montane")
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 # bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
@@ -247,13 +247,10 @@ ggplot(plotData[grepl("PSME", vegTypeCN) & scenario == "PM"], aes(PC1, PC4, colo
   facet_wrap(year ~ vegTypeCN)
 
 ## DOUGLAS-FIR
-
 plotData$year <- as.character(plotData$year)
-
-
 plotDataPCA <- vegHVPCA
 plotDataPCA$x <- plotDataPCA$x[grepl("PSME", plotData$vegTypeCN),]
-PSMEPCAplot <- autoplot(vegHVPCA2, data = plotData[grepl("PSME", vegTypeCN)],
+PSMEPCAplot <- autoplot(plotDataPCA, data = plotData[grepl("PSME", vegTypeCN)],
                         colour = "year", shape = "year", label.colour = "blue",
                         loadings = TRUE, loadings.colour = "blue", scale = 0,
                         loadings.label = TRUE, loadings.label.size = 3, alpha = 0.3) +
