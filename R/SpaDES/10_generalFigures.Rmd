@@ -502,15 +502,18 @@ makeGIF <- function(gif.dir, gifPrefix, ...) {
     image_join() %>% # joins image
     image_animate(...) %>% # animates, can opt for number of loops
     image_write(file.path(gif.dir, paste0(gifPrefix, ".gif")))
+  
+  if (file.exists(file.path(gif.dir, paste0(gifPrefix, ".gif"))))
+    file.remove(PNGlist)
 }
 
-makeGIF(gif.dir = file.path(figOutputPath, "gifs", "PM_rep1"),
+makeGIF(gif.dir = file.path(figOutputPath, "gifs", "noPM_rep1"),
         gifPrefix = "vegTypeMapStk_noPM",
         fps = 2)
-makeGIF(gif.dir = file.path(figOutputPath, "gifs", "noPM_rep1"),
+makeGIF(gif.dir = file.path(figOutputPath, "gifs", "PM_rep1"),
         gifPrefix = "vegTypeMapStk_PM",
         fps = 2)
 
 ```
 
-![](name-of-giphy.gif)
+
