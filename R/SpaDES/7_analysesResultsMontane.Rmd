@@ -2532,6 +2532,134 @@ rm(plot33, plot35)
 gc()
 ```
 
+## ALPHA AND BETA DIVERSITY PLOTS - BY VEG TYPE - TIME ONLY
+Forest types are defined at the last year of the simulation and pixels are kept constant.
+```{r alphaDivVegType, cache = FALSE}
+## BIODIVERSITY METRICS --------------------------------
+## ALPHA DIVERSITY --------------
+## inverse Simpson concentration (Whittaker 1972)
+rm(plotData, plotData2)
+amc::.gc()
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData[, sumB := sum(B, na.rm = TRUE), by = .(scenario, rep, year, pixelIndex)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, year, pixelIndex, vegTypeCN, speciesCode, firePresAbs, noFires)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, year, pixelIndex, vegTypeCN, firePresAbs, noFires)]
+
+cols2 <- vegTypeCNColours[names(vegTypeCNColours) != "No veg."]
+labs2 <- vegTypeCNLabels[names(vegTypeCNLabels) != "No veg."] 
+plot33.2 <- ggplot(data = plotData[vegTypeCN != "No veg."],
+                   aes(x = year, y = alphaDiv, colour = vegTypeCN)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  stat_summary(aes(x = year, y = alphaDiv, colour = "landscape"),
+               fun = "mean", geom = "line", size = 1) +
+  scale_colour_manual(values = cols2, 
+                      labels = labs2, drop = TRUE) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+plot33.3 <- ggplot(data = plotData[vegTypeCN != "No veg."],
+                   aes(x = year, y = alphaDiv, colour = vegTypeCN, linetype = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  stat_summary(aes(x = year, y = alphaDiv, colour = "landscape"),
+               fun = "mean", geom = "line", size = 1) +
+  scale_colour_manual(values = cols2, 
+                      labels = labs2, drop = TRUE) +
+  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+
+## BETA DIVERSITY --------------
+## from multiplicative decomposition where both alpha
+## and gamma diversity are inverse Simpson concentration (Whittaker 1972)
+## alpha-div
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+plotData[, sumB := sum(B, na.rm = TRUE), by = .(scenario, rep, year, pixelIndex)]
+plotData <- plotData[, list(relB = sum(B, na.rm = TRUE)/sumB),
+                     by = .(scenario, rep, year, pixelIndex, vegTypeCN, speciesCode, firePresAbs, noFires)]
+plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
+                     by = .(scenario, rep, year, pixelIndex, vegTypeCN, firePresAbs, noFires)]
+
+## gamma-div - firePresAbs
+plotData2 <- copy(summaryBurnCohortDataSpp)
+plotData2[, sumB := sum(BiomassBySpecies, na.rm = TRUE),
+          .(scenario, rep, year, firePresAbs)]
+plotData2 <- plotData2[, list(relB = sum(BiomassBySpecies, na.rm = TRUE)/sumB),
+                       by = .(scenario, rep, year, firePresAbs, speciesCode)]
+plotData2 <- plotData2[, list(gammaDiv = 1/sum(relB^2)),
+                       by = .(scenario, rep, year, firePresAbs)]
+
+## beta-div  - firePresAbs
+plotData2 <- plotData2[plotData, on = .(scenario, rep, year, firePresAbs)]
+plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na.rm = TRUE)),
+                       by = .(scenario, rep, year, vegTypeCN, firePresAbs)]
+
+plot35.2 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
+                   aes(x = year, y = betaDiv, colour = vegTypeCN)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  stat_summary(aes(x = year, y = betaDiv, colour = "landscape"),
+               fun = "mean", geom = "line", size = 1) +
+  scale_colour_manual(values = cols2, labels = labs2) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Avg. beta-diversity", y = "beta-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_grid(scenario ~ firePresAbs,
+             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+plot35.3 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
+                   aes(x = year, y = betaDiv, colour = vegTypeCN, linetype = scenario)) +
+  stat_summary(fun = "mean", geom = "line", size = 1) +
+  stat_summary(aes(x = year, y = betaDiv, colour = "landscape"),
+               fun = "mean", geom = "line", size = 1) +
+  scale_colour_manual(values = cols2, labels = labs2) +
+  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Avg. beta-diversity", y = "beta-div.") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+```
+
+```{r plot&savePlots18, echo = FALSE}
+plotSave <- ggarrange(plot33.2,
+                      plot35.2, common.legend = TRUE,
+                      legend.grob = get_legend(plot33.2 + theme(legend.direction = "vertical")),
+                      legend = "right",
+                      ncol = 1,
+                      labels = "auto", font.label = list(size = 20))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_landscapeAlphaBetaScenarioVegType.tiff"),
+       width = 12, height = 10)
+
+plotSave <- ggarrange(plot33.3,
+                      plot35.3, common.legend = TRUE,
+                      legend.grob = get_legend(plot33.3),
+                      legend = "bottom",
+                      ncol = 1,
+                      labels = "auto", font.label = list(size = 20))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_landscapeAlphaBetaScenarioVegType2.tiff"),
+       width = 8, height = 10)
+gc()
+```
+
+
 ## MAPS - veg type (dominant species)
 ```{r mapPlots, cache = FALSE}
 ## MAPS ------------------------
@@ -2790,4 +2918,161 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_commonVegTy
 
 rm(plotMap4, plotMap4hist)
 gc()
+```
+
+## MAPS - fire attributes 
+Averaged across reps
+```{r mapPlots_fireAttr, cache = FALSE}
+## MAPS ------------------------
+## dominant species - to deal with reps we need to reclassify the stands after averaging across reps.
+plotData <- summaryFireAttributes[, list(meanFreq  = mean(meanFreq, na.rm = TRUE),
+                                         meanPatchS = mean(meanPatchS, na.rm = TRUE),
+                                         meanSevB = mean(meanSevB, na.rm = TRUE)),
+                                  by = .(scenario, pixelIndex)]
+## log severity
+plotData$meanSevB <- log(plotData$meanSevB + 1)
+
+plotData <- melt(plotData, id.vars = c("scenario", "pixelIndex"))
+
+fireAttrStk <- lapply(split(plotData, by = c("scenario", "variable")), function(DT, RTM) {
+  rasVeg <- RTM
+  rasVeg[] <- NA
+  rasVeg[DT$pixelIndex] <- DT$value
+  rasVeg
+}, RTM = preSimList$rasterToMatch)
+fireAttrStk <- stack(fireAttrStk)
+
+names(fireAttrStk) <- sub("^PM.", "PM - ", names(fireAttrStk))
+names(fireAttrStk) <- sub("^noPM.", "no PM - ", names(fireAttrStk))
+names(fireAttrStk) <- sub("meanFreq", "mean interval", names(fireAttrStk))
+names(fireAttrStk) <- sub("meanPatchS", "mean patch size", names(fireAttrStk))
+names(fireAttrStk) <- sub("meanSevB", "mean severity", names(fireAttrStk))
+fireAttrStk <- fireAttrStk[[order(names(fireAttrStk))]]
+
+fireAttrStk <- terra::rast(fireAttrStk)
+tiff(file.path(figOutputPath, "results_fireAttribMaps.tiff"), width = 12, height = 8, units = "in",
+     res = 300)
+terra::plot(fireAttrStk, cex = 2, xlab = "longitude", ylab = "latitude",
+            col = colorRampPalette(RColorBrewer::brewer.pal(9, "YlOrRd"))(30),
+            pax = list(cex.axis = 1.2), cex.lab = 1.5,
+            mar = c(4.1, 4.1, 3.1, 6.5), plg = list(cex = 1.5), 
+            fun = function() terra::plot(terra::vect(preSimList$studyArea), add = TRUE))
+dev.off()
+```
+
+## TOPOGRAPHY AND CLIMATE PER VEGETATION TYPE (functional veg types)
+Exploring topography and climate differences between pixels of different vegetation types, where vegetation types were classified at the beginning of the simulation
+```{r topoClimVegType, cache = FALSE}
+## TOPOGRAPHY --------------------------
+rm(plotData, plotData2)
+amc::.gc()
+pixelIDs <- unique(allPixelCohortDataMnt[year == startYear, .(vegTypeCN, pixelIndex)])  
+
+slopeRas <- raster(file.path(simPaths$inputPath, "slopeRas.tif"))
+aspectRas <- raster(file.path(simPaths$inputPath, "aspectRas.tif"))
+elevRas <- raster(file.path(simPaths$inputPath, "DEMRas_38892a6620545dfa.tif"))
+
+topoData <- data.table(pixelIndex = 1:ncell(slopeRas), 
+                       Slope = getValues(slopeRas),
+                       Aspect = getValues(aspectRas),
+                       Elevation = getValues(elevRas))
+plotData <- topoData[pixelIDs, on = "pixelIndex"]
+plotData <- melt(plotData, measure.vars = c("Elevation", "Slope", "Aspect"))
+
+facetLabs <- c("Elevation" = "Elevation\n(m a.s.l.)", "Slope" = "Slope (%)", "Aspect" = "Aspect\n(degrees)")
+plot45 <- ggplot(data = plotData, aes(x = vegTypeCN, y = value, fill = vegTypeCN)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  theme_pubr(base_size = 16, legend = "bottom",  x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.placement = "outside", strip.background = element_blank(), strip.text = element_text(size = 16)) +
+  labs(title = "Topography", y = "", x = "") +
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) +
+  facet_wrap( ~ variable, scales = "free_y", labeller = labeller(variable = facetLabs),
+              strip.position = "left", ncol = 2)
+
+## add pixelIDs to weather data
+pixelIDsRas <- preSimList$rasterToMatch
+pixelIDsRas[] <- 1:ncell(pixelIDsRas)
+pixelIDsRas[!pixelIDsRas[] %in% pixelIDs$pixelIndex] <- NA
+
+weatherData <- preSimList$weatherData
+weatherData <- st_transform(weatherData, crs = crs(pixelIDsRas))
+weatherData <- cbind(weatherData, st_drop_geometry(st_extract(st_as_stars(pixelIDsRas), at = weatherData)))
+
+## drop geometry and NAs and add vegTypes
+weatherData <- as.data.table(st_drop_geometry(weatherData))
+setnames(weatherData, "rasterToMatchLarge", "pixelIndex")
+weatherData <- weatherData[!is.na(pixelIndex)]
+weatherData <- weatherData[pixelIDs, on = "pixelIndex", nomatch = 0]
+setnames(weatherData, c("temperature", "relativeHumidity", "windSpeed", "precipitation"),
+         c("Temperature", "Rel. humidity", "Wind speed", "Precipitation"))
+
+plotData <- melt(weatherData, measure.vars = c("Temperature", "Rel. humidity", "Wind speed", "Precipitation"))
+
+facetLabs <- c("Temperature" = "Temperature\n(centigrade)", "Rel. humidity" = "Rel. humidity\n(%)", 
+               "Wind speed" = "Wind speed\n(km/h)", "Precipitation" = "Precipitation\n(mm)")
+plot46 <- ggplot(data = plotData, aes(x = vegTypeCN, y = value, fill = vegTypeCN)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_manual(values = vegTypeCNColours, labels = vegTypeCNLabels) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.placement = "outside", strip.background = element_blank(), strip.text = element_text(size = 16)) +
+  labs(title = "Climate", y = "", x = "") +
+  facet_wrap( ~ variable, scales = "free_y", labeller = labeller(variable = facetLabs),
+              strip.position = "left")
+```
+
+```{r plot&savePlots22, echo = FALSE}
+plotSave <- plot_grid(
+  plot_grid(plot45 + theme(axis.text.x = element_blank(), legend.position = "none"),
+            plot46 + theme(legend.position = "none"), 
+            rel_heights = c(0.7, 1), ncol = 1, align = "v", axis = "l",
+            labels = "auto", label_size = 20),
+  get_legend(plot45 + theme(legend.direction = "vertical")),
+  ncol = 2, rel_widths = c(1, 0.2))
+
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "topoClim_vegTypesCN.tiff"),
+       width = 12, height = 10)
+```
+
+
+## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
+```{r fireAttriPyro}
+tempData <- allHVData[year == end(preSimList),
+                      .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
+tempData <- melt.data.table(tempData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+tempData$scenario <- sub("HV_", "", tempData$scenario)
+tempData <- tempData[HVtype == "fireHV", list(Volume = mean(Volume, na.rm = TRUE)),
+                     by = .(rep, vegType, scenario)]
+setnames(tempData, "vegType", "vegTypeCN")
+
+## add only landsdape level HV sizes 
+plotData <- tempData[vegTypeCN == "landscape", .(scenario, rep, Volume)][summaryFireAttributes, on = .(scenario, rep)]
+plotData <- melt(plotData, id.vars = c("scenario", "rep", "Volume", "pixelIndex", "vegTypeCN"))
+plotData[variable %in% c("meanPatchS", "meanSevB"), value := log(value + 0.1)]
+
+plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Volume), 3)), 
+                                                      y = value, 
+                                                      fill = as.factor(round(log(Volume), 3)))) +
+  geom_violin() + 
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.placement = "outside", strip.background = element_blank(), strip.text = element_text(size = 16)) +
+  labs(y = "", x = "pyrodiversity") +
+  facet_grid(variable ~ scenario, scales = "free", switch = "y",
+             labeller = labeller(scenario = c("noPM" = "no PM", "PM" = "PM"),
+                                 variable = c(meanFreq = "Mean fire interval",
+                                              meanSevB = "Mean severity",
+                                              meanPatchS = "Mean patch size")))
+```
+
+```{r plot&savePlots23, echo = FALSE}
+plot47
+ggsave(plot = plot47, filename = file.path(figOutputPath, "results_fireAttrLandscapePyrodiversity.tiff"),
+       width = 14, height = 8)
 ```
