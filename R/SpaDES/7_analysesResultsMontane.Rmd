@@ -207,7 +207,9 @@ plotData2 <- plotData2[!is.na(ageDiffSimObs)]
 
 plotData2 <- plotData2[!is.na(ageDiffSimObs)]
 ageDiffLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
-  lm(abs(ageDiffSimObs) ~ scenario  * speciesCode, data = DT)
+  # lm(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, data = DT)
+  nlme::gls(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode),
+            data = DT)   ## better AIC and residuals
 })
 
 plotData2[firePresAbs == "0", 
