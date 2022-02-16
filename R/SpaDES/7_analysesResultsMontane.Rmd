@@ -1313,7 +1313,7 @@ plot25 <- ggplot(data = plotData[vegTypeCN != "No veg."],
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by forest type") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])
 
@@ -1333,7 +1333,7 @@ plot26 <- ggplot(data = plotData[vegTypeCN != "No veg."],
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## average age
 pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
@@ -1353,7 +1353,7 @@ plot27 <- ggplot(data = plotData,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by forest type") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(vegTypeCN, scenario, rep, pixelIndex)])  
 
@@ -1372,7 +1372,7 @@ plot28 <- ggplot(data = plotData,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by forest type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 ```
 
 ```{r plot&savePlots5, echo = FALSE}
@@ -1474,7 +1474,7 @@ plot1.2 <- ggplot(data = plotData2,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
-                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+                        labels = scenLabels) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Relative species abundance", y = "Average relative abundance\n(per pixel)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
@@ -1489,7 +1489,7 @@ plot5.2 <- ggplot(data = plotData2,
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
-                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+                        labels = scenLabels) +
   labs(title = "Average species age", y = "biomass-weighted age") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_wrap( ~ vegTypeCN, nrow = 2,
@@ -1555,13 +1555,15 @@ plot29 <- ggplot() +
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = speciesLabels) +
   scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50")) +
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   labs(title = "Avg. age", y = "age", x = "",
        subtitle = "by species") +
   facet_grid( ~ firePresAbs,
-              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire"))) 
+              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
 
 plot30 <- ggplot() +
   geom_violin(data = plotData,
@@ -1581,10 +1583,12 @@ plot30 <- ggplot() +
   stat_summary(data = plotData2,
                aes(x = as.factor(firePresAbs), y = Reconstructed.age, colour = "observed"),
                fun.data = "mean_cl_boot") +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
@@ -1654,13 +1658,15 @@ plot29.2 <- ggplot() +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50")) +
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   labs(title = "Avg. age", y = "age", x = "",
        subtitle = "by forest type") +
   facet_grid( ~ firePresAbs,
-              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire"))) 
+              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
 
 plot30.2 <- ggplot() +
   geom_violin(data = plotData,
@@ -1680,10 +1686,12 @@ plot30.2 <- ggplot() +
   stat_summary(data = plotData2,
                aes(x = as.factor(firePresAbs), y = Reconstructed.age, colour = "observed"),
                fun.data = "mean_cl_boot") +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
@@ -1736,16 +1744,18 @@ plot31 <- ggplot() +
                fun.data = "mean_cl_boot", geom = "pointrange",
                position = position_dodge(width = 0.9)) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts", x = "",
        subtitle = "by forest type") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots9, echo = FALSE}
@@ -1788,16 +1798,18 @@ plot31.4 <- ggplot() +
                fun.data = "mean_cl_boot", geom = "pointrange",
                position = position_dodge(width = 0.9)) +
   scale_x_discrete(labels = speciesLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts", x = "",
        subtitle = "by species") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots10, echo = FALSE}
@@ -1839,10 +1851,11 @@ plot31.2 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_discrete(labels = scenLabels) +
   labs(title = "Avg differences from observed no. cohorts",
        y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## mean absolute deviation across reps
 plot31.3 <- ggplot(plotData2,
@@ -1851,14 +1864,16 @@ plot31.3 <- ggplot(plotData2,
   stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
   scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_colour_discrete(labels = scenLabels) +
   labs(title = "Mean abs. deviation from observed no. cohorts",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots11, echo = FALSE}
@@ -1917,10 +1932,11 @@ plot31.5 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = speciesLabels) +
+  scale_fill_discrete(labels = scenLabels) +
   labs(title = "Avg differences from observed no. cohorts",
        y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## mean absolute deviation across reps
 plot31.6 <- ggplot(plotData2,
@@ -1929,14 +1945,16 @@ plot31.6 <- ggplot(plotData2,
   stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
+  scale_colour_discrete(labels = scenLabels) +
   scale_x_discrete(labels = speciesLabels) +
   labs(title = "Mean abs. deviation from observed no. cohorts",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots12, echo = FALSE}
@@ -2001,10 +2019,11 @@ plot32 <- ggplot(plotData,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_fill_discrete(labels = scenLabels) +
   labs(title = "Avg. differences from observed ages",
        y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## mean absolute differences
 plot32.2 <- ggplot(plotData2,
@@ -2013,8 +2032,10 @@ plot32.2 <- ggplot(plotData2,
   stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
+  scale_colour_discrete(labels = scenLabels) +
   scale_x_discrete(labels = vegTypeCNLabels, 
                    limits = unique(c("landscape", sort(unique(plotData2$vegTypeCN))))) +
   labs(title = "Mean abs. deviation from observed ages",
@@ -2090,12 +2111,13 @@ plot43 <- ggplot(plotData,
   geom_boxplot() +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   scale_x_discrete(labels = speciesLabels) +
+  scale_fill_discrete(labels = scenLabels) +
   theme(legend.title = element_blank(), 
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. differences from observed ages",
        y = expression("sim." - bar("obs.")), x = "") +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## mean absolute differences
 plot43.2 <- ggplot(plotData2,
@@ -2105,9 +2127,11 @@ plot43.2 <- ggplot(plotData2,
   stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = c(speciesLabels, landscape = "landscape"), 
                    limits = c("landscape", names(speciesLabels))) +
+  scale_colour_discrete(labels = scenLabels) +
   labs(title = "Mean abs. deviation from observed ages",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
@@ -2161,6 +2185,7 @@ plot37 <- ggplot(summaryFireAttributes,
   geom_density(adjust = 1.5) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_x_log10() +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Fire mean patch size distribution", 
@@ -2171,6 +2196,7 @@ plot37.2 <- ggplot(summaryFireAttributes,
   geom_density(adjust = 1.5) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_x_log10() +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Fire mean patch size distribution", 
@@ -2190,6 +2216,7 @@ plot38 <- ggplot(plotData,
   stat_summary(aes(label = round(..y..), colour = scenario),
                fun = "mean", geom = "text", show.legend = FALSE,
                position = position_dodge(width = 0.9), vjust = -1) +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "no. fires", y = "no. pixels")
@@ -2227,7 +2254,8 @@ plot39 <- ggplot() +
   scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
                                  "observed" = "grey50")) +
   scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50")) +
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Mean fire interval", subtitle = "by forest type",
@@ -2238,6 +2266,7 @@ plot39.3 <- ggplot(data = summaryFireAttributes,
                    aes(x = meanFreq, fill = scenario, alpha = scenario)) +
   geom_density() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire interval", colour = "")
@@ -2246,6 +2275,7 @@ plot39.4 <- ggplot(data = summaryFireAttributes,
                    aes(x = meanFreq, fill = scenario, alpha = scenario)) +
   geom_density() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire interval", colour = "") + 
@@ -2256,6 +2286,7 @@ plot40 <- ggplot(data = summaryFireAttributes) +
   geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
   scale_x_log10() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire severity\n(biomass lost, ton/ha)", colour = "")
@@ -2265,6 +2296,7 @@ plot40 <- ggplot(data = summaryFireAttributes) +
 plot41 <- ggplot(data = summaryFireAttributes) +
   geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  scale_fill_discrete(labels = scenLabels) +
   scale_x_log10() +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
@@ -2278,6 +2310,7 @@ plotData <- summaryFireAttributes[, .(scenario, rep, pixelIndex, meanSevB)][plot
 plot42 <- ggplot(data = plotData) +
   geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
@@ -2358,6 +2391,7 @@ plot44 <- ggplot(plotData,
                      fill = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   geom_boxplot() +
+  scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = vegTypeCNLabels) +
@@ -2374,6 +2408,7 @@ plot44.2 <- ggplot(plotData2,
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
   scale_x_discrete(labels = vegTypeCNLabels, limits = rev(names(vegTypeCNLabels))) +
+  scale_colour_discrete(labels = scenLabels) +
   labs(title = "Mean abs. deviation from fire intervals",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip()
@@ -2419,12 +2454,13 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
 plot33 <- ggplot(data = plotData,
                  aes(x = year, y = alphaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## map of alpha - avg across reps
 plotData2 <- plotData[year == endYear, list(alphaDiv = mean(alphaDiv)),
@@ -2509,12 +2545,13 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot35 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## gamma-div - no fires
 plotData2 <- copy(summaryBurnCohortDataSpp)
@@ -2532,6 +2569,7 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot36 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.")  +
@@ -2584,7 +2622,7 @@ plot33.2 <- ggplot(data = plotData[vegTypeCN != "No veg."],
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot33.3 <- ggplot(data = plotData[vegTypeCN != "No veg."],
                    aes(x = year, y = alphaDiv, colour = vegTypeCN, linetype = scenario)) +
@@ -2594,7 +2632,7 @@ plot33.3 <- ggplot(data = plotData[vegTypeCN != "No veg."],
   scale_colour_manual(values = cols2, 
                       labels = labs2, drop = TRUE) +
   scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
-                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+                        labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
@@ -2640,7 +2678,7 @@ plot35.2 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 plot35.3 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
                    aes(x = year, y = betaDiv, colour = vegTypeCN, linetype = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
@@ -2648,7 +2686,7 @@ plot35.3 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
                fun = "mean", geom = "line", size = 1) +
   scale_colour_manual(values = cols2, labels = labs2) +
   scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
-                        labels = c("noPM" = "no PM", "PM" = "PM")) +
+                        labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
@@ -3084,7 +3122,7 @@ plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Vo
         strip.placement = "outside", strip.background = element_blank(), strip.text = element_text(size = 16)) +
   labs(y = "", x = "pyrodiversity") +
   facet_grid(variable ~ scenario, scales = "free", switch = "y",
-             labeller = labeller(scenario = c("noPM" = "no PM", "PM" = "PM"),
+             labeller = labeller(scenario = scenLabels,
                                  variable = c(meanFreq = "Mean fire interval",
                                               meanSevB = "Mean severity",
                                               meanPatchS = "Mean patch size")))

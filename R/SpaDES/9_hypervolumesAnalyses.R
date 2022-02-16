@@ -508,7 +508,7 @@ HVvolumeVegTypesStartPlot <- ggplot(plotData[HVtype == "vegHV"],
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+                     labels = scenLabels) +
   theme_pubr(base_size = 12, x.text.angle = 30,
              margin = FALSE, legend = "right") +
   theme(legend.box = "vertical",
