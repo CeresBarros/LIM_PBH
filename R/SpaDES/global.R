@@ -49,8 +49,8 @@ Require(c("SpaDES",
           "data.table",
           "CeresBarros/ToolsCB",
           "PredictiveEcology/SpaDES.experiment",
-          "PredictiveEcology/LandR@modelBiomass",
-          "PredictiveEcology/reproducible@DotsBugFix"),
+          "PredictiveEcology/LandR",
+          "PredictiveEcology/reproducible"),
         upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2,
