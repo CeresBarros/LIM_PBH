@@ -1981,7 +1981,8 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_noCohortsSi
 gc()
 ```
 
-Mean absolute deviation simulated age with respect to average observed age for a given stand type
+### Mean absolute deviation simulated age with respect to average observed age for a given stand type
+(typical MAD, and quantile deviations - 50, 75, 95%)
 Forest types are defined at the LAST year of the simulation and pixels are kept constant.
 ```{r simVsObsAgesDif, cache = FALSE}
 ## mean age differences
@@ -2042,7 +2043,96 @@ plot32.2 <- ggplot(plotData2,
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+
+## forest-type-level differences between simulated and observed upper quuantiles
+pixelIDs <- unique(allPixelCohortDataMnt[year == endYear, .(scenario, rep, vegTypeCN, pixelIndex)])
+
+plotData <- allPixelCohortDataMnt[pixelIDs, on = .(scenario, rep, pixelIndex)]
+plotData[, vegTypeCN := i.vegTypeCN]
+plotData[, i.vegTypeCN := NULL]
+
+plotData <- plotData[year == endYear & B > 0,  ## absences can't lower the average ages
+                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                          sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
+                            quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
+                            quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
+                     by = .(scenario, rep, firePresAbs, vegTypeCN)]
+
+plotData2 <- ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                              quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                              quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
+                       by = .(Cover.dendro, firePresAbs)]
+plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
+setnames(plotData, "Cover.dendro", "vegTypeCN")
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData <- plotData[!is.na(quant50AgeBySppObs)]
+if (any(is.na(plotData))) stop()
+
+plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
+                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
+                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
+                      by = .(scenario, rep, vegTypeCN, firePresAbs)]
+temp <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
+                        meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
+                        meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs)),
+                        vegTypeCN = "landscape"),
+                 by = .(scenario, rep, firePresAbs)]
+plotData2 <- rbind(plotData2, temp)
+plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
+
+plot32.3 <- ggplot(plotData2, 
+                   aes(x = vegTypeCN, y = value, colour = variable, 
+                       shape = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
+               alpha = 0.7, fill = "white") +
+  scale_color_viridis_d(option = "viridis", begin = 0.3, end = 0.8, 
+                        labels = c("meanAbsDevSimObsQuant50" = "50%", 
+                                   "meanAbsDevSimObsQuant75" = "75%", 
+                                   "meanAbsDevSimObsQuant95" = "95%"),
+                        name = "Quantile: ") +
+  scale_x_discrete(labels = vegTypeCNLabels, 
+                   limits = unique(c("landscape", sort(unique(plotData2$vegTypeCN)))),
+                   expand = c(-0.2, 1.1)) +
+  scale_shape_manual(labels = scenLabels, values = c("PM" = 24, "noPM" = 19)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Quantile absolute deviation", shape = "",
+       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
+  coord_flip() +
+  facet_wrap(~ firePresAbs, scales = "free_x", 
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## only pixels with fire
+## order veg types, with landscape at the end
+factorLevs <- c(as.character(sort(setdiff(unique(plotData2$vegTypeCN), "landscape"))), "landscape")
+plotData2[, vegTypeCN := factor(vegTypeCN, levels = factorLevs)]
+
+plot32.4 <- ggplot(plotData2[firePresAbs == "1"], 
+                   aes(x = variable, y = value, colour = scenario, 
+                       shape = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
+               size = 1) +
+  scale_x_discrete(labels = c("meanAbsDevSimObsQuant50" = "50%", 
+                              "meanAbsDevSimObsQuant75" = "75%", 
+                              "meanAbsDevSimObsQuant95" = "95%")) +
+  scale_shape_discrete(labels = scenLabels, name = "") +
+  scale_color_discrete(labels = scenLabels, name = "") +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.background = element_blank()) +
+  labs(title = "Quantile absolute deviation", x = "", 
+       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|"))) +
+  facet_wrap(~ vegTypeCN, scales = "free_x", ncol = 4,
+             labeller = labeller(vegTypeCN = vegTypeCNLabels))
+
 ```
 
 ```{r plot&savePlots13, echo = FALSE}
@@ -2069,10 +2159,44 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_ageSimVsObsTest_MAD_VegTypeCN.tiff"),
        width = 12, height = 10)
 
+plotSave <- plot_grid(
+  plot_grid(plot29.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30.2 + theme(legend.position = "bottom", plot.title = element_blank()),
+            nrow = 1, 
+            rel_widths = c(1, 0.7),
+            axis = "b", align = "h",
+            labels = c("a", "b", ""), label_size = 20),
+  plot_grid(plot32.3 + theme(legend.position = "right",
+                             plot.title = element_blank(),
+                             legend.direction = "vertical",
+                             legend.box = "vertical"),
+            labels = c("c"), label_size = 20),
+  nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_ageSimVsObsTest_MADquant_VegTypeCN.tiff"),
+       width = 10, height = 10)
+
+plotSave <- plot_grid(
+  plot_grid(plot29.3 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30.3 + theme(legend.position = "right", plot.title = element_blank(), plot.subtitle = element_blank()),
+            nrow = 1, 
+            axis = "b", align = "h",
+            labels = c("a", "b", ""), label_size = 20),
+  plot_grid(plot32.4 + theme(legend.position = "right",
+                             plot.title = element_blank(),
+                             legend.direction = "vertical",
+                             legend.box = "vertical"),
+            labels = c("c"), label_size = 20),
+  nrow = 2, rel_heights = c(0.8, 1), axis = "lr", align = "v")
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
+       width = 10, height = 10)
+
 gc()
 ```
 
-Mean absolute deviation simulated age with respect to average observed age for a given species
+### Mean absolute deviation simulated age with respect to average observed age for a given species
+(typical MAD, and quantile deviations - 50, 75, 95%)
 ```{r simVsObsAgesDif2, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
@@ -2136,7 +2260,97 @@ plot43.2 <- ggplot(plotData2,
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+
+## species-level differences between simulated and observed upper quuantiles
+plotData <- allPixelCohortDataMnt[year == endYear & B > 0,  ## absences can't lower the average ages
+                                  list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                       sum((B/100), na.rm = TRUE))),
+                                  by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
+                            quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
+                            quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
+                     by = .(scenario, rep, firePresAbs, speciesCode)]
+
+plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
+plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
+plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
+plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
+plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
+plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData2 <- plotData2[!is.na(speciesCode)]
+
+plotData2 <- plotData2[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                              quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                              quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
+                       by = .(speciesCode, firePresAbs)]
+plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData <- plotData[!is.na(quant50AgeBySppObs)]
+if (any(is.na(plotData))) stop()
+
+plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
+                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
+                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
+                      by = .(scenario, rep, speciesCode, firePresAbs)]
+temp <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
+                        meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
+                        meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs)),
+                        speciesCode = "landscape"),
+                 by = .(scenario, rep, firePresAbs)]
+plotData2 <- rbind(plotData2, temp)
+
+plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
+
+plot43.3 <- ggplot(plotData2, 
+                   aes(x = speciesCode, y = value, colour = variable, 
+                       shape = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
+               alpha = 0.7, fill = "white") +
+  scale_color_viridis_d(option = "viridis", begin = 0.3, end = 0.8, 
+                        labels = c("meanAbsDevSimObsQuant50" = "50%", 
+                                   "meanAbsDevSimObsQuant75" = "75%", 
+                                   "meanAbsDevSimObsQuant95" = "95%"),
+                        name = "Quantile: ") +
+  scale_x_discrete(labels = speciesLabels,
+                   limits = unique(c("landscape", sort(plotData2$speciesCode))),
+                   expand = c(-0.2, 1.1)) +
+  scale_shape_manual(labels = scenLabels, values = c("PM" = 24, "noPM" = 19)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(title = "Quantile absolute deviation", shape = "",
+       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
+  coord_flip() +
+  facet_wrap(~ firePresAbs, scales = "free_x", 
              labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+
+## only pixels with fire
+## order veg types, with landscape at the end
+factorLevs <- c(as.character(sort(setdiff(unique(plotData2$speciesCode), "landscape"))), "landscape")
+plotData2[, speciesCode := factor(speciesCode, levels = factorLevs)]
+
+plot43.4 <- ggplot(plotData2[firePresAbs == "1"], 
+                   aes(x = variable, y = value, colour = scenario, 
+                       shape = scenario)) +
+  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
+  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
+               size = 1) +
+  scale_x_discrete(labels = c("meanAbsDevSimObsQuant50" = "50%", 
+                              "meanAbsDevSimObsQuant75" = "75%", 
+                              "meanAbsDevSimObsQuant95" = "95%")) +
+  scale_shape_discrete(labels = scenLabels, name = "") +
+  scale_color_discrete(labels = scenLabels, name = "") +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.background = element_blank()) +
+  labs(title = "Quantile absolute deviation", x = "", 
+       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|"))) +
+  facet_wrap(~ speciesCode, scales = "free_x", ncol = 3,
+             labeller = labeller(speciesCode = c(speciesLabels, landscape = "landscape")))
 ```
 
 ```{r plot&savePlots14, echo = FALSE}
@@ -2173,7 +2387,41 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MAD_Species.tiff"),
        width = 10, height = 10)
 
-rm(plot43, plot43.2, plotTest1.2)
+plotSave <- plot_grid(
+  plot_grid(plot29 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30 + theme(legend.position = "bottom", plot.title = element_blank()),
+            nrow = 1, 
+            rel_widths = c(1, 0.7),
+            axis = "b", align = "h",
+            labels = c("a", "b", ""), label_size = 20),
+  plot_grid(plot43.3 + theme(legend.position = "right",
+                             plot.title = element_blank(),
+                             legend.direction = "vertical",
+                             legend.box = "vertical"),
+            labels = c("c"), label_size = 20),
+  nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species.tiff"),
+       width = 10, height = 10)
+
+
+plotSave <- plot_grid(
+  plot_grid(plot29.1 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
+            plot30.1 + theme(legend.position = "bottom", plot.title = element_blank(), plot.subtitle = element_blank()),
+            nrow = 1, 
+            axis = "b", align = "h",
+            labels = c("a", "b", ""), label_size = 20),
+  plot_grid(plot43.4 + theme(legend.position = "right",
+                             plot.title = element_blank(),
+                             legend.direction = "vertical",
+                             legend.box = "vertical"),
+            labels = c("c"), label_size = 20),
+  nrow = 2, rel_heights = c(0.8, 1), axis = "lr", align = "h")
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species2.tiff"),
+       width = 10, height = 10)
+
+# rm(plot43, plot43.2, plotTest1.2)
 gc()
 ```
 
