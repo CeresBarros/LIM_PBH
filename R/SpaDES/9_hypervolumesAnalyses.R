@@ -490,14 +490,15 @@ plotSave <- plot_grid(
   plot_grid(
   plot_grid(alignedVegPlots[[1]],
             alignedLandPlots[[1]],
-            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5)),
+            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
+            labels = c("a", "b")),
   plot_grid(alignedVegPlots[[2]],
             alignedLandPlots[[2]],
-            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5)),
-            ncol = 1, nrow = 2, align = "v", axis = "l", rel_heights = c(0.76, 1),
-  labels = "auto"),
-  get_legend(pyroHVvolumeVegTypesPlot),
-  ncol = 1, nrow = 2, rel_heights = c(1, 0.1))
+            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
+            labels = c("c", "d")),
+            ncol = 1, nrow = 2, align = "v", axis = "l", rel_heights = c(0.76, 1)),
+  get_legend(bioHVvolumeVegTypesPlot + theme(legend.box = "horizontal")),
+  ncol = 1, nrow = 2, rel_heights = c(1, 0.15))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
        width = 10, height = 8)
 
