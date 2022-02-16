@@ -315,6 +315,17 @@ AIC(pyroVSbiodiversityLandscape.lm,
     pyroVSbiodiversityLandscape.lm2,
     pyroVSbiodiversityLandscape.lm3)
 
+## for the noPM scenario the relationship seems like an exponential decay
+pyroVSbiodiversityLandscape.lm2.2 <- lm(logVegHV ~ logFireHV,
+                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
+pyroVSbiodiversityLandscape.lm2.3 <- lm(logVegHV ~ fireHV,
+                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
+pyroVSbiodiversityLandscape.lm3.2 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2)),
+                                      data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
+
+AIC(pyroVSbiodiversityLandscape.lm2.2, pyroVSbiodiversityLandscape.lm2.3, pyroVSbiodiversityLandscape.lm3.2)
+
+
 tiff(file.path(figOutputPath, "pyroVSbiodiversityLandscapelmRESIDUALS.tiff"))
 sets <- par(mfrow = c(2,2))
 plot(pyroVSbiodiversityLandscape.lm3)
