@@ -300,8 +300,17 @@ pyroVSbiodiversityLandscape.lm2 <- lm(logVegHV ~ logFireHV*scenario, data = mode
 ## try quadratic (as per Steel et al 2021 and He et al 2019)
 ## note that by default, we're using orthogonal polinomials - AIC is the same, so are residuals
 ## coefficients differ
-pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
+## due to a bug in nlme, gls doens't output the estimated polynomial (using poly) and therefore
+## predictions with new data (necessary for emmeans) are wrong (see https://stackoverflow.com/questions/70746067/issues-predicting-with-nlmeglsquadratic-model-fitted-with-poly-2)
+## instead of poly we now centre the data and use logFireHV + I(logFireHV^2) -- given the low degree polynomial this is okay.
+
+# pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
+#                                       data = modelData[vegType == "landscape"])
+modelData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
+          by = .(scenario, vegType)]
+pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario,
                                       data = modelData[vegType == "landscape"])
+
 AIC(pyroVSbiodiversityLandscape.lm,
     pyroVSbiodiversityLandscape.lm2,
     pyroVSbiodiversityLandscape.lm3)
@@ -318,7 +327,7 @@ cat("\n*********************\n")
 summary(pyroVSbiodiversityLandscape.lm3)
 cat("\n*********************\n")
 emtrends(pyroVSbiodiversityLandscape.lm3, specs = c("scenario"),
-         var = "logFireHV", max.degree = 2)
+         var = "logFireHVcenter", max.degree = 2)
 sink()
 
 ## by vetType
@@ -330,7 +339,7 @@ hist(modelData[vegType != "landscape" & fireHV < 500, fireHV], breaks = 1000)
 
 pyroVSbiodiversityVegTypes.lm2 <- lm(logVegHV ~ logFireHV *scenario*vegType,
                                      data = modelData[vegType != "landscape"])
-pyroVSbiodiversityVegTypes.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
+pyroVSbiodiversityVegTypes.lm3 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario*vegType,
                                      data = modelData[vegType != "landscape"])
 AIC(pyroVSbiodiversityVegTypes.lm2, pyroVSbiodiversityVegTypes.lm3)
 sets <- par(mfrow = c(2,2))
@@ -343,15 +352,11 @@ modelData2$vegType <- factor(modelData2$vegType)
 modelData2$scenario <- relevel(modelData2$scenario, "HV_noPM")
 modelData2$vegType <- relevel(modelData2$vegType, "No veg.")
 
-pyroVSbiodiversityVegTypes.gls <- gls(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
+pyroVSbiodiversityVegTypes.gls <- gls(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario*vegType,
                                       weights = varIdent(form = ~ 1 | scenario * vegType),
                                       data = modelData2)   ## much better!
 pyroVSbiodiversityVegTypes.gam <- gam(logVegHV ~ s(logFireHV, k = 3, by = interaction(scenario, vegType)),
                                       data =  modelData2)
-
-tempMod <- lm(logVegHV ~ poly(logFireHV, 2)*scenario*vegType, data = modelData2)
-terms(tempMod)
-terms(pyroVSbiodiversityVegTypes.gls)
 
 AIC(pyroVSbiodiversityVegTypes.lm,
     pyroVSbiodiversityVegTypes.lm2,
@@ -370,21 +375,10 @@ anova(pyroVSbiodiversityVegTypes.gls)
 cat("\n*********************\n")
 summary(pyroVSbiodiversityVegTypes.gls)
 cat("\n*********************\n")
-
-## refit with separate polynomial variables
-modelData2$logFireHVpoly1 <- poly(modelData2$logFireHV, 2)[,1]
-modelData2$logFireHVpoly2 <- poly(modelData2$logFireHV, 2)[,2]
-modTemp <- gls(logVegHV ~ (logFireHVpoly1 + logFireHVpoly2)*scenario*vegType,
-               weights = varIdent(form = ~ 1 | scenario * vegType),
-               data = modelData2)
-cat("\nLinear trend:\n")
-emtrends(modTemp, pairwise ~ scenario | vegType,
-         var = "logFireHVpoly1", mode = "df.error")
-cat("\nQuadratic trend:\n")
-emtrends(modTemp, pairwise ~ scenario | vegType,
-         var = "logFireHVpoly2", mode = "df.error") ## fails
+emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ scenario | vegType,
+         var = "logFireHVcenter", max.degree = 2, mode = "df.error")
 sink()
-rm(modTemp)
+
 
 ## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
 ## how does scenario affect hypervolume sizes at the end of the simulation?
