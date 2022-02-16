@@ -577,58 +577,118 @@ plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
 plotData <- dcast(plotData, ... ~ HVtype, value.var = "Volume")
 plotData[, `:=`(logFireHV = log(fireHV),
                 logVegHV = log(vegHV))]
+plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
+         by = .(scenario, vegType)]
 
-plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm3)]   ## just to comnpare with smoother
-plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls)]   ## just to comnpare with smoother
+plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm3, type = "response")]   ## just to compare with smoother
+plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls, type = "response")]   ## just to compare with smoother
 
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
 ## SEs are removed because they are not the same as the gls's
+plotBioPyroFunSmooth <- function(plotData, title = "") {
+  ggplot(plotData,
+         aes(x = logFireHVcenter, y = logVegHV,
+             # linetype = scenario,
+             # shape = scenario,
+             colour = vegType)) +
+    geom_point() +
+    # geom_line(aes(y = pred)) +  ## just to check if it matches smoother
+    stat_smooth(method = "lm", formula = y ~ x + I(x^2), se = FALSE) +
+    scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+    # scale_linetype_manual(labels = scenLabels,
+    #                       values = c("HV_noPM" = 2, "HV_PM" = 1)) +
+    # scale_shape_discrete(labels = scenLabels) +
+    scale_x_continuous(limits = range(plotData[, logFireHVcenter])) +
+    theme_pubr(base_size = 12, margin = TRUE) +
+    theme(legend.box = "vertical",
+          strip.background = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+    labs(x = "pyrodiversity", y = "forest diversity", title = title, colour = "", linetype = "", shape = "") +
+    facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
+                scales = "free") +
+    guides(linetype = guide_legend(override.aes = list(colour = "black")))
+}
 
-pyroVSbioDivVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
-                                   aes(x = logFireHV, y = logVegHV,
-                                       linetype = scenario, shape = scenario,
-                                       colour = vegType)) +
-  geom_point() +
-  # geom_line(aes(y = pred)) +  ## just to check if it matches smoother
-  stat_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE) +
-  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_linetype_manual(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM"),
-                        values = c("HV_noPM" = 2, "HV_PM" = 1)) +
-  scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  scale_x_continuous(limits = range(plotData[, log(fireHV)])) +
-  theme_pubr(base_size = 12, margin = TRUE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "pyrodiversity", y = "forest diversity", colour = "", linetype = "", shape = "") +
-  facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
-              scales = "free") +
-  guides(linetype = guide_legend(override.aes = list(colour = "black")))
+pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_noPM"],
+                                                     title = scenLabels["noPM"])
+pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_noPM"],
+                                                     title = scenLabels["noPM"])
+pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_PM"],
+                                                     title = scenLabels["PM"])
+pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_PM"],
+                                                         title = scenLabels["PM"])
 
-pyroVSbioDivVegLandscapePlot <- ggplot(plotData[vegType == "landscape"],
-                                       aes(x = log(fireHV), y = log(vegHV), shape = scenario,
-                                           linetype = scenario, colour = vegType)) +
-  geom_point() +
-  # geom_line(aes(y = pred)) +  ## just to check if it matches smoother
-  stat_smooth(method = "lm", formula = y ~ poly(x, 2), se = FALSE) +
-  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_linetype_manual(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM"),
-                        values = c("HV_noPM" = 2, "HV_PM" = 1)) +
-  scale_shape_discrete(labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank(),
-        plot.title = element_text(size = 12, hjust = 0.5),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "pyrodiversity", y = "forest diversity", title = "landscape",
-       colour = "", linetype = "", shape = "") +
-  guides(linetype = guide_legend(override.aes = list(colour = "black")))
-
-plotSave <- ggarrange(pyroVSbioDivVegTypesPlot, pyroVSbioDivVegLandscapePlot + labs(y = ""),
-                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto",
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
-
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversity.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothnoPM.tiff"),
        width = 14, height = 8)
 
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothPM.tiff"),
+       width = 14, height = 8)
+
+
+## without the smoother, with SEs, but using "smoothed" predictions
+newData <- copy(plotData)
+newData[, pred := NULL]
+newData <- newData[, list(logFireHVcenter = seq(min(logFireHVcenter), max(logFireHVcenter), length.out = 1000)),
+                   by = .(scenario, vegType)]
+preds <- as.data.table(predict(pyroVSbiodiversityLandscape.lm3, newdata = newData[vegType == "landscape"], se.fit = TRUE)[c("fit", "se.fit")])
+newData[vegType == "landscape", `:=`("pred" = preds$fit, "pred.se" = preds$se.fit)]
+
+preds <- as.data.table(predict(pyroVSbiodiversityVegTypes.gls, newdata = newData[vegType != "landscape"], se.fit = TRUE)[c("fit", "se.fit")])
+newData[vegType != "landscape", `:=`("pred" = preds$fit, "pred.se" = preds$se.fit)]
+
+plotBioPyroFunPreds <- function(plotData, newData, title = "") {
+  ggplot() +
+    geom_ribbon(data = newData,
+                aes(x = logFireHVcenter,
+                    ymin = pred - pred.se, ymax = pred + pred.se),
+                fill = "grey75", colour = "grey75") +
+    geom_point(data = plotData,
+               aes(x = logFireHVcenter, y = logVegHV,
+                   colour = vegType)) +
+    geom_line(data = newData,
+              aes(x = logFireHVcenter, y = pred,
+                  colour = vegType), size = 1) +  ## just to check if it matches smoother
+    scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
+    scale_x_continuous(limits = range(plotData[, logFireHVcenter])) +
+    theme_pubr(base_size = 12, margin = TRUE) +
+    theme(legend.box = "vertical",
+          strip.background = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+    labs(x = "pyrodiversity", y = "forest diversity", title = title, colour = "", linetype = "", shape = "") +
+    facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
+                scales = "free") +
+    guides(linetype = guide_legend(override.aes = list(colour = "black")))
+}
+
+
+pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunPreds(plotData[scenario == "HV_noPM" & vegType != "landscape"],
+                                                    newData[scenario == "HV_noPM" & vegType != "landscape"],
+                                                    title = scenLabels["noPM"])
+pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunPreds(plotData[scenario == "HV_noPM" & vegType == "landscape"],
+                                                        newData[scenario == "HV_noPM" & vegType == "landscape"],
+                                                         title = scenLabels["noPM"])
+pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunPreds(plotData[scenario == "HV_PM" & vegType != "landscape"],
+                                                  newData[scenario == "HV_PM" & vegType != "landscape"],
+                                                   title = scenLabels["PM"])
+pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunPreds(plotData[scenario == "HV_PM" & vegType == "landscape"],
+                                                      newData[scenario == "HV_PM" & vegType == "landscape"],
+                                                       title = scenLabels["PM"])
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPrednoPM.tiff"),
+       width = 14, height = 8)
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPredPM.tiff"),
+       width = 14, height = 8)
