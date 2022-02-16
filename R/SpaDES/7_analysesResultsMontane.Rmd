@@ -1594,6 +1594,48 @@ plot30 <- ggplot() +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   labs(title = "Avg. age", y = "age", x = "",
        subtitle = "across species")
+
+
+## only fire pixels, no means
+plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
+setnames(plotData3, "Reconstructed.age", "AgeBySppWeighted")
+plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
+plot29.1 <- ggplot() +
+  geom_violin(data = plotData3,
+              mapping =  aes(x = speciesCode, y = AgeBySppWeighted,
+                             fill = scenario, colour = scenario),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = speciesLabels) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
+  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
+  labs(title = "Avg. age", y = "age", x = "",
+       subtitle = "by species")
+
+plot30.1 <- ggplot() +
+  geom_violin(data = plotData3,
+              mapping = aes(x = scenario, y = AgeBySppWeighted, fill = scenario, 
+                            colour = scenario),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = scenLabels) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
+  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
+  labs(title = "Avg. age", y = "age", x = "",
+       subtitle = "across species")
+
 ```
 
 ```{r plot&savePlots7, echo = FALSE}
@@ -1605,6 +1647,16 @@ plotSave <- plot_grid(plot_grid(plot29 + theme(legend.position = "none"),
                       rel_widths = c(1, 0.15))
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
+       width = 14, height = 7)
+
+plotSave <- plot_grid(plot_grid(plot29.1 + theme(legend.position = "none"),
+                                plot30.1 + theme(legend.position = "none"),
+                                nrow = 1, rel_widths = c(1, 0.7),
+                                labels = "auto", label_size = 20, axis = "b", align = "h"),
+                      get_legend(plot29.1 + theme(legend.direction = "vertical")), 
+                      rel_widths = c(1, 0.15))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs2.tiff"),
        width = 14, height = 7)
 ```
 
@@ -1697,6 +1749,47 @@ plot30.2 <- ggplot() +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   labs(title = "Avg. age", y = "age", x = "",
        subtitle = "across forest type")
+
+
+## only fire pixels, no means
+plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
+setnames(plotData3, "Reconstructed.age", "AgeBySppWeighted")
+plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
+plot29.3 <- ggplot() +
+  geom_violin(data = plotData3,
+              mapping = aes(x = vegTypeCN, y = AgeBySppWeighted, fill = scenario, 
+                            colour = scenario),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
+  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
+  labs(title = "Avg. age", y = "age", x = "",
+       subtitle = "by forest type")
+
+plot30.3 <- ggplot() +
+  geom_violin(data = plotData3,
+              mapping = aes(x = scenario, y = AgeBySppWeighted, fill = scenario, 
+                            colour = scenario),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  theme_pubr(base_size = 16, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  scale_x_discrete(labels = scenLabels) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                                 "observed" = "grey50"),
+                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
+  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
+  labs(title = "Avg. age", y = "age", x = "",
+       subtitle = "across forest type")
 ```
 
 ```{r plot&savePlots8, echo = FALSE}
@@ -1708,6 +1801,16 @@ plotSave <- plot_grid(plot_grid(plot29.2 + theme(legend.position = "none"),
                       rel_widths = c(1, 0.15))
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_ageSimVsObsVegTypeCN.tiff"),
+       width = 14, height = 7)
+
+plotSave <- plot_grid(plot_grid(plot29.3 + theme(legend.position = "none"),
+                                plot30.3 + theme(legend.position = "none"),
+                                nrow = 1, rel_widths = c(1, 0.7),
+                                labels = "auto", label_size = 20, axis = "b", align = "h"),
+                      get_legend(plot29.3 + theme(legend.direction = "vertical")), 
+                      rel_widths = c(1, 0.15))
+plotSave
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fixedPixels", "results_ageSimVsObsVegTypeCN2.tiff"),
        width = 14, height = 7)
 ```
 
@@ -2144,6 +2247,10 @@ plot32.2
 ggsave(plot = plot32.2 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "fixedPixels", "results_meanAbsAgeDevVegTypeCN.tiff"),
        width = 10, height = 5)
+plot32.3
+ggsave(plot = plot32.3 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "fixedPixels", "results_MADquantVegTypeCNs.tiff"),
+       width = 10, height = 6)
 
 plotSave <- plot_grid(
   plot_grid(plot29.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
@@ -2361,6 +2468,11 @@ ggsave(plot = plot43 + theme(legend.position = "right"),
 plot43.2
 ggsave(plot = plot43.2 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_meanAbsAgeDevSpecies.tiff"),
+       width = 10, height = 5)
+
+plot43.3
+ggsave(plot = plot43.3 + theme(legend.position = "right"),
+       filename = file.path(figOutputPath, "results_MADquantSpecies.tiff"),
        width = 10, height = 5)
 
 plotSave <- plot_grid(plot_grid(plot43 + theme(legend.position = "none"),
