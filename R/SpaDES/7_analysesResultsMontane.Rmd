@@ -213,9 +213,19 @@ ageDiffLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
 })
 
 plotData2[firePresAbs == "0", 
-          c("pred", "predSE") := predict(ageDiffLMList$`0`, type = "response", se = TRUE)[c("fit", "se.fit")]]
+          pred := predict(ageDiffLMList$`0`, type = "response")]
 plotData2[firePresAbs == "1", 
-          c("pred", "predSE") := predict(ageDiffLMList$`1`, type = "response", se = TRUE)[c("fit", "se.fit")]]
+          pred := predict(ageDiffLMList$`1`, type = "response")]
+if (isFALSE(class(ageDiffLMList$`0`) == "gls")) {
+  plotData2[firePresAbs == "0", 
+            predSE := predict(ageDiffLMList$`0`, type = "response", se = TRUE)["se.fit"]]
+}
+
+if (isFALSE(class(ageDiffLMList$`1`) == "gls")) {
+  plotData2[firePresAbs == "1", 
+            predSE := predict(ageDiffLMList$`1`, type = "response", se = TRUE)["se.fit"]]
+}
+
 
 plotTest1 <- ggplot(plotData2, aes(x = firePresAbs)) +
   geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
