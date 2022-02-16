@@ -2355,7 +2355,7 @@ plot43.2 <- ggplot(plotData2,
                    aes(x = speciesCode, y = meanAbsDevSimObs,
                        colour = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
+  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.5)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
