@@ -72,3 +72,8 @@ if (length(vegTypeCNColours) == 8) {
 names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels) - 2)]
 vegTypeCNColours["landscape"] <- "darkgreen"
 vegTypeCNColours["No veg."] <- "grey40"
+
+
+## labels for scenario:
+scenLabels <- c("PM" = expression(M[MS]), "noPM" = expression(M[SR]),
+                "HV_PM" = expression(M[MS]), "HV_noPM" = expression(M[SR]))

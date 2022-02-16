@@ -142,6 +142,7 @@ plotTest2 <- ggplot(plotData) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
+  scale_fill_discrete(labels = scenLabels) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
@@ -184,6 +185,7 @@ plotTest3 <- ggplot(plotData) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
+  scale_fill_discrete(labels = scenLabels) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
@@ -244,6 +246,7 @@ plotTest4 <- ggplot(plotData2) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
+    scale_fill_discrete(labels = scenLabels) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
@@ -295,6 +298,8 @@ plotTest5 <- ggplot(plotData2) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
+    scale_fill_discrete(labels = scenLabels) +
+    scale_x_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "beta-div.", x = "")
@@ -342,7 +347,7 @@ plot1 <- ggplot(data = plotData,
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot2 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(BiomassBySpecies + 0.000001), colour = speciesCode)) +
@@ -353,7 +358,7 @@ plot2 <- ggplot(data = summaryBurnCohortDataSpp,
   labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## total mortality
 plotData <- summaryBurnCohortDataSpp[, list(MortalityBySpecies = sum(MortalityBySpecies)),
@@ -367,7 +372,7 @@ plot3 <- ggplot(data = plotData,
   labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot4 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = log(MortalityBySpecies + 0.000001), colour = speciesCode)) +
@@ -378,7 +383,7 @@ plot4 <- ggplot(data = summaryBurnCohortDataSpp,
   labs(title = "Total landscape mortality", y = "log-biomass (ton/ha)",
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 amc::.gc()
 
 ## average age
@@ -394,7 +399,7 @@ plot5 <- ggplot(data = plotData,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot6 <- ggplot(data = summaryBurnCohortDataSpp,
                 aes(x = year, y = AgeBySppWeighted, colour = speciesCode)) +
@@ -405,7 +410,7 @@ plot6 <- ggplot(data = summaryBurnCohortDataSpp,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## no. cohorts
 plotData <- allPixelCohortData[B > 0, list(noCohorts = length(unique(age))),
@@ -419,7 +424,7 @@ plot7 <- ggplot(data = plotData,
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot8 <- ggplot(data = plotData,
                 aes(x = year, y = noCohorts, colour = speciesCode)) +
@@ -429,7 +434,7 @@ plot8 <- ggplot(data = plotData,
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Avg. no. cohorts", y = "no. cohorts",
        subtitle = "by species") +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 amc::.gc()
 ```
@@ -494,7 +499,7 @@ plot1var <- ggplot(data = plotData,
        x = "", subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand biomass
 plotData <- allPixelCohortData[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
@@ -512,7 +517,7 @@ plot2var <- ggplot(data = plotData,
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average age across landscape
 plotData <- allPixelCohortData[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
@@ -529,7 +534,7 @@ plot3var <- ggplot(data = plotData,
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand age
 plotData <- allPixelCohortData[year == endYear,
@@ -549,7 +554,7 @@ plot4var <- ggplot(data = plotData,
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## avg no. cohorts in stand
 plotData <- allPixelCohortData[year == endYear & B > 0,
@@ -568,7 +573,7 @@ plot5var <- ggplot(data = plotData,
        x = "" , subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots9, echo = FALSE, echo = FALSE}
@@ -616,7 +621,7 @@ plot9 <- ggplot(data = plotData,
   labs(title = "Abundance of cover type", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot9.2 <- ggplot(data = plotData,
                   aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
@@ -627,7 +632,7 @@ plot9.2 <- ggplot(data = plotData,
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 amc::.gc()
 
 plotData <- allPixelCohortData[, list(noPixelsVeg = length(unique(pixelIndex))),
@@ -648,7 +653,7 @@ plot10 <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "no. pixels",
        subtitle = "(dominant species cover type)") +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 plot10.2 <- ggplot(data = plotData,
                    aes(x = year, y = noPixelsVeg, fill = as.factor(vegType))) +
@@ -658,7 +663,7 @@ plot10.2 <- ggplot(data = plotData,
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Cover type abundance", y = "prop. pixels",
        subtitle = "(dominant species cover type)") +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## no. cohorts
 plotData <- allPixelCohortData[B > 0, list(noCohorts = length(unique(age))),
@@ -672,7 +677,7 @@ plot11 <- ggplot(data = plotData,
   labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
        subtitle = "by dom. species cover type") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot12 <- ggplot(data = plotData,
                  aes(x = year, y = noCohorts, colour = as.factor(vegType))) +
@@ -682,7 +687,7 @@ plot12 <- ggplot(data = plotData,
   scale_colour_manual(values = vegTypeColours, labels = vegTypeLabels) +
   labs(title = "Avg. no. cohorts in a stand", y = "no. cohorts",
        subtitle = "by dom. species cover type") +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## total biomass
 plotData <- summaryBurnCohortDataVegType[, list(BiomassByVegType = sum(BiomassByVegType)),
@@ -697,7 +702,7 @@ plot13 <- ggplot(data = plotData,
        subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot14 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = log(BiomassByVegType + 0.000001), colour = as.factor(vegType))) +
@@ -708,7 +713,7 @@ plot14 <- ggplot(data = summaryBurnCohortDataVegType,
   labs(title = "Total biomass", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## total mortality
 plotData <- summaryBurnCohortDataVegType[, list(MortalityByVegType = sum(MortalityByVegType)),
@@ -722,7 +727,7 @@ plot15 <- ggplot(data = plotData,
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot16 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = log(MortalityByVegType + 0.000001), colour = as.factor(vegType))) +
@@ -733,7 +738,7 @@ plot16 <- ggplot(data = summaryBurnCohortDataVegType,
   labs(title = "Total mortality", y = "log-biomass (ton/ha)",
        subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 
 ## average age
 plotData <- allPixelCohortData[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
@@ -749,7 +754,7 @@ plot17 <- ggplot(data = plotData,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by dominant species cover type") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 plot18 <- ggplot(data = summaryBurnCohortDataVegType,
                  aes(x = year, y = AgeBySppWeighted, colour = as.factor(vegType))) +
@@ -760,7 +765,7 @@ plot18 <- ggplot(data = summaryBurnCohortDataVegType,
   labs(title = "Avg. age", y = "biomass-weighted age",
        subtitle = "by dominant species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
-  facet_grid(scenario ~ noFires)
+  facet_grid(scenario ~ noFires, labeller = labeller(scenario = scenLabels))
 amc::.gc()
 ```
 
@@ -834,7 +839,7 @@ plot6var <- ggplot(data = plotData,
        x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand biomass
 plotData <- allPixelCohortData[year == endYear, list(B = sum(B/100, na.rm = TRUE)),   ## copllapse cohorts first
@@ -852,7 +857,7 @@ plot7var <- ggplot(data = plotData,
        x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average age across landscape
 plotData <- allPixelCohortData[year == endYear, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
@@ -869,7 +874,7 @@ plot8var <- ggplot(data = plotData,
        x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## average stand age
 plotData <- allPixelCohortData[year == endYear,
@@ -889,7 +894,7 @@ plot9var <- ggplot(data = plotData,
        x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## avg no. cohorts in stand
 plotData <- allPixelCohortData[year == endYear & B > 0,
@@ -908,7 +913,7 @@ plot10var <- ggplot(data = plotData,
        x = "" , subtitle = "by dom. species cover type") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## no. pixels
 plotData <- allPixelCohortData[year == endYear, list(noPixelsVeg = length(unique(pixelIndex))),
@@ -932,7 +937,7 @@ plot11var <- ggplot(data = plotData,
        x = "" , subtitle = "(dominant species cover type)") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 ```
 
 ```{r plot&savePlots10, echo = FALSE}
@@ -974,12 +979,13 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
 plot33 <- ggplot(data = plotData,
                  aes(x = year, y = alphaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+    scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## map of alpha - avg across reps
 plotData2 <- plotData[year == endYear, list(alphaDiv = mean(alphaDiv)),
@@ -1064,12 +1070,13 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot35 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+    scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(~ firePresAbs,
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 ## gamma-div - no fires
 plotData2 <- copy(summaryBurnCohortDataSpp)
@@ -1087,6 +1094,7 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot36 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
+    scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.")  +
@@ -1186,7 +1194,7 @@ plotMap2hist <- ggplot(rasData2) +
         axis.title.x = element_blank()) +
   scale_fill_manual(values = vegTypeColours, labels = vegTypeLabels,
                     na.translate = FALSE) +
-  scale_alpha_manual(labels = c("TRUE" = "PM", "FALSE" = "noPM"),
+  scale_alpha_manual(labels = c("TRUE" = scenLabels["PM"], "FALSE" = scenLabels["noPM"]),
                      values = c("TRUE" = 1, "FALSE" = 0.6)) +
   scale_x_discrete(labels = vegTypeLabels) +
   guides(alpha = guide_legend(nrow = 2)) +

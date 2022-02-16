@@ -408,7 +408,7 @@ pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   # scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-  #                    labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+  #                    labels = scenLabels) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
   theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
@@ -426,7 +426,7 @@ bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "v
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+                     labels = scenLabels) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
   theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
@@ -445,7 +445,7 @@ pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == 
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+                     labels = scenLabels) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
@@ -462,7 +462,7 @@ bioHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = c("HV_noPM" = "no PM", "HV_PM" = "PM")) +
+                     labels = scenLabels) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
@@ -532,7 +532,7 @@ HVOverlapVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("noPM" = 0.4, "PM" = 1.0),
-                     labels = c("noPM" = "no PM", "PM" = "PM")) +
+                     labels = scenLabels) +
   theme_pubr(base_size = 10, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
         strip.background = element_blank(),
@@ -546,16 +546,17 @@ HVOverlapLandscapePlot <- ggplot(plotData[vegType == "landscape"],
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("noPM" = 0.4, "PM" = 1.0),
-                     labels = c("noPM" = "no PM", "PM" = "PM")) +
+                     labels = scenLabels) +
   theme_pubr(base_size = 10, margin = FALSE) +
   theme(strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", y = "Overlap", fill = "") +
   guides(alpha = "none", fill = "none")
 
-plotSave <- ggarrange(HVOverlapVegTypesPlot, HVOverlapLandscapePlot + labs(y = ""),
+plotSave <- ggarrange(HVOverlapVegTypesPlot + theme(legend.box = "horizontal"),
+                      HVOverlapLandscapePlot + theme(legend.box = "horizontal") + labs(y = ""),
                       ncol = 2, nrow = 1, align = "h", widths = c(1, 0.5),
-                      common.legend = TRUE, legend = "bottom")
+                      common.legend = TRUE, legend = "bottom", labels = "auto")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVOverlap.tiff"),
        width = 8, height = 6)
 
