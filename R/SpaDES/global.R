@@ -8,29 +8,27 @@
 ## clean workspace
 rm(list = ls()); amc::.gc()
 
-## Get packages ----------------------
-## requires as of June 16th 2021
-# loading reproducible      1.2.7.9006
-# loading quickPlot         0.1.7.9002
-# loading SpaDES.core       1.0.8.9000
-# loading SpaDES.tools      0.3.7.9007
-# loading SpaDES.addins     0.1.2
-# loading SpaDES.experiment 0.0.2.9002
-# loading LandR             1.0.4.0001
-# loading LandR.CS          0.0.2.0002
-## loading fireSenseUtils   0.0.4.9080
+if (!exists("pkgDir")) {
+  pkgDir <- file.path("packages", version$platform,
+                      paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1]))
 
-# devtools::install_github("PredictiveEcology/reproducible@DotsBugFix", dependencies = FALSE)
-# devtools::install_github("achubaty/amc@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/pemisc@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/map@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/LandR@modelBiomass", dependencies = FALSE)
-# devtools::install_github("ianmseddy/LandR.CS", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.core@development")
-# devtools::install_github("PredictiveEcology/SpaDES.experiment@development", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/fireSenseUtils@development", dependencies = FALSE)
+  if (!dir.exists(pkgDir)) {
+    dir.create(pkgDir, recursive = TRUE)
+  }
+  .libPaths(pkgDir)
+}
+
+# devtools::install_github("PredictiveEcology/reproducible@cb41d78c2cdcaa06d5a98412302c1f4d01850e78", dependencies = FALSE)
+# devtools::install_github("achubaty/amc@15c5229951700f9a638fd186f176f0e793d76c10", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/pemisc@dd2be4a9a15981d0d6f3740d8b3d4de07f255b95", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/map@9b401b88ac4d2ceef6de821d718f66a525599d74", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/LandR@466836778f4050d752bc8348d021655226cd504e", dependencies = FALSE)
+# devtools::install_github("ianmseddy/LandR.CS@2b056a5d9efea150f3145c8497b33b7fbb726488", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/quickPlot@878dcb2a421c239adfc6d65de37edde58689492b", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/SpaDES.tools@e4add9495d8e9c38d31e5325f37282140d38d8af", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/SpaDES.core@8a7886a6afd7f3b90df10ea6b87caae8661f8709")
+# devtools::install_github("PredictiveEcology/SpaDES.experiment@5a23c40f8aa9a9efc6dc16e040f8771561059152", dependencies = FALSE)
+# devtools::install_github("PredictiveEcology/fireSenseUtils@4a23a2071599b0c8322d07997871eb53c77db5ff", dependencies = FALSE)
 
 if (!require("Require")) {
   devtools::install_github("PredictiveEcology/Require@development")
