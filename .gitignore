@@ -13,3 +13,6 @@ packages/*
 *.dat
 .Rprofile
 *.Rout
+
+
+!packages/pkgSnapshot.txt
