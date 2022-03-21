@@ -37,9 +37,8 @@ if (!require("Require")) {
 
 if (FALSE) {
   Require::pkgSnapshot("packages/pkgSnapshot.txt")
-
   # Much later on a different or same machine
-  # Require::Require(pkgSnapshot = "packages/snapshot.txt")
+  Require::Require(pkgSnapshot = "packages/snapshot.txt")
 }
 
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
