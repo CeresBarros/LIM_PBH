@@ -321,7 +321,7 @@ pyroVSbiodiversityLandscape.lm2.2 <- lm(logVegHV ~ logFireHV,
 pyroVSbiodiversityLandscape.lm2.3 <- lm(logVegHV ~ fireHV,
                                         data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
 pyroVSbiodiversityLandscape.lm3.2 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2)),
-                                      data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
+                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
 
 AIC(pyroVSbiodiversityLandscape.lm2.2, pyroVSbiodiversityLandscape.lm2.3, pyroVSbiodiversityLandscape.lm3.2)
 
@@ -488,15 +488,15 @@ alignedLandPlots <- align_plots(pyroHVvolumeLandscapePlot + labs(y = "", title =
 
 plotSave <- plot_grid(
   plot_grid(
-  plot_grid(alignedVegPlots[[1]],
-            alignedLandPlots[[1]],
-            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
-            labels = c("a", "b")),
-  plot_grid(alignedVegPlots[[2]],
-            alignedLandPlots[[2]],
-            ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
-            labels = c("c", "d")),
-            ncol = 1, nrow = 2, align = "v", axis = "l", rel_heights = c(0.76, 1)),
+    plot_grid(alignedVegPlots[[1]],
+              alignedLandPlots[[1]],
+              ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
+              labels = c("a", "b")),
+    plot_grid(alignedVegPlots[[2]],
+              alignedLandPlots[[2]],
+              ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
+              labels = c("c", "d")),
+    ncol = 1, nrow = 2, align = "v", axis = "l", rel_heights = c(0.76, 1)),
   get_legend(bioHVvolumeVegTypesPlot + theme(legend.box = "horizontal")),
   ncol = 1, nrow = 2, rel_heights = c(1, 0.15))
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
@@ -583,6 +583,7 @@ plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
 plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.lm3, type = "response")]   ## just to compare with smoother
 plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls, type = "response")]   ## just to compare with smoother
 
+
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
 ## SEs are removed because they are not the same as the gls's
@@ -613,11 +614,11 @@ plotBioPyroFunSmooth <- function(plotData, title = "") {
 pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_noPM"],
                                                      title = scenLabels["noPM"])
 pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_noPM"],
-                                                     title = scenLabels["noPM"])
+                                                         title = scenLabels["noPM"])
 pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_PM"],
-                                                     title = scenLabels["PM"])
+                                                   title = scenLabels["PM"])
 pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_PM"],
-                                                         title = scenLabels["PM"])
+                                                       title = scenLabels["PM"])
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
@@ -673,13 +674,13 @@ pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunPreds(plotData[scenario == "HV_noP
                                                     title = scenLabels["noPM"])
 pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunPreds(plotData[scenario == "HV_noPM" & vegType == "landscape"],
                                                         newData[scenario == "HV_noPM" & vegType == "landscape"],
-                                                         title = scenLabels["noPM"])
+                                                        title = scenLabels["noPM"])
 pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunPreds(plotData[scenario == "HV_PM" & vegType != "landscape"],
                                                   newData[scenario == "HV_PM" & vegType != "landscape"],
-                                                   title = scenLabels["PM"])
+                                                  title = scenLabels["PM"])
 pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunPreds(plotData[scenario == "HV_PM" & vegType == "landscape"],
                                                       newData[scenario == "HV_PM" & vegType == "landscape"],
-                                                       title = scenLabels["PM"])
+                                                      title = scenLabels["PM"])
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
