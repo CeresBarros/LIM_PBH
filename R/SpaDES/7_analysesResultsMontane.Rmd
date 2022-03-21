@@ -2549,7 +2549,7 @@ plot37 <- ggplot(summaryFireAttributes,
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Fire mean patch size distribution", 
-       x = "Patch size (no. pixels)")
+       x = "Mean patch size (no. pixels)")
 
 plot37.2 <- ggplot(summaryFireAttributes,
                    aes(x = meanPatchS + 0.1, fill = scenario, alpha = scenario)) +

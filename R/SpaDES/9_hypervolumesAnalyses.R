@@ -419,11 +419,11 @@ pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "
   theme(legend.box = "vertical",
         strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "pyrodiversity")
+  labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity")
 # guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
 # facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-#                                           "fireHV" = "pyrodiversity")))
+#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+#                                           "fireHV" = "Pyrodiversity")))
 
 bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "vegHV"],
                                   aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
@@ -437,11 +437,11 @@ bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "v
   theme(legend.box = "vertical",
         strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", alpha = "", title = "forest diversity") +
+  labs(x = "", y = "log-hypervolume size", fill = "", alpha = "", title = "Forest diversity") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-#                                           "fireHV" = "pyrodiversity")))
+#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+#                                           "fireHV" = "Pyrodiversity")))
 
 
 pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "fireHV"],
@@ -455,11 +455,11 @@ pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == 
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", title = "pyrodiversity") +
+  labs(x = "", y = "log-hypervolume size", fill = "", title = "Pyrodiversity") +
   guides(alpha = "none", fill = "none")
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-#                                           "fireHV" = "pyrodiversity")))
+#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+#                                           "fireHV" = "Pyrodiversity")))
 
 bioHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "vegHV"],
                                    aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
@@ -472,11 +472,11 @@ bioHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", title = "forest diversity") +
+  labs(x = "", y = "log-hypervolume size", fill = "", title = "Forest diversity") +
   guides(alpha = "none", fill = "none")
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "forest diversity",
-#                                           "fireHV" = "pyrodiversity")))
+#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+#                                           "fireHV" = "Pyrodiversity")))
 
 alignedVegPlots <- align_plots(pyroHVvolumeVegTypesPlot + theme(plot.margin = margin(0,0,0,0), legend.position = "none", axis.text.x = element_blank()),
                                bioHVvolumeVegTypesPlot + theme(plot.margin = margin(0,0,0,0), legend.position = "none"),
@@ -604,7 +604,7 @@ plotBioPyroFunSmooth <- function(plotData, title = "") {
     theme(legend.box = "vertical",
           strip.background = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(x = "pyrodiversity", y = "forest diversity", title = title, colour = "", linetype = "", shape = "") +
+    labs(x = "Pyrodiversity", y = "Forest diversity", title = title, colour = "", linetype = "", shape = "") +
     facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
                 scales = "free") +
     guides(linetype = guide_legend(override.aes = list(colour = "black")))
@@ -661,7 +661,7 @@ plotBioPyroFunPreds <- function(plotData, newData, title = "") {
     theme(legend.box = "vertical",
           strip.background = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(x = "pyrodiversity", y = "forest diversity", title = title, colour = "", linetype = "", shape = "") +
+    labs(x = "Pyrodiversity", y = "Forest diversity", title = title, colour = "", linetype = "", shape = "") +
     facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
                 scales = "free") +
     guides(linetype = guide_legend(override.aes = list(colour = "black")))
