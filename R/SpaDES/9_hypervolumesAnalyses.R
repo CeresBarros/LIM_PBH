@@ -12,6 +12,7 @@ library(mgcv)
 library(multcomp)
 library(emmeans)
 library(cowplot)
+library(ToolsCB)
 
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
@@ -54,6 +55,17 @@ dir.create(statsOutputPath, recursive = TRUE)
 
 ## LOAD SIM LIST  ---------------------------------
 preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
+
+
+## PREP FIRE AND VEG DATA -------------------
+yearSubset <- c(seq(2011, 2111, 5), 2111)
+source("R/SpaDES/6_resultsDataPrep.R")
+source("R/R_tools/prepFireData4HVs.R")
+source("R/R_tools/prepVegData4HVs.R")
+
+## don't need these
+rm(allPixelBurnData, allPixelCohortData, allPixelCohortDataMnt)
+gc(reset = TRUE)
 
 ## LOAD HYPERVOLUMES RESULTS ----------------------
 source("R/R_tools/prepHVData.R")
@@ -341,7 +353,7 @@ emtrends(pyroVSbiodiversityLandscape.lm3, specs = c("scenario"),
          var = "logFireHVcenter", max.degree = 2)
 sink()
 
-## by vetType
+## by vegType
 pyroVSbiodiversityVegTypes.lm <- lm(vegHV ~ fireHV*scenario*vegType, data = modelData[vegType != "landscape"])
 ## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps
 hist(modelData[vegType != "landscape", fireHV], breaks = 1000)
@@ -692,4 +704,69 @@ plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPredPM.tiff"),
+       width = 14, height = 8)
+
+## relationship  between pyrodiversity and fire attributes -----------------
+## join HV sizes with fire attributes
+plotData <- allHVData[year == end(preSimList) & HVtype == "fireHV",
+                      .(HV_noPM, HV_PM, rep, repHV, vegType)]
+plotData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+plotData[, scenario := sub("HV_", "", scenario)]
+## center and scale volume as in model
+plotData[, Volume := scale(log(Volume), center = TRUE, scale = FALSE),
+          by = .(scenario, vegType)]
+
+plotData2 <- plotData[vegType == "landscape"]
+plotData2 <- summaryFireAttributes[plotData2, on = c("scenario", "rep"),
+                                   allow.cartesian = TRUE]
+plotData2[,vegTypeCN := NULL]
+
+plotData <- plotData[vegType != "landscape"]
+plotData <- summaryFireAttributes[plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
+                                  allow.cartesian = TRUE]
+setnames(plotData, "vegTypeCN", "vegType")
+plotData <- rbind(plotData, plotData2)
+
+plotData <- melt.data.table(plotData, measure.vars = c("meanFreq", "meanSevB", "meanPatchS"),
+                            variable.name = "fireAttr", value.name = "value")
+## calculate summary stats
+plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Volume, vegType, fireAttr)]
+
+
+fireAttrPyroPlotFun <- function(plotData) {
+  ggplot(plotData,
+              aes(x = Volume, y = log(Mean + 1),
+                  colour = vegType, linetype = scenario,
+                  shape = scenario)) +
+  geom_point(size = 2) +
+  stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE) +
+  geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
+  geom_vline(aes(xintercept = -Inf)) +
+  coord_cartesian(clip = "off") +
+  scale_shape_discrete(labels = scenLabels, name = "") +
+  scale_linetype_discrete(labels = scenLabels, name = "") +
+  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours, name = "") +
+  theme_pubr(base_size = 12, margin = TRUE) +
+  theme(legend.box = "horizontal", strip.text.y = element_text(size = 12),
+        strip.background = element_blank(), strip.placement = "outside",
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(x = "Pyrodiversity", y = "", title = "") +
+  facet_grid(fireAttr ~ vegType,
+             scales = "free", switch = "y",
+             labeller = labeller(vegType = vegTypeCNLabels,
+                                 fireAttr = c("meanPatchS" = "Mean patch size\n(no. pixels)",
+                                              "meanFreq" = "Mean fire interval",
+                                              "meanSevB" = "Mean fire severity\n(biomass lost, ton/ha)")))
+}
+
+fireAttrPyroLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"])
+fireAttrPyroVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"])
+
+plotSave <- ggarrange(fireAttrPyroVegTypesPlot,
+                      fireAttrPyroLandscapePlot + labs(y = "", title = "") + theme(strip.text.y = element_blank()),
+                      ncol = 2, nrow = 1, widths = c(1, 0.3), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff"),
        width = 14, height = 8)
