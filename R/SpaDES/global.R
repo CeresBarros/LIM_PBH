@@ -40,7 +40,7 @@ if (FALSE) {
   Require::Require(pkgSnapshot = "packages/snapshot.txt")
 }
 
-Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7)", require = FALSE)
+Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7)")
 
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
 
@@ -50,7 +50,8 @@ Require::Require(c("SpaDES",
                    "CeresBarros/ToolsCB",
                    "PredictiveEcology/SpaDES.experiment",
                    "PredictiveEcology/LandR",
-                   "PredictiveEcology/reproducible"),
+                   "PredictiveEcology/reproducible"
+                   ),
                  upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2,
