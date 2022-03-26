@@ -265,6 +265,6 @@ LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules
 ## save
 lapply(names(LIM_simInitList), FUN = function(scenario) {
   saveSimList(LIM_simInitList[[scenario]],
-              file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario)))
+              file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")))
 })
 
