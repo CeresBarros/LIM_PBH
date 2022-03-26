@@ -86,8 +86,8 @@ useParallel <- FALSE
 
 ## paths define simulation paths
 # simDirName <- "AI_report"
-# simDirName <- "mar2021Runs"
-simDirName <- "jun2021Runs"
+# simDirName <- "jun2021Runs"
+simDirName <- "mar2022Runs"
 simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName)
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
@@ -119,7 +119,7 @@ source("R/SpaDES/3_fireWeather.R")
 # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
 ## to prepare objects for simulation and FireSense ignition/fire frquency fits
 ## Define simulation params
-simTimes <- list(start = 2011L, end = 2111L)
+simTimes <- list(start = 2011L, end = 2611L)
 vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # If all are below this, then it is a "mixed" stand
 fireInitialTime <- simTimes$start + 5L
