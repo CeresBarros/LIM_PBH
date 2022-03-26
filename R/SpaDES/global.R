@@ -88,10 +88,10 @@ useParallel <- FALSE
 # simDirName <- "AI_report"
 # simDirName <- "mar2021Runs"
 simDirName <- "jun2021Runs"
-simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
+simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName)
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
-                 , outputPath = file.path("R/SpaDES/outputs", simDirName))
+                 , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
 
 ## Get necessary objects -----------------------
 source("R/SpaDES/1_simObjects.R")
