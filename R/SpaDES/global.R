@@ -32,7 +32,6 @@ if (!exists("pkgDir")) {
 
 if (!require("Require")) {
   devtools::install_github("PredictiveEcology/Require@development")
-  library(Require)
 }
 
 if (FALSE) {
@@ -41,16 +40,18 @@ if (FALSE) {
   Require::Require(pkgSnapshot = "packages/snapshot.txt")
 }
 
+Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7)", require = FALSE)
+
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
 
-Require(c("SpaDES",
-          "raster",
-          "data.table",
-          "CeresBarros/ToolsCB",
-          "PredictiveEcology/SpaDES.experiment",
-          "PredictiveEcology/LandR",
-          "PredictiveEcology/reproducible"),
-        upgrade = FALSE)
+Require::Require(c("SpaDES",
+                   "raster",
+                   "data.table",
+                   "CeresBarros/ToolsCB",
+                   "PredictiveEcology/SpaDES.experiment",
+                   "PredictiveEcology/LandR",
+                   "PredictiveEcology/reproducible"),
+                 upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2,
         "spades.moduleCodeChecks" = FALSE,
