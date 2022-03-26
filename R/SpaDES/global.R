@@ -159,6 +159,6 @@ simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
 future:::ClusterRegistry("stop")
 
 ## save simLists object.
-qs::qsave(simExperimentOut, file.path(simPaths$outputPath, paste0("LIM_simLists_noPM_PM")))
+qs::qsave(simExperimentOut, file.path(simPaths$outputPath, paste0("LIM_simLists_noPM_PM", ".qs")))
 
 q("no")
