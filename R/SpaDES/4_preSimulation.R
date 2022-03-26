@@ -74,7 +74,7 @@ simParams <- list(
     # , "forestedLCCClasses" = c(1:15, 34:36)
     # , "LCCClassesToReplaceNN" = c(34:36)
     , "forestedLCCClasses" = c(1:6)   ## LCC 2010
-    , "LCCClassesToReplaceNN" = numeric(0) ## no replacement - urban/cropland could be grassland, barren may or not suppport veg.
+    , "LCCClassesToReplaceNN" = numeric(0) ## no replacement - urban/cropland could be grassland, barren may or not support veg.
     , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
     , "exportModels" = "all"
