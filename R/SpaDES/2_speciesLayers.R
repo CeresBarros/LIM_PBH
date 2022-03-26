@@ -16,7 +16,8 @@ speciesPaths <- list(cachePath = file.path(simPaths$cachePath, "speciesLayers"),
 
 speciesParameters <- list(
   Biomass_speciesData = list(
-    "types" = c("KNN2011", "CASFRI", "ForestInventory")   ## Pickell has no data here having errors with the other two. extents and NA data.
+    "dataYear" = 2011L
+    , "types" = c("KNN", "CASFRI", "ForestInventory")   ## Pickell has no data here having errors with the other two. extents and NA data.
     , "sppEquivCol" = sppEquivCol
     , ".useCache" = c(".inputObjects", "init")
   )
