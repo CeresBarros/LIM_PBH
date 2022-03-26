@@ -82,6 +82,7 @@ options("reproducible.useNewDigestAlgorithm" = 2,
 runName <- c("noPM", "PM")
 
 # eventCaching <- c(".inputObjects", "init")
+eventCaching <- NULL ## there's a bug
 useParallel <- FALSE
 
 ## paths define simulation paths
