@@ -1473,7 +1473,7 @@ plot1.2 <- ggplot(data = plotData2,
   stat_summary(fun = "mean", geom = "line", size = 1) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+  scale_linetype_manual(values = scenLinetype,
                         labels = scenLabels) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
   labs(title = "Relative species abundance", y = "Average relative abundance\n(per pixel)") +
@@ -1488,7 +1488,7 @@ plot5.2 <- ggplot(data = plotData2,
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+  scale_linetype_manual(values = scenLinetype,
                         labels = scenLabels) +
   labs(title = "Average species age", y = "biomass-weighted age") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
@@ -2991,7 +2991,7 @@ plot33.3 <- ggplot(data = plotData[vegTypeCN != "No veg."],
                fun = "mean", geom = "line", size = 1) +
   scale_colour_manual(values = cols2, 
                       labels = labs2, drop = TRUE) +
-  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+  scale_linetype_manual(values = scenLinetype,
                         labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
@@ -3045,7 +3045,7 @@ plot35.3 <- ggplot(data = plotData2[vegTypeCN != "No veg."],
   stat_summary(aes(x = year, y = betaDiv, colour = "landscape"),
                fun = "mean", geom = "line", size = 1) +
   scale_colour_manual(values = cols2, labels = labs2) +
-  scale_linetype_manual(values = c("noPM" = 2, "PM" = 1),
+  scale_linetype_manual(values = scenLinetype,
                         labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
@@ -3486,6 +3486,76 @@ plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Vo
                                  variable = c(meanFreq = "Mean fire interval",
                                               meanSevB = "Mean severity",
                                               meanPatchS = "Mean patch size")))
+
+## HERE
+
+## relationship  between pyrodiversity and fire attributes -----------------
+## join HV sizes with fire attributes
+plotData <- allHVData[year == end(preSimList) & HVtype == "fireHV",
+                      .(HV_noPM, HV_PM, rep, repHV, vegType)]
+plotData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+plotData[, scenario := sub("HV_", "", scenario)]
+## center and scale volume as in model
+plotData[, Volume := scale(log(Volume), center = TRUE, scale = FALSE),
+          by = .(scenario, vegType)]
+
+plotData2 <- plotData[vegType == "landscape"]
+plotData2 <- summaryFireAttributes[plotData2, on = c("scenario", "rep"),
+                                   allow.cartesian = TRUE]
+plotData2[,vegTypeCN := NULL]
+
+plotData <- plotData[vegType != "landscape"]
+plotData <- summaryFireAttributes[plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
+                                  allow.cartesian = TRUE]
+setnames(plotData, "vegTypeCN", "vegType")
+plotData <- rbind(plotData, plotData2)
+
+plotData <- melt.data.table(plotData, measure.vars = c("meanFreq", "meanSevB", "meanPatchS"),
+                            variable.name = "fireAttr", value.name = "value")
+## calculate summary stats
+plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Volume, vegType, fireAttr)]
+
+
+fireAttrPyroPlotFun <- function(plotData) {
+  ggplot(plotData,
+              aes(x = Volume, y = log(Mean + 1),
+                  colour = vegType, linetype = scenario,
+                  shape = scenario)) +
+  geom_point(size = 2) +
+  stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE) +
+  geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
+  geom_vline(aes(xintercept = -Inf)) +
+  coord_cartesian(clip = "off") +
+  scale_shape_discrete(labels = scenLabels, name = "") +
+  scale_linetype_manual(values = scenLinetype, labels = scenLabels) +
+  scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours, name = "") +
+  theme_pubr(base_size = 12, margin = TRUE) +
+  theme(legend.box = "horizontal", strip.text.y = element_text(size = 12),
+        strip.background = element_blank(), strip.placement = "outside",
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(x = "Pyrodiversity", y = "", title = "") +
+  facet_grid(fireAttr ~ vegType,
+             scales = "free", switch = "y",
+             labeller = labeller(vegType = vegTypeCNLabels,
+                                 fireAttr = c("meanPatchS" = "Mean patch size\n(no. pixels)",
+                                              "meanFreq" = "Mean fire interval",
+                                              "meanSevB" = "Mean fire severity\n(biomass lost, ton/ha)")))
+}
+
+fireAttrPyroLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"])
+fireAttrPyroVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"])
+
+plotSave <- ggarrange(fireAttrPyroVegTypesPlot,
+                      fireAttrPyroLandscapePlot + labs(y = "", title = "") + theme(strip.text.y = element_blank()),
+                      ncol = 2, nrow = 1, widths = c(1, 0.3), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff"),
+       width = 14, height = 8)
+
+
+
 ```
 
 ```{r plot&savePlots23, echo = FALSE}

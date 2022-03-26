@@ -77,3 +77,7 @@ vegTypeCNColours["No veg."] <- "grey40"
 ## labels for scenario:
 scenLabels <- c("PM" = expression(M[MS]), "noPM" = expression(M[SR]),
                 "HV_PM" = expression(M[MS]), "HV_noPM" = expression(M[SR]))
+
+## line type for scenario
+scenLinetype <- c("PM" = 1, "noPM" = 2,
+                  "HV_PM" = 1, "HV_noPM" = 1)
