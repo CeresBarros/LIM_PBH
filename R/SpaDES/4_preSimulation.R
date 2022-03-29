@@ -188,9 +188,9 @@ simObjects <- list(
   , "nonForestFuelsTable" = nonForestFuelsTable
   , "nonZeroCover" =  simOutSpeciesLayers$nonZeroCover
   , "numTreed" =  simOutSpeciesLayers$numTreed
-  , "PSPgis" = PSPgis
-  , "PSPmeasure" = PSPmeasure
-  , "PSPplot" = PSPplot
+  , "PSPgis_sppParams" = PSPgis_sppParams
+  , "PSPmeasure_sppParams" = PSPmeasure_sppParams
+  , "PSPplot_sppParams" = PSPplot_sppParams
   , "rasterToMatch" = rasterToMatchLarge
   , "rasterToMatchLarge" = rasterToMatchLarge
   , "rawBiomassMap" = rawBiomassMap
