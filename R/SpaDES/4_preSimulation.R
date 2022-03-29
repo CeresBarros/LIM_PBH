@@ -95,9 +95,17 @@ simParams <- list(
     , ".seed" = list("init" = 123)
   )
   , Biomass_speciesParameters = list(
-    "sppEquivCol" = sppEquivCol
+    "constrainGrowthCurve" = c(0, 1)
     , "constrainMaxANPP" = c(3.0, 3.5)
     , "constrainMortalityShape" = c(10, 25)
+    , "quantileAgeSubset" = list(Abie_sp = 95,
+                                 Pice_eng = 95,
+                                 Pseu_men = 95,
+                                 Pice_gla = 95,
+                                 Pinu_sp = 95,
+                                 Popu_sp = 99)
+    , "sppEquivCol" = sppEquivCol
+    , "speciesFittingApproach" = "focal"
   )
   , Biomass_core = list(
     "calcSummaryBGM" = c("start")
