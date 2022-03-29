@@ -69,7 +69,11 @@ simModules <- list("noPM" = list(
 
 ## noPM and PM moduels can both be in the same parameter list.
 simParams <- list(
-  Biomass_borealDataPrep = list(
+  .globals = list("dataYear" = 2011L    ## will not be used as the layers have been pre-preped, but just in case...
+                  , ".initialB" = NA
+                  , ".plotInitialTime" = plotInitialTime
+                  , ".useCache" = eventCaching)
+  , Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
     # , "forestedLCCClasses" = c(1:15, 34:36)
     # , "LCCClassesToReplaceNN" = c(34:36)
@@ -88,14 +92,12 @@ simParams <- list(
     , "pixelGroupBiomassClass" = 100
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
-    , ".plotInitialTime" = plotInitialTime
     , ".seed" = list("init" = 123)
-    , ".useCache" = eventCaching
   )
   , Biomass_speciesParameters = list(
     "sppEquivCol" = sppEquivCol
-    , ".plotInitialTime" = plotInitialTime
-    , ".useCache" = eventCaching
+    , "constrainMaxANPP" = c(3.0, 3.5)
+    , "constrainMortalityShape" = c(10, 25)
   )
   , Biomass_core = list(
     "calcSummaryBGM" = c("start")
@@ -109,7 +111,6 @@ simParams <- list(
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
     , ".saveInitialTime" = NA
-    , ".useCache" = eventCaching # seems slower to use Cache for both
     , ".useParallel" = useParallel
   )
   , Biomass_fuelsPFG = list(
@@ -117,36 +118,28 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "nonForestFire" = TRUE
     , "sppEquivCol" = sppEquivCol
-    , ".plotInitialTime" = plotInitialTime
     , ".plotMaps" = FALSE
-    , ".useCache" = eventCaching
   )
   , fireProperties = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
-    , ".plotInitialTime" = plotInitialTime
-    , ".useCache" = eventCaching
   )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
-    , ".plotInitialTime" = plotInitialTime
   )
   , Biomass_regenerationPM = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
-    , ".plotInitialTime" = plotInitialTime
   )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "fitRes" = 1000
     , "prepPredictionObjs" = TRUE
     , "propAbsences" = 9
-    , ".plotInitialTime" = plotInitialTime
-    , ".useCache" = eventCaching
   )
   , fireSense_IgnitionFit = list(
     "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:meanMDC + D2:meanMDC +
@@ -163,7 +156,6 @@ simParams <- list(
     , "rescaleVars" = TRUE
     , "rescalers" = NULL
     , ".plots" = "png"
-    , ".useCache" = eventCaching
   )
   , fireSense_IgnitionPredict = list(
     ".runInterval" = NA    ## only run once at the start
@@ -173,11 +165,8 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , "spreadProbRange" = c(0.20, 0.25)
-    , ".plotInitialTime" = plotInitialTime
-    , ".useCache" = eventCaching
   )
 )
-
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
