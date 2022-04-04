@@ -30,3 +30,4 @@ simOutFireWeather <- Cache(simInitAndSpades
                            , cacheRepo = fireWeatherPaths$cachePath
                            , userTags = "simInitFireWeather"
                            , omitArgs = c("userTags"))
+# simOutFireWeather <- loadFromCache(fireWeatherPaths$cachePath, cacheId = "02b3b3bdc01abbd5")
