@@ -40,7 +40,10 @@ if (FALSE) {
   Require::Require(pkgSnapshot = "packages/snapshot.txt")
 }
 
-Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7)")
+# devtools::install_local("../LandR/", force = TRUE)
+# devtools::install_github("ianmseddy/PSPclean@development")
+
+Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7.9000)")
 
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
 
