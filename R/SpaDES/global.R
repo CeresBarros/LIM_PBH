@@ -165,7 +165,7 @@ simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = TRUE,
                                 replicates = 10,
-                                cache = TRUE)
+                                useCache = TRUE)
 future:::ClusterRegistry("stop")
 
 ## save simLists object.
