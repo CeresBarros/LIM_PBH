@@ -70,7 +70,7 @@ simModules <- list("noPM" = list(
 ## noPM and PM moduels can both be in the same parameter list.
 simParams <- list(
   .globals = list("dataYear" = 2011L    ## will not be used as the layers have been pre-preped, but just in case...
-                  , ".initialB" = NA
+                  , "initialB" = NA     ## use LANDIS approach to estimate initial cohort B
                   , ".plots" = c("png", "object")
                   , ".plotInitialTime" = 1
                   , ".useCache" = eventCaching)
