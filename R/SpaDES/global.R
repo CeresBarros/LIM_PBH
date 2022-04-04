@@ -129,7 +129,6 @@ vegLeadingProportion <- 0 # indicates what proportion the stand must be in one s
 fireInitialTime <- simTimes$start + 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 successionTimestep <- 10L
-plotInitialTime <- NA
 
 # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
 # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
