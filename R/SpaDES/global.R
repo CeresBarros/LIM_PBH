@@ -138,13 +138,16 @@ names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simLi
 LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
-# LIM_simInitList <- lapply(list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE),
-#                           loadSimList)
-# end(LIM_simInitList[[1]]) <- 2020
+# end(LIM_simInitList[[1]]) <- 2025
 # end(LIM_simInitList[[2]]) <- 2020
-# simOut1 <- spades(LIM_simInitList[[1]])
-# simOut2 <- spades(LIM_simInitList[[2]])
+# end(simOut1) <- 2112
+# simOut1 <- spades(LIM_simInitList[["noPM"]])
+# simOut2 <- spades(LIM_simInitList[["PM"]])
 
+# saveSimList(simOut1, filename = file.path(simPaths$outputPath, "noPM", "simOut1.qs"))
+# saveSimList(simOut2, filename = file.path(simPaths$outputPath, "PM", "simOut2.qs"))
+
+# plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
 ## -----------------------------------------------
 ## SIMULATION RUN
