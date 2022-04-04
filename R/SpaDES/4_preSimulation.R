@@ -71,7 +71,8 @@ simModules <- list("noPM" = list(
 simParams <- list(
   .globals = list("dataYear" = 2011L    ## will not be used as the layers have been pre-preped, but just in case...
                   , ".initialB" = NA
-                  , ".plotInitialTime" = plotInitialTime
+                  , ".plots" = c("png", "object")
+                  , ".plotInitialTime" = 1
                   , ".useCache" = eventCaching)
   , Biomass_borealDataPrep = list(
     "sppEquivCol" = sppEquivCol
@@ -92,6 +93,7 @@ simParams <- list(
     , "pixelGroupBiomassClass" = 100
     , "useCloudCacheForStats" = FALSE
     , "cloudFolderID" = NA
+    , ".plots" = NA
     , ".seed" = list("init" = 123)
   )
   , Biomass_speciesParameters = list(
@@ -106,11 +108,11 @@ simParams <- list(
                                  Popu_sp = 99)
     , "sppEquivCol" = sppEquivCol
     , "speciesFittingApproach" = "focal"
+    , ".plots" = NA
   )
   , Biomass_core = list(
     "calcSummaryBGM" = c("start")
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
-    , ".plotInitialTime" = plotInitialTime
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
     , "sppEquivCol" = sppEquivCol
@@ -127,27 +129,32 @@ simParams <- list(
     , "nonForestFire" = TRUE
     , "sppEquivCol" = sppEquivCol
     , ".plotMaps" = FALSE
+    , ".plots" = NA
   )
   , fireProperties = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "vegFeedback" = TRUE
+    , ".plots" = NA
   )
   , Biomass_regeneration = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
+    , ".plots" = NA
   )
   , Biomass_regenerationPM = list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "successionTimestep" = fireTimestep
+    , ".plots" = NA
   )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "fitRes" = 1000
     , "prepPredictionObjs" = TRUE
     , "propAbsences" = 9
+    , ".plots" = NA
   )
   , fireSense_IgnitionFit = list(
     "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:meanMDC + D2:meanMDC +
@@ -173,6 +180,7 @@ simParams <- list(
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
     , "spreadProbRange" = c(0.20, 0.25)
+    , ".plots" = NA
   )
 )
 

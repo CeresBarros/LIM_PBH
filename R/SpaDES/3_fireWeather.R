@@ -26,7 +26,7 @@ simOutFireWeather <- Cache(simInitAndSpades
                            , modules = "fireWeather"
                            , paths = fireWeatherPaths
                            , debug = TRUE
-                           , .plotInitialTime = NA
+                           , .plots = NA
                            , cacheRepo = fireWeatherPaths$cachePath
                            , userTags = "simInitFireWeather"
                            , omitArgs = c("userTags"))
