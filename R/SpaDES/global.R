@@ -132,7 +132,10 @@ successionTimestep <- 10L
 
 # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
 # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
-source("R/SpaDES/4_preSimulation.R")
+# source("R/SpaDES/4_preSimulation.R")
+simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
+names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
+LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
 # LIM_simInitList <- lapply(list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE),
