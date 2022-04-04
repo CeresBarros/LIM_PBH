@@ -157,7 +157,8 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 ## using experiment:
 library(future)
 if (Sys.info()["sysname"] == "Windows") {
-  plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+  # plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+  plan("sequential")
 } else {
   plan("multicore", workers = 2)
 }
