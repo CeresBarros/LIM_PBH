@@ -52,7 +52,7 @@ Require::Require(c("SpaDES",
                    "data.table",
                    "CeresBarros/ToolsCB",
                    "PredictiveEcology/SpaDES.experiment",
-                   "PredictiveEcology/LandR",
+                   "PredictiveEcology/LandR@LANDISinitialB (>= 1.0.7.9013)",
                    "PredictiveEcology/reproducible"
                    ),
                  upgrade = FALSE)
