@@ -13,5 +13,6 @@ packages/*
 *.dat
 *.Rout
 
+GDriveTokens
 
 !packages/pkgSnapshot.txt
