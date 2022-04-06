@@ -35,9 +35,9 @@ if (!require("Require")) {
 }
 
 if (FALSE) {
-  Require::pkgSnapshot("packages/pkgSnapshot.txt")
+  Require::pkgSnapshot("packages/pkgSnapshot.txt", standAlone = TRUE, exact = TRUE)
   # Much later on a different or same machine
-  Require::Require(pkgSnapshot = "packages/snapshot.txt")
+  # Require::Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
 }
 
 # devtools::install_local("../LandR/", force = TRUE)
