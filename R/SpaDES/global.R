@@ -104,7 +104,7 @@ simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache"
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName)
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
-                   , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
+                   , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
                    , modulePath = file.path("R/SpaDES/m")
