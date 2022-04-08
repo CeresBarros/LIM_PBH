@@ -8,6 +8,9 @@
 ## clean workspace
 rm(list = ls()); amc::.gc()
 
+## to prevent overflow to threads that aren't actually available
+setDTthreads(threads = 120)
+
 if (!exists("pkgDir")) {
   pkgDir <- file.path("packages", version$platform,
                       paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1]))
