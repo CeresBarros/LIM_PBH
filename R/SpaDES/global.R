@@ -179,14 +179,20 @@ if (Sys.info()["sysname"] == "Windows") {
 } else {
   plan("multicore", workers = 2)
 }
+clearSimEnv <- FALSE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
-                                clearSimEnv = TRUE,
+                                clearSimEnv = clearSimEnv,
                                 replicates = 10,
                                 useCache = TRUE)
 future:::ClusterRegistry("stop")
 
 ## save simLists object.
+if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
+  for (i in seq_along(simExperimentOut)) {
+    rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
+  }
+}
 qs::qsave(simExperimentOut, file.path(simPaths$outputPath, paste0("LIM_simLists_noPM_PM", ".qs")))
 
 q("no")
