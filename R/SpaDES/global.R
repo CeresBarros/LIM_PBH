@@ -173,12 +173,11 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## using experiment:
 library(future)
-if (Sys.info()["sysname"] == "Windows") {
-  # plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
-  plan("sequential")
-} else {
-  plan("multicore", workers = 2)
-}
+## multicore no longer available from RStudio
+# plan("multisession", workers = 5)   ## each worker consuming roughly 16Gb
+plan("multicore", workers = 5)   ## add interactive check for this one/
+# plan("sequential")
+
 clearSimEnv <- FALSE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
