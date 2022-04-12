@@ -9,8 +9,8 @@ local({
       paste(getRversion(), R.version["platform"], R.version["arch"], R.version["os"]),
       ")"
     )
-    options(repos = c(CRAN = paste0("https://packagemanager.rstudio.com/all/__linux__/",
-                                    .os.version, "/latest")))
+    # options(repos = c(CRAN = paste0("https://packagemanager.rstudio.com/all/__linux__/",
+    #                                 .os.version, "/latest")))
     options(HTTPUserAgent = .user.agent)
   }
 })

@@ -1,5 +1,5 @@
 # Ignore
-cache/*
+cache
 outputs/*
 .httr-oath
 m/*/data
