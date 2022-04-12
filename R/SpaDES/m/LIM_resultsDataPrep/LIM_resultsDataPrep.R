@@ -590,6 +590,14 @@ addVegTypesCNEvent <- function(sim) {
     stop("Please provide 'ecoregionLayer' used in the simulation")
   }
 
+  if (!suppliedElsewhere("sppEquiv", sim)) {
+    stop("Please provide 'sppEquiv' used in the simulation")
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    stop("Please provide 'rasterToMatch' used in the simulation")
+  }
+
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
