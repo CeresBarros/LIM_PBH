@@ -31,6 +31,9 @@ if (!exists("pkgDir")) {
 # devtools::install_github("PredictiveEcology/fireSenseUtils@4a23a2071599b0c8322d07997871eb53c77db5ff", dependencies = FALSE)
 
 if (!require("Require")) {
+  if (!require("devtools")) {
+    install.packages("devtools")
+  }
   devtools::install_github("PredictiveEcology/Require@development")
 }
 
@@ -43,7 +46,7 @@ if (FALSE) {
 # devtools::install_local("../LandR/", force = TRUE)
 # devtools::install_github("ianmseddy/PSPclean@development")
 
-Require::Require("PredictiveEcology/SpaDES.install (>= 0.0.7.9000)")
+Require::Require("PredictiveEcology/SpaDES.install@development (>= 0.0.7.9000)")
 
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
 
