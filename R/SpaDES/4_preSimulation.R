@@ -71,14 +71,15 @@ simModules <- list("noPM" = list(
 simParams <- list(
   .globals = list("dataYear" = 2011L    ## will not be used as the layers have been pre-preped, but just in case...
                   , "initialB" = NA     ## use LANDIS approach to estimate initial cohort B
+                  , "sppEquivCol" = sppEquivCol
+                  , "vegLeadingProportion" = vegLeadingProportion
                   , ".plots" = c("png", "object")
                   , ".plotInitialTime" = 1
                   , ".useCache" = eventCaching)
   , Biomass_borealDataPrep = list(
-    "sppEquivCol" = sppEquivCol
-    # , "forestedLCCClasses" = c(1:15, 34:36)
+    # "forestedLCCClasses" = c(1:15, 34:36)
     # , "LCCClassesToReplaceNN" = c(34:36)
-    , "forestedLCCClasses" = c(1:6)   ## LCC 2010
+    "forestedLCCClasses" = c(1:6)   ## LCC 2010
     , "LCCClassesToReplaceNN" = numeric(0) ## no replacement - urban/cropland could be grassland, barren may or not support veg.
     , "ecoregionLayerField" = "ecozoneCode"
     , "fitDeciduousCoverDiscount" = FALSE
@@ -106,7 +107,6 @@ simParams <- list(
                                  Pice_gla = 95,
                                  Pinu_sp = 95,
                                  Popu_sp = 99)
-    , "sppEquivCol" = sppEquivCol
     , "speciesFittingApproach" = "focal"
     , ".plots" = NA
   )
@@ -115,9 +115,7 @@ simParams <- list(
     , "initialBiomassSource" = "cohortData" # can be 'biomassMap' or "spinup" too
     , "plotOverstory" = TRUE
     , "seedingAlgorithm" = "wardDispersal"
-    , "sppEquivCol" = sppEquivCol
     , "successionTimestep" = successionTimestep
-    , "vegLeadingProportion" = vegLeadingProportion
     , ".plotInterval" = 1
     , ".plotMaps" = FALSE
     , ".saveInitialTime" = NA
@@ -127,7 +125,6 @@ simParams <- list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "nonForestFire" = TRUE
-    , "sppEquivCol" = sppEquivCol
     , ".plotMaps" = FALSE
     , ".plots" = NA
   )
