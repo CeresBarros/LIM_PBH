@@ -25,7 +25,6 @@ speciesParameters <- list(
 
 speciesObjects <- list(
   "sppEquiv" = sppEquivalencies_CA
-  , "sppColorVect" = sppColorVect
   # , "studyAreaLarge" = foothillsMED
   , "studyAreaLarge" = foothills
   , "rasterToMatchLarge" = rasterToMatchLarge

@@ -203,7 +203,8 @@ simObjects <- list(
   , "studyArea" = foothills
   , "studyAreaLarge" = foothills
   , "sppEquiv" = sppEquivalencies_CA
-  , "sppColorVect" = sppColorVect
+  , "sppColorVect" = simOutSpeciesLayers$sppColorVect
+  , "sppNameVector" = simOutSpeciesLayers$sppNameVector
   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
   , "speciesParams" = speciesParams
   , "treed" =  simOutSpeciesLayers$treed

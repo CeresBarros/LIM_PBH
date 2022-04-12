@@ -159,10 +159,6 @@ sppEquivalencies_CA[, Cameron := c(Abie_las = "ABLA", Abie_sp = "ABLA",
 sppEquivCol <- "LIM"
 sppEquivalencies_CA <- na.omit(sppEquivalencies_CA, cols = sppEquivCol)
 
-## create color palette for species used in model
-sppColorVect <- sppColors(sppEquivalencies_CA, sppEquivCol,
-                          newVals = "Mixed", palette = "Accent")
-
 ## PSP DATA ------------------------------------------------------------------
 ## Set up PSP data for Biomass_speciesParameters
 PSPmeasure_sppParams <- Cache(prepInputs,
