@@ -9,7 +9,7 @@
 rm(list = ls()); amc::.gc()
 
 ## to prevent overflow to threads that aren't actually available
-setDTthreads(threads = 120)
+data.table::setDTthreads(threads = 120)
 
 if (!exists("pkgDir")) {
   pkgDir <- file.path("packages", version$platform,
