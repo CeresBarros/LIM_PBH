@@ -131,10 +131,11 @@ keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras
 })
 
 keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
-simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
-sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
-sppColorVect <- sppColorVect[keepSpp]
-# raster::plot(simOutSpeciesLayers$speciesLayers)
+speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
+sppEquivalencies_CA <- sppEquivalencies_CA[get(sppEquivCol) %in% keepSpp]
+sppColorVect <- simOutSpeciesLayers$sppColorVect[keepSpp]
+sppNameVector <- intersect(simOutSpeciesLayers$sppNameVector, names(sppColorVect))
+# raster::plot(speciesLayers)
 
 ## Prepare fire weather tables --------------------
 source("R/SpaDES/3_fireWeather.R")
