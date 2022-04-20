@@ -23,21 +23,6 @@ speciesParams <- list(
   )
 )
 
-## Get land-cover raster 2001 now that we have a rasterToMatchLarge
-# if (is.null(P(simOutSpeciesLayers)$.studyAreaName)) {
-#   SAname <- reproducible::studyAreaName(simOutSpeciesLayers$studyAreaLarge)
-# }
-# rstLCC2005 <- LandR::prepInputsLCC(
-#   year = 2005L,
-#   destinationPath = simPaths$inputPath,
-#   studyArea = simOutSpeciesLayers$studyAreaLarge,   ## Ceres: makePixel table needs same no. pixels for this, RTM rawBiomassMap, LCC.. etc
-#   rasterToMatch = simOutSpeciesLayers$rasterToMatchLarge,
-#   filename2 = .suffix("rstLCC.tif", paste0("_", SAname)),
-#   overwrite = TRUE,
-#   cacheRepo = simPaths$cachePath,
-#   userTags = c("rstLCC", SAname),
-#   omitArgs = c("userTags"))
-
 
 ## SIM MODULES AND PARAMETERS -----------------------------------------
 ## make two lists of sim modules, one noPM and one PM
@@ -205,7 +190,6 @@ simObjects <- list(
   , "speciesLayers" = simOutSpeciesLayers$speciesLayers
   , "speciesParams" = speciesParams
   , "treed" =  simOutSpeciesLayers$treed
-  # , "rstLCC" = rstLCC2005
   , "weatherData" = simOutFireWeather$weatherData
   , "weatherDataMDC" = simOutFireWeather$weatherDataMDC
   , "weatherDataMDCCRS" = simOutFireWeather$weatherDataCRS
