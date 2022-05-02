@@ -8,8 +8,6 @@
 ## clean workspace
 rm(list = ls()); amc::.gc()
 
-## to prevent overflow to threads that aren't actually available
-data.table::setDTthreads(threads = 120)
 
 if (!exists("pkgDir")) {
   pkgDir <- file.path("packages", version$platform,
@@ -59,9 +57,10 @@ Require::Require(c("SpaDES",
                    "CeresBarros/ToolsCB",
                    "PredictiveEcology/SpaDES.experiment",
                    "CeresBarros/LandR@LANDISinitialB (>= 1.0.7.9016)",
-                   "PredictiveEcology/reproducible"
-                   ),
-                 upgrade = FALSE)
+                   "PredictiveEcology/reproducible",
+                   "future"
+),
+upgrade = FALSE)
 
 options("reproducible.useNewDigestAlgorithm" = 2,
         "spades.moduleCodeChecks" = FALSE,
@@ -71,7 +70,11 @@ options("reproducible.useNewDigestAlgorithm" = 2,
         "reproducible.useGDAL" = FALSE,
         "reproducible.cacheSaveFormat" = "qs",
         "reproducible.useMemoise" = TRUE,
+        "future.plan" = "multicore",
+        "mc.cores" = 100,
         "spades.useRequire" = TRUE)
+## to prevent overflow to threads that aren't actually available
+data.table::setDTthreads(threads = 120)
 
 ## -----------------------------------------------
 ## SIMULATION SETUP
@@ -100,10 +103,10 @@ useParallel <- FALSE
 simDirName <- "mar2022Runs"
 
 if (Sys.info()["nodename"] == "W-VIC-A127584") {
-simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName)
-                 , modulePath = file.path("R/SpaDES/m")
-                 , inputPath = file.path("R/SpaDES/inputs")
-                 , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
+  simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName)
+                   , modulePath = file.path("R/SpaDES/m")
+                   , inputPath = file.path("R/SpaDES/inputs")
+                   , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
 } else if (grepl("for-cast", Sys.info()["nodename"])) {
   simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName)
                    , modulePath = file.path("R/SpaDES/m")
@@ -121,42 +124,42 @@ simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache"
 source("R/SpaDES/1_simObjects.R")
 
 ## Run Biomass_speciesData to get species layers
-source("R/SpaDES/2_speciesLayers.R")
-
-## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
-# plot(simOutSpeciesLayers$speciesLayers)
-keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
-  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(ras[]))
-  propPres > 0.05  ## species need to be in at least 5% of the landscape
-})
-
-keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
-speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
-sppEquivalencies_CA <- sppEquivalencies_CA[get(sppEquivCol) %in% keepSpp]
-sppColorVect <- simOutSpeciesLayers$sppColorVect[keepSpp]
-sppNameVector <- intersect(simOutSpeciesLayers$sppNameVector, names(sppColorVect))
-# raster::plot(speciesLayers)
-
-## Prepare fire weather tables --------------------
-source("R/SpaDES/3_fireWeather.R")
-
-## Run more data prep -----------------------------
-# Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
-## to prepare objects for simulation and FireSense ignition/fire frquency fits
-## Define simulation params
-simTimes <- list(start = 2011L, end = 2611L)
-vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
-# If all are below this, then it is a "mixed" stand
-fireInitialTime <- simTimes$start + 5L
-fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
-successionTimestep <- 10L
-
-# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
-# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
-source("R/SpaDES/4_preSimulation.R")
-# simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
-# names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
-# LIM_simInitList <- lapply(simListFiles, loadSimList)
+# source("R/SpaDES/2_speciesLayers.R")
+#
+# ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
+# # plot(simOutSpeciesLayers$speciesLayers)
+# keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
+#   propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(ras[]))
+#   propPres > 0.05  ## species need to be in at least 5% of the landscape
+# })
+#
+# keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
+# speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
+# sppEquivalencies_CA <- sppEquivalencies_CA[get(sppEquivCol) %in% keepSpp]
+# sppColorVect <- simOutSpeciesLayers$sppColorVect[keepSpp]
+# sppNameVector <- intersect(simOutSpeciesLayers$sppNameVector, names(sppColorVect))
+# # raster::plot(speciesLayers)
+#
+# ## Prepare fire weather tables --------------------
+# source("R/SpaDES/3_fireWeather.R")
+#
+# ## Run more data prep -----------------------------
+# # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
+# ## to prepare objects for simulation and FireSense ignition/fire frquency fits
+# ## Define simulation params
+# simTimes <- list(start = 2011L, end = 2611L)
+# vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
+# # If all are below this, then it is a "mixed" stand
+# fireInitialTime <- simTimes$start + 5L
+# fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
+# successionTimestep <- 10L
+#
+# # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
+# # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+# source("R/SpaDES/4_preSimulation.R")
+simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
+names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
+LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
 # end(LIM_simInitList[[1]]) <- 2025
@@ -176,11 +179,14 @@ source("R/SpaDES/4_preSimulation.R")
 # graphics.off()
 
 ## using experiment:
-library(future)
 ## multicore no longer available from RStudio
 # plan("multisession", workers = 5)   ## each worker consuming roughly 16Gb
 plan("multicore", workers = 5)   ## add interactive check for this one/
 # plan("sequential")
+
+## clean unnecessary simLists
+rm(simOutSpeciesLayers, simOutFireWeather);
+gc()
 
 clearSimEnv <- FALSE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
