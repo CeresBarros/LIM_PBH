@@ -134,6 +134,8 @@ simParams <- list(
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "fitRes" = 1000
+    , "parallel" = TRUE
+    , "parallelCores" = 8
     , "prepPredictionObjs" = TRUE
     , "propAbsences" = 9
     , ".plots" = NA
