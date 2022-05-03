@@ -70,11 +70,10 @@ options("reproducible.useNewDigestAlgorithm" = 2,
         "reproducible.useGDAL" = FALSE,
         "reproducible.cacheSaveFormat" = "qs",
         "reproducible.useMemoise" = TRUE,
-        "future.plan" = "multicore",
-        "mc.cores" = 100,
+        "mc.cores" = 1,
         "spades.useRequire" = TRUE)
 ## to prevent overflow to threads that aren't actually available
-data.table::setDTthreads(threads = 120)
+data.table::setDTthreads(threads = 1)
 
 ## -----------------------------------------------
 ## SIMULATION SETUP
