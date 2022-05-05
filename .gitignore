@@ -16,3 +16,5 @@ packages/*
 GDriveTokens
 
 !packages/pkgSnapshot.txt
+
+analyses.zip

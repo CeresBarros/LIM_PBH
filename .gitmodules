@@ -1,42 +1,42 @@
 [submodule "R/SpaDES/m/Biomass_core"]
 	path = R/SpaDES/m/Biomass_core
-	url = https://github.com/CeresBarros/Biomass_core.git
+	url = git@github.com:CeresBarros/Biomass_core.git
 [submodule "R/SpaDES/m/Biomass_borealDataPrep"]
 	path = R/SpaDES/m/Biomass_borealDataPrep
-	url = https://github.com/CeresBarros/Biomass_borealDataPrep.git
+	url = git@github.com:CeresBarros/Biomass_borealDataPrep.git
 [submodule "R/SpaDES/m/Biomass_speciesData"]
 	path = R/SpaDES/m/Biomass_speciesData
-	url = https://github.com/CeresBarros/Biomass_speciesData.git
+	url = git@github.com:CeresBarros/Biomass_speciesData.git
 [submodule "R/SpaDES/m/Biomass_regeneration"]
 	path = R/SpaDES/m/Biomass_regeneration
-	url = https://github.com/CeresBarros/Biomass_regeneration.git
+	url = git@github.com:CeresBarros/Biomass_regeneration.git
 [submodule "R/SpaDES/m/Biomass_regenerationPM"]
 	path = R/SpaDES/m/Biomass_regenerationPM
-	url = https://github.com/CeresBarros/Biomass_regenerationPM.git
+	url = git@github.com:CeresBarros/Biomass_regenerationPM.git
 [submodule "R/SpaDES/m/Biomass_fuels"]
 	path = R/SpaDES/m/Biomass_fuels
-	url = https://github.com/CeresBarros/Biomass_fuels.git
+	url = git@github.com:CeresBarros/Biomass_fuels.git
 [submodule "R/SpaDES/m/fireSense_IgnitionFit"]
 	path = R/SpaDES/m/fireSense_IgnitionFit
-	url = https://github.com/CeresBarros/fireSense_IgnitionFit.git
+	url = git@github.com:CeresBarros/fireSense_IgnitionFit.git
 [submodule "R/SpaDES/m/fireSense_IgnitionPredict"]
 	path = R/SpaDES/m/fireSense_IgnitionPredict
-	url = https://github.com/CeresBarros/fireSense_IgnitionPredict.git
+	url = git@github.com:CeresBarros/fireSense_IgnitionPredict.git
 [submodule "R/SpaDES/m/fireWeather"]
 	path = R/SpaDES/m/fireWeather
 	url = git@github.com:CeresBarros/fireWeather.git
 [submodule "R/SpaDES/m/Biomass_fuelsPFG"]
 	path = R/SpaDES/m/Biomass_fuelsPFG
-	url = https://github.com/CeresBarros/Biomass_fuelsPFG.git
+	url = git@github.com:CeresBarros/Biomass_fuelsPFG.git
 [submodule "R/SpaDES/m/Biomass_speciesParameters"]
 	path = R/SpaDES/m/Biomass_speciesParameters
-	url = https://github.com/CeresBarros/Biomass_speciesParameters.git
+	url = git@github.com:CeresBarros/Biomass_speciesParameters.git
 [submodule "R/SpaDES/m/fireSense_dataPrep"]
 	path = R/SpaDES/m/fireSense_dataPrep
 	url = git@github.com:CeresBarros/fireSense_dataPrep.git
 [submodule "R/SpaDES/m/FavierFireSpread"]
 	path = R/SpaDES/m/FavierFireSpread
-	url = https://github.com/CeresBarros/FavierFireSpread.git
+	url = git@github.com:CeresBarros/FavierFireSpread.git
 [submodule "R/SpaDES/m/Biomass_fireProperties"]
 	path = R/SpaDES/m/fireProperties
-	url = https://github.com/CeresBarros/fireProperties.git
+	url = git@github.com:CeresBarros/fireProperties.git
