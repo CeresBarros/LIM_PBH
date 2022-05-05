@@ -151,7 +151,7 @@ simParams <- list(
                   knots = list("meanMDC" = 21))   ## the rounded 80% quantile, pre scaling
     , "iterDEoptim" = 60
     , "iterNlminb" = 500
-    , "cores" = 4
+    , "cores" = 1
     , "rescaleVars" = TRUE
     , "rescalers" = NULL
     , ".plots" = "png"
