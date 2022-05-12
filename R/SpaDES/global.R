@@ -119,10 +119,11 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName))
 }
-## Get necessary objects -----------------------
-source("R/SpaDES/1_simObjects.R")
 
-## Run Biomass_speciesData to get species layers
+# ## Get necessary objects -----------------------
+# source("R/SpaDES/1_simObjects.R")
+#
+# ## Run Biomass_speciesData to get species layers
 # source("R/SpaDES/2_speciesLayers.R")
 #
 # ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
@@ -152,9 +153,9 @@ source("R/SpaDES/1_simObjects.R")
 # fireInitialTime <- simTimes$start + 5L
 # fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 # successionTimestep <- 10L
-#
-# # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
-# # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+
+# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
+# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
 # source("R/SpaDES/4_preSimulation.R")
 simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
 names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
@@ -162,8 +163,7 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
 # end(LIM_simInitList[[1]]) <- 2025
-# end(LIM_simInitList[[2]]) <- 2020
-# end(simOut1) <- 2112
+# end(LIM_simInitList[[2]]) <- 2025
 # simOut1 <- spades(LIM_simInitList[["noPM"]])
 # simOut2 <- spades(LIM_simInitList[["PM"]])
 
@@ -177,17 +177,20 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 ## -----------------------------------------------
 # graphics.off()
 
-## using experiment:
-## multicore no longer available from RStudio
-# plan("multisession", workers = 5)   ## each worker consuming roughly 16Gb
-plan("multicore", workers = 5)   ## add interactive check for this one/
-# plan("sequential")
-
 ## clean unnecessary simLists
 rm(simOutSpeciesLayers, simOutFireWeather);
 gc()
 
-clearSimEnv <- FALSE
+## using experiment:
+## multicore no longer available from RStudio
+# plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+plan("multicore", workers = 5)   ## add interactive check for this one/
+# plan("sequential")
+
+# end(LIM_simInitList[["noPM"]]) <- 2025
+# out <- future_replicate(2, spades(LIM_simInitList[["noPM"]], .saveInitialTime = NA))  ## no errors
+
+clearSimEnv <- TRUE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
