@@ -54,7 +54,7 @@ dir.create(figOutputPath, recursive = TRUE)
 dir.create(statsOutputPath, recursive = TRUE)
 
 ## LOAD SIM LIST  ---------------------------------
-preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
+preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM.qs"))
 
 
 ## PREP FIRE AND VEG DATA -------------------

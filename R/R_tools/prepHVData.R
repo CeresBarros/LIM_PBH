@@ -82,8 +82,9 @@ if ("HVid" %in% names(vegHVDataBYrComparisons)) {
 ## drop unique components
 set(vegHVDataBYrComparisons, NULL, grep("Unique", names(vegHVDataBYrComparisons)), NULL)
 
-## sometimes HV1 is 2011, others is 2111 (probably because data wasn't sorted) -
+## sometimes HV1 is the start year, others is end year (probably because data wasn't sorted) -
 ## make sure there aren't duplicate comparisons
+stop("FIX YEARS")
 if (getOption("LandR.assertions")) {
   test <- unique(vegHVDataBYrComparisons[is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
   test2 <- unique(vegHVDataBYrComparisons[!is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
@@ -107,7 +108,7 @@ if (getOption("LandR.assertions")) {
   }
 }
 
-## add comparison type - because sometimes HV1 is 2011, others is 2111
+## add comparison type - because sometimes HV1 is start year, others is end year
 ## we need to use `sort(unique())` bellow
 comp <- sort(unique(sub(".*_", "", grep("Volume", names(vegHVDataBYrComparisons), value = TRUE))))
 comp <- paste(comp, collapse = "_")
@@ -115,6 +116,7 @@ vegHVDataBYrComparisons[, compare := comp]
 
 ## break into 2 tables, remove empty volume columns,
 ## make column of comparison ID, change names and re-rbind
+stop("FIX YEARS")
 tempData  <- vegHVDataBYrComparisons[is.na(Volume_HV1_2011),]
 tempData2  <- vegHVDataBYrComparisons[!is.na(Volume_HV1_2011),]
 
@@ -152,6 +154,7 @@ allHVData$vegType <- as.factor(allHVData$vegType)
 allHVData[, overlap := Intersection/Union]
 
 ## check for missing data
+stop("FIX YEARS")
 if (nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM)) & (is.na(HV_2011)|is.na(HV_2111))])) {
   stop("There seems to be missing data")
 }

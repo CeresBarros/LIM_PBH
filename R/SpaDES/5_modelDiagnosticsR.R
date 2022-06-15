@@ -56,7 +56,7 @@ eventCaching <- c(".inputObjects", "init")
 # oldSim <- qs::qread("C:/Users/cbarros/Desktop/oldDisp_noPM/preSimList.qs")
 
 ## get simList from Init - doesn't matter which scenario
-LIM_simInitList <- loadSimList("R/SpaDES/outputs/mar2021Runs/noPM/LIM_simInit_noPM")
+LIM_simInitList <- loadSimList("R/SpaDES/outputs/mar2021Runs/noPM/LIM_simInit_noPM.qs")
 
 parameters <- list(
   fireSense_IgnitionFit = list(

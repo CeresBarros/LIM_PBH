@@ -19,8 +19,8 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAna
                  , inputPath = file.path("R/SpaDES/inputs")
                  , outputPath = file.path("R/SpaDES/outputs", simDirName))
 
-preSimListnoPM <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM"))
-preSimListPM <- loadSimList(file.path(simPaths$outputPath, "PM", "LIM_simInit_PM"))
+preSimListnoPM <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM.qs"))
+preSimListPM <- loadSimList(file.path(simPaths$outputPath, "PM", "LIM_simInit_PM.qs"))
 
 paramsnoPM <- params(preSimList)$Biomass_regeneration
 paramsPM <- params(preSimList)$Biomass_regenerationPM
