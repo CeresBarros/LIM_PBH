@@ -154,7 +154,7 @@ loadHVResultsFromRDS <- function(x, files) {
 #' @param ... more arguments passed to \code{ToolsCB::plotHypervolumes3D}
 
 plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLabels,
-                             mergeVegType = NULL, colsHV, cacheRepo, figOutputPath,
+                             mergeVegType = NULL, startYear, endYear, colsHV, cacheRepo, figOutputPath,
                              ...) {
   if (is(vegType, "factor")) {
     vegType <- as.character(VegTY)
@@ -172,14 +172,14 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   }
 
 
-  userTags <- c("hypervolume", vegType, "2011", "noPM")
+  userTags <- c("hypervolume", vegType, "startYear", "noPM")
   ## subset tables to correct year, veg type and scenario
   tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == "2011" & scenario == "noPM",]
+  tempData <- vegHVPCAscores[year == as.character(startYear) & scenario == "noPM",]
   ## subset pixels
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  HV2011_noPM  <- Cache(hypervolume::hypervolume,
+  HVstartYear_noPM  <- Cache(hypervolume::hypervolume,
                         data = tempData[, ..colsHV],
                         method = "svm",
                         svm.gamma = 0.01,
@@ -188,14 +188,14 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                         userTags = userTags,
                         omitArgs = c("userTags"))
 
-  userTags <- c("hypervolume", vegType, "2111", "noPM")
+  userTags <- c("hypervolume", vegType, "endYear", "noPM")
   ## subset tables to correct year, veg type and scenario
   tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == "2111" & scenario == "noPM",]
+  tempData <- vegHVPCAscores[year == as.character(endYear) & scenario == "noPM",]
   ## subset pixels
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  HV2111_noPM  <- Cache(hypervolume::hypervolume,
+  HVendYear_noPM  <- Cache(hypervolume::hypervolume,
                         data = tempData[, ..colsHV],
                         method = "svm",
                         svm.gamma = 0.01,
@@ -204,14 +204,14 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                         userTags = userTags,
                         omitArgs = c("userTags"))
 
-  userTags <- c("hypervolume", vegType, "2011", "PM")
+  userTags <- c("hypervolume", vegType, "startYear", "PM")
   ## subset tables to correct year, veg type and scenario
   tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == "2011" & scenario == "PM",]
+  tempData <- vegHVPCAscores[year == as.charactr(startYear) & scenario == "PM",]
   ## subset pixels
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  HV2011_PM  <- Cache(hypervolume::hypervolume,
+  HVstartYear_PM  <- Cache(hypervolume::hypervolume,
                       data = tempData[, ..colsHV],
                       method = "svm",
                       svm.gamma = 0.01,
@@ -220,14 +220,14 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                       userTags = userTags,
                       omitArgs = c("userTags"))
 
-  userTags <- c("hypervolume", vegType, "2111", "PM")
+  userTags <- c("hypervolume", vegType, "endYear", "PM")
   ## subset tables to correct year, veg type and scenario
   tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == "2111" & scenario == "PM",]
+  tempData <- vegHVPCAscores[year == as.character(endYear) & scenario == "PM",]
   ## subset pixels
   tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  HV2111_PM  <- Cache(hypervolume::hypervolume,
+  HVendYear_PM  <- Cache(hypervolume::hypervolume,
                       data = tempData[, ..colsHV],
                       method = "svm",
                       svm.gamma = 0.01,
@@ -236,7 +236,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                       userTags = userTags,
                       omitArgs = c("userTags"))
 
-  HVls <- hypervolume::hypervolume_join(HV2011_noPM, HV2011_PM, HV2111_noPM, HV2111_PM)
+  HVls <- hypervolume::hypervolume_join(HVstartYear_noPM, HVstartYear_PM, HVendYear_noPM, HVendYear_PM)
 
   args <- c(HVlist = HVls, list(...))
   args$main <- vegTypeCNLabels[vegType]
