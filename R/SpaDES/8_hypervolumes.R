@@ -16,7 +16,8 @@ options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
 options("reproducible.useGDAL" = FALSE)
 
 ## general paths
-simDirName <- "jun2021Runs"
+# simDirName <- "jun2021Runs"
+simDirName <- "mar2022Runs"
 simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
