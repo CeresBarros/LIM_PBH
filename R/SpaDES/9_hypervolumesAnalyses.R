@@ -59,8 +59,8 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 
 
 ## PREP FIRE AND VEG DATA -------------------
-yearSubset <- c(seq(2011, 2111, 5), 2111)
 source("R/SpaDES/6_resultsDataPrep.R")
+yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
 source("R/R_tools/prepFireData4HVs.R")
 source("R/R_tools/prepVegData4HVs.R")
 
