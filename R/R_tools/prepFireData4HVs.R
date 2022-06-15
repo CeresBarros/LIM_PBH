@@ -11,7 +11,7 @@ summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = me
 ## not the first fire year, as these vegTypes have already been altered by fire
 ## and add pixels that had no fires
 cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
-summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == end(preSimList), ..cols]),
+summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == max(yearSubset), ..cols]),
                                                on = c("scenario", "rep", "pixelIndex")]
 ## checks
 test1 <- any(is.na(summaryFireAttributes$vegTypeCN))

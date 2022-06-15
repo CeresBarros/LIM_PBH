@@ -6,7 +6,7 @@
 ## the join shouldn't actually change anything because we already subset the pixels with veg
 ## in the montane belt (regardless of fire)
 
-vegDataForHVs <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
+vegDataForHVs <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
 
 if (getOption("LandR.assertions")) {
   pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
@@ -33,7 +33,7 @@ if (getOption("LandR.assertions")) {
   if (any(test))
     stop("Different pixelIndex between scenario/rep/year combinations")
 
-  temp <- split(vegDataForHVs[year == start(preSimList), .(vegTypeCN, pixelIndex, scenario, rep)],
+  temp <- split(vegDataForHVs[year == min(yearSubset), .(vegTypeCN, pixelIndex, scenario, rep)],
                 by = c("scenario", "rep"), keep.by = FALSE)
   temp <- lapply(temp, FUN = function(x) setkey(x, vegTypeCN, pixelIndex))
   temppix <- lapply(temp, FUN = function(x) x[["pixelIndex"]])

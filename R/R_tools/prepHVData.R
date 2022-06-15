@@ -16,7 +16,7 @@ fireHVData <- loadHVResultsFromRDS("fireHVs", allFiles)
 if ("HVid" %in% names(fireHVData)) {
   fireHVData[, scenario := HVid]   ## no HVid with intersecion results
 }
-fireHVData[, year := as.integer(end(preSimList))]   ## fire HV are from last year, but integrate the whole simulation period
+fireHVData[, year := as.integer(max(yearSubset))]   ## fire HV are from last year, but integrate the whole simulation period
 ## drop unique components
 set(fireHVData, NULL, grep("Unique", names(fireHVData)), NULL)
 

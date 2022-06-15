@@ -69,7 +69,7 @@ traitsTable[, firetolerance := as.ordered(firetolerance)]
 traitsTable <- data.frame(traitsTable[, .(longevity, shadetolerance, firetolerance, postfireregen)],
                           row.names = traitsTable$speciesCode)
 
-vegData <- allPixelCohortDataMnt[year %in% c(start(preSimList), end(preSimList))]
+vegData <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
 cols <- c("speciesCode", "scenario", "rep", "year", "pixelIndex", "B")   ## keep rep for wrapper.
 vegData <- vegData[, ..cols]
 ## sum B across cohorts
@@ -186,7 +186,7 @@ if (mergePSME) {
 
 vegTypes <- vegTypes[vegTypes != "No veg."]
 
-pixelIndexDT <- unique(vegHVPCAscores[year == end(preSimList), .(rep, vegTypeCN, pixelIndex)])
+pixelIndexDT <- unique(vegHVPCAscores[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)])
 
 lapply(vegTypes, FUN = plotHVs3DWrapper,
        vegHVPCAscores = vegHVPCAscores[rep == 1],
@@ -195,6 +195,8 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        figOutputPath = figOutputPath,
        cacheRepo = simPaths$cachePath,
        mergeVegType = "mergePSME",
+       startYear = min(yearSubset),
+       endYear = max(yearSubset),
        colsHV = c("PC1", "PC2", "PC3", "PC4"),
        ## plotHypervolumes3D args:
        loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]) * ordiArrowMul(vegHVPCA, fill = 2, choices = 1:3, display = "species"),
@@ -227,7 +229,7 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
 ## sample size may be not showing how much these forest types are overlapping in terms of forest composition.
 ## However, if we analyse this across years, it seems that DMCPSME may have shifted less than the other two.
 ## If we were to group all three the between-year shift would be overall smaller (and overlap larger),
-## because both the 2011 and 2111 HVs would be larger to start with
+## because both the start and end HVs would be larger to start with
 ## based on these I think we can merge the pure PSME stands and leave the dry mixed conifer/PSME separate
 
 ## average scores across reps

@@ -75,8 +75,8 @@ yearSubset <- c(seq(2011, 2111, 5), 2111)
 
 source("R/SpaDES/6_resultsDataPrep.R")
 
-startYear <- as.integer(start(preSimList))
-endYear <- as.integer(end(preSimList))
+startYear <- min(yearSubset)
+endYear <- max(yearSubset)
 
 ## check
 if (endYear != max(allPixelCohortDataMnt$year, na.rm = TRUE)) {

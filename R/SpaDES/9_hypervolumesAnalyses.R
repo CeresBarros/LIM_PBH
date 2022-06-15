@@ -76,7 +76,7 @@ source("R/R_tools/plotLabels&Cols.R")
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------
 ## make separate datatable for stats so that we can change contrasts
-modelData <- allHVData[year == end(preSimList) & HVtype == "fireHV",
+modelData <- allHVData[year == max(yearSubset) & HVtype == "fireHV",
                        .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
                          rep, repHV, vegType)]
 
@@ -159,7 +159,7 @@ sink()
 ## STATISTICS: EFFECT OF SCENARIO ON BIODIVERSITY  ------------------------
 ## how did scenario affect overall diversity at the end of simulation? ----
 ## (i.e. HV size)
-modelData <- allHVData[year == end(preSimList) & HVtype == "vegHV",
+modelData <- allHVData[year == max(yearSubset) & HVtype == "vegHV",
                        .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
                          rep, repHV, vegType)]
 modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
@@ -219,7 +219,7 @@ sink()
 ## ------------------------------------------------------------------------
 ## How much did communities change in time? ---------------------------------------
 ## as in Barros et al 2016, calculate the prop overlap
-modelData <- allHVData[HVtype == "vegHV" & compare == "2011_2111",
+modelData <- allHVData[HVtype == "vegHV" & compare == paste(min(yearSubset), max(yearSubset), sep = "_"),
                        .(overlap, MinDist, CentroidDist,
                          rep, repHV, vegType, scenario)]
 modelData[, scenario := relevel(factor(scenario), "noPM")]
@@ -291,7 +291,7 @@ sink()
 
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRO-BIODIVERSITY RELATIONSHIP  ------
-modelData <- allHVData[year == end(preSimList),
+modelData <- allHVData[year == max(yearSubset),
                        .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
 modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
                              variable.name = "scenario", value.name = "Volume")
@@ -411,7 +411,7 @@ sink()
 allHVData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
 
 ## melt volume data
-plotData <- allHVData[year == end(preSimList),
+plotData <- allHVData[year == max(yearSubset),
                       .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
                         rep, repHV, vegType)]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
@@ -515,7 +515,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVVolumes.tiff"),
        width = 10, height = 8)
 
 ## were biodiversity volumes different at the start?
-plotData <- allHVData[year == start(preSimList),
+plotData <- allHVData[year == min(yearSubset),
                       .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
                         rep, repHV, vegType)]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
@@ -540,7 +540,7 @@ ggsave(plot = HVvolumeVegTypesStartPlot, filename = file.path(figOutputPath, "HV
 
 
 ## How much did communities change in time? ---------------------------------------
-plotData <- allHVData[HVtype == "vegHV" & compare == "2011_2111",
+plotData <- allHVData[HVtype == "vegHV" & compare == paste(min(yearSubset), max(yearSubset), sep = "_"),
                       .(overlap, MinDist, CentroidDist, rep, repHV, vegType, scenario)]
 
 HVOverlapVegTypesPlot <- ggplot(plotData[vegType != "landscape"],
@@ -581,7 +581,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "HVOverlap.tiff"),
 
 ## relationship between pyrodiversity and biodiversity --------------------
 ## melt volume data and dcast by volume type to relate the two
-plotData <- allHVData[year == end(preSimList),
+plotData <- allHVData[year == max(yearSubset),
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
