@@ -3110,7 +3110,7 @@ if (areEqual) {
   layers2Keep <- c(grep(startYear, names(vegTypeStk), value = TRUE)[1], 
                    grep(startYear, names(vegTypeStk), invert = TRUE, value = TRUE))
   vegTypeStk <- vegTypeStk[[layers2Keep]]
-  names(vegTypeStk) <- sub(".*2011", "startYear", names(vegTypeStk))
+  names(vegTypeStk) <- sub(paste0(".*", startYear), "startYear", names(vegTypeStk))
 } else {
   stop("initial veg type raster not identical across scenarios")
 }
@@ -3277,7 +3277,7 @@ if (areEqual) {
   layers2Keep <- c(grep(startYear, names(vegTypeCNStk), value = TRUE)[1], 
                    grep(startYear, names(vegTypeCNStk), invert = TRUE, value = TRUE))
   vegTypeCNStk <- vegTypeCNStk[[layers2Keep]]
-  names(vegTypeCNStk) <- sub(".*2011", "startYear", names(vegTypeCNStk))
+  names(vegTypeCNStk) <- sub(paste0(".*", startYear), "startYear", names(vegTypeCNStk))
 } else {
   stop("initial veg type raster not identical across scenarios")
 }

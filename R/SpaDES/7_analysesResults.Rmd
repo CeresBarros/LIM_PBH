@@ -1147,7 +1147,7 @@ if (areEqual) {
   layers2Keep <- c(grep(startYear, names(vegTypeStk), value = TRUE)[1], 
                    grep(startYear, names(vegTypeStk), invert = TRUE, value = TRUE))
   vegTypeStk <- vegTypeStk[[layers2Keep]]
-  names(vegTypeStk) <- sub(".*2011", "startYear", names(vegTypeStk))
+  names(vegTypeStk) <- sub(paste0(".*", startYear), "startYear", names(vegTypeStk))
 } else {
   stop("initial veg type raster not identical across scenarios")
 }
