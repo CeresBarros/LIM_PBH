@@ -149,31 +149,40 @@ loadSimulationDataEvent <- function(sim) {
   }
   names(grepPattrn) <- P(sim)$scenarios
 
+  ## make list of stacked rasters -- filters between start and end years
   rstCurrentFiresStkList <- sapply(grepPattrn,
                                    FUN = loadStackFromRDS,
                                    files = sim$rstCurrentFiresFiles,
+                                   startYear = P(sim)$startYear,
+                                   endYear = P(sim)$endYear,
                                    simplify = FALSE, USE.NAMES = TRUE)
 
   pixelGroupMapStkList <- sapply(grepPattrn,
                                  FUN = loadStackFromRDS,
                                  files = sim$pixelGroupMapFiles,
+                                 startYear = P(sim)$startYear,
+                                 endYear = P(sim)$endYear,
                                  simplify = FALSE, USE.NAMES = TRUE)
 
   vegTypeMapStkList <- sapply(grepPattrn,
                               FUN = loadStackFromRDS,
                               files = sim$vegTypeMapFiles,
+                              startYear = P(sim)$startYear,
+                              endYear = P(sim)$endYear,
                               simplify = FALSE, USE.NAMES = TRUE)
 
 
-  ## pixelCohortData tables
+  ## pixelCohortData tables -- filters between start and end years and yearSubset
   pixelCohortDataList <- mapply(FUN = loadCohortDataFromRDS,
                                 x = grepPattrn,
                                 pixelGroupMapStk = pixelGroupMapStkList,
                                 MoreArgs = list(files = sim$cohortDataFiles,
-                                                yearSubset = P(sim)$yearSubset),
+                                                yearSubset = P(sim)$yearSubset,
+                                                startYear = P(sim)$startYear,
+                                                endYear = P(sim)$endYear),
                                 SIMPLIFY = FALSE, USE.NAMES = TRUE)
 
-  ## vegTypeData tables
+  ## vegTypeData tables -- filters to yearSubset
   vegTypeDataList <- mapply(FUN = vegTypeDataFromStks,
                             vegTypeMapStk = vegTypeMapStkList,
                             pixelGroupMapStk = pixelGroupMapStkList,
@@ -184,14 +193,18 @@ loadSimulationDataEvent <- function(sim) {
   pixelBurnDataList <- sapply(rstCurrentFiresStkList,
                               FUN = pixelBurnDataFromStks,
                               simplify = FALSE, USE.NAMES = TRUE)
-  ## add scenario column when binding
-  allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
-  allPixelBurnData <- allPixelBurnData[fireID != "NA"]
 
-  ## severityData tables
+  ## add scenario column when binding
+  ## exclude NAs early to save memory when binding
+  pixelBurnDataList <- lapply(pixelBurnDataList, function(allPixelBurnData) allPixelBurnData[fireID != "NA"])
+  allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
+
+  ## severityData tables -- filters between start and end years
   severityDataList <- sapply(grepPattrn,
                              FUN = loadSeverityDataFromRDS,
                              files = sim$severityDataFiles,
+                             startYear = P(sim)$startYear,
+                             endYear = P(sim)$endYear,
                              simplify = FALSE, USE.NAMES = TRUE)
   ## add scenario column when binding
   allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)

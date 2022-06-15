@@ -2,8 +2,15 @@
 #'
 #' @param x the pattern of file name to be matched
 #' @param files the vector of all file names to be searched
+#' @param startYear first year of the data, data files with an earlier year
+#'   will be excluded
+#' @param endYear last year of the data, data files with a later year
+#'   will be excluded
 
-loadStackFromRDS <- function(x, files) {
+loadStackFromRDS <- function(x, files, startYear, endYear) {
+  filesYrs <- as.integer(sub(".*year", "",  sub(".rds", "", files)))
+  files <- files[filesYrs >= startYear & filesYrs <= endYear]
+
   stk <- lapply(grep(x, files, value = TRUE), readRDS) %>%
     stack(.)
   names(stk) <- renameFromFilenames(x, files)
@@ -16,10 +23,23 @@ loadStackFromRDS <- function(x, files) {
 #' @param files the vector of all file names to be searched
 #' @param pixelGroupMapStkList list of matching stacks of \code{pixelGroupMap}s
 #'    List names must match \code{x}
+#' @param startYear first year of the data, data files with an earlier year
+#'   will be excluded
+#' @param endYear last year of the data, data files with a later year
+#'   will be excluded
 #' @param yearSubset vector of years to subset
 
-loadCohortDataFromRDS <- function(x, files, pixelGroupMapStk, yearSubset = NULL) {
+loadCohortDataFromRDS <- function(x, files, pixelGroupMapStk, startYear, endYear, yearSubset = NULL) {
   files <- grep(x, files, value = TRUE)
+
+  filesYrs <- as.integer(sub(".*year", "",  sub(".rds", "", files)))
+  files <- files[filesYrs >= startYear & filesYrs <= endYear]
+
+  ## now subset to chosen years if need be
+  if (!is.null(yearSubset)) {
+    filesYrs <- as.integer(sub(".*year", "",  sub(".rds", "", files)))
+    files <- files[filesYrs %in% yearSubset]
+  }
 
   pixelCohortData <- lapply(files, FUN = function(ff, pixelGroupMapStk) {
     cohortData <- readRDS(ff)
@@ -39,10 +59,6 @@ loadCohortDataFromRDS <- function(x, files, pixelGroupMapStk, yearSubset = NULL)
     return(cohortData)
   }, pixelGroupMapStk = pixelGroupMapStk) %>%
     rbindlist(fill = TRUE, l = .)
-
-  if (!is.null(yearSubset)) {
-    pixelCohortData <- pixelCohortData[year %in% yearSubset]
-  }
 
   return(pixelCohortData)
 }
@@ -112,9 +128,17 @@ pixelBurnDataFromStks <- function(rstCurrentFiresStk) {
 #'
 #' @param x the pattern of file name to be matched
 #' @param files the vector of all file names to be searched
+#' @param startYear first year of the data, data files with an earlier year
+#'   will be excluded
+#' @param endYear last year of the data, data files with a later year
+#'   will be excluded
 
-loadSeverityDataFromRDS <- function(x, files) {
+
+loadSeverityDataFromRDS <- function(x, files, startYear, endYear) {
   files <- grep(x, files, value = TRUE)
+
+  filesYrs <- as.integer(sub(".*year", "",  sub(".rds", "", files)))
+  files <- files[filesYrs >= startYear & filesYrs <= endYear]
 
   severityData <- lapply(files, FUN = function(ff) {
     severityData <- readRDS(ff)
