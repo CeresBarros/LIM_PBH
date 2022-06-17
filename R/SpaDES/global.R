@@ -47,20 +47,30 @@ if (FALSE) {
 # devtools::install_local("../LandR/", force = TRUE)
 # devtools::install_github("ianmseddy/PSPclean@development")
 
-Require::Require("PredictiveEcology/SpaDES.install@development (>= 0.0.7.9000)")
+Require::Require("PredictiveEcology/SpaDES.install@development", install = "force")
 
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
+
+Require::Require(c("PredictiveEcology/reproducible@development (>= 1.2.9)",
+                   "PredictiveEcology/SpaDES.core@development (>= 1.0.10.9015)"
+),
+require = FALSE)
 
 Require::Require(c("SpaDES",
                    "raster",
                    "data.table",
                    "CeresBarros/ToolsCB",
                    "PredictiveEcology/SpaDES.experiment",
-                   "CeresBarros/LandR@LANDISinitialB (>= 1.0.7.9016)",
+                   # "CeresBarros/LandR@LANDISinitialB (>= 1.0.7.9017)",
                    "PredictiveEcology/reproducible",
                    "future"
 ),
 upgrade = FALSE)
+
+## workaround, Require not happy
+if (packageVersion("LandR") < numeric_version("1.0.7.9017")) {
+  devtools::install_github("CeresBarros/LandR@a58f893ed56ea5f35dbd8676c8e61ea1d2137469")
+}
 
 options("reproducible.useNewDigestAlgorithm" = 2,
         "spades.moduleCodeChecks" = FALSE,
