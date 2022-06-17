@@ -18,6 +18,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.md", "LIM_resultsDataPrep.Rmd")), ## same file
   reqdPkgs = list("data.table", "raster",
+                  "reproducible",
                   "PredictiveEcology/LandR@development",
                   "future", "future.apply", "dplyr",
                   "CeresBarros/ToolsCB", "crayon"),
