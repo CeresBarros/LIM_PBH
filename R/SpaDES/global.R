@@ -182,6 +182,10 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 # plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
+opts <- options(spades.useRequire = FALSE)
+spades(LIM_simInitList[["noPM"]], debug = "print(table(sim$rstCurrentFires[]))")
+options(opts)
+
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
