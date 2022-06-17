@@ -102,8 +102,8 @@ data.table::setDTthreads(threads = 1)
 # runName <- "noPM_newSppParams"
 runName <- c("noPM", "PM")
 
-# eventCaching <- c(".inputObjects", "init")
-eventCaching <- NULL ## there's a bug
+eventCaching <- c(".inputObjects", "init")
+# eventCaching <- NULL ## there's a bug
 useParallel <- FALSE
 
 ## paths define simulation paths
