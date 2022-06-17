@@ -48,8 +48,8 @@ if (mergePSME) {
 dir.create(figOutputPath, recursive = TRUE)
 
 ## LOAD DATA (RESULTS)  ---------------------
-source("R/SpaDES/6_resultsDataPrep.R")
 yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
+source("R/SpaDES/simResultsDataPrep.R")
 
 
 ## PREP FIRE AND VEG DATA -------------------
