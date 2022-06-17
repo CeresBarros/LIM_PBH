@@ -197,14 +197,13 @@ vegPCA <- vegDataForHVs[, ..cols] %>%
 vegHVdata <- as.data.table(vegPCA$HVpoints)
 vegHVdata <- cbind(vegHVdata, vegDataForHVs[, .(scenario, rep, year, pixelIndex, vegTypeCN)])
 
-if (mergeDMCPSME) {  ## only do the the merged vegTypes
-  vegHVdata <- vegHVdata[vegTypeCN == "DMCPSME" & year %in% c(start(preSimList), end(preSimList))]
-} else {
-  if (mergePSME) {  ## only do the the merged vegTypes
-    vegHVdata <- vegHVdata[vegTypeCN == "PSME" & year %in% c(start(preSimList), end(preSimList))]
-  } else {
-    vegHVdata <- vegHVdata[year %in% c(start(preSimList), end(preSimList))]
-  }
+## subset to first/last years
+vegHVdata <- vegHVdata[year %in% c(min(yearSubset), max(yearSubset))]
+if (mergeDMCPSME & doMergedOnly) {  ## only do the the merged vegTypes
+  vegHVdata <- vegHVdata[vegTypeCN == "DMCPSME"]
+}
+if (mergePSME & doMergedOnly) {  ## only do the the merged vegTypes
+  vegHVdata <- vegHVdata[vegTypeCN == "PSME"]
 }
 
 
