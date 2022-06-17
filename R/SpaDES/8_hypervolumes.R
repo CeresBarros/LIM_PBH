@@ -35,6 +35,7 @@ source("R/SpaDES/6_resultsDataPrep.R")
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
 mergePSME <- TRUE ## merge PSME dryPSME
+doMergedOnly <- FALSE ## should HVs only be calculated for the merged veg types?
 options("LandR.assertions" = TRUE)
 if (mergeDMCPSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
@@ -78,11 +79,11 @@ fireHVdata <- cbind(fireHVdata, summaryFireAttributes[, .(scenario, rep, pixelIn
 
 ## Hypervolumes by vegetation type ----------
 ## only montane belt
-if (mergeDMCPSME) {
+if (mergeDMCPSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "DMCPSME"]
 }
 
-if (mergePSME) {
+if (mergePSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "PSME"]
 }
 
