@@ -1,6 +1,6 @@
 ## --------------------------------------------------
 ##  FINDING DIFFERENCES IN INPUTS AND PARAMETERS
-##  bETWEEN SCENARIOS
+##  BETWEEN SCENARIOS
 ## --------------------------------------------------
 
 library(SpaDES)

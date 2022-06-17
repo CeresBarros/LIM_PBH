@@ -88,7 +88,7 @@ if (mergePSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "PSME"]
 }
 
-doAll <- FALSE
+doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
@@ -131,7 +131,7 @@ lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
 
 ## Hypervolumes across the landscape ----------------
 ## only montane belt
-doAll <- FALSE
+doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
