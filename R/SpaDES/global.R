@@ -52,7 +52,8 @@ Require::Require("PredictiveEcology/SpaDES.install@development", install = "forc
 SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")
 
 Require::Require(c("PredictiveEcology/reproducible@development (>= 1.2.9)",
-                   "PredictiveEcology/SpaDES.core@development (>= 1.0.10.9015)"
+                   "PredictiveEcology/SpaDES.core@development (>= 1.0.10.9015)",
+                   "CeresBarros/SpaDES.tools@spread2maxSize"
 ),
 require = FALSE)
 
