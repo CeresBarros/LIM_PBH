@@ -173,10 +173,19 @@ names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simLi
 LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
-# end(LIM_simInitList[[1]]) <- 2025
-# end(LIM_simInitList[[2]]) <- 2025
-# simOut1 <- spades(LIM_simInitList[["noPM"]])
-# simOut2 <- spades(LIM_simInitList[["PM"]])
+end(LIM_simInitList[[1]]) <- 2111
+end(LIM_simInitList[[2]]) <- 2111
+
+## schedule final plots to new end
+LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
+  sim <- scheduleEvent(sim, end(sim),
+                       "Biomass_core", "plotSummaryBySpecies", eventPriority = 9.00)
+  sim <- scheduleEvent(sim, end(sim),
+                       "Biomass_core", "plotAvgs", eventPriority = 9.00 + 0.5)
+})
+
+simOut1 <- spades(LIM_simInitList[["noPM"]])
+simOut2 <- spades(LIM_simInitList[["PM"]])
 
 # saveSimList(simOut1, filename = file.path(simPaths$outputPath, "noPM", "simOut1.qs"))
 # saveSimList(simOut2, filename = file.path(simPaths$outputPath, "PM", "simOut2.qs"))
@@ -184,7 +193,7 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 # plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
 opts <- options(spades.useRequire = FALSE)
-spades(LIM_simInitList[["noPM"]], debug = "print(table(sim$rstCurrentFires[]))")
+spades(LIM_simInitList[["noPM"]])
 options(opts)
 
 ## -----------------------------------------------
