@@ -176,6 +176,9 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 end(LIM_simInitList[[1]]) <- 2111
 end(LIM_simInitList[[2]]) <- 2111
 
+## try increasing max spread to simulate a greater spread of fire sizes
+P(LIM_simInitList$noPM, "spreadProbRange", "FavierFireSpread") <- c(0.20, 0.26)
+
 ## schedule final plots to new end
 LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
   sim <- scheduleEvent(sim, end(sim),
@@ -185,7 +188,9 @@ LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
 })
 
 simOut1 <- spades(LIM_simInitList[["noPM"]])
+restartSpades()
 simOut2 <- spades(LIM_simInitList[["PM"]])
+restartSpades()
 
 # saveSimList(simOut1, filename = file.path(simPaths$outputPath, "noPM", "simOut1.qs"))
 # saveSimList(simOut2, filename = file.path(simPaths$outputPath, "PM", "simOut2.qs"))
