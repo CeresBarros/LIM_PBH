@@ -44,7 +44,8 @@ if (FALSE) {
   # Require::Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
 }
 
-# devtools::install_local("../LandR/", force = TRUE)
+# devtools::install_local("../SpaDES.core/", force = TRUE)
+# devtools::install_local("../SpaDES.tools/", force = TRUE)
 # devtools::install_github("ianmseddy/PSPclean@development")
 
 Require::Require("PredictiveEcology/SpaDES.install@development", install = "force")

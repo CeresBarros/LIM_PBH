@@ -20,14 +20,14 @@ fireWeatherParameters <- list(
   )
 )
 
-simOutFireWeather <- Cache(simInitAndSpades
-                           , times = list(start = 0, end = 1)
-                           , params = fireWeatherParameters
-                           , modules = "fireWeather"
-                           , paths = fireWeatherPaths
-                           , debug = TRUE
-                           , .plots = NA
-                           , cacheRepo = fireWeatherPaths$cachePath
-                           , userTags = "simInitFireWeather"
-                           , omitArgs = c("userTags"))
-# simOutFireWeather <- loadFromCache(fireWeatherPaths$cachePath, cacheId = "02b3b3bdc01abbd5")
+# simOutFireWeather <- Cache(simInitAndSpades
+#                            , times = list(start = 0, end = 1)
+#                            , params = fireWeatherParameters
+#                            , modules = "fireWeather"
+#                            , paths = fireWeatherPaths
+#                            , debug = TRUE
+#                            , .plots = NA
+#                            , cacheRepo = fireWeatherPaths$cachePath
+#                            , userTags = "simInitFireWeather"
+#                            , omitArgs = c("userTags"))
+simOutFireWeather <- loadFromCache(fireWeatherPaths$cachePath, cacheId = "02b3b3bdc01abbd5")
