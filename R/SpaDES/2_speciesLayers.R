@@ -19,7 +19,7 @@ speciesParameters <- list(
     "dataYear" = 2011L
     , "types" = c("KNN", "CASFRI", "ForestInventory")   ## Pickell has no data here having errors with the other two. extents and NA data.
     , "sppEquivCol" = sppEquivCol
-    , ".useCache" = c(".inputObjects", "init")
+    , ".useCache" = eventCaching
   )
 )
 
