@@ -135,7 +135,7 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 # ## Get necessary objects -----------------------
 # source("R/SpaDES/1_simObjects.R")
 #
-# ## Run Biomass_speciesData to get species layers
+# # ## Run Biomass_speciesData to get species layers
 # source("R/SpaDES/2_speciesLayers.R")
 #
 # ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
@@ -165,42 +165,46 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 # fireInitialTime <- simTimes$start + 5L
 # fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 # successionTimestep <- 10L
-
-# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
-# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+#
+# # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
+# # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+# opts <- options("spades.useRequire" = FALSE)
 # source("R/SpaDES/4_preSimulation.R")
+# options(opts)
 simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
 names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
 LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
-end(LIM_simInitList[[1]]) <- 2111
-end(LIM_simInitList[[2]]) <- 2111
+# end(LIM_simInitList[[1]]) <- 2111
+# end(LIM_simInitList[[2]]) <- 2111
 
 ## try increasing max spread to simulate a greater spread of fire sizes
-P(LIM_simInitList$noPM, "spreadProbRange", "FavierFireSpread") <- c(0.20, 0.26)
+# P(LIM_simInitList$noPM, "spreadProbRange", "FavierFireSpread") <- c(0.23, 0.26)
+# P(LIM_simInitList$PM, "spreadProbRange", "FavierFireSpread") <- c(0.23, 0.25)
 
-## schedule final plots to new end
-LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
-  sim <- scheduleEvent(sim, end(sim),
-                       "Biomass_core", "plotSummaryBySpecies", eventPriority = 9.00)
-  sim <- scheduleEvent(sim, end(sim),
-                       "Biomass_core", "plotAvgs", eventPriority = 9.00 + 0.5)
-})
+# ## schedule final plots to new end
+# LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
+#   sim <- scheduleEvent(sim, end(sim),
+#                        "Biomass_core", "plotSummaryBySpecies", eventPriority = 9.00)
+#   sim <- scheduleEvent(sim, end(sim),
+#                        "Biomass_core", "plotAvgs", eventPriority = 9.00 + 0.5)
+# })
+#
+# opts <- options(spades.useRequire = FALSE)
+# simOut1 <- spades(LIM_simInitList[["noPM"]])
+# simOut2 <- spades(LIM_simInitList[["PM"]])
+# options(opts)
 
-simOut1 <- spades(LIM_simInitList[["noPM"]])
-restartSpades()
-simOut2 <- spades(LIM_simInitList[["PM"]])
-restartSpades()
 
 # saveSimList(simOut1, filename = file.path(simPaths$outputPath, "noPM", "simOut1.qs"))
 # saveSimList(simOut2, filename = file.path(simPaths$outputPath, "PM", "simOut2.qs"))
 
 # plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
-opts <- options(spades.useRequire = FALSE)
-spades(LIM_simInitList[["noPM"]])
-options(opts)
+# opts <- options(spades.useRequire = FALSE)
+# spades(LIM_simInitList[["noPM"]])
+# options(opts)
 
 ## -----------------------------------------------
 ## SIMULATION RUN
@@ -208,8 +212,8 @@ options(opts)
 # graphics.off()
 
 ## clean unnecessary simLists
-rm(simOutSpeciesLayers, simOutFireWeather);
-gc()
+# rm(simOutSpeciesLayers, simOutFireWeather);
+# gc()
 
 ## using experiment:
 ## multicore no longer available from RStudio
@@ -224,7 +228,7 @@ clearSimEnv <- TRUE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
-                                replicates = 10,
+                                replicates = 1,
                                 useCache = FALSE)
 future:::ClusterRegistry("stop")
 
