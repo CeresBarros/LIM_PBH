@@ -220,6 +220,7 @@ plan("multicore", workers = 5)   ## add interactive check for this one/
 # end(LIM_simInitList[["noPM"]]) <- 2025
 # out <- future_replicate(2, spades(LIM_simInitList[["noPM"]], .saveInitialTime = NA))  ## no errors
 
+opts <- options("spades.useRequire" = FALSE)
 clearSimEnv <- TRUE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
@@ -227,6 +228,7 @@ simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 replicates = 1,
                                 useCache = FALSE)
 future:::ClusterRegistry("stop")
+options(opts)
 
 ## save simLists object.
 if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
