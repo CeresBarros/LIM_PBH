@@ -46,11 +46,11 @@ if (FALSE) {
 Require::Require("PredictiveEcology/SpaDES.install@development")
 
 # SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")   ## not happy with LandR
-# devtools::install_github("ianmseddy/PSPclean@development")
 
 Require::Require(c("PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd",
                    "PredictiveEcology/SpaDES.core@f9be1102974147aa17b054b690e4446209c0b4d6",
-                   "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752"
+                   "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752",
+                   "ianmseddy/PSPclean@development"
 ),
 require = FALSE)
 
