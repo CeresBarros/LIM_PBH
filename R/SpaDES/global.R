@@ -58,20 +58,20 @@ Require::Require(c("PredictiveEcology/reproducible@development (>= 1.2.9)",
 ),
 require = FALSE)
 
-Require::Require(c("SpaDES",
-                   "raster",
+Require::Require(c("raster",
+                   "SpaDES",
                    "data.table",
                    "CeresBarros/ToolsCB",
                    "PredictiveEcology/SpaDES.experiment",
-                   # "CeresBarros/LandR@LANDISinitialB (>= 1.0.7.9017)",
+                   # "CeresBarros/LandR@developmentCeres (>= 1.0.7.9017)",  ## workaround below
                    "PredictiveEcology/reproducible",
                    "future"
 ),
 upgrade = FALSE)
 
 ## workaround, Require not happy
-if (packageVersion("LandR") < numeric_version("1.0.7.9017")) {
-  devtools::install_github("CeresBarros/LandR@a58f893ed56ea5f35dbd8676c8e61ea1d2137469")
+if (packageVersion("LandR") < numeric_version("1.0.7.9022")) {
+  devtools::install_github("CeresBarros/LandR@developmentCeres")
 }
 
 options("reproducible.useNewDigestAlgorithm" = 2,
