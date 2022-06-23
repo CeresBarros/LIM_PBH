@@ -163,7 +163,8 @@ simParams <- list(
     "fireInitialTime" = fireInitialTime
     , "fireTimestep" = fireTimestep
     , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
-    , "spreadProbRange" = c(0.20, 0.25)
+    # , "spreadProbRange" = c(0.20, 0.25)   ## over-estimated small fires and under estimated medium/large
+    , "spreadProbRange" = c(0.23, 0.25)     ## better alignment with fire size distributions -- see playing with spreadProb.pptx
     , ".plots" = NA
   )
 )
