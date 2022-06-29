@@ -150,12 +150,12 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 ## Prepare fire weather tables --------------------
 # source("R/SpaDES/3_fireWeather.R")
-#
-# ## Run more data prep -----------------------------
-# # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
-# ## to prepare objects for simulation and FireSense ignition/fire frquency fits
-# ## Define simulation params
-# simTimes <- list(start = 2011L, end = 2611L)
+
+## Run more data prep -----------------------------
+# Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
+## to prepare objects for simulation and FireSense ignition/fire frquency fits
+## Define simulation params
+# simTimes <- list(start = 2011L, end = 4011L)   ## capture several cycles of Doug-fir dynamics
 # vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
 # # If all are below this, then it is a "mixed" stand
 # fireInitialTime <- simTimes$start + 5L
@@ -217,15 +217,21 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 plan("multicore", workers = 5)   ## add interactive check for this one/
 # plan("sequential")
 
-# end(LIM_simInitList[["noPM"]]) <- 2025
-# out <- future_replicate(2, spades(LIM_simInitList[["noPM"]], .saveInitialTime = NA))  ## no errors
+# opts <- options("spades.useRequire" = FALSE)
+# out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
+# future:::ClusterRegistry("stop")
+# options(opts)
+#
+# opts <- options("spades.useRequire" = FALSE)
+# out2 <- spades(LIM_simInitList[["PM"]], .saveInitialTime = NA)
+# options(opts)
 
 opts <- options("spades.useRequire" = FALSE)
 clearSimEnv <- TRUE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
-                                replicates = 1,
+                                replicates = 5,
                                 useCache = FALSE)
 future:::ClusterRegistry("stop")
 options(opts)
