@@ -141,10 +141,10 @@ simParams <- list(
     , ".plots" = NA
   )
   , fireSense_IgnitionFit = list(
-    "fireSense_ignitionFormula" = paste0("n_fires ~ coniferous:meanMDC + D2:meanMDC +
-                          M2:meanMDC + O1b:meanMDC + NF:meanMDC +
-                          coniferous:pw(meanMDC, k_conif) + D2:pw(meanMDC, k_D2) +
-                          M2:pw(meanMDC, k_M2) + O1b:pw(meanMDC, k_O1b) + NF:pw(meanMDC, k_NF) - 1")
+    "fireSense_ignitionFormula" = paste("n_fires ~ coniferous:meanMDC + D2:meanMDC +",
+                                        "M2:meanMDC + O1b:meanMDC + NF:meanMDC +",
+                                        "coniferous:pw(meanMDC, k_conif) + D2:pw(meanMDC, k_D2) +",
+                                        "M2:pw(meanMDC, k_M2) + O1b:pw(meanMDC, k_O1b) + NF:pw(meanMDC, k_NF) - 1")
     , "lb" = list(coef = 0,
                   knots = list("meanMDC" = 19))   ## the rounded 5% quantile, pre scaling
     , "ub" = list(coef = 20,
