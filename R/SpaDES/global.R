@@ -233,7 +233,8 @@ simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
                                 replicates = 5,
-                                useCache = FALSE)
+                                useCache = FALSE,
+                                meanStaggerIntervalInSecs = 60)
 future:::ClusterRegistry("stop")
 options(opts)
 
