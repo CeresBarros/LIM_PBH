@@ -130,25 +130,25 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 # ## Get necessary objects -----------------------
 # source("R/SpaDES/1_simObjects.R")
-#
-# # ## Run Biomass_speciesData to get species layers
+
+# ## Run Biomass_speciesData to get species layers
 # source("R/SpaDES/2_speciesLayers.R")
-#
-# ## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
-# # plot(simOutSpeciesLayers$speciesLayers)
+
+## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
+# plot(simOutSpeciesLayers$speciesLayers)
 # keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
 #   propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(ras[]))
 #   propPres > 0.05  ## species need to be in at least 5% of the landscape
 # })
-#
+
 # keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
 # speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
 # sppEquivalencies_CA <- sppEquivalencies_CA[get(sppEquivCol) %in% keepSpp]
 # sppColorVect <- simOutSpeciesLayers$sppColorVect[keepSpp]
 # sppNameVector <- intersect(simOutSpeciesLayers$sppNameVector, names(sppColorVect))
-# # raster::plot(speciesLayers)
-#
-# ## Prepare fire weather tables --------------------
+# raster::plot(speciesLayers)
+
+## Prepare fire weather tables --------------------
 # source("R/SpaDES/3_fireWeather.R")
 #
 # ## Run more data prep -----------------------------
@@ -161,9 +161,9 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 # fireInitialTime <- simTimes$start + 5L
 # fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 # successionTimestep <- 10L
-#
-# # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
-# # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+
+# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
+# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
 # opts <- options("spades.useRequire" = FALSE)
 # source("R/SpaDES/4_preSimulation.R")
 # options(opts)
@@ -179,7 +179,7 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 # P(LIM_simInitList$noPM, "spreadProbRange", "FavierFireSpread") <- c(0.23, 0.26)
 # P(LIM_simInitList$PM, "spreadProbRange", "FavierFireSpread") <- c(0.23, 0.25)
 
-# ## schedule final plots to new end
+## schedule final plots to new end
 # LIM_simInitList <- lapply(LIM_simInitList, function(sim) {
 #   sim <- scheduleEvent(sim, end(sim),
 #                        "Biomass_core", "plotSummaryBySpecies", eventPriority = 9.00)
