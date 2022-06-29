@@ -155,6 +155,9 @@ simParams <- list(
     , "rescaleVars" = TRUE
     , "rescalers" = NULL
     , ".plots" = "png"
+    ## we need to set the seed to make sure all reps/scenarios have the same fitted values and coefs given that there is randomness in
+    ## the fitting process
+    , ".seed" = list("run" = 123)
   )
   , fireSense_IgnitionPredict = list(
     ".runInterval" = NA    ## only run once at the start
