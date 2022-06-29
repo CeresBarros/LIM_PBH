@@ -50,7 +50,8 @@ Require::Require("PredictiveEcology/SpaDES.install@development")
 Require::Require(c("PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd",
                    "CeresBarros/SpaDES.core@2e8b95b04cf6b93bc45796ddc8a55c8d1618432d",
                    "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752",
-                   "ianmseddy/PSPclean@development"
+                   "ianmseddy/PSPclean@development",
+                   "CeresBarros/SpaDES.experiment@c594ea3b4ede1a8949307b4197909453762111ec"
 ),
 require = FALSE)
 
