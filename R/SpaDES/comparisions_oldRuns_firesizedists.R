@@ -123,8 +123,10 @@ ggarrange(plot1, plot2, nrow = 1)
 # simInitMarch <- SpaDES.core::loadSimList("F:/LandscapesInMotion/R/SpaDES/R/SpaDES/outputs/mar2022Runs/noPM/LIM_simInit_noPM.qs")
 # firstYearB <- allCohortDataMarch[year == 2011]
 
-files <- list.files("R/SpaDES/outputs/mar2022Runs/noPM/", "rstCurrentFires", full.names = TRUE)
+# files <- list.files("R/SpaDES/outputs/mar2022Runs/noPM/", "rstCurrentFires", full.names = TRUE)
+# files <- list.files("R/SpaDES/outputs/mar2022Runs/noPM/noPM_rep1/", "rstCurrentFires", full.names = TRUE)
 # files <- list.files("R/SpaDES/outputs/mar2022Runs/PM/", "rstCurrentFires", full.names = TRUE)
+files <- list.files("R/SpaDES/outputs/mar2022Runs/PM/PM_rep1/", "rstCurrentFires", full.names = TRUE)
 files <- grep(paste("year", seq(2011, 2111, 1), sep = "", collapse = "|"), files, value = TRUE)
 
 rstCurrentFires <- stack(lapply(files, readRDS))
@@ -135,14 +137,14 @@ fireSizes <- lapply(unstack(rstCurrentFires), function(ras) {
   if (dim(tab)) {
     as.data.table(tab)
   } else NULL
-}) %>%
-  rbindlist(.)
+})
+fireSizes <- rbindlist(fireSizes)
 setnames(fireSizes, new = c("fireID", "noPixels"))
 
-fireRasterObs <- Cache(prepInputsFireYear,
+fireRasterObs <- Cache(LandR::prepInputsFireYear,
                        url = "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip",
                        destinationPath = simPaths$inputPath,
-                       rasterToMatch = LIM_simInitList$noPM$rasterToMatch,
+                       rasterToMatch = LIM_simInitList$PM$rasterToMatch,
                        maskWithRTM = TRUE,
                        method = "ngb",
                        datatype = "INT2U",
@@ -157,6 +159,6 @@ setnames(fireSizesObs, new = c("fireID", "noPixels"))
 
 allFireSizes <- rbindlist(list("simulated" = fireSizes, "observed" = fireSizesObs), idcol = TRUE)
 
-ggplot(allFireSizes, aes(x = noPixels, fill = .id)) +
-  geom_density(alpha = 0.5)
+ggplot2::ggplot(allFireSizes, ggplot2::aes(x = noPixels, fill = .id)) +
+  ggplot2::geom_density(alpha = 0.5)
 
