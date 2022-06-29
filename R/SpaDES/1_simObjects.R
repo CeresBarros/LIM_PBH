@@ -59,6 +59,7 @@ rasterToMatchLarge <- Cache(writeOutputs, rasterToMatchLarge,
                             filename2 = file.path(simPaths$cachePath, "rasters", "rasterToMatchLarge.tif"),
                             datatype = "INT2U", overwrite = TRUE,
                             userTags = c(cacheTags, "rasterToMatchLarge"),
+                            cacheRepo = simPaths$cachePath,
                             omitArgs = c("userTags"))
 
 ## and standAgeMap
@@ -72,6 +73,7 @@ standAgeMap <- Cache(LandR::prepInputsStandAgeMap,
                      fireURL = fireURL,
                      fireField = "YEAR",
                      startTime = 2011,
+                     cacheRepo = simPaths$cachePath,
                      userTags = c("prepInputsStandAge_rtm", cacheTags),
                      omitArgs = c("destinationPath", "targetFile", "overwrite",
                                   "alsoExtract", "userTags"))
