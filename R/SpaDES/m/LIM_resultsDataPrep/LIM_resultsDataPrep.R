@@ -144,7 +144,7 @@ loadSimulationDataEvent <- function(sim) {
   grepPattrn <- paste0("/", P(sim)$scenarios)
   if (all(!is.na(P(sim)$reps))) {
     reps <- P(sim)$reps
-    reps[reps < 10] <- paste0("0", reps[reps < 10])
+    reps[reps < 10] <- paste0("0?", reps[reps < 10])
     grepPattrn <- paste0(grepPattrn, "_",
                          "rep", "(", paste0(reps, collapse = "|"), ")/")
   }
@@ -557,7 +557,7 @@ addVegTypesCNEvent <- function(sim) {
   grepPattrn <- paste0(P(sim)$scenarios, collapse = "|")
   if (all(!is.na(P(sim)$reps))) {
     reps <- P(sim)$reps
-    reps[reps < 10] <- paste0("0", reps[reps < 10])
+    reps[reps < 10] <- paste0("0?", reps[reps < 10])
     grepPattrn <- paste0("/(", grepPattrn, ")", "_",
                          "rep", "(", paste0(reps, collapse = "|"), ")$")
   } else {
