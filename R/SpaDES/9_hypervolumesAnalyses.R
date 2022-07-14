@@ -59,9 +59,24 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 
 
 ## PREP FIRE AND VEG DATA -------------------
-yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
+yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
+runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
 source("R/R_tools/prepFireData4HVs.R")
+
+useFirstLastYear <- FALSE
+yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
+yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
+
+yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
+needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+while(any(needsNewSample$V1)) {
+  yearSamples[group %in% needsNewSample[which(V1), group], year2 := sample(year, 1), by = .(rep, group)]
+  needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+}
+yearSamples <- unique(yearSamples[,.(year2, rep)])
+setnames(yearSamples, "year2", "year")
+
 source("R/R_tools/prepVegData4HVs.R")
 
 ## don't need these
