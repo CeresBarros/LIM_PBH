@@ -41,19 +41,21 @@ if (getOption("LandR.assertions")) {
   if (any(test))
     stop("Different pixelIndex between scenario/rep/year combinations")
 
-  temp <- split(vegDataForHVs[year == min(yearSubset), .(vegTypeCN, pixelIndex, scenario, rep)],
-                by = c("scenario", "rep"), keep.by = FALSE)
-  temp <- lapply(temp, FUN = function(x) setkey(x, vegTypeCN, pixelIndex))
-  temppix <- lapply(temp, FUN = function(x) x[["pixelIndex"]])
-  tempveg <- lapply(temp, FUN = function(x) x[["vegTypeCN"]])
+  if (min(vegDataForHVs$year) == 2011) {
+    temp <- split(vegDataForHVs[year == min(yearSubset), .(vegTypeCN, pixelIndex, scenario, rep)],
+                  by = c("scenario", "rep"), keep.by = FALSE)
+    temp <- lapply(temp, FUN = function(x) setkey(x, vegTypeCN, pixelIndex))
+    temppix <- lapply(temp, FUN = function(x) x[["pixelIndex"]])
+    tempveg <- lapply(temp, FUN = function(x) x[["vegTypeCN"]])
 
-  test <- lapply(1:length(temppix), function(n) setdiff(temppix[[n]], unlist(temppix[-n])))
-  test2 <- lapply(1:length(tempveg), function(n) setdiff(tempveg[[n]], unlist(tempveg[-n])))
-  test <- sapply(test, length)
-  test2 <- sapply(test2, length)
+    test <- lapply(1:length(temppix), function(n) setdiff(temppix[[n]], unlist(temppix[-n])))
+    test2 <- lapply(1:length(tempveg), function(n) setdiff(tempveg[[n]], unlist(tempveg[-n])))
+    test <- sapply(test, length)
+    test2 <- sapply(test2, length)
 
-  if (any(test) | any(test2))
-    stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
+    if (any(test) | any(test2))
+      stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
+  }
 
   ## checks at landscape scale:
   pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
