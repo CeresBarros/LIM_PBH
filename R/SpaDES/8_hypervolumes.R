@@ -36,7 +36,7 @@ source("R/SpaDES/simResultsDataPrep.R")
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
 mergePSME <- TRUE ## merge PSME dryPSME
-doMergedOnly <- FALSE ## should HVs only be calculated for the merged veg types?
+doMergedOnly <- TRUE ## should HVs only be calculated for the merged veg types?
 options("LandR.assertions" = TRUE)
 if (mergeDMCPSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
@@ -58,7 +58,9 @@ source("R/R_tools/prepFireData4HVs.R")
 ## Global pyrodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
 ## hypervolume sizes can be compared across repetitions and forest types.
+
 summaryFireAttributes[, dummyHVid := paste(scenario, rep, vegTypeCN, sep = "_")]
+
 cols <- c("meanFreq", "meanSevB", "meanPatchS", "dummyHVid")
 firePCA <- summaryFireAttributes[, ..cols] %>%
   ToolsCB:::.scaleVars(., init.vars = c(1:3)) %>%
@@ -207,7 +209,7 @@ vegPCA <- vegDataForHVs[, ..cols] %>%
         datatable = .,
         HVidvar = 9,
         noAxes = 4,
-        plotOrdi = TRUE,
+        plotOrdi = FALSE,
         saveOrdiSumm = TRUE,
         saveOrdi = TRUE,   ## save actual PCA
         file.suffix = "vegHVs_FULLPCA",
