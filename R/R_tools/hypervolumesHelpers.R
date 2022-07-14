@@ -12,7 +12,7 @@ vegHVWrapper <- function(allData, HVcols, IDcols, HVIDcol, file.suffix, addNoise
   if (addNoise) {
     IDcols2 <- unique(c(HVIDcol, setdiff(IDcols, "pixelIndex")))
     needsNoise <- allData[, lapply(.SD, sd), .SDcols = HVcols, by = IDcols2]
-    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = HVcols, by = IDcols2]
+    needsNoise <- needsNoise[,  rowSums(.SD, na.rm = TRUE) == 0, .SDcols = HVcols, by = IDcols2]
 
     if (any(needsNoise$V1)) {
       tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
@@ -52,7 +52,7 @@ fireHVWrapper <- function(allData, cols, file.suffix, addNoise = TRUE, ...) {
   if (addNoise) {
     ## add noise to data if all dimensions have zero variance
     needsNoise <- allData[, lapply(.SD, sd), .SDcols = cols, by = .(scenario, rep)]
-    needsNoise <- needsNoise[,  rowSums(.SD) == 0, .SDcols = cols, by = .(scenario, rep)]
+    needsNoise <- needsNoise[,  rowSums(.SD, na.rm = TRUE) == 0, .SDcols = cols, by = .(scenario, rep)]
 
     if (any(needsNoise$V1)) {
       tempData <- allData[needsNoise[V1 == TRUE, .(scenario, rep)],
