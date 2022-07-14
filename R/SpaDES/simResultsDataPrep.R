@@ -19,7 +19,7 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = min(yearSubset),
                                                    "endYear" = max(yearSubset),
                                                    "parallel" = FALSE,
-                                                   "reps" = 1L:10L,
+                                                   "reps" = 1L:5L,
                                                    "yearSubset" = yearSubset,
                                                    ".useCache" = TRUE)) ## parsing error when caching
 
