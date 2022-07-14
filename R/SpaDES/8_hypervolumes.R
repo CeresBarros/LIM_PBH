@@ -193,7 +193,12 @@ source("R/R_tools/prepVegData4HVs.R")
 ## Global biodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
 ## hypervolume sizes can be compared across repetitions and forest types.
-vegDataForHVs[, dummyHVid := paste(scenario, rep, year, vegTypeCN, sep = "_")]
+
+## with 2000 yrs sims the sampled years from the last 500 years are integrated in a single
+## HV (per scenario, rep, vegtype)
+vegDataForHVs[, dummyHVid := ifelse(useFirstLastYear, paste(scenario, rep, year, vegTypeCN, sep = "_"),
+                                    paste(scenario, rep, vegTypeCN, sep = "_"))]
+
 cols <- setdiff(names(vegDataForHVs),
                 c("scenario", "rep", "year", "pixelIndex", "vegTypeCN"))
 vegPCA <- vegDataForHVs[, ..cols] %>%
@@ -235,40 +240,58 @@ vegHVdata <- vegHVdata[, ..cols]
 ## only montane belt
 
 ## HV comparisons per year, between scenarios --------------
-## note that splitting by veg type has to be done on the first
+## note that splitting by veg type has to be done on the last
 ## year as vegTypes can change (cannot use first fire year, because cohortData will have
 ## been impacted by fire already). Splitting is done by rep only
 ## as vegTypeCN/pixelIndex combos for the first year have to be
 ## identical between scenarios (tested above)
 ## gaussian HVs were extremely slow
-pixelIndexList <- split(unique(vegHVdata[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)]),
-                        by = c("rep", "vegTypeCN"), drop = TRUE)
 
-## check that there is only one vegType at the start year across scenarios
-test <- sapply(pixelIndexList,
-               FUN = function(pixelIndexDT, vegHVdata) {
-                 ## filter data to appropriate pixels, note that vegType may change in the second year
-                 allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
-                 unique(allData$vegTypeCN) == unique(pixelIndexDT$vegTypeCN)
+if (useFirstLastYear) {
+  pixelIndexList <- split(unique(vegHVdata[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)]),
+                          by = c("rep", "vegTypeCN"), drop = TRUE)
+  ## check that there is only one vegType at the start year across scenarios
+  ## not relevant when using last 500yrs of a 2000yrs simulation
+  test <- sapply(pixelIndexList,
+                 FUN = function(pixelIndexDT, vegHVdata) {
+                   ## filter data to appropriate pixels, note that vegType may change in the second year
+                   allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+                   unique(allData$vegTypeCN) == unique(pixelIndexDT$vegTypeCN)
 
-               }, vegHVdata = vegHVdata[year == min(yearSubset)])
-if (any(!test)) stop("different veg types at start year fround across scenarios.")
+                 }, vegHVdata = vegHVdata[year == min(yearSubset)])
+  if (any(!test)) stop("different veg types at start year fround across scenarios.")
+} else {
+  ## the last year may no longer be 4011
+  pixelIndexList <- vegHVdata[, list(year = max(year)), .(rep)]
+  pixelIndexList <- unique(vegHVdata[pixelIndexList, on = .(rep, year)][, .(rep, vegTypeCN, pixelIndex)])
+  pixelIndexList <- split(pixelIndexList, by = c("rep", "vegTypeCN"), drop = TRUE)
+}
 
 doAll <- FALSE
 lapply(pixelIndexList,
-       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
+       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll, useFirstLastYear) {
          r <- unique(pixelIndexDT$rep)
          veg <- unique(pixelIndexDT$vegTypeCN)
 
          ## filter data to appropriate pixels, note that vegType may change in the second year
          allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-         ## now split by year to calculate and compare hypervolumes between
-         ## scenarios for each year
+         if (!useFirstLastYear) {
+           allData[, year := NA_integer_] ## don't need year anymore, all will be integrated
+         }
+
+         # if necessary split by year to calculate and compare hypervolumes between
+         # scenarios for each year
+         # not relevant when using last 500yrs of a 2000yrs simulation
          lapply(split(allData, by = "year"),
                 FUN = function(allData, HVoutputPath, r, veg, doAll) {
                   yr <- unique(allData$year)
-                  file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
+                  if (!is.na(yr)) {
+                    file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
+                  } else {
+                    file.suffix <- paste0("vegHVs_", veg, "_rep", r)
+                  }
+
                   IDcols <- c("scenario", "rep", "pixelIndex")
 
                   no.runs <- 3
@@ -307,7 +330,8 @@ lapply(pixelIndexList,
                                  verbose = FALSE)
                   }
                 }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
-       }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
+       },
+       vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
 
 
 ## HV comparisons per scenario, between years --------------
@@ -376,12 +400,27 @@ lapply(pixelIndexList,
 ## HV comparisons per year, between scenarios --------------
 ## split by year and rep to calculate and compare hypervolumes between
 ## scenarios for each year
+
+## year split not relevant when using last 500yrs of a 2000yrs simulation
+
 doAll <- FALSE
-lapply(split(vegHVdata, by = c("rep", "year")),
-       FUN = function(allData, HVoutputPath, doAll) {
+lapply(ifelse(useFirstLastYear,
+              split(vegHVdata, by = c("rep", "year")),
+              split(vegHVdata, by = c("rep"))),
+       FUN = function(allData, HVoutputPath, doAll, useFirstLastYear) {
          r <- unique(allData$rep)
+
+         if (!useFirstLastYear) {
+           allData[, year := NA_integer_]
+         }
+
          yr <- unique(allData$year)
-         file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
+         if (!is.na(yr)) {
+           file.suffix <- paste0("vegHVs_landscape", "_yr", yr, "_rep", r)
+         } else {
+           file.suffix <- paste0("vegHVs_landscape", "_rep", r)
+         }
+
          IDcols <- c("scenario", "rep", "pixelIndex")
          no.runs <- 3
          skip <- FALSE
@@ -419,7 +458,7 @@ lapply(split(vegHVdata, by = c("rep", "year")),
                         plotHV = TRUE,
                         verbose = FALSE)
          }
-       }, HVoutputPath = HVoutputPath, doAll = doAll)
+       }, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
 
 
 ## HV comparisons per scenario, between years --------------
