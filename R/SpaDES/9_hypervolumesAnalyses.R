@@ -17,11 +17,12 @@ library(ToolsCB)
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
 source("R/R_tools/glhtMethods.R")
-options("reproducible.useNewDigestAlgorithm" = 2)
-options("spades.moduleCodeChecks" = FALSE)
-options("reproducible.useCache" = TRUE)
-options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
-options("reproducible.useGDAL" = FALSE)
+options("reproducible.useNewDigestAlgorithm" = 2
+        , "spades.moduleCodeChecks" = FALSE
+        , "reproducible.useCache" = TRUE
+        , "reproducible.destinationPath" = normPath("R/SpaDES/inputs")
+        , "reproducible.useGDAL" = FALSE
+        , "LandR.assertions" = TRUE)
 
 ## general paths
 # simDirName <- "jun2021Runs"
