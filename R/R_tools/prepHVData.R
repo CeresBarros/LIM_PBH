@@ -3,12 +3,14 @@
 allFiles <- list.files(HVoutputPath, "Intersection.*.rds", full.names = TRUE)
 if (mergeDMCPSME) {
   allFiles <- grep("_DMCPSME_|_PSME_|_dryPSME_", allFiles, value = TRUE, invert = TRUE) ## remove HV for vegTypes that were merged
-  allFiles <- c(allFiles, list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE)) ## add HV for merged vegType
+  allFiles <- c(allFiles,
+                grep("_PSME_", list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE), value = TRUE)) ## add HV for merged vegType
 }
 
 if (mergePSME) {
   allFiles <- grep("_PSME_|_dryPSME_", allFiles, value = TRUE, invert = TRUE) ## remove HV for vegTypes that were merged
-  allFiles <- c(allFiles, list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE)) ## add HV for merged vegType
+  allFiles <- c(allFiles,
+                grep("_PSME_", list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE), value = TRUE)) ## add HV for merged vegType
 }
 
 
