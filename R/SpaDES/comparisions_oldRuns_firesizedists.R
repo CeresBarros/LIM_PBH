@@ -127,7 +127,7 @@ ggarrange(plot1, plot2, nrow = 1)
 # files <- list.files("R/SpaDES/outputs/mar2022Runs/noPM/noPM_rep1/", "rstCurrentFires", full.names = TRUE)
 # files <- list.files("R/SpaDES/outputs/mar2022Runs/PM/", "rstCurrentFires", full.names = TRUE)
 files <- list.files("R/SpaDES/outputs/mar2022Runs/PM/PM_rep1/", "rstCurrentFires", full.names = TRUE)
-files <- grep(paste("year", seq(2011, 2111, 1), sep = "", collapse = "|"), files, value = TRUE)
+# files <- grep(paste("year", seq(2011, 2111, 1), sep = "", collapse = "|"), files, value = TRUE)
 
 rstCurrentFires <- stack(lapply(files, readRDS))
 names(rstCurrentFires) <- sub("\\.rds", "", sub(".*year", "", files))
@@ -141,19 +141,19 @@ fireSizes <- lapply(unstack(rstCurrentFires), function(ras) {
 fireSizes <- rbindlist(fireSizes)
 setnames(fireSizes, new = c("fireID", "noPixels"))
 
-fireRasterObs <- Cache(LandR::prepInputsFireYear,
-                       url = "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip",
-                       destinationPath = simPaths$inputPath,
-                       rasterToMatch = LIM_simInitList$PM$rasterToMatch,
-                       maskWithRTM = TRUE,
-                       method = "ngb",
-                       datatype = "INT2U",
-                       filename2 = NULL,
-                       fireField = "CFS_REF_ID",
-                       earliestYear = 1,
-                       fun = "sf::st_read",
-                       userTags = c("FavierFireSpread", "function:.inputObjects"),
-                       omitArgs = c("destinationPath", "targetFile", "userTags"))
+fireRasterObs <- reproducible::Cache(LandR::prepInputsFireYear,
+                                     url = "https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_poly/current_version/NFDB_poly.zip",
+                                     destinationPath = simPaths$inputPath,
+                                     rasterToMatch = LIM_simInitList$PM$rasterToMatch,
+                                     maskWithRTM = TRUE,
+                                     method = "ngb",
+                                     datatype = "INT2U",
+                                     filename2 = NULL,
+                                     fireField = "CFS_REF_ID",
+                                     earliestYear = 1,
+                                     fun = "sf::st_read",
+                                     userTags = c("FavierFireSpread", "function:.inputObjects"),
+                                     omitArgs = c("destinationPath", "targetFile", "userTags"))
 fireSizesObs <- as.data.table(table(fireRasterObs[]))
 setnames(fireSizesObs, new = c("fireID", "noPixels"))
 
