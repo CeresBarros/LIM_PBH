@@ -336,61 +336,64 @@ lapply(pixelIndexList,
 
 ## HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
-doAll <- FALSE
-lapply(pixelIndexList,
-       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
-         r <- unique(pixelIndexDT$rep)
-         veg <- unique(pixelIndexDT$vegTypeCN)
 
-         ## filter data to appropriate pixels, note that vegType may change in the second year
-         allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+## not relevant when using last 500yrs of a 2000yrs simulation
+if (useFirstLastYear) {
+  doAll <- FALSE
+  lapply(pixelIndexList,
+         FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
+           r <- unique(pixelIndexDT$rep)
+           veg <- unique(pixelIndexDT$vegTypeCN)
 
-         ## now split by scenario to calculate and compare hypervolumes between
-         ## years for each scenario
-         lapply(split(allData, by = "scenario"),
-                FUN = function(allData, HVoutputPath, r, veg, doAll) {
-                  scen <- unique(allData$scenario)
-                  file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
-                  IDcols <- c("year", "rep", "pixelIndex")
+           ## filter data to appropriate pixels, note that vegType may change in the second year
+           allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-                  no.runs <- 3
-                  skip <- FALSE
-                  if (!doAll) {
-                    ## check if all HV intersections were computed already
-                    computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
-                                            list.files(HVoutputPath), value = TRUE)
-                    if (length(computedHVpairs) == no.runs) {
-                      skip <- TRUE
+           ## now split by scenario to calculate and compare hypervolumes between
+           ## years for each scenario
+           lapply(split(allData, by = "scenario"),
+                  FUN = function(allData, HVoutputPath, r, veg, doAll) {
+                    scen <- unique(allData$scenario)
+                    file.suffix <- paste0("vegHVs_", veg, "_", scen, "_rep", r)
+                    IDcols <- c("year", "rep", "pixelIndex")
+
+                    no.runs <- 3
+                    skip <- FALSE
+                    if (!doAll) {
+                      ## check if all HV intersections were computed already
+                      computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                              list.files(HVoutputPath), value = TRUE)
+                      if (length(computedHVpairs) == no.runs) {
+                        skip <- TRUE
+                      }
                     }
-                  }
 
-                  if (skip) {
-                    message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
-                                         "'doAll' is", doAll,"... Skipping"))
-                  } else {
-                    print(file.suffix)
-                    vegHVWrapper(allData,
-                                 IDcols,
-                                 HVcols = c("PC1", "PC2", "PC3", "PC4"),
-                                 HVIDcol = "year",
-                                 file.suffix,
-                                 # noAxes = 4,
-                                 ordination = "none",
-                                 HVmethod = "svm",
-                                 no.runs = no.runs,
-                                 svm.gamma = 0.01,
-                                 outputs.dir = HVoutputPath,
-                                 do.scale = FALSE,
-                                 addNoise = TRUE,
-                                 # do.scale = TRUE,
-                                 # saveOrdi = TRUE,
-                                 # plotOrdi = TRUE,
-                                 plotHV = TRUE,
-                                 verbose = FALSE)
-                  }
-                }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
-       }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
-
+                    if (skip) {
+                      message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                           "'doAll' is", doAll,"... Skipping"))
+                    } else {
+                      print(file.suffix)
+                      vegHVWrapper(allData,
+                                   IDcols,
+                                   HVcols = c("PC1", "PC2", "PC3", "PC4"),
+                                   HVIDcol = "year",
+                                   file.suffix,
+                                   # noAxes = 4,
+                                   ordination = "none",
+                                   HVmethod = "svm",
+                                   no.runs = no.runs,
+                                   svm.gamma = 0.01,
+                                   outputs.dir = HVoutputPath,
+                                   do.scale = FALSE,
+                                   addNoise = TRUE,
+                                   # do.scale = TRUE,
+                                   # saveOrdi = TRUE,
+                                   # plotOrdi = TRUE,
+                                   plotHV = TRUE,
+                                   verbose = FALSE)
+                    }
+                  }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
+         }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
+}
 
 ## Hypervolumes across the landscape ----------------
 ## only montane belt
@@ -465,47 +468,53 @@ lapply(ifelse(useFirstLastYear,
 ## gaussian HVs were extremely slow
 ## now split by scenario and rep to calculate and compare hypervolumes between
 ## years for each scenario
-doAll <- FALSE
-lapply(split(vegHVdata, by = c("rep","scenario")),
-       FUN = function(allData, HVoutputPath, doAll) {
-         r <- unique(allData$rep)
-         scen <- unique(allData$scenario)
-         file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
-         IDcols <- c("year", "rep", "pixelIndex")
-         no.runs <- 3
-         skip <- FALSE
-         if (!doAll) {
-           ## check if all HV intersections were computed already
-           computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
-                                   list.files(HVoutputPath), value = TRUE)
-           if (length(computedHVpairs) == no.runs) {
-             skip <- TRUE
+
+## not relevant when using last 500yrs of a 2000yrs simulation
+
+if (useFirstLastYear) {
+  doAll <- FALSE
+  lapply(split(vegHVdata, by = c("rep","scenario")),
+         FUN = function(allData, HVoutputPath, doAll) {
+           r <- unique(allData$rep)
+           scen <- unique(allData$scenario)
+           file.suffix <- paste0("vegHVs_landscape_", scen, "_rep", r)
+           IDcols <- c("year", "rep", "pixelIndex")
+           no.runs <- 3
+           skip <- FALSE
+           if (!doAll) {
+             ## check if all HV intersections were computed already
+             computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                     list.files(HVoutputPath), value = TRUE)
+             if (length(computedHVpairs) == no.runs) {
+               skip <- TRUE
+             }
            }
-         }
 
-         if (skip) {
-           message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
-                                "'doAll' is", doAll,"... Skipping"))
-         } else {
-           print(file.suffix)
+           if (skip) {
+             message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                  "'doAll' is", doAll,"... Skipping"))
+           } else {
+             print(file.suffix)
 
-           vegHVWrapper(allData,
-                        IDcols,
-                        HVcols = c("PC1", "PC2", "PC3", "PC4"),
-                        HVIDcol = "year",
-                        file.suffix,
-                        # noAxes = 4,
-                        ordination = "none",
-                        HVmethod = "svm",
-                        no.runs = no.runs,
-                        svm.gamma = 0.01,
-                        outputs.dir = HVoutputPath,
-                        do.scale = FALSE,
-                        addNoise = TRUE,
-                        # do.scale = TRUE,
-                        # saveOrdi = TRUE,
-                        # plotOrdi = TRUE,
-                        plotHV = TRUE,
-                        verbose = FALSE)
-         }
-       }, HVoutputPath = HVoutputPath, doAll = doAll)
+             vegHVWrapper(allData,
+                          IDcols,
+                          HVcols = c("PC1", "PC2", "PC3", "PC4"),
+                          HVIDcol = "year",
+                          file.suffix,
+                          # noAxes = 4,
+                          ordination = "none",
+                          HVmethod = "svm",
+                          no.runs = no.runs,
+                          svm.gamma = 0.01,
+                          outputs.dir = HVoutputPath,
+                          do.scale = FALSE,
+                          addNoise = TRUE,
+                          # do.scale = TRUE,
+                          # saveOrdi = TRUE,
+                          # plotOrdi = TRUE,
+                          plotHV = TRUE,
+                          verbose = FALSE)
+           }
+         }, HVoutputPath = HVoutputPath, doAll = doAll)
+
+}
