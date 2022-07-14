@@ -67,15 +67,6 @@ if (getOption("LandR.assertions")) {
     stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
          "Combinations as allPixelCohortDataMnt")
   }
-
-  temp <- split(vegDataForHVs[, .(pixelIndex, scenario, rep, year)],
-                by = c("scenario", "rep", "year"), keep.by = FALSE)
-  temp <- lapply(temp, FUN = function(x) unique(x[["pixelIndex"]]))
-  test <- lapply(1:length(temp), function(n) setdiff(temp[[n]], unlist(temp[-n])))
-
-  test <- sapply(test, length)
-  if (any(test))
-    stop("Different pixelIndex between scenario/rep/year combinations")
 }
 
 ## prep data for hypervolumes
@@ -84,7 +75,7 @@ vegDataForHVs[, `:=`(meanStandAge = mean(as.numeric(sum(age * (B/100), na.rm = T
                                                       sum((B/100), na.rm = TRUE))),
                      sdStandAge = sd(as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                   sum((B/100), na.rm = TRUE)))),
-              by = c("scenario", "rep", "year", "pixelIndex", "vegTypeCN")]
+              by = .(scenario, rep, year, pixelIndex, vegTypeCN)]
 vegDataForHVs[is.na(meanStandAge), meanStandAge := 0]  ## NAs come from stands with 0 B and 0 age
 vegDataForHVs[is.na(sdStandAge), sdStandAge := 0]  ## NAs come from stands with 0 B and 0 age or just one value of standAge
 
