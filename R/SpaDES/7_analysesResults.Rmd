@@ -54,7 +54,7 @@ cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 ```{r dataPrep, include = FALSE, cache = FALSE}
 yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
 
-source("R/SpaDES/6_resultsDataPrep.R")
+source("R/SpaDES/simResultsDataPrep.R")
 
 startYear <- min(yearSubset)
 endYear <- max(yearSubset)
