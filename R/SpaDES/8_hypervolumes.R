@@ -192,6 +192,9 @@ setnames(yearSamples, "year2", "year")
 
 source("R/R_tools/prepVegData4HVs.R")
 
+rm(allPixelBurnData, allPixelCohortData, allPixelCohortDataMnt)
+gc(reset = TRUE)
+
 ## Global biodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
 ## hypervolume sizes can be compared across repetitions and forest types.
