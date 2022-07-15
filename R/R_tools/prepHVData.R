@@ -18,7 +18,9 @@ fireHVData <- loadHVResultsFromRDS("fireHVs", allFiles)
 if ("HVid" %in% names(fireHVData)) {
   fireHVData[, scenario := HVid]   ## no HVid with intersecion results
 }
+
 fireHVData[, year := as.integer(max(yearSubset))]   ## fire HV are from last year, but integrate the whole simulation period
+
 ## drop unique components
 set(fireHVData, NULL, grep("Unique", names(fireHVData)), NULL)
 
@@ -43,36 +45,38 @@ if (getOption("LandR.assertions")) {
 
 ## get between and within year (between scenarios) comparisons separately
 withinYearFiles <- grep("yr", allFiles, value = TRUE)
-vegHVDataWYrComparisons <- loadHVResultsFromRDS("vegHVs", withinYearFiles)
-if ("HVid" %in% names(vegHVDataWYrComparisons)) {
-  vegHVDataWYrComparisons[, tempHVid := as.numeric(HVid)]
-  vegHVDataWYrComparisons[is.na(tempHVid), scenario := HVid]
-  vegHVDataWYrComparisons[!is.na(tempHVid), year := HVid]
-  vegHVDataWYrComparisons[, tempHVid := NULL]
+if (length(withinYearFiles)) {
+  vegHVDataWYrComparisons <- loadHVResultsFromRDS("vegHVs", withinYearFiles)
+  if ("HVid" %in% names(vegHVDataWYrComparisons)) {
+    vegHVDataWYrComparisons[, tempHVid := as.numeric(HVid)]
+    vegHVDataWYrComparisons[is.na(tempHVid), scenario := HVid]
+    vegHVDataWYrComparisons[!is.na(tempHVid), year := HVid]
+    vegHVDataWYrComparisons[, tempHVid := NULL]
+  }
+  ## drop unique components
+  set(vegHVDataWYrComparisons, NULL, grep("Unique", names(vegHVDataWYrComparisons)), NULL)
+
+  ## add comparison type
+  comp <- sub(".*_", "", grep("Volume", names(vegHVDataWYrComparisons), value = TRUE))
+  comp <- paste(comp, collapse = "_")
+  vegHVDataWYrComparisons[, compare := comp]
+
+  ## break into 2 tables, remove empty volume columns,
+  ## make column of comparison ID, change names and re-rbind
+  tempData  <- vegHVDataWYrComparisons[is.na(Volume_HV1_PM),]
+  tempData2  <- vegHVDataWYrComparisons[!is.na(Volume_HV1_PM),]
+
+  cols <- grep("Volume", names(tempData), value = TRUE)
+  set(tempData, NULL, cols[which(is.na(colSums(tempData[, ..cols])))], NULL)
+  set(tempData2, NULL, cols[which(is.na(colSums(tempData2[, ..cols])))], NULL)
+
+  setnames(tempData, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData)))
+  setnames(tempData2, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData2)))
+
+  vegHVDataWYrComparisons <- rbind(tempData, tempData2, use.names = TRUE)
 }
-## drop unique components
-set(vegHVDataWYrComparisons, NULL, grep("Unique", names(vegHVDataWYrComparisons)), NULL)
 
-## add comparison type
-comp <- sub(".*_", "", grep("Volume", names(vegHVDataWYrComparisons), value = TRUE))
-comp <- paste(comp, collapse = "_")
-vegHVDataWYrComparisons[, compare := comp]
-
-## break into 2 tables, remove empty volume columns,
-## make column of comparison ID, change names and re-rbind
-tempData  <- vegHVDataWYrComparisons[is.na(Volume_HV1_PM),]
-tempData2  <- vegHVDataWYrComparisons[!is.na(Volume_HV1_PM),]
-
-cols <- grep("Volume", names(tempData), value = TRUE)
-set(tempData, NULL, cols[which(is.na(colSums(tempData[, ..cols])))], NULL)
-set(tempData2, NULL, cols[which(is.na(colSums(tempData2[, ..cols])))], NULL)
-
-setnames(tempData, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData)))
-setnames(tempData2, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData2)))
-
-vegHVDataWYrComparisons <- rbind(tempData, tempData2, use.names = TRUE)
-
-## between year comparisons data
+## between year comparisons data -- or the temporally integrated HVs
 betweenYearFiles <- grep("yr", allFiles, value = TRUE, invert = TRUE)
 vegHVDataBYrComparisons <- loadHVResultsFromRDS("vegHVs", betweenYearFiles)
 if ("HVid" %in% names(vegHVDataBYrComparisons)) {
@@ -86,8 +90,7 @@ set(vegHVDataBYrComparisons, NULL, grep("Unique", names(vegHVDataBYrComparisons)
 
 ## sometimes HV1 is the start year, others is end year (probably because data wasn't sorted) -
 ## make sure there aren't duplicate comparisons
-stop("FIX YEARS")
-if (getOption("LandR.assertions")) {
+if (getOption("LandR.assertions") & useFirstLastYear) {
   test <- unique(vegHVDataBYrComparisons[is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
   test2 <- unique(vegHVDataBYrComparisons[!is.na(Volume_HV1_2011), .(scenario, rep, vegType)])
   test[, test := paste(scenario, rep, vegType)]
@@ -118,9 +121,13 @@ vegHVDataBYrComparisons[, compare := comp]
 
 ## break into 2 tables, remove empty volume columns,
 ## make column of comparison ID, change names and re-rbind
-stop("FIX YEARS")
-tempData  <- vegHVDataBYrComparisons[is.na(Volume_HV1_2011),]
-tempData2  <- vegHVDataBYrComparisons[!is.na(Volume_HV1_2011),]
+if (useFirstLastYear) {
+  colHV1 <- "Volume_HV1_2011"
+} else {
+  colHV1 <- "Volume_HV1_PM"
+}
+tempData  <- vegHVDataBYrComparisons[is.na(get(colHV1)),]
+tempData2  <- vegHVDataBYrComparisons[!is.na(get(colHV1)),]
 
 cols <- grep("Volume", names(tempData), value = TRUE)
 set(tempData, NULL, cols[which(is.na(colSums(tempData[, ..cols])))], NULL)
@@ -131,8 +138,14 @@ setnames(tempData2, new = sub("Volume_(HV)[0-9]_(.*)", "\\1_\\2", names(tempData
 
 vegHVDataBYrComparisons <- rbind(tempData, tempData2, use.names = TRUE)
 
-vegHVData <- rbind(vegHVDataWYrComparisons, vegHVDataBYrComparisons, use.names = TRUE,
-                   fill = TRUE)
+if (exists("vegHVDataWYrComparisons")) {
+  vegHVData <- rbind(vegHVDataWYrComparisons, vegHVDataBYrComparisons,
+                     use.names = TRUE, fill = TRUE)
+} else {
+  vegHVData <- vegHVDataBYrComparisons
+  vegHVData[, year := max(yearSubset)]
+}
+
 
 ## check reps/years/scenario per veg type
 if (getOption("LandR.assertions")) {
@@ -156,10 +169,15 @@ allHVData$vegType <- as.factor(allHVData$vegType)
 allHVData[, overlap := Intersection/Union]
 
 ## check for missing data
-stop("FIX YEARS")
-if (nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM)) & (is.na(HV_2011)|is.na(HV_2111))])) {
+if (useFirstLastYear) {
+  test <- nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM)) & (is.na(HV_2011)|is.na(HV_2111))])
+} else {
+  test <-  nrow(allHVData[(is.na(HV_noPM)|is.na(HV_PM))])
+}
+if (test) {
   stop("There seems to be missing data")
 }
 
-rm(temp, tempData, tempData2, fireHVData, vegHVData)
+rm(temp, tempData, tempData2, test,
+   fireHVData, vegHVData, vegHVDataBYrComparisons, vegHVDataWYrComparisons)
 gc(reset = TRUE)
