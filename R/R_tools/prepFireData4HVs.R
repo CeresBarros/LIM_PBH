@@ -29,4 +29,6 @@ if (dim(test2)[1]) {
 ## set fire attributes to 0 in pixels that had no fires
 cols <- c("meanFreq", "meanSev", "meanSevB", "meanPatchS")
 summaryFireAttributes[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
+
+rm(test1, test2)
 amc::.gc()

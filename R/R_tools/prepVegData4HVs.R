@@ -67,6 +67,9 @@ if (getOption("LandR.assertions")) {
     stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
          "Combinations as allPixelCohortDataMnt")
   }
+
+  rm(temp, test, test2)
+  amc::.gc()
 }
 
 ## prep data for hypervolumes
