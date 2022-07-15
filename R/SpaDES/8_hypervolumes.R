@@ -268,7 +268,8 @@ if (useFirstLastYear) {
 } else {
   ## the last year may no longer be 4011
   pixelIndexList <- vegHVdata[, list(year = max(year)), .(rep)]
-  pixelIndexList <- unique(vegHVdata[pixelIndexList, on = .(rep, year)][, .(rep, vegTypeCN, pixelIndex)])
+  pixelIndexList <- vegHVdata[pixelIndexList, on = .(rep, year)]
+  pixelIndexList <- unique(pixelIndexList[, .(rep, vegTypeCN, pixelIndex)])
   pixelIndexList <- split(pixelIndexList, by = c("rep", "vegTypeCN"), drop = TRUE)
 }
 
