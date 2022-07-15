@@ -269,7 +269,9 @@ if (useFirstLastYear) {
   ## the last year may no longer be 4011
   pixelIndexList <- vegHVdata[, list(year = max(year)), .(rep)]
   pixelIndexList <- vegHVdata[pixelIndexList, on = .(rep, year)]
-  pixelIndexList <- unique(pixelIndexList[, .(rep, vegTypeCN, pixelIndex)])
+  pixelIndexList <- as.data.frame(pixelIndexList)  ## for some reason the next line is crashing R with a memory access issue
+  pixelIndexList <- unique(pixelIndexList[, c("rep", "vegTypeCN", "pixelIndex")])
+  pixelIndexList <- as.data.table(pixelIndexList)
   pixelIndexList <- split(pixelIndexList, by = c("rep", "vegTypeCN"), drop = TRUE)
 }
 
