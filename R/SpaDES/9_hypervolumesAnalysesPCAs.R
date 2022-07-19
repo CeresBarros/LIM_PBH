@@ -48,7 +48,8 @@ if (mergePSME) {
 dir.create(figOutputPath, recursive = TRUE)
 
 ## LOAD DATA (RESULTS)  ---------------------
-yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
+yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
+runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
 
 
@@ -56,10 +57,28 @@ source("R/SpaDES/simResultsDataPrep.R")
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 opts <- options("LandR.assertions" = FALSE)
 source("R/R_tools/prepFireData4HVs.R")
+
+useFirstLastYear <- FALSE
+yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
+yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
+
+yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
+needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+while(any(needsNewSample$V1)) {
+  yearSamples[group %in% needsNewSample[which(V1), group], year2 := sample(year, 1), by = .(rep, group)]
+  needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+}
+yearSamples <- unique(yearSamples[,.(year2, rep)])
+setnames(yearSamples, "year2", "year")
+
 source("R/R_tools/prepVegData4HVs.R")
 options(opts)
 ## get labels and colours
 source("R/R_tools/plotLabels&Cols.R")
+
+## don't need these
+rm(allPixelBurnData, allPixelCohortData)
+gc(reset = TRUE)
 
 ## CALCULATE CWM TRAIT VALUES ----------------
 ## averages across reps (species abundances were averaged across rep per pixel)
@@ -70,12 +89,26 @@ traitsTable[, firetolerance := as.ordered(firetolerance)]
 traitsTable <- data.frame(traitsTable[, .(longevity, shadetolerance, firetolerance, postfireregen)],
                           row.names = traitsTable$speciesCode)
 
-vegData <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
+if (useFirstLastYear) {
+  vegData <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
+} else {
+  if (exists("yearSamples")) {
+    vegData <- allPixelCohortDataMnt[yearSamples, on = .(year, rep)]
+  } else {
+    vegData <- allPixelCohortDataMnt[year %in% yearSubset]
+  }
+}
+
 cols <- c("speciesCode", "scenario", "rep", "year", "pixelIndex", "B")   ## keep rep for wrapper.
 vegData <- vegData[, ..cols]
 ## sum B across cohorts
 vegData <- vegData[, list(B = sum(B)), by = c("speciesCode", "scenario", "rep", "year", "pixelIndex")]
 vegData <- dcast.data.table(vegData, as.formula("... ~ speciesCode"), value.var = "B")
+
+if (!useFirstLastYear) {
+  ## if not comparing years, make all years equal to last
+  vegData[, year := max(year)]
+}
 
 spp <- rownames(traitsTable)
 combos <- unique(vegData[, .(scenario, rep, year)])
@@ -187,7 +220,20 @@ if (mergePSME) {
 
 vegTypes <- vegTypes[vegTypes != "No veg."]
 
-pixelIndexDT <- unique(vegHVPCAscores[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)])
+pixelIndexDT <- vegHVPCAscores[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)]
+pixelIndexDT <- unique(pixelIndexDT)
+
+if (useFirstLastYear) {
+  startYear <- min(yearSubset)
+  endYear <- min(yearSubset)
+  cols <- c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2])
+  centroid.cols <- c("grey", "grey", "red", "blue")
+} else {
+  startYear <- NULL
+  endYear <- NULL
+  cols <- c(scales::hue_pal()(2)[1], scales::hue_pal()(2)[2])
+  centroid.cols <- c("red", "blue")
+}
 
 lapply(vegTypes, FUN = plotHVs3DWrapper,
        vegHVPCAscores = vegHVPCAscores[rep == 1],
@@ -196,8 +242,8 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        figOutputPath = figOutputPath,
        cacheRepo = simPaths$cachePath,
        mergeVegType = "mergePSME",
-       startYear = min(yearSubset),
-       endYear = max(yearSubset),
+       startYear = startYear,
+       endYear = endYear,
        colsHV = c("PC1", "PC2", "PC3", "PC4"),
        ## plotHypervolumes3D args:
        loadings_coords = as.data.frame(loadings_coords[Var %in% Vars, .(PC1, PC2, PC3)]) * ordiArrowMul(vegHVPCA, fill = 2, choices = 1:3, display = "species"),
@@ -212,12 +258,14 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        cex.random = 0.5,
        cex.centroid = 1.7,
        lwd = 2,
-       colors = c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2]),
-       centroid.cols = c("grey", "grey", "red", "blue"),
+       colors = cols,
+       centroid.cols = centroid.cols,
        grid = FALSE,
        box = TRUE,
        names = c("PC1\n", "PC2\n", "\nPC3"),
-       limits = c(round(min(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1, round(max(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) + 0.1),
+       # limits = c(round(min(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1,
+       #            round(max(vegHVPCAscores[, c("PC1", "PC2", "PC3", "PC4")]), 2) + 0.1),
+       limits = c(-6, 6),
        y.margin.add = 0.6,
        angle = 50,
        pch = 16)
@@ -235,29 +283,57 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
 
 ## average scores across reps
 cols <- grep("^PC", names(vegHVPCAscores), value = TRUE)
+
+colsBy <- c("scenario", "rep", "pixelIndex", "vegTypeCN")
+if (useFirstLastYear) {
+  colsBy <- c(colsBy, "year")
+}
 plotData <- vegHVPCAscores[, lapply(.SD, mean), .SDcols = cols,
-                           by = .(scenario, rep, pixelIndex, vegTypeCN, year)]
+                           by = colsBy]
 ggplot(plotData[grepl("PSME", vegTypeCN)], aes(PC1, PC2, colour = vegTypeCN, shape = scenario)) +
   geom_point(alpha = 0.5) +
-  facet_wrap(scenario ~ year)
+  if (useFirstLastYear) {
+    facet_wrap(scenario ~ year)
+  } else {
+    facet_wrap(~ scenario)
+  }
+
 
 ggplot(plotData[grepl("PSME", vegTypeCN) & scenario == "PM"], aes(PC1, PC3, colour = as.factor(rep), shape = scenario)) +
   geom_point(alpha = 0.5) +
-  facet_wrap(year ~ vegTypeCN)
+  if (useFirstLastYear) {
+    facet_wrap(year ~ vegTypeCN)
+  } else {
+    facet_wrap(~ vegTypeCN)
+  }
 
-ggplot(plotData[grepl("PSME", vegTypeCN) & scenario == "PM"], aes(PC1, PC4, colour = as.factor(rep), shape = scenario)) +
+
+ggplot(plotData[grepl("PSME", vegTypeCN) & scenario == "PM"], aes(PC1, PC2, colour = as.factor(rep), shape = scenario)) +
   geom_point(alpha = 0.5) +
-  facet_wrap(year ~ vegTypeCN)
+  if (useFirstLastYear) {
+    facet_wrap(year ~ vegTypeCN)
+  } else {
+    facet_wrap(~ vegTypeCN)
+  }
 
 ## DOUGLAS-FIR
 plotData$year <- as.character(plotData$year)
 plotDataPCA <- vegHVPCA
 plotDataPCA$x <- plotDataPCA$x[grepl("PSME", plotData$vegTypeCN),]
+if (useFirstLastYear) {
+  col <- "year"
+  shape <- "year"
+} else {
+  col <- "vegTypeCN"
+  shape <- "vegTypeCN"
+}
+
 PSMEPCAplot <- autoplot(plotDataPCA, data = plotData[grepl("PSME", vegTypeCN)],
-                        colour = "year", shape = "year", label.colour = "blue",
+                        colour = col, shape = shape,
+                        label.colour = "blue",
                         loadings = TRUE, loadings.colour = "blue", scale = 0,
                         loadings.label = TRUE, loadings.label.size = 3, alpha = 0.3) +
-  scale_x_continuous(expand = expansion(add = 0.1)) +
+  # scale_x_continuous(expand = expansion(add = 0.1)) +
   theme_pubr(base_size = 12,  margin = FALSE) +
   theme(legend.position = "right",
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +

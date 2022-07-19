@@ -18,7 +18,7 @@ vegHVWrapper <- function(allData, HVcols, IDcols, HVIDcol, file.suffix, addNoise
       tempData <- allData[needsNoise[V1 == TRUE, ..IDcols2],
                           on = IDcols2]
       tempData[, (HVcols) := lapply(.SD, function(x, n) rnorm(n, mean(x), 0.0000001),
-                                  n = .N), .SDcols = HVcols, by = IDcols2]
+                                    n = .N), .SDcols = HVcols, by = IDcols2]
       allData <- rbind(allData[!tempData, on = IDcols2],
                        tempData, fill = TRUE, use.names = TRUE)
     }
@@ -165,87 +165,89 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
     if (mergeVegType == "mergeDMCPSME") {
       grepStr <- "PSME"
     } else {
-      if (mergeVegType == "mergePSME") {
+      if (mergeVegType == "mergePSME" & grepl("^dryPSME|^PSME", vegType)) {
         grepStr <- "^dryPSME|^PSME"
       }
     }
   }
 
 
-  userTags <- c("hypervolume", vegType, "startYear", "noPM")
-  ## subset tables to correct year, veg type and scenario
-  tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == as.character(startYear) & scenario == "noPM",]
-  ## subset pixels
-  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-  HVstartYear_noPM  <- Cache(hypervolume::hypervolume,
-                        data = tempData[, ..colsHV],
-                        method = "svm",
-                        svm.gamma = 0.01,
-                        .cacheExtra = paste(userTags, collapse = "_"),
-                        cacheRepo = cacheRepo,
-                        userTags = userTags,
-                        omitArgs = c("userTags"))
+  HVcombos <- if (is.null(startYear) & is.null(endYear)) {
+    expand.grid(c("noPM", "PM"), c(NA))
+  } else {
+    expand.grid(c("noPM", "PM"), c(startYear, endYear))
+  }
+  names(HVcombos) <- c("scenario", "year")
 
-  userTags <- c("hypervolume", vegType, "endYear", "noPM")
-  ## subset tables to correct year, veg type and scenario
-  tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == as.character(endYear) & scenario == "noPM",]
-  ## subset pixels
-  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+  allHVs <- Map(scen = HVcombos$scenario,
+                yearToMatch = HVcombos$year,
+                f = .HVforPlots,
+                MoreArgs = list(pixelIndexDT = pixelIndexDT,
+                                vegHVPCAscores = vegHVPCAscores,
+                                colsHV = colsHV,
+                                grepStrVegType = grepStr,
+                                userTags = vegType,
+                                cacheRepo = cacheRepo))
 
-  HVendYear_noPM  <- Cache(hypervolume::hypervolume,
-                        data = tempData[, ..colsHV],
-                        method = "svm",
-                        svm.gamma = 0.01,
-                        .cacheExtra = paste(userTags, collapse = "_"),
-                        cacheRepo = cacheRepo,
-                        userTags = userTags,
-                        omitArgs = c("userTags"))
-
-  userTags <- c("hypervolume", vegType, "startYear", "PM")
-  ## subset tables to correct year, veg type and scenario
-  tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == as.charactr(startYear) & scenario == "PM",]
-  ## subset pixels
-  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
-
-  HVstartYear_PM  <- Cache(hypervolume::hypervolume,
-                      data = tempData[, ..colsHV],
-                      method = "svm",
-                      svm.gamma = 0.01,
-                      .cacheExtra = paste(userTags, collapse = "_"),
-                      cacheRepo = cacheRepo,
-                      userTags = userTags,
-                      omitArgs = c("userTags"))
-
-  userTags <- c("hypervolume", vegType, "endYear", "PM")
-  ## subset tables to correct year, veg type and scenario
-  tempPixID <- pixelIndexDT[grepl(grepStr, vegTypeCN)]
-  tempData <- vegHVPCAscores[year == as.character(endYear) & scenario == "PM",]
-  ## subset pixels
-  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
-
-  HVendYear_PM  <- Cache(hypervolume::hypervolume,
-                      data = tempData[, ..colsHV],
-                      method = "svm",
-                      svm.gamma = 0.01,
-                      .cacheExtra = paste(userTags, collapse = "_"),
-                      cacheRepo = cacheRepo,
-                      userTags = userTags,
-                      omitArgs = c("userTags"))
-
-  HVls <- hypervolume::hypervolume_join(HVstartYear_noPM, HVstartYear_PM, HVendYear_noPM, HVendYear_PM)
+  HVls <- hypervolume::hypervolume_join(allHVs)
 
   args <- c(HVlist = HVls, list(...))
   args$main <- vegTypeCNLabels[vegType]
 
-  tiff(file.path(figOutputPath, paste0("HV3DplotWvectors_", vegType, ".tiff")), width = 7, heigh = 7,
+  if (is.null(args$limits)) {
+    HVpoints <- rbindlist(lapply(allHVs, function(HV) as.data.table(HV@RandomPoints)))
+
+    args$limits <- c(round(min(HVpoints), 2),
+                     round(max(HVpoints), 2))
+    padding <- round(args$limits, -1)
+    padding[padding == 0] <- 1L
+    padding[1] <- ifelse(padding[1] == 1, -1L, padding[1])
+    args$limits <- args$limits + padding
+  }
+
+  png(file.path(figOutputPath, paste0("HV3DplotWvectors_", vegType, ".png")), width = 7, heigh = 7,
        units = "in", res = 300)
   do.call(plotHypervolumes3D, args)
   dev.off()
 }
+
+
+.HVforPlots <- function(pixelIndexDT, vegHVPCAscores, scen, colsHV,
+                        grepStrVegType, yearToMatch, userTags, cacheRepo) {
+
+  ## subset tables to correct year, veg type and scenario
+  tempPixID <- pixelIndexDT[grepl(grepStrVegType, vegTypeCN)]
+  if (is.na(yearToMatch)) {
+    tempData <- vegHVPCAscores[scenario == scen,]
+    yearToMatch <- NULL
+  } else {
+    yearToMatch <- ifelse(is.character(vegHVPCAscores$year), as.character(yearToMatch), as.integer(yearToMatch))
+    tempData <- vegHVPCAscores[year %in% as.character(yearToMatch) & scenario == scen,]
+  }
+  ## subset pixels
+  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+
+  if (!is.null(userTags)) {
+    userTags <- c(userTags, "hypervolume", yearToMatch, scen)
+  } else {
+    userTags <- c("hypervolume", paste(unique(tempData$vegTypeCN), collapse = "_"), yearToMatch, scen)
+  }
+
+  cacheObj <- digest::digest(tempData, algo = "xxhash64")
+
+  HV <- Cache(hypervolume::hypervolume,
+              data = tempData[, ..colsHV],
+              method = "svm",
+              svm.gamma = 0.01,
+              .cacheExtra = cacheObj,
+              cacheRepo = cacheRepo,
+              userTags = userTags,
+              omitArgs = c("data"))
+  return(HV)
+}
+
+
 
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
 ## BANDWITH ESTIMATES ----
