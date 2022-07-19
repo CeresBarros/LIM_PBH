@@ -63,7 +63,7 @@ if (runPrepResultsModule) {
   allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
 }
 
-## not sure with the veg type isn't there..
+## not sure why the veg type isn't there..
 if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
   allPixelCohortDataMnt <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, vegType)])[allPixelCohortDataMnt, on = .(scenario, rep, year, pixelIndex)]
 }
