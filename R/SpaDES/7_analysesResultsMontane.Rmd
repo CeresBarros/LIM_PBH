@@ -85,7 +85,7 @@ dir.create(figOutputPath, recursive = TRUE)
 Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 
 ```{r dataPrep, include = FALSE, cache = FALSE}
-yearSubset <- as.integer(c(seq(2211, 2611, 10), 2611))
+yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 
 source("R/SpaDES/simResultsDataPrep.R")
 
