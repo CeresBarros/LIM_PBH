@@ -18,10 +18,25 @@ options("reproducible.useGDAL" = FALSE)
 ## general paths
 # simDirName <- "jun2021Runs"
 simDirName <- "mar2022Runs"
-simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
-                 , modulePath = file.path("R/SpaDES/m")
-                 , inputPath = file.path("R/SpaDES/inputs")
-                 , outputPath = file.path("R/SpaDES/outputs", simDirName))
+if (Sys.info()["nodename"] == "W-VIC-A127584") {
+  simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
+                   , modulePath = file.path("R/SpaDES/m")
+                   , inputPath = file.path("R/SpaDES/inputs")
+                   , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
+} else if (grepl("for-cast", Sys.info()["nodename"])) {
+  simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
+                   , modulePath = file.path("R/SpaDES/m")
+                   , inputPath = file.path("R/SpaDES/inputs")
+                   , outputPath = file.path("R/SpaDES/outputs", simDirName)
+                   , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
+                   , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
+} else {
+  simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
+                   , modulePath = file.path("R/SpaDES/m")
+                   , inputPath = file.path("R/SpaDES/inputs")
+                   , outputPath = file.path("R/SpaDES/outputs", simDirName))
+}
+
 
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
