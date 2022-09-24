@@ -196,6 +196,7 @@ useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all year
 yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
 yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
 
+set.seed(123)
 yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
 needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
 while(any(needsNewSample$V1)) {
