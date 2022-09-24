@@ -88,6 +88,7 @@ Given the size of the data put together in a pixel-based format, results were sa
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
+gc(reset = TRUE)
 
 startYear <- min(yearSubset)
 endYear <- max(yearSubset)

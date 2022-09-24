@@ -65,11 +65,12 @@ dir.create(figOutputPath, recursive = TRUE)
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
-
+gc(reset = TRUE)
 
 ## PREP FIRE AND VEG DATA -------------------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 opts <- options("LandR.assertions" = FALSE)
+
 source("R/R_tools/prepFireData4HVs.R")
 
 useFirstLastYear <- FALSE
@@ -86,6 +87,11 @@ yearSamples <- unique(yearSamples[,.(year2, rep)])
 setnames(yearSamples, "year2", "year")
 
 source("R/R_tools/prepVegData4HVs.R")
+
+## don't need these
+rm(allPixelBurnData, allPixelCohortData)
+gc(reset = TRUE)
+
 options(opts)
 ## get labels and colours
 source("R/R_tools/plotLabels&Cols.R")
@@ -97,7 +103,6 @@ gc(reset = TRUE)
 ## CALCULATE CWM TRAIT VALUES ----------------
 ## averages across reps (species abundances were averaged across rep per pixel)
 ## for categorical/ordinal traits the dominant trait value (highest abundance) was taken
-
 traitsTable <- preSimList$species
 traitsTable[, firetolerance := as.ordered(firetolerance)]
 traitsTable <- data.frame(traitsTable[, .(longevity, shadetolerance, firetolerance, postfireregen)],

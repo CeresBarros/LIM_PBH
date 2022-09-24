@@ -192,7 +192,7 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
 useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all years?
 
 ## for each rep, we will randomly draw 5 years from each 100yrs window (the same years are used across scenarios).
-## all years enter the same hypervolume, so that it itegrates the last 500yrs of simulation
+## all years enter the same hypervolume, so that it integrates the last 500yrs of simulation
 yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
 yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
 
