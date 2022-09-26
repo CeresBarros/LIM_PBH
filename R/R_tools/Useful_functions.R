@@ -437,3 +437,38 @@ getLoadings4Plot <- function(x, choices = c(1,2), scale = 1, pc.biplot = FALSE,
   loadings <- loadings/ratio
   return(loadings)
 }
+
+
+
+#' SAMPLE SIMULATION YEARS
+#' samples 5 years (per rep) at regular intervals (every century) within the last 500 years of sampling
+#'
+#' @param yearRepTable a table of years and repetitions (unique combos will be extracted)
+#' @param .seed a numeric passed to `set.seed`. If NA, seed won't be set.
+#'
+#' @return a table with years to sample per rep
+
+
+sample5SimYears <- function(yearRepTable, .seed = 123) {
+  yearSamples <- setkeyv(unique(yearRepTable), c("rep", "year"))
+  yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
+
+  if (!is.na(.seed)) {
+    initialRandomSeed <- .Random.seed
+    set.seed(.seed)
+  }
+
+  yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
+  needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+  while(any(needsNewSample$V1)) {
+    yearSamples[group %in% needsNewSample[which(V1), group], year2 := sample(year, 1), by = .(rep, group)]
+    needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
+  }
+  yearSamples <- unique(yearSamples[,.(year2, rep)])
+  setnames(yearSamples, "year2", "year")
+
+  if (exists("initialRandomSeed", inherits = FALSE)) {
+    .Random.seed <- initialRandomSeed
+  }
+  return(yearSamples)
+}

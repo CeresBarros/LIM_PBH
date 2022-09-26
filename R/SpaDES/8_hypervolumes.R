@@ -189,23 +189,12 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
 
 
 ## VEGETATION ATTRIBUTES HYPERVOLUMES -----------
-useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all years?
 
 ## for each rep, we will randomly draw 5 years from each 100yrs window (the same years are used across scenarios).
 ## all years enter the same hypervolume, so that it integrates the last 500yrs of simulation
-yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
-yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
+yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
 
-set.seed(123)
-yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
-needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
-while(any(needsNewSample$V1)) {
-  yearSamples[group %in% needsNewSample[which(V1), group], year2 := sample(year, 1), by = .(rep, group)]
-  needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
-}
-yearSamples <- unique(yearSamples[,.(year2, rep)])
-setnames(yearSamples, "year2", "year")
-
+useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all years?
 source("R/R_tools/prepVegData4HVs.R")
 
 rm(allPixelBurnData, allPixelCohortData, allPixelCohortDataMnt)

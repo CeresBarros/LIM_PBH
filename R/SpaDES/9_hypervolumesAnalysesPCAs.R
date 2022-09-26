@@ -73,19 +73,8 @@ opts <- options("LandR.assertions" = FALSE)
 
 source("R/R_tools/prepFireData4HVs.R")
 
+yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
 useFirstLastYear <- FALSE
-yearSamples <- setkeyv(unique(allPixelCohortDataMnt[, .(year, rep)]), c("rep", "year"))
-yearSamples[, group := cut(year, breaks = 5, right = FALSE, labels = FALSE), by = rep]
-
-yearSamples[, year2 := sample(year, 1), by = .(rep, group)]
-needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
-while(any(needsNewSample$V1)) {
-  yearSamples[group %in% needsNewSample[which(V1), group], year2 := sample(year, 1), by = .(rep, group)]
-  needsNewSample <- yearSamples[, length(unique(year2)) < 5, by = group]
-}
-yearSamples <- unique(yearSamples[,.(year2, rep)])
-setnames(yearSamples, "year2", "year")
-
 source("R/R_tools/prepVegData4HVs.R")
 
 ## don't need these
