@@ -181,7 +181,7 @@ Vars <- loadings_coords$Var[Vars]
 
 ## clean wd
 rm(summaryFireAttributes)
-gc()
+gc(reset = TRUE)
 
 ## FIT TRAIT VECTORS TO PCA ------------
 ## treat all ordered vectors as continuous
