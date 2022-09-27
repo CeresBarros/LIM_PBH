@@ -92,17 +92,6 @@ runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
 gc(reset = TRUE)
 
-startYear <- min(yearSubset)
-endYear <- max(yearSubset)
-
-## check
-if (endYear != max(allPixelCohortDataMnt$year, na.rm = TRUE)) {
-  stop("endYear and max(year) differ")
-}
-if (startYear != min(allPixelCohortDataMnt$year, na.rm = TRUE)) {
-  stop("startYear and min(year) differ")
-}
-
 if (mergeDMCPSME) {
   allPixelCohortDataMnt[vegTypeCN %in% c("DMCPSME", "PSME", "dryPSME"), vegTypeCN := "DMCPSME"]
   ageDataCN[Cover.dendro %in% c("DMCPSME", "PSME", "dryPSME"), Cover.dendro := "DMCPSME"]
@@ -113,7 +102,22 @@ if (mergePSME) {
   ageDataCN[Cover.dendro %in% c("PSME", "dryPSME"), Cover.dendro := "PSME"]
 }
 
-## add vegTypes at the initial year - these are the ones we track in time, the final year may have changed completely -
+## HERE -- need to use sampled years as "last year" -- maybe avererage per rep?
+yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
+allPixelCDMntEnd <- allPixelCohortDataMnt[yearSamples, on = .(year, rep)]
+
+# startYear <- min(yearSubset)
+# endYear <- max(yearSubset)
+# ## check
+# if (endYear != max(allPixelCohortDataMnt$year, na.rm = TRUE)) {
+#   stop("endYear and max(year) differ")
+# }
+# if (startYear != min(allPixelCohortDataMnt$year, na.rm = TRUE)) {
+#   stop("startYear and min(year) differ")
+# }
+
+
+## add vegTypes at end  year - these are the ones we track in time as we would in dendro studies
 ## and pixels with no fires to burn data - note that we loose the yearly fire data.
 allPixelBurnData <- allPixelBurnData[unique(allPixelCohortDataMnt[year == endYear, 
                                                                   .(scenario, rep, pixelIndex, vegTypeCN)]), 
