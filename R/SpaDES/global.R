@@ -122,6 +122,8 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , outputPath = file.path("R/SpaDES/outputs", simDirName)
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
+  data.table::setDTthreads(25)
+  options(bitmapType="cairo")
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
                    , modulePath = file.path("R/SpaDES/m")
