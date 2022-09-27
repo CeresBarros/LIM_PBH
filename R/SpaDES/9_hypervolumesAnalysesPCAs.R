@@ -245,9 +245,11 @@ if (useFirstLastYear) {
   centroid.cols <- c("red", "blue")
 }
 
+rep2Plot <- unique(pixelIndexDT$rep)[1]
+
 lapply(vegTypes, FUN = plotHVs3DWrapper,
-       vegHVPCAscores = vegHVPCAscores[rep == 1],
-       pixelIndexDT = pixelIndexDT[rep == 1],
+       vegHVPCAscores = vegHVPCAscores[rep == rep2Plot],
+       pixelIndexDT = pixelIndexDT[rep == rep2Plot],
        vegTypeCNLabels = vegTypeCNLabels,
        figOutputPath = figOutputPath,
        cacheRepo = simPaths$cachePath,
