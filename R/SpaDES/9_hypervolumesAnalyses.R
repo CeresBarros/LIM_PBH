@@ -378,7 +378,7 @@ AIC(pyroVSbiodiversityLandscape.lm2.2,
 
 
 png(file.path(figOutputPath, "pyroVSbiodiversityLandscapelmRESIDUALS.png"))
-check_plot(pyroVSbiodiversityLandscape.lm2)
+check_model(pyroVSbiodiversityLandscape.lm2)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityLandscapelmSUMMARY.txt"))
