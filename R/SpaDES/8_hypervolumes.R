@@ -2,7 +2,21 @@
 ##  HYPERVOLUMES OF PYRODIVERSITY AND BIODIVERSITY
 ## --------------------------------------------------
 
-library(SpaDES)
+if (!exists("pkgDir")) {
+  pkgDir <- file.path(
+    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
+    version$platform,
+    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
+  )
+
+  if (!dir.exists(pkgDir)) {
+    dir.create(pkgDir, recursive = TRUE)
+  }
+  .libPaths(pkgDir)
+}
+
+
+library(SpaDES.core)
 library(ToolsCB)
 library(data.table)
 
@@ -10,7 +24,6 @@ source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
 options("reproducible.useNewDigestAlgorithm" = 2)
-options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
 options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
 options("reproducible.useGDAL" = FALSE)
@@ -49,6 +62,9 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
+
+rm(allPixelCohortData)
+gc()
 
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
@@ -199,7 +215,7 @@ yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed 
 useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all years?
 source("R/R_tools/prepVegData4HVs.R")
 
-rm(allPixelBurnData, allPixelCohortData, allPixelCohortDataMnt)
+rm(allPixelBurnData, allPixelCohortDataMnt)
 gc(reset = TRUE)
 
 ## Global biodiversity PCA ----------

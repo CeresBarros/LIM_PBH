@@ -178,6 +178,8 @@ if (test) {
   stop("There seems to be missing data")
 }
 
-rm(temp, tempData, tempData2, test,
-   fireHVData, vegHVData, vegHVDataBYrComparisons, vegHVDataWYrComparisons)
+suppressWarnings(
+  rm(temp, tempData, tempData2, test,
+     fireHVData, vegHVData, vegHVDataBYrComparisons, vegHVDataWYrComparisons)
+)
 gc(reset = TRUE)

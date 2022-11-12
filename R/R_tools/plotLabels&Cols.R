@@ -34,7 +34,7 @@ vegTypeLabels[vegTypeLabels == "Deciduous"] <- "Broadleaf"
 vegTypeLabels <- sort(vegTypeLabels)
 
 vegTypeColours <- as.character(levels(preSimList$vegTypeMap)[[1]]$colors)
-vegTypeColours[length(vegTypeColours) + 1] <- "grey40"
+vegTypeColours[length(vegTypeColours) + 1] <- "#666666"
 names(vegTypeColours) <- c(levels(preSimList$vegTypeMap)[[1]]$ID, "0")
 
 if (exists("allPixelCohortDataMnt")) {
@@ -70,8 +70,8 @@ if (length(vegTypeCNColours) == 8) {
 }
 
 names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels) - 2)]
-vegTypeCNColours["landscape"] <- "darkgreen"
-vegTypeCNColours["No veg."] <- "grey40"
+vegTypeCNColours["landscape"] <- "#006400"
+vegTypeCNColours["No veg."] <- "#666666"
 
 
 ## labels for scenario:

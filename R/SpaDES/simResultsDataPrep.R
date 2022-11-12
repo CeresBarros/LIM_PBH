@@ -2,6 +2,24 @@
 ##  DATA PREP FOR ANALYSES OF RESULTS
 ## -----------------------------------
 
+## reduce memory footprint
+DTthreads <- getDTthreads()
+setDTthreads(threads = 8)
+
+if (!exists("pkgDir")) {
+  pkgDir <- file.path(
+    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
+    version$platform,
+    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
+  )
+
+  if (!dir.exists(pkgDir)) {
+    dir.create(pkgDir, recursive = TRUE)
+  }
+  .libPaths(pkgDir)
+}
+
+
 if (!exists("yearSubset")) {
   stop("please provide yearSubset vector")
 }
@@ -16,12 +34,13 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
-paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = min(yearSubset),
-                                                   "endYear" = max(yearSubset),
+paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = as.integer(min(yearSubset)),
+                                                   "endYear" = as.integer(max(yearSubset)),
                                                    "parallel" = FALSE,
                                                    "reps" = 1L:5L,
-                                                   "yearSubset" = yearSubset,
-                                                   ".useCache" = TRUE)) ## parsing error when caching
+                                                   "yearSubset" = as.integer(yearSubset),
+                                                   ".useCache" = c("init", "loadSimulationData", "joinSimulationData",
+                                                                   "addVegTypesCN", "averageAcrossYears"))) ## parsing error when caching
 
 objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
                        "rasterToMatch" = preSimList$rasterToMatch,
@@ -39,6 +58,8 @@ outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortD
                                                    eventPriority = 10))
 if (runPrepResultsModule) {
   options("LandR.assertions" = FALSE)
+  options("spades.useRequire" = FALSE)
+  options("spades.moduleCodeChecks" = FALSE)
   simOut <- Cache(simInitAndSpades,
                   times = list(start = 1, end = 1),
                   params = paramsResults,
@@ -88,3 +109,6 @@ ageDataCN[, noCohorts := length(unique(Est.bin)) , by = .(Patch.ID)]
 
 ageDataCN[, firePresAbs := ifelse(is.na(mean.FI), 0, 1)]
 
+## reset DT threads
+data.table::setDTthreads(DTthreads)
+rm(DTthreads)

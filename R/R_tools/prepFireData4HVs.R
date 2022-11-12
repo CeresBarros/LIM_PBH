@@ -7,8 +7,7 @@ summaryFireAttributes <- allPixelBurnData[!is.na(pixelGroup), list(meanFreq = me
                                                                    meanSevB = mean(severityB),
                                                                    meanPatchS = mean(patchSize)),
                                           by = .(scenario, rep, pixelIndex)]
-## add vegType per pixel at the start of the simulation
-## not the first fire year, as these vegTypes have already been altered by fire
+## add vegType per pixel at the end of the simulation
 ## and add pixels that had no fires
 cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
 summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == max(yearSubset), ..cols]),
