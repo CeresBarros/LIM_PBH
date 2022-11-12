@@ -472,3 +472,33 @@ sample5SimYears <- function(yearRepTable, .seed = 123) {
   }
   return(yearSamples)
 }
+
+
+
+#' Average AllPixelCDMntEnd columns across sampled years
+#'
+#' Averages, takes the unique values, or the most frequent values
+#' across years (per rep, pixel and species)
+#' for all colums in allPixelCDMntEnd, except pixelGroup, which is
+#' ignored and therefore excluded
+#'
+#' This function exists for caching purposes.
+
+averagAllPixelCDMntEnd <- function(allPixelCDMntEnd) {
+  allPixelCDMntEnd <- allPixelCDMntEnd[, list(
+    vegType = as.integer(names(which.max(table(vegType)))),
+    vegTypeCN = names(which.max(table(vegTypeCN))),
+    noFires = as.integer(mean(noFires)),
+    ecozoneCode = as.integer(unique(ecozoneCode)),
+    ecozoneName = unique(ecozoneName),
+    ecoregionGroup = unique(ecoregionGroup),
+    age = as.integer(mean(age)),
+    B = as.integer(mean(B)),
+    mortality = as.integer(mean(mortality)),
+    aNPPAct = as.integer(mean(aNPPAct)),
+    firePresAbs = as.integer(names(which.max(table(firePresAbs))))
+  )
+  , by = .(scenario, rep, pixelIndex, speciesCode)]
+
+  allPixelCDMntEnd
+}
