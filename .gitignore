@@ -9,6 +9,7 @@
 figs/*
 outputs/*
 packages/*
+packages_docker/*
 *.rds
 *.dat
 *.Rout
