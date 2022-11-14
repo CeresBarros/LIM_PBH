@@ -489,23 +489,6 @@ addVegTypesCNEvent <- function(sim) {
                                                                  allow.cartesian = TRUE]
   setnames(vegTypesCN, "LIM", "speciesCode")
 
-  parallelFUN <- function(DT, cPath) {
-    rr <- .Random.seed
-    a <- set.seed(123) # would be set.seed(P(sim)$.seed[["init"]]) )
-    tempArg <- sample(1:nrow(DT), 100, replace = FALSE)
-    .Random.seed <- rr # reset
-    tempArg <- DT[tempArg,]
-    setkey(DT, scenario, rep, year, pixelGroup)
-    out <- Cache(convertToCNVegType,
-                 DT = DT,
-                 groupingCols = c("scenario", "rep", "year", "pixelGroup"),
-                 cachingArg = tempArg,
-                 omitArgs = c("DT"),
-                 cacheRepo = cPath,
-                 userTags = c("reportResults"))
-    out
-  }
-
   amc::.gc()
   if (P(sim)$parallel) {
     if (.Platform$OS.type == "windows") {
