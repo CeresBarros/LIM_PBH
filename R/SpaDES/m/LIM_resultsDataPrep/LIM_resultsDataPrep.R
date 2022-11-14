@@ -11,33 +11,34 @@ defineModule(sim, list(
   authors = structure(list(list(given = "Ceres", family = "Barros", role = c("aut", "cre"),
                                 email = "cbarros@mail.ubc.ca", comment = NULL)), class = "person"),
   childModules = character(0),
-  version = list(SpaDES.core = "1.0.8.9000",
-                 LIM_resultsDataPrep = "0.0.0.9000"),
+  version = list(SpaDES.core = "1.1.0.9004",
+                 LIM_resultsDataPrep = "0.0.1"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.md", "LIM_resultsDataPrep.Rmd")), ## same file
-  reqdPkgs = list("data.table", "raster",
-                  "reproducible",
-                  "PredictiveEcology/LandR@development",
-                  "future", "future.apply", "dplyr",
-                  "CeresBarros/ToolsCB", "crayon"),
+  reqdPkgs = list("crayon", "data.table", "dplyr", "future", "future.apply",
+                  "raster",
+                  "PredictiveEcology/LandR@development (>= 1.0.7.9023)",
+                  "PredictiveEcology/reproducible@development (>= 1.2.11)",
+                  "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9004)",
+                  "CeresBarros/ToolsCB"),
   parameters = rbind(
-    defineParameter("endYear", "integer", 2111L, 1, NA,
+    defineParameter("endYear", "integer", 2111L, NA_integer_, NA_integer_,
                     "The last year of simulation results to use."),
-    defineParameter("ncores", "integer", 8, 1, NA,
+    defineParameter("ncores", "integer", 8L, 1L, NA_integer_,
                     "Number of cores to use if P(sim)$parallel is TRUE"),
     defineParameter("parallel", "logical", TRUE, NA, NA,
                     paste("Should data processing be parallelized? Currently only used in assigning",
                           "functional vegetation types following Cameron Naficy's classification")),
-    defineParameter("reps", "integer", 1L:10L, NA, NA,
+    defineParameter("reps", "integer", 1L:10L, NA_integer_, NA_integer_,
                     "The simulation repetitions to compile. If no repetitions were performed set to NA"),
     defineParameter("scenarios", "character", c("PM", "noPM"), NA, NA,
                     paste("The simulation scenarios to compile - must correspond with the names used in the",
                           "outputs folder tree")),
-    defineParameter("startYear", "integer", 2011L, NA, NA,
+    defineParameter("startYear", "integer", 2011L, NA_integer_, NA_integer_,
                     "The first year simulation results to use"),
-    defineParameter("yearSubset", "integer", unique(c(seq(2011L, 2111L, 5), 2111L)), NA, NA,
+    defineParameter("yearSubset", "integer", as.integer(unique(c(seq(2011, 2111, 5), 2111))), NA_integer_, NA_integer_,
                     paste("Specific simulation years to compile - only vegetation dynamics will be subset.",
                           "outputs folder tree. If using all years set to NULL. Must contain `startYear` and `endYear`")),
     defineParameter(".plots", "character", "screen", NA, NA,
@@ -84,9 +85,18 @@ defineModule(sim, list(
                  sourceURL = NA)
   ),
   outputObjects = bindrows(
-    createsOutput("allPixelBurnData", "data.table", "Pixelwise fire data across the simulation landscape."),
-    createsOutput("allPixelCohortData", "data.table", "Pixelwise cohort and fire data across the simulation landscape."),
-    createsOutput("allPixelCohortDataMnt", "data.table", "Pixelwise cohort and fire data for montane belt.")
+    createsOutput("allPixelBurnData", "data.table",
+                  desc = paste("Pixelwise fire data per pixel: fire interval (no. years between each fire;",
+                               "'fireInt'), fire frequency (mean `fireInt`; 'fireFreq'), severity (severity",
+                               "class from *Biomass_regenerationPM*, assumed `5L` in stand-replacing ('noPM')",
+                               "scenario), patch size (no. pixels with same severity class within a fire ID;",
+                               "'patchSize') and killed biomass ('severityB').")),
+    createsOutput("allPixelCohortData", "data.table",
+                  desc = paste("Pixelwise cohort data across the simulation landscape, plus total no fires",
+                               "('noFires') and fire presence/absence ('firePresAbs').")),
+    createsOutput("allPixelCohortDataMnt", "data.table",
+                  desc = paste("As 'allPixelCohortData' but only on Montane region, with added vegetation",
+                               "types from Cameron Naficy ('vegTypeCN')"))
   )
 ))
 
@@ -264,6 +274,7 @@ loadSimulationDataEvent <- function(sim) {
 
 joinSimulationDataEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  gc()  ## try to release memory consumed by DT threads
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
 
   ## ECOLOGICAL ZONATION -----------------------------
@@ -438,6 +449,7 @@ joinSimulationDataEvent <- function(sim) {
 
 addVegTypesCNEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  gc()  ## try to release memory consumed by DT threads
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
 
   ## USING CAMERON'S CLASSIFICATION/SUMMARY ---------------------
