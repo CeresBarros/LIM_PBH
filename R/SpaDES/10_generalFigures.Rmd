@@ -54,7 +54,6 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresGeneral")
 dir.create(figOutputPath)
-cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 ```
 
 ### DATA LOADING AND PROCESSING NOTES

@@ -1,11 +1,15 @@
 ---
-title: "LIM - analysis of results (montane)"
+title: "LIM - analysis of results (montane -- new: sims with 2000yrs)"
+subtitle: "Only publication results are included" 
 author: "Ceres Barros"
 date: "26/04/2021"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
+
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = "D:/GitHub/LandscapesInMotion/")
+knitr::opts_knit$set(root.dir = normalizePath(getwd()))
 knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
                       fig.width = 10, fig.height = 8)
 ```
@@ -66,7 +70,6 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane")
-cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 
 ## merge Douglas-fir/dry-conifer stands?
 ## no need with last year classif

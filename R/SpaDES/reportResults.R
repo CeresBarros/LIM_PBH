@@ -27,7 +27,6 @@ simPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report/postSimAnalyses
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 dir.create(figOutputPath)
-cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 
 ## DATA SOURCING ---------------------------------------------------
 ## GET CAMERON'S AGE DATA AND STAND VEG TYPES
@@ -321,7 +320,7 @@ parallelFUN <- function(DT) {
                groupingCols = c("scenario", "rep", "year", "pixelGroup"),
                cachingArg = tempArg,
                omitArgs = c("DT"),
-               cacheRepo = cPath,
+               cacheRepo = simPaths$cachePath,
                userTags = c("reportResults"))
   out
 }
@@ -336,8 +335,8 @@ amc::.gc()
 vegTypesCN <- rbindlist(vegTypesCN, use.names = TRUE)
 
 ## test:
-# vegTypesCN <- unique(showCache(cPath, userTags = c("reportResults"))$cacheId) %>%
-#   loadFromCache(cPath, cacheId = .)
+# vegTypesCN <- unique(showCache(simPaths$cachePath, userTags = c("reportResults"))$cacheId) %>%
+#   loadFromCache(simPaths$cachePath, cacheId = .)
 
 ## add Cameron's veg types and get rid of useless columns
 cols <- c("scenario", "rep", "year", "pixelGroup", "vegTypeCN")

@@ -1,10 +1,10 @@
 ---
-title: "LIM - analysis of results (full landscape)"
+title: "LIM - analysis of results (full landscape -- new: sims with 2000yrs)"
 author: "Ceres Barros"
 date: "26/04/2021"
 output: html_document
 ---
-
+  
 ```{r setup, include=FALSE}
 # knitr::opts_knit$set(root.dir = "~/GitHub/LandscapesInMotion/")
 knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
@@ -63,7 +63,6 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 dir.create(figOutputPath)
-cPath <- file.path(simPaths$cachePath, "postSimAnalyses")
 ```
 
 ### DATA LOADING AND PROCESSING NOTES
@@ -262,7 +261,7 @@ plotTest4 <- ggplot(plotData2) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
-    scale_fill_discrete(labels = scenLabels) +
+  scale_fill_discrete(labels = scenLabels) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
@@ -314,8 +313,8 @@ plotTest5 <- ggplot(plotData2) +
              position = position_dodge(width = 0.75), size = 2, show.legend = FALSE) +
   geom_hline(yintercept = 0, colour = "grey", linetype = "dashed") +
   scale_color_manual(values = c("red", "red")) +
-    scale_fill_discrete(labels = scenLabels) +
-    scale_x_discrete(labels = scenLabels) +
+  scale_fill_discrete(labels = scenLabels) +
+  scale_x_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(y = "beta-div.", x = "")
@@ -995,7 +994,7 @@ plotData <- plotData[, list(alphaDiv = 1/sum(relB^2)),
 plot33 <- ggplot(data = plotData,
                  aes(x = year, y = alphaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
-    scale_colour_discrete(labels = scenLabels) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. alpha-diversity", y = "alpha-div.") +
@@ -1086,7 +1085,7 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot35 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
-    scale_colour_discrete(labels = scenLabels) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.") +
@@ -1110,7 +1109,7 @@ plotData2 <- plotData2[, list(betaDiv = gammaDiv * sum((1/.N) * (1/alphaDiv), na
 plot36 <- ggplot(data = plotData2,
                  aes(x = year, y = betaDiv, colour = scenario)) +
   stat_summary(fun = "mean", geom = "line", size = 1) +
-    scale_colour_discrete(labels = scenLabels) +
+  scale_colour_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", linetype = "dotted")) +
   labs(title = "Avg. beta-diversity", y = "beta-div.")  +
