@@ -38,7 +38,7 @@ options("reproducible.useGDAL" = FALSE)
 
 
 ## general paths
-simDirName <- "mar2021Runs"
+simDirName <- "mar2022Runs"
 if (Sys.info()["nodename"] == "W-VIC-A127584") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName)
                    , modulePath = file.path("R/SpaDES/m")
