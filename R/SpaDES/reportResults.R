@@ -19,7 +19,7 @@ library(MuMIn)
 
 source("R/R_tools/convertToCNVegType.R")
 
-simPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report")
+simPaths <- list(cachePath = file.path("R/SpaDES/cache/AI_report/postSimAnalyses")
                  , modulePath = file.path("R/SpaDES/m")
                  , inputPath = file.path("R/SpaDES/inputs")
                  , outputPath = file.path("R/SpaDES/outputs"))
