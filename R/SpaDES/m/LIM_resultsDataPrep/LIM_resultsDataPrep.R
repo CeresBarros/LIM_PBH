@@ -292,6 +292,20 @@ joinSimulationDataEvent <- function(sim) {
   ecoregionLayerDT <- ecoregionLayerLabels[ecoregionLayerDT, on = .(ecozoneCode)]
 
   allPixelCohortData <- ecoregionLayerDT[sim$allPixelCohortData, on = .(pixelIndex)]
+  allPixelCohortData[, `:=`(scenario = as.factor(scenario),
+                            rep = as.integer(rep),
+                            year = as.integer(year),
+                            pixelGroup = as.integer(pixelGroup),
+                            pixelIndex = as.integer(pixelIndex),
+                            ecoregionGroup = as.factor(ecoregionGroup),
+                            ecozoneCode = as.integer(ecozoneCode),
+                            ecozoneName = as.factor(ecozoneName),
+                            vegType = as.integer(vegType),
+                            speciesCode = as.factor(speciesCode),
+                            age = as.integer(age),
+                            B = as.integer(B),
+                            mortality = as.integer(mortality),
+                            aNPPAct = as.integer(aNPPAct))]
   amc::.gc()
 
   ## FIRE ATTRIBUTES ---------------------------------------
@@ -299,11 +313,12 @@ joinSimulationDataEvent <- function(sim) {
   ## no. fires per pixel
   ## how many times did each pixel burn? total no. fires per pixel/scenario/rep
   allPixelBurnData <- copy(sim$allPixelBurnData)
-  allPixelBurnData[, noFires := sum(burnt), by = .(scenario, rep, pixelIndex)]
+  allPixelBurnData[, noFires := as.integer(sum(burnt)), by = .(scenario, rep, pixelIndex)]
 
   ## calculate fire size in pixels per fireID/scenario/rep
   ## this accounts for both forest and non-forest pixels
-  allPixelBurnData[, fireSize := length(unique(pixelIndex)), by = .(scenario, rep, year, fireID)]
+  allPixelBurnData[, fireSize := as.integer(length(unique(pixelIndex))),
+                   by = .(scenario, rep, year, fireID)]
 
   ## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
   ## note that for noPM we assume severity class (i.e. 'severity' column) to be the maximum = 5
@@ -312,15 +327,16 @@ joinSimulationDataEvent <- function(sim) {
   ## with a given severity per fireID
   message(blue("Assuming a severity class 5 for any scenario with 'noPM'"))
   allPixelBurnData[grepl("noPM", scenario) & !is.na(pixelGroup), severity := 5]
-  allPixelBurnData[!is.na(severity), patchSize := length(unique(pixelIndex)),
+  allPixelBurnData[, severity := as.integer(severity)]
+  allPixelBurnData[!is.na(severity), patchSize := as.integer(length(unique(pixelIndex))),
                    by = .(scenario, rep, year, severity, fireID)]
 
   ## fire frequency
   ## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
   setkey(allPixelBurnData, pixelIndex, scenario, rep, year)
-  allPixelBurnData[, fireInt := year - lag(year, n = 1),
+  allPixelBurnData[, fireInt := as.integer(year - lag(year, n = 1)),
                    by = .(scenario, rep, pixelIndex)]
-  allPixelBurnData[is.na(fireInt), fireInt := year - P(sim)$startYear] ## NAs mean only one fire, return interval is the difference from start year
+  allPixelBurnData[is.na(fireInt), fireInt := as.integer(year - P(sim)$startYear)] ## NAs mean only one fire, return interval is the difference from start year
   allPixelBurnData[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
 
   allPixelBurnData[, burnt := NULL] ## no longer necessary
@@ -436,7 +452,8 @@ joinSimulationDataEvent <- function(sim) {
   amc::.gc()
 
   ## add presence/absence of fire across simulation per pixel/scenario
-  allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)), by = .(scenario, rep, pixelIndex)]
+  allPixelCohortData[, firePresAbs := as.integer(any(noFires > 0)),
+                     by = .(scenario, rep, pixelIndex)]
   amc::.gc()
 
   ## export to sim
@@ -540,6 +557,22 @@ addVegTypesCNEvent <- function(sim) {
   amc::.gc()
 
   ## export to sim
+  allPixelCohortDataMnt[, `:=`(scenario = as.factor(scenario),
+                               rep = as.integer(rep),
+                               year = as.integer(year),
+                               pixelGroup = as.integer(pixelGroup),
+                               pixelIndex = as.integer(pixelIndex),
+                               ecoregionGroup = as.factor(ecoregionGroup),
+                               ecozoneCode = as.integer(ecozoneCode),
+                               ecozoneName = as.factor(ecozoneName),
+                               speciesCode = as.factor(speciesCode),
+                               vegTypeCN = as.factor(vegTypeCN),
+                               noFires = as.integer(noFires),
+                               firePresAbs = as.integer(firePresAbs),
+                               age = as.integer(age),
+                               B = as.integer(B),
+                               mortality = as.integer(mortality),
+                               aNPPAct = as.integer(aNPPAct))]
   sim$allPixelCohortDataMnt <- allPixelCohortDataMnt
 
   # ! ----- STOP EDITING ----- ! #
