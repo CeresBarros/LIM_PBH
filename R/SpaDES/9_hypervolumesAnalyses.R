@@ -181,7 +181,8 @@ anova(fireHVVolumeVegTypes.gls)
 cat("\n*********************\n")
 summary(fireHVVolumeVegTypes.gls)
 cat("\n*********************\n")
-emmeans(fireHVVolumeVegTypes.gls, pairwise ~ scenario | vegType, adjust = "tukey")    ## tukey contrasts for scenarios within vegTypes
+emmeans(fireHVVolumeVegTypes.gls, pairwise ~ scenario | vegType,
+        adjust = "tukey", data = modelData2)    ## tukey contrasts for scenarios within vegTypes
 sink()
 
 
