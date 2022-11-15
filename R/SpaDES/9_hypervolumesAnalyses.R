@@ -459,23 +459,23 @@ plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
 
 pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "fireHV"],
                                    aes(x = vegType, y = log(Volume)
-                                       # , alpha = scenario
+                                       , alpha = scenario
                                        , fill = vegType)) +
   geom_boxplot() +
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  # scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-  #                    labels = scenLabels) +
+  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
+                     labels = scenLabels) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
   theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
   theme(legend.box = "vertical",
         strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity")
-# guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
-# facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
-#                                           "fireHV" = "Pyrodiversity")))
+  labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity") +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  # facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
+  #            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+  #                                           "fireHV" = "Pyrodiversity")))
 
 bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "vegHV"],
                                   aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
