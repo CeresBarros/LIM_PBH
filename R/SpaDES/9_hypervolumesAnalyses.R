@@ -200,11 +200,12 @@ modelData[, scenario := relevel(scenario, "HV_noPM")]
 modelData[, vegType := relevel(vegType, "No veg.")]
 
 ## model landscape separately
-vegHVVolumeLandscape.lm <- lm(log(Volume) ~ scenario, modelData[vegType == "landscape"])
+modelData2 <- modelData[vegType == "landscape"]
+vegHVVolumeLandscape.lm <- lm(log(Volume) ~ scenario, modelData2)
 
 vegHVVolumeLandscape.gls <- gls(log(Volume) ~ scenario,
                                 weights = varIdent(form = ~ 1 | scenario),
-                                data = modelData[vegType == "landscape"])
+                                data = modelData2)
 
 AIC(vegHVVolumeLandscape.lm,
     vegHVVolumeLandscape.gls)  ## slightly better
@@ -218,11 +219,12 @@ anova(vegHVVolumeLandscape.gls)
 cat("\n*********************\n")
 summary(vegHVVolumeLandscape.gls)
 cat("\n*********************\n")
-emmeans(vegHVVolumeLandscape.gls, specs = "scenario")
+emmeans(vegHVVolumeLandscape.gls, specs = "scenario", data = modelData2)
 sink()
 
 ## model vegTypes
-vegHVVolumeVegTypes.lm <- lm(log(Volume) ~ scenario * vegType, modelData[vegType != "landscape"])
+modelData2 <- modelData[vegType != "landscape"]
+vegHVVolumeVegTypes.lm <- lm(log(Volume) ~ scenario * vegType, modelData2)
 
 ## some heteroscedasticity
 check_model(vegHVVolumeVegTypes.lm)
@@ -246,7 +248,8 @@ anova(vegHVVolumeVegTypes.gls)
 cat("\n*********************\n")
 summary(vegHVVolumeVegTypes.gls)
 cat("\n*********************\n")
-emmeans(vegHVVolumeVegTypes.gls, pairwise ~ scenario | vegType, adjust = "tukey")    ## tukey contrasts for scenarios within vegTypes
+emmeans(vegHVVolumeVegTypes.gls, pairwise ~ scenario | vegType, adjust = "tukey",
+        deata = modelData2)    ## tukey contrasts for scenarios within vegTypes
 cat("\n*********************\n")
 sink()
 
