@@ -547,9 +547,14 @@ plotData <- plotData[B > 0,  ## absences can't lower the average ages
                      list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                           sum((B/100), na.rm = TRUE))),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
-plotData <- plotData[,  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
+
+## don't average across years/pixels -- leave all replicates.
+# plotData <- plotData[,  
+                     # list(AgeBySppWeighted = mean(AgeBySppWeighted)),
+                     # by = .(scenario, rep, firePresAbs, vegTypeCN)]
+if (any(is.na(plotData$AgeBySppWeighted))) {
+  stop("there should be no NAs")
+}
 
 plotData2 <- copy(ageDataCN[, .(Cover.dendro, Reconstructed.age, firePresAbs)])
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
