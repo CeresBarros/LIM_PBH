@@ -352,6 +352,8 @@ pyroVSbiodiversityLandscape.lm2 <- lm(logVegHV ~ logFireHV*scenario, data = mode
 ## predictions with new data (necessary for emmeans) are wrong (see https://stackoverflow.com/questions/70746067/issues-predicting-with-nlmeglsquadratic-model-fitted-with-poly-2)
 ## instead of poly we now centre the data and use logFireHV + I(logFireHV^2) -- given the low degree polynomial this is okay.
 
+## the bug was "seemingly" fixed but there's still an issue with estimates in gls.
+
 # pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
 #                                       data = modelData[vegType == "landscape"])
 modelData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
@@ -387,8 +389,6 @@ anova(pyroVSbiodiversityLandscape.lm2)
 cat("\n*********************\n")
 summary(pyroVSbiodiversityLandscape.lm2)
 cat("\n*********************\n")
-# emtrends(pyroVSbiodiversityLandscape.lm3, specs = c("scenario"),
-#          var = "logFireHVcenter", max.degree = 2)
 emtrends(pyroVSbiodiversityLandscape.lm2, specs = c("scenario"),
          var = "logFireHV")
 sink()
