@@ -7,7 +7,7 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-
+  
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = normalizePath(getwd()))
 knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
@@ -93,6 +93,7 @@ Given the size of the data put together in a pixel-based format, results were sa
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
+rm(allPixelCohortData) ## not needed
 gc(reset = TRUE)
 
 if (mergeDMCPSME) {
@@ -153,7 +154,7 @@ summaryBurnCohortDataSpp <- allPixelCohortDataMnt[, list(BiomassBySpecies = as.n
                                                   by = .(scenario, rep, year, noFires, speciesCode)]
 summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
-amc::.gc()
+gc(reset = TRUE)
 
 ## BY FOREST TYPE (def. as dominant species)
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
@@ -165,7 +166,7 @@ summaryBurnCohortDataVegType <- allPixelCohortDataMnt[, list(BiomassByVegType = 
                                                       by = .(scenario, rep, year, noFires, vegType)]
 summaryBurnCohortDataVegType[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataVegType[, firePresAbs := as.integer(noFires != 0)]
-amc::.gc()
+gc(reset = TRUE)
 
 ## BY CAMERON'S VEG TYPE
 summaryBurnCohortDataVegTypeCN <- allPixelCohortDataMnt[, list(BiomassByVegType = as.numeric(sum((B/100), na.rm = TRUE)),
@@ -3511,8 +3512,6 @@ plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Vo
                                               meanSevB = "Mean severity",
                                               meanPatchS = "Mean patch size")))
 
-## HERE
-
 ## relationship  between pyrodiversity and fire attributes -----------------
 ## join HV sizes with fire attributes
 plotData <- allHVData[year == end(preSimList) & HVtype == "fireHV",
@@ -3523,7 +3522,7 @@ plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
 plotData[, scenario := sub("HV_", "", scenario)]
 ## center and scale volume as in model
 plotData[, Volume := scale(log(Volume), center = TRUE, scale = FALSE),
-          by = .(scenario, vegType)]
+         by = .(scenario, vegType)]
 
 plotData2 <- plotData[vegType == "landscape"]
 plotData2 <- summaryFireAttributes[plotData2, on = c("scenario", "rep"),
@@ -3577,9 +3576,6 @@ plotSave <- ggarrange(fireAttrPyroVegTypesPlot,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff"),
        width = 14, height = 8)
-
-
-
 ```
 
 ```{r plot&savePlots23, echo = FALSE}
