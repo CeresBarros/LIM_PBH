@@ -122,24 +122,21 @@ allPixelCDMntEnd <- allPixelCohortDataMnt[yearSamples, on = .(year, rep)]
 gc(reset = TRUE)
 
 
-## add vegTypes at end  year - these are the ones we track in time as we would in dendro studies
-## and pixels with no fires to burn data - note that we loose the yearly fire data.
-allPixelBurnData <- allPixelBurnData[unique(allPixelCDMntEnd[, .SD, .SDcols = c(cols, "vegTypeCN")]), 
-                                     on = c("scenario", "rep", "year", "pixelIndex")]
-cols <- c("fireID", "noFires", "severity", "severityB", "fireSize", "patchSize", "fireInt", "fireFreq")
-allPixelBurnData[, (cols) := lapply(.SD, replaceNAs), .SDcols = cols]
+## add vegTypes at end  year - for pyrodiv HV vegTypes were classified at the end to capture
+## 500 years of fire history. This was not the same in vegHV for which we sampled 5 years, each 
+## with it's veg types -- this seems wrong or hard to compare but it will do for now.
 
 ## summarise fire data
 source("R/R_tools/prepFireData4HVs.R")
 
 ## drop unused levels
-allPixelBurnData$vegTypeCN <- droplevels(allPixelBurnData$vegTypeCN)
 allPixelCohortDataMnt$vegTypeCN <- droplevels(allPixelCohortDataMnt$vegTypeCN)
 allPixelCDMntEnd$vegTypeCN <- droplevels(allPixelCDMntEnd$vegTypeCN)
 summaryFireAttributes$vegTypeCN <- droplevels(summaryFireAttributes$vegTypeCN)
 
 ## get HV data
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
+useFirstLastYear <- FALSE
 source("R/R_tools/prepHVData.R")
 ```
 
@@ -200,7 +197,7 @@ At the end of the simulation (or averaged across sampled years), by species
 ## comparing simulated and observed ages - end of sim
 ## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
 ## in the obs data and this would lead to data loss
-plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
+plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
                              list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
@@ -386,13 +383,13 @@ gc()
 ## age distribution at end of simulation vs cameron's
 
 ## pixel-level differences from observed mean
-plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
+## don't average across years/pixels -- leave all replicates.
+plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
                              list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
-plotData <- plotData[,  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
+plotData$age <- NULL
+plotData <- unique(plotData)
 
 plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
 plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
@@ -536,6 +533,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 
 ### Age means CIs - by forest type
 Forest types are defined for a sample of years across the quasi equilibrium period.
+Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
 ```{r simVsObsAges_vegType, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
@@ -543,15 +541,15 @@ Forest types are defined for a sample of years across the quasi equilibrium peri
 pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
 plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, vegTypeCN, pixelIndex)]
 
-plotData <- plotData[B > 0,  ## absences can't lower the average ages
+## average age by species!
+# don't average across years/pixels/species -- leave all replicates like the observed data
+plotData <- plotData[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
                      list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                           sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
+plotData$age <- NULL
+plotData <- unique(plotData)
 
-## don't average across years/pixels -- leave all replicates.
-# plotData <- plotData[,  
-                     # list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     # by = .(scenario, rep, firePresAbs, vegTypeCN)]
 if (any(is.na(plotData$AgeBySppWeighted))) {
   stop("there should be no NAs")
 }
@@ -559,7 +557,7 @@ if (any(is.na(plotData$AgeBySppWeighted))) {
 plotData2 <- copy(ageDataCN[, .(Cover.dendro, Reconstructed.age, firePresAbs)])
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
-## make sure the data used here is the same as in the MAD calculations
+## add means per vegType: make sure the data used here is the same as in the MAD calculations
 plotData <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)), 
                       by = .(vegTypeCN, firePresAbs)][plotData, on = .(vegTypeCN, firePresAbs)]
 plotData[, firePresAbs := as.factor(firePresAbs)]
@@ -697,36 +695,46 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 ### Mean absolute deviations and quantile deviations of simulated ages by stand type
 (typical MAD, and quantile deviations - 50, 75, 95%)
 Forest types are defined for a sample of years across the quasi equilibrium period.
+Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
+
 ```{r simVsObsAgesDif, cache = FALSE}
 ## mean age differences
-## calculate avg weighted ages across observed stands first
-## then the absolute difference of each stand to the observed average (per veg type) across reps
+## calculate avg weighted ages (per species) per pixel first, then average across species per pixel
+## then take the absolute difference of each stand to the observed average (per veg type) across reps
 pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
 
 plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, pixelIndex)]
 plotData[, vegTypeCN := i.vegTypeCN]
 plotData[, i.vegTypeCN := NULL]
-plotData <- plotData[vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+plotData <- plotData[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
                      list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                           sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
+## repeat values for landscape
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
 plotData <- plotData[,
                      list(AgeBySppWeighted = mean(AgeBySppWeighted)),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
 
-plotData2 <- ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
-                       by = .(Cover.dendro, firePresAbs)]
+if (any(is.na(plotData$AgeBySppWeighted))) {
+  stop("There should be no NAs")
+}
+
+plotData2 <- rbind(ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
+                       by = .(Cover.dendro, firePresAbs)],
+                   ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE),
+                                    Cover.dendro = "landscape"),
+                       by = .(firePresAbs)])
 plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
-plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(AgeBySppWeighted)]
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs)))),
+plotData <- plotData[!is.na(avgAgeBySppObs)]
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - avgAgeBySppObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
-plotData2 <- rbind(plotData2,
-                   plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs))),
-                                   vegTypeCN = "landscape"),
-                            by = .(scenario, rep, firePresAbs)])
 
 ## differences
+x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
 plot32 <- ggplot(plotData,
                  aes(x = vegTypeCN,
                      y = AgeBySppWeighted - avgAgeBySppObs,
@@ -735,7 +743,7 @@ plot32 <- ggplot(plotData,
   geom_boxplot() +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_x_discrete(labels = vegTypeCNLabels, limits = x_order) +
   scale_fill_discrete(labels = scenLabels) +
   labs(title = "Avg. differences from observed ages",
        y = expression("sim." - bar("obs.")), x = "") +
@@ -754,36 +762,47 @@ plot32.2 <- ggplot(plotData2,
   scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
   scale_colour_discrete(labels = scenLabels) +
   scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = unique(c("landscape", sort(unique(plotData2$vegTypeCN))))) +
+                   limits = rev(x_order)) +
   labs(title = "Mean abs. deviation from observed ages",
        y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
   coord_flip() +
   facet_grid(~ firePresAbs,
              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-## forest-type-level differences between simulated and observed upper quuantiles
+## forest-type-level differences between simulated and observed upper quantiles
 pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
 
 plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, pixelIndex)]
 plotData[, vegTypeCN := i.vegTypeCN]
 plotData[, i.vegTypeCN := NULL]
 
-plotData <- plotData[B > 0,  ## absences can't lower the average ages
+plotData <- plotData[B > 0  & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
                      list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                           sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
+## add landscape
+plotData2 <- copy(plotData) 
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
 plotData <- plotData[,  ## absences can't lower the average ages
                      list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     by = .(scenario, rep, pixelIndex, firePresAbs, vegTypeCN)]
+                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
 plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
                             quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
                             quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
-plotData2 <- ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
-                              quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
-                              quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
-                       by = .(Cover.dendro, firePresAbs)]
+plotData2 <- rbind(
+  ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                   quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                   quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
+            by = .(Cover.dendro, firePresAbs)],
+  ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                   quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                   quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE),
+                   Cover.dendro = "landscape"), 
+            by = .(firePresAbs)])
+
 plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData[, firePresAbs := as.factor(firePresAbs)]
@@ -794,12 +813,6 @@ plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50Age
                              meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
                              meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
-temp <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
-                        meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
-                        meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs)),
-                        vegTypeCN = "landscape"),
-                 by = .(scenario, rep, firePresAbs)]
-plotData2 <- rbind(plotData2, temp)
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
 
 plot32.3 <- ggplot(plotData2, 
@@ -923,21 +936,29 @@ gc()
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
-plotData <- allPixelCDMntEnd[vegTypeCN %in% unique(ageDataCN$Cover.dendro),
+## don't average across years/pixels -- leave all replicates.
+plotData <- allPixelCDMntEnd[B > 0,
                              list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
-plotData <- plotData[,
-                     list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
+plotData$age <- NULL
+plotData <- unique(plotData)
+plotData2 <- copy(plotData)
+plotData2[ , speciesCode := "landscape"]
+plotData <- rbind(plotData, plotData2)
 
-plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
+plotData2 <- ageDataCN[, .(Species, Reconstructed.age, firePresAbs)]
 plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
 plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
 plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
 plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
 plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
 plotData2 <- plotData2[!is.na(speciesCode)]
+
+plotData3 <- copy(plotData2)
+plotData3[, speciesCode := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+  
 plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
                        by = .(speciesCode, firePresAbs)]
 
@@ -945,11 +966,6 @@ plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
 plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(AgeBySppWeighted)]
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs)))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
-
-temp <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs))),
-                        speciesCode = "landscape"),
-                 by = .(scenario, rep, firePresAbs)]
-plotData2 <- rbind(plotData2, temp)
 
 ## differences
 plot43 <- ggplot(plotData,
@@ -988,11 +1004,17 @@ plot43.2 <- ggplot(plotData2,
              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
 
-## species-level differences between simulated and observed upper quuantiles
+## species-level differences between simulated and observed upper quantiles
 plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
                              list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
+plotData$age <- NULL
+plotData <- unique(plotData)
+plotData2 <- copy(plotData)
+plotData2[ , speciesCode := "landscape"]
+plotData <- rbind(plotData, plotData2)
+
 plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
                             quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
                             quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
@@ -1005,6 +1027,10 @@ plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
 plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
 plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
 plotData2 <- plotData2[!is.na(speciesCode)]
+
+plotData3 <- copy(plotData2)
+plotData3[, speciesCode := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
 
 plotData2 <- plotData2[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
                               quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
@@ -1020,12 +1046,6 @@ plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50Age
                              meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
                              meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
-temp <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
-                        meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
-                        meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs)),
-                        speciesCode = "landscape"),
-                 by = .(scenario, rep, firePresAbs)]
-plotData2 <- rbind(plotData2, temp)
 
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
 
@@ -1160,8 +1180,8 @@ gc()
 ### No. fires, fire frequency, fire size and fire severity
 ```{r simVsObsFires, cache = FALSE}
 ## fire size distribution
-plot37 <- ggplot(summaryFireAttributes,
-                 aes(x = meanPatchS + 0.1, fill = scenario, alpha = scenario)) +
+plot37 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."],
+                 aes(x = meanPatchS + 1, fill = scenario, alpha = scenario)) +
   geom_density(adjust = 1.5) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_x_log10() +
@@ -1171,8 +1191,8 @@ plot37 <- ggplot(summaryFireAttributes,
   labs(title = "Fire mean patch size distribution", 
        x = "Mean patch size (no. pixels)")
 
-plot37.2 <- ggplot(summaryFireAttributes,
-                   aes(x = meanPatchS + 0.1, fill = scenario, alpha = scenario)) +
+plot37.2 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."],
+                   aes(x = meanPatchS + 1, fill = scenario, alpha = scenario)) +
   geom_density(adjust = 1.5) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_x_log10() +
@@ -1180,19 +1200,16 @@ plot37.2 <- ggplot(summaryFireAttributes,
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Fire mean patch size distribution", 
-       x = "Patch size (no. pixels)") +
+       x = "Mean patch size (no. pixels)") +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## average no. of pixels with certain fire frequency
 plotData <- allPixelCohortDataMnt[, list(noPixels = length(unique(pixelIndex))),
                                   by = .(scenario, rep, year, noFires)]
-## wtf: (?)
-# plotData2 <- plotData[, list(rep = 2, scenario = scenario, noFires = noFires, noPixels = noPixels * runif(1, 0, 1))]
-# plotData <- rbind(plotData, plotData2)
 plot38 <- ggplot(plotData,
                  aes(x = as.factor(noFires), y = noPixels, fill = scenario)) +
   stat_summary(fun = "mean", geom = "bar", position = "dodge", alpha = 0.5) +
-  stat_summary(fun.data = "mean_sdl", aes(colour = scenario),
+  stat_summary(fun.data = "mean_sd", aes(colour = scenario),
                geom = "errorbar", position = "dodge", show.legend = FALSE) +
   stat_summary(aes(label = round(..y..), colour = scenario),
                fun = "mean", geom = "text", show.legend = FALSE,
@@ -1202,90 +1219,41 @@ plot38 <- ggplot(plotData,
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "no. fires", y = "no. pixels")
 
-
-## mean fire interval per forest type - to compare with camerons fire intervals.
-plotData <- rbind(summaryFireAttributes[meanFreq > 0, .(scenario, rep, pixelIndex, meanFreq, vegTypeCN)], 
-                  summaryFireAttributes[meanFreq > 0, list(meanFreq = mean(meanFreq, na.rm = TRUE),
-                                                           vegTypeCN = "landscape"), 
-                                        by = .(scenario, rep, pixelIndex)])
-plotData2 <- rbind(unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, mean.FI, Patch.ID)]),
-                   ageDataCN[firePresAbs > 0, list(mean.FI = mean(mean.FI, na.rm = TRUE),
-                                                   Cover.dendro = "landscape"),
-                             by = .(Patch.ID)])
-plot39 <- ggplot() +
-  geom_violin(data = plotData,
-              aes(x = vegTypeCN, y = meanFreq, fill = scenario, 
-                  colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  # stat_summary(data = plotData,
-  #              aes(x = vegTypeCN, y = meanFreq, colour = scenario), 
-  #              fun.data = "mean_cl_boot", geom = "pointrange", 
-  #              position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              aes(x = Cover.dendro, y = mean.FI, fill = "observed", 
-                  colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  # stat_summary(data = plotData2,
-  #              aes(x = Cover.dendro, y = mean.FI, colour = "observed"),
-  #              fun.data = "mean_cl_boot", geom = "pointrange",
-  #              position = position_dodge(width = 0.9)) +
+## average no. of fires per forest type across quasi-equilibrium period
+plotData <- allPixelCDMntEnd[vegTypeCN != "No veg.", 
+                             list(meanNoFires = mean(noFires),
+                                  sdNoFires = sd(noFires)),
+                             by = .(scenario, vegTypeCN)]
+plot36 <- ggplot(plotData) +
+  geom_bar(aes(x = vegTypeCN, y = meanNoFires, fill = scenario),
+           position = "dodge", stat = "identity", alpha = 0.5) +
+  geom_errorbar(aes(x = vegTypeCN,
+                    ymin = meanNoFires - sdNoFires, 
+                    ymax = meanNoFires + sdNoFires,
+                    colour = scenario),
+                position = "dodge", show.legend = FALSE) +
+  scale_fill_discrete(labels = scenLabels) +
+  scale_colour_discrete(labels = scenLabels) +
   scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Mean fire interval", subtitle = "by forest type",
-       y = "Fire interval", x = "", colour = "")
-
-## remove landscape, since plot data does not cover non-forested plots -- unfair comparison.
-plot39.2 <- ggplot() +
-  geom_violin(data = plotData[vegTypeCN != "landscape"],
-              aes(x = vegTypeCN, y = meanFreq, fill = scenario, 
-                  colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  # stat_summary(data = plotData[vegTypeCN != "landscape"],
-  #              aes(x = vegTypeCN, y = meanFreq, colour = scenario), 
-  #              fun.data = "mean_cl_boot", geom = "pointrange", 
-  #              position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2[Cover.dendro != "landscape"],
-              aes(x = Cover.dendro, y = mean.FI, fill = "observed", 
-                  colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  # stat_summary(data = plotData2[Cover.dendro != "landscape"],
-  #              aes(x = Cover.dendro, y = mean.FI, colour = "observed"),
-  #              fun.data = "mean_cl_boot", geom = "pointrange",
-  #              position = position_dodge(width = 0.9)) +
-  scale_x_discrete(labels = vegTypeCNLabels[vegTypeCNLabels != "landscape"]) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Mean fire interval", subtitle = "by forest type",
-       y = "Fire interval", x = "", colour = "")
+  labs(y = "no. fires", x = "")
 
 ## only simulated fire intervals
-plot39.3 <- ggplot(data = summaryFireAttributes,
-                   aes(x = meanFreq, fill = scenario, alpha = scenario)) +
+plot39.3 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."],
+                   aes(x = meanFreq + 1, fill = scenario, alpha = scenario)) +
   geom_density() +
+  scale_x_log10() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire interval", colour = "")
 
-plot39.4 <- ggplot(data = summaryFireAttributes,
-                   aes(x = meanFreq, fill = scenario, alpha = scenario)) +
+plot39.4 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."],
+                   aes(x = meanFreq + 1, fill = scenario, alpha = scenario)) +
   geom_density() +
+  scale_x_log10() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 14, legend = "bottom") +
@@ -1294,7 +1262,7 @@ plot39.4 <- ggplot(data = summaryFireAttributes,
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## distribution of fire severity per stand across landscape
-plot40 <- ggplot(data = summaryFireAttributes) +
+plot40 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."]) +
   geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
   scale_x_log10() +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
@@ -1305,7 +1273,7 @@ plot40 <- ggplot(data = summaryFireAttributes) +
 
 ## distribution of fire severity per stand by veg types defined for a sample of years across the quasi equilibrium period.
 ## as used for HVs
-plot41 <- ggplot(data = summaryFireAttributes) +
+plot41 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."]) +
   geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
   scale_fill_discrete(labels = scenLabels) +
@@ -1317,8 +1285,9 @@ plot41 <- ggplot(data = summaryFireAttributes) +
 
 ## distribution of fire severity by veg types defined every year
 ## so not always the same pixels
-plotData <- unique(allPixelCohortDataMnt[, .(scenario, rep, year, pixelIndex, vegTypeCN)])
-plotData <- summaryFireAttributes[, .(scenario, rep, pixelIndex, meanSevB)][plotData, on = .(scenario, rep, pixelIndex)]
+plotData <- unique(allPixelCohortDataMnt[vegTypeCN != "No veg.", .(scenario, rep, year, pixelIndex, vegTypeCN)])
+plotData <- summaryFireAttributes[vegTypeCN != "No veg.",
+                                  .(scenario, rep, pixelIndex, meanSevB)][plotData, on = .(scenario, rep, pixelIndex)]
 plot42 <- ggplot(data = plotData) +
   geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
   scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
@@ -1338,13 +1307,12 @@ plotSave <- ggarrange(plot37 + theme(plot.title = element_blank()),
                       labels = "auto", common.legend = TRUE, legend = "bottom")
 ggsave(plotSave, filename = file.path(figOutputPath, "results_meanPatchSizeDist.tiff"),
        width = 16, height = 6)
+ggsave(plot = plot36 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
+       filename = file.path(figOutputPath, "results_noFiresVegTypeCN.tiff"),
+       width = 8, height = 7)
 ggsave(plot = plot38 + theme(legend.position = c(0.9, 0.9), legend.background = element_blank()),
        filename = file.path(figOutputPath, "results_noPixelsVsnoFires.tiff"),
        width = 8, height = 7)
-ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
-       width = 10, height = 8)
-ggsave(plot = plot39.2, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs_noLandscape.tiff"),
-       width = 10, height = 8)
 plotSave <- ggarrange(plot39.3 + theme(plot.title = element_blank()), 
                       plot39.4 + theme(plot.title = element_blank()),
                       widths = c(0.5, 1),
@@ -1362,7 +1330,7 @@ ggsave(plotSave, filename = file.path(figOutputPath, "results_meanSevDist.tiff")
        width = 16, height = 6)
 
 ggsave(plot = plot42 + theme(legend.position = c(0.9, 0.1), legend.background = element_blank()),
-       filename = file.path(figOutputPath, "results_meanSevDistVegTypeCN.tiff"),
+       filename = file.path(figOutputPath, "results_meanSevDist_sampleYearVegTypeCN.tiff"),
        width = 10, height = 8)
 
 plotSave <- ggarrange(plot37 + theme(plot.title = element_blank()),
@@ -1381,25 +1349,202 @@ ggsave(plot = plotSave,
 
 ```
 
+### boxplots of  no. fires, fire frequency, fire size and fire severity
+Non-forest forest type removed
+```{r fireAttr_boxplots, cache = FALSE}
+x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
+## fire size
+plot45 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+  geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = "landscape"),
+               outlier.size = 0.5) +
+  geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = vegTypeCN),
+               outlier.size = 0.5) +
+  scale_y_log10() +
+  scale_x_discrete(labels = vegTypeCNLabels, 
+                   limits = x_order) +
+  scale_fill_discrete(labels = scenLabels) +
+  theme_pubr(base_size = 14, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(y = "Mean patch size (no. pixels)", x = "")
+
+plot46 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+  geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = "landscape"),
+               outlier.size = 0.5) +
+  geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = vegTypeCN),
+               outlier.size = 0.5) +
+  scale_y_log10() +
+  scale_x_discrete(labels = vegTypeCNLabels, 
+                   limits = x_order) +
+  scale_fill_discrete(labels = scenLabels) +
+  theme_pubr(base_size = 14, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(y = "Mean fire interval (years)", x = "")
+
+## fire severity
+plot47 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+  geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = "landscape"),
+               outlier.size = 0.5) +
+  geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = vegTypeCN),
+               outlier.size = 0.5) +
+  scale_y_log10() +
+  scale_x_discrete(labels = vegTypeCNLabels, 
+                   limits = x_order) +
+  scale_fill_discrete(labels = scenLabels) +
+  theme_pubr(base_size = 14, legend = "bottom") +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  labs(y =  "Mean fire severity\n(biomass lost, ton/ha)", x = "")
+
+```
+
+```{r plot&savePlots17, echo = FALSE}
+plotSave <- ggarrange(plot45,
+                      plot46, 
+                      plot47, 
+                      common.legend = TRUE, legend = "bottom",
+                      ncol = 1,
+                      font.label = list(size = 20),
+                      labels = "auto")
+ggsave(plot = plotSave,
+       filename = file.path(figOutputPath, "results_fireAttrLandscape_boxplots.tiff"),
+       width = 10, height = 12, dpi = 300)
+
+```
+
+### "Fire regime" plots
+As in Cameron & Daniels 2020 (Fig. 9b,c): median and  SD of fire interval~severity, per forest type
+
+```{r fireAttr_boxplots, cache = FALSE}
+plotData <- summaryFireAttributes[vegTypeCN != "No veg.", 
+                                  list(meanFreq_median = median(meanFreq),
+                                       meanFreq_sd = sd(meanFreq),
+                                       meanSevB_median = median(meanSevB),
+                                       meanSevB_sd = sd(meanSevB)),
+                                  by = .(scenario, vegTypeCN)]
+
+plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
+
+jitter_wd <- 100
+jitter_hg <- 5
+jitter_sd <- 456
+plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevB_median, colour = vegTypeCN)) +
+  geom_point(size = 2, alpha = 0.5, 
+             position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
+  geom_errorbar(aes(ymin = meanFreq_median - meanFreq_sd, 
+                    ymax = meanFreq_median + meanFreq_sd),
+                alpha = 0.5, 
+                position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
+  geom_errorbarh(aes(xmin = meanSevB_median - meanSevB_sd, 
+                     xmax = meanSevB_median + meanSevB_sd),
+                 alpha = 0.5, 
+                 position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
+  scale_colour_manual(labels = vegTypeCNLabels[names(vegTypeCNLabels) %in% plotData$vegTypeCN],
+                      values = vegTypeCNColours[names(vegTypeCNLabels) %in% plotData$vegTypeCN]) +
+  theme_pubr(base_size = 14, legend = "bottom") +
+  theme(legend.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+        strip.background = element_blank()) +
+  labs(x = "Mean fire severity\n(biomass lost, ton/ha)",
+       y = "Mean fire interval (years)") +
+  facet_wrap(~ scenario, labeller = label_parsed)
+
+```
+
+```{r plot&savePlots16, echo = FALSE}
+ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_crossPlot.tiff"),
+       width = 8, height = 6)
+```
+
+
+### Fire interval comparisons  with observed data
+Non-forest forest type removed, only pixel/plots with fire evidence
+Note that `summaryFireAttributes`  has pixels with fire and without fires. So pixels without fires need to be removed
+Also, in the observed data mean/median fire intervals were not calculated for plots that had one fire event only. So pixels with a single fire event are also removed
+```{r simVsObsFires, cache = FALSE}
+## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
+pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
+
+## mean fire interval per forest type - to compare with camerons fire intervals.
+plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
+plotData <- plotData[vegTypeCN %in% ageDataCN$Cover.dendro, 
+                     .(scenario, rep, pixelIndex, meanFreq, vegTypeCN)] 
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
+                  
+plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, mean.FI, Patch.ID)])
+plotData3 <- copy(plotData2)
+plotData3[, Cover.dendro := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+                    
+plot39 <- ggplot() +
+  geom_violin(data = plotData,
+              aes(x = vegTypeCN, y = meanFreq, fill = scenario, 
+                  colour = scenario),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  geom_violin(data = plotData2,
+              aes(x = Cover.dendro, y = mean.FI, fill = "observed", 
+                  colour = "observed"),
+              alpha = 0.3,
+              position = position_dodge(width = 0.9)) +
+  geom_point(data = plotData2[Cover.dendro %in% c("broadleaf", "PIEN")],   ## these only have one point
+             aes(x = Cover.dendro, y = mean.FI, colour = "observed"),
+             position = position_dodge(width = 0.9), show.legend = FALSE) +
+  scale_x_discrete(labels = vegTypeCNLabels) +
+  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
+                                 "observed" = "grey50")) +
+  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
+                               "observed" = "grey50"),
+                    labels = c(scenLabels, "observed" = "observed")) +
+  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
+  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  guides(colour = "none") +
+  labs(title = "Mean fire interval", subtitle = "by forest type",
+       y = "Fire interval", x = "", colour = "")
+```
+
+```{r plot&savePlots16, echo = FALSE}
+ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
+       width = 10, height = 8)
+```
+
+
 ### Mean absolute deviation simulated fire intervals with respect to observed fire intervals for a given stand type
-```{r simVsObsAgesDif3, cache = FALSE}
+Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
+Note that `summaryFireAttributes`  has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
+```{r simVsObsFires2, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
-plotData <- summaryFireAttributes[meanFreq > 0]
-plotData2 <- ageDataCN[firePresAbs > 0, list(avgMean.FIObs = mean(mean.FI, na.rm = TRUE)),
+## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
+pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
+## mean fire interval per forest type - to compare with camerons fire intervals.
+plotData <- summaryFireAttributes[vegTypeCN != "No veg."][pixWFires, 
+                                                          on = .(scenario, rep, pixelIndex), nomatch = 0]
+
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
+
+## vegType MADs first
+plotData2 <- ageDataCN[firePresAbs > 0,]
+plotData3 <- copy(plotData2)
+plotData3[, Cover.dendro := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+plotData2 <- plotData2[, list(avgMean.FIObs = mean(mean.FI, na.rm = TRUE)),
                        by = .(Cover.dendro)]
-plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN")]
-setnames(plotData, "Cover.dendro", "vegTypeCN")
-plotData <- plotData[!is.na(avgMean.FIObs) & !is.na(meanFreq)]
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - mean(avgMean.FIObs)))),
+
+setnames(plotData2, "Cover.dendro", "vegTypeCN")
+plotData <- plotData2[plotData, on = "vegTypeCN"]
+
+if (nrow(plotData[is.na(avgMean.FIObs) | is.na(meanFreq)])) {
+  stop("NAs detected")
+}
+
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - avgMean.FIObs))),
                       by = .(scenario, rep, vegTypeCN)]
 
-plotData2 <- rbind(plotData2, plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - mean(avgMean.FIObs))),
-                                              vegTypeCN = "landscape"),
-                                       by = .(scenario, rep)])
-
-## differences
+## boxplot differences
 plot44 <- ggplot(plotData,
                  aes(x = vegTypeCN,
                      y = meanFreq - avgMean.FIObs,
@@ -1414,53 +1559,25 @@ plot44 <- ggplot(plotData,
        y = expression("sim." - bar("obs.")), x = "")
 
 ## mean absolute differences
+x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
 plot44.2 <- ggplot(plotData2,
-                   aes(x = vegTypeCN, y = meanAbsDevSimObs,
-                       colour = scenario)) +
-  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(),
-        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
-  scale_x_discrete(labels = vegTypeCNLabels, limits = rev(names(vegTypeCNLabels))) +
-  scale_colour_discrete(labels = scenLabels) +
-  labs(title = "Mean abs. deviation from fire intervals",
-       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
-  coord_flip()
-
-
-## remove "landscape" since plot data doesn't cover non-vegetated states -- it's an unfair comparison
-plot44.3 <- ggplot(plotData[vegTypeCN != "landscape"],
-                 aes(x = vegTypeCN,
-                     y = meanFreq - avgMean.FIObs,
-                     fill = scenario)) +
+                   aes(x = vegTypeCN, y = meanAbsDevSimObs, colour = scenario, 
+                       shape = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_boxplot() +
-  scale_fill_discrete(labels = scenLabels) +
+  stat_summary(fun.data = "mean_sd", position = position_dodge(width = 0.5), size = 0.7) +
+  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
+  scale_x_discrete(labels = vegTypeCNLabels, limits = x_order) +
+  scale_shape_discrete(labels = scenLabels, name = "") +
+  scale_color_discrete(labels = scenLabels, name = "") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = vegTypeCNLabels[vegTypeCNLabels != "landscape"]) +
-  labs(title = "Avg. differences from observed fire intervals",
-       y = expression("sim." - bar("obs.")), x = "")
-
-## mean absolute differences
-plot44.4 <- ggplot(plotData2[vegTypeCN != "landscape"],
-                   aes(x = vegTypeCN, y = meanAbsDevSimObs,
-                       colour = scenario)) +
-  stat_summary(fun.data = "mean_sdl", position = position_dodge(width = 0.5)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(),
         panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
-  scale_x_discrete(labels = vegTypeCNLabels[vegTypeCNLabels != "landscape"], 
-                   limits = rev(names(vegTypeCNLabels[vegTypeCNLabels != "landscape"]))) +
-  scale_colour_discrete(labels = scenLabels) +
   labs(title = "Mean abs. deviation from fire intervals",
-       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
-  coord_flip()
+       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "")
+
 ```
 
-```{r plot&savePlots16, echo = FALSE}
+```{r plot&savePlots18, echo = FALSE}
 plot44
 ggsave(plot = plot44 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_meanFIDiff.tiff"),
@@ -1470,37 +1587,17 @@ ggsave(plot = plot44.2 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_meanAbsFIDev.tiff"),
        width = 10, height = 5)
 
-plotSave <- plot_grid(
-  plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle = element_blank(), 
-                           axis.title.x = element_blank(), legend.position = "none"),
-            plot44.2 + theme(plot.title = element_blank(), legend.position = "none"),
-            nrow = 1, labels = "auto", label_size = 20, align = "h", axis = "b"),
-  get_legend(plot39 + guides(colour = "none", fill = guide_legend(override.aes = list(alpha = 1)))),
-  ncol = 1, rel_heights = c(1, 0.1))
+plotSave <- plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle = element_blank(), 
+                                     axis.title.x = element_blank(), legend.position = "right"),
+                      plot44.2 + theme(legend.position = "right",
+                                       plot.title = element_blank(),
+                                       legend.direction = "vertical",
+                                       legend.box = "vertical"),
+                      ncol = 1, labels = "auto", label_size = 20, align = "v", axis = "b")
+
 
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN.tiff"),
-       width = 12, height = 7)
-
-plot44.3
-ggsave(plot = plot44.3 + theme(legend.position = "right"),
-       filename = file.path(figOutputPath, "results_meanFIDiff_noLandscape.tiff"),
-       width = 14, height = 7)
-plot44.4
-ggsave(plot = plot44.4 + theme(legend.position = "right"),
-       filename = file.path(figOutputPath, "results_meanAbsFIDev_noLandscape.tiff"),
-       width = 10, height = 5)
-
-plotSave <- plot_grid(
-  plot_grid(plot39.2 + theme(plot.title = element_blank(), plot.subtitle = element_blank(), 
-                           axis.title.x = element_blank(), legend.position = "none"),
-            plot44.4 + theme(plot.title = element_blank(), legend.position = "none"),
-            nrow = 1, labels = "auto", label_size = 20, align = "h", axis = "b"),
-  get_legend(plot39.2 + guides(colour = "none", fill = guide_legend(override.aes = list(alpha = 1)))),
-  ncol = 1, rel_heights = c(1, 0.1))
-
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN_noLandscape.tiff"),
-       width = 12, height = 7)
-
+       width = 8, height = 8)
 gc()
 ```
 
@@ -1537,14 +1634,14 @@ plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Vo
 
 ## relationship  between pyrodiversity and fire attributes -----------------
 ## join HV sizes with fire attributes
-plotData <- allHVData[year == end(preSimList) & HVtype == "fireHV",
+plotData <- allHVData[HVtype == "fireHV",
                       .(HV_noPM, HV_PM, rep, repHV, vegType)]
 plotData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
 plotData[, scenario := sub("HV_", "", scenario)]
 ## center and scale volume as in model
-plotData[, Volume := scale(log(Volume), center = TRUE, scale = FALSE),
+plotData[, Volume := log(Volume),
          by = .(scenario, vegType)]
 
 plotData2 <- plotData[vegType == "landscape"]
@@ -1566,7 +1663,7 @@ plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Vol
 
 fireAttrPyroPlotFun <- function(plotData) {
   ggplot(plotData,
-         aes(x = Volume, y = log(Mean + 1),
+         aes(x = log(Volume+1), y = log(Mean + 1),
              colour = vegType, linetype = scenario,
              shape = scenario)) +
     geom_point(size = 2) +
@@ -1574,14 +1671,16 @@ fireAttrPyroPlotFun <- function(plotData) {
     geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
     geom_vline(aes(xintercept = -Inf)) +
     coord_cartesian(clip = "off") +
+    scale_x_continuous(label = scales::label_number(accuracy = 0.01)) +
     scale_shape_discrete(labels = scenLabels, name = "") +
     scale_linetype_manual(values = scenLinetype, labels = scenLabels) +
     scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours, name = "") +
     theme_pubr(base_size = 12, margin = TRUE) +
     theme(legend.box = "horizontal", strip.text.y = element_text(size = 12),
           strip.background = element_blank(), strip.placement = "outside",
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(x = "Pyrodiversity", y = "", title = "") +
+          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+          panel.spacing.x = unit(1.5, "line")) +
+    labs(x = "Pyrodiversity\n(log-hypervolume size)", y = "", title = "") +
     facet_grid(fireAttr ~ vegType,
                scales = "free", switch = "y",
                labeller = labeller(vegType = vegTypeCNLabels,
@@ -1595,10 +1694,10 @@ fireAttrPyroVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"]
 
 plotSave <- ggarrange(fireAttrPyroVegTypesPlot,
                       fireAttrPyroLandscapePlot + labs(y = "", title = "") + theme(strip.text.y = element_blank()),
-                      ncol = 2, nrow = 1, widths = c(1, 0.3), labels = "auto", label.y = 0.95,
+                      ncol = 2, nrow = 1, widths = c(1, 0.2), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff"),
-       width = 14, height = 8)
+       width = 20, height = 7)
 ```
 
 ```{r plot&savePlots23, echo = FALSE}
@@ -1625,17 +1724,25 @@ plotData[, BiomassBySpecies := sum(B),
          by = .(scenario, rep, year, vegTypeCN, speciesCode)]
 plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
+## no. pixels with a veg type, per scenario/rep/year, then average for plot
+plotData[noFires > 0, noPixels := length(pixelIndex), by = .(scenario, rep, year, vegTypeCN)]
+plotData[noFires > 0, noPixels := round(mean(noPixels)), by = .(scenario, vegTypeCN)]
+
 ## SPECIES BIOMASS
 ## cross pixel sums
 ## just mean across reps and scaled from 0-1
-plot7 <- ggplot(data = plotData[noFires > 0],
-                aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode)) +
-  stat_summary(fun = "mean", geom = "bar", position = "fill") +
+plot7 <- ggplot(data = plotData[noFires > 0]) +
+  stat_summary(aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode),
+               fun = "mean", geom = "bar", position = "fill") +
+  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
+  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
+            aes(x = vegTypeCN, y = 1.05, label = noPixels)) +
+  scale_x_discrete(labels = vegTypeCNLabels) + 
+  scale_y_continuous(breaks = c(seq(0, 1, 0.25)),
+                     labels = c(as.character(seq(0, 1, 0.25)))) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
+  labs(title = "Total biomass", y = "Proportion of biomass",
        subtitle = "by species", x = "") +
   guides(colour = "none") +
   facet_grid(~ scenario, 
@@ -1643,7 +1750,7 @@ plot7 <- ggplot(data = plotData[noFires > 0],
 
 ## with mean and SD
 plot7.2 <- ggplot(data = plotData[noFires > 0],
-                aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode)) +
+                  aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode)) +
   stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
   stat_summary( fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9)) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
@@ -1659,7 +1766,7 @@ plot7.2 <- ggplot(data = plotData[noFires > 0],
 ## pixel averages
 ## just mean across reps and scaled from 0-1
 plot7.3 <- ggplot(data = plotData[noFires > 0],
-                aes(x = vegTypeCN, y = B, fill = speciesCode)) +
+                  aes(x = vegTypeCN, y = B, fill = speciesCode)) +
   stat_summary(fun = "mean", geom = "bar", position = "fill") +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
@@ -1673,7 +1780,7 @@ plot7.3 <- ggplot(data = plotData[noFires > 0],
 
 ## with mean and SD
 plot7.4 <- ggplot(data = plotData[noFires > 0],
-                aes(x = vegTypeCN, y = B, fill = speciesCode)) +
+                  aes(x = vegTypeCN, y = B, fill = speciesCode)) +
   stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
   stat_summary( fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9)) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
