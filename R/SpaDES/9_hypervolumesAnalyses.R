@@ -475,7 +475,7 @@ pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "
         strip.background = element_blank(),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
   # facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
   #            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
   #                                           "fireHV" = "Pyrodiversity")))
