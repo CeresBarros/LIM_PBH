@@ -7,7 +7,7 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-  
+
 ```{r setup, include=FALSE}
 knitr::opts_knit$set(root.dir = normalizePath(getwd()))
 knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE,
@@ -153,8 +153,8 @@ summaryBurnCohortDataSpp <- allPixelCohortDataMnt[, list(BiomassBySpecies = as.n
                                                          MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
                                                          aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
                                                          AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                            sum((B/100), na.rm = TRUE))),
-                                     by = c(byCols, "speciesCode")]
+                                                                                         sum((B/100), na.rm = TRUE))),
+                                                  by = c(byCols, "speciesCode")]
 summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
 summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
 gc(reset = TRUE)
@@ -836,7 +836,7 @@ plot32.4 <- ggplot(plotData2[firePresAbs == "1"],
                        shape = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
-               size = 1) +
+               size = 0.7) +
   scale_x_discrete(labels = c("meanAbsDevSimObsQuant50" = "50%", 
                               "meanAbsDevSimObsQuant75" = "75%", 
                               "meanAbsDevSimObsQuant95" = "95%")) +
@@ -1010,6 +1010,7 @@ plotData2 <- plotData2[, list(quant50AgeBySppObs = quantile(Reconstructed.age, p
                               quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
                               quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
                        by = .(speciesCode, firePresAbs)]
+
 plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
 plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50AgeBySppObs)]
@@ -1326,6 +1327,7 @@ plot42 <- ggplot(data = plotData) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
+
 ```
 
 ```{r plot&savePlots15, echo = FALSE}
@@ -1501,6 +1503,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVs
 
 gc()
 ```
+
 
 ## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
 ```{r fireAttriPyro, echo = FALSE}
