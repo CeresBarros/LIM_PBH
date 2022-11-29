@@ -1350,11 +1350,11 @@ ggsave(plot = plotSave,
 ```
 
 ### boxplots of  no. fires, fire frequency, fire size and fire severity
-Non-forest forest type removed
+Non-forest forest types and pixels w/o included since these plots are showing data used for PBRs
 ```{r fireAttr_boxplots, cache = FALSE}
-x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
+x_order <- names(vegTypeCNLabels)
 ## fire size
-plot45 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+plot45 <- ggplot(summaryFireAttributes) +
   geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = "landscape"),
                outlier.size = 0.5) +
   geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = vegTypeCN),
@@ -1367,7 +1367,7 @@ plot45 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(y = "Mean patch size (no. pixels)", x = "")
 
-plot46 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+plot46 <- ggplot(summaryFireAttributes) +
   geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = "landscape"),
                outlier.size = 0.5) +
   geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = vegTypeCN),
@@ -1381,7 +1381,7 @@ plot46 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
   labs(y = "Mean fire interval (years)", x = "")
 
 ## fire severity
-plot47 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."]) +
+plot47 <- ggplot(summaryFireAttributes) +
   geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = "landscape"),
                outlier.size = 0.5) +
   geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = vegTypeCN),
