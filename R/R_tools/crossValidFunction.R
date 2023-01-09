@@ -96,14 +96,15 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
 
   ## trainData an testData cannot have extra cols
   cols <- names(origData)
-  trainData <<- trainData[, ..cols]
+  trainData <- trainData[, ..cols]
+  trainData <<- trainData   ## needs to be in .GlobalEnv for gamlss
   testData <- testData[, ..cols]
 
   ## refit model on training sample - this is failing due to singularity
   ## then predict
   trainModel <- tryCatch(update(object = statsModel, data = trainData), error = function(e) e)
 
-  if (any(class(trainModel) %in% "error")) {
+  if (is(trainModel, "error")) {
     validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA)
   } else {
     params <- c("mu", "nu", "tau")
