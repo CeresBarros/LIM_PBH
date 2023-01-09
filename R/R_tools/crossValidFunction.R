@@ -156,7 +156,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
 
     ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
     RsqGAMLSS <- Rsq(trainModel)
-    TGDstats <- getTGD(trainModel, newdata = testData, data = trainData)
+    TGDstats <- getTGD(trainModel, newdata = testData[, .SD, .SDcols = names(trainData)], data = trainData)   ## testData may have additional cols (sampID)
     Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
     Rsquared <- Rsquared["Rsquared"]
   }
