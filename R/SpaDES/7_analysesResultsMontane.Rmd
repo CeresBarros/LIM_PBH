@@ -21,7 +21,7 @@ if (!exists("pkgDir")) {
     version$platform,
     paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
   )
-
+  
   if (!dir.exists(pkgDir)) {
     dir.create(pkgDir, recursive = TRUE)
   }
@@ -739,7 +739,7 @@ plotData2 <- rbind(ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.
                        by = .(Cover.dendro, firePresAbs)],
                    ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE),
                                     Cover.dendro = "landscape"),
-                       by = .(firePresAbs)])
+                             by = .(firePresAbs)])
 plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData <- plotData[!is.na(avgAgeBySppObs)]
@@ -1483,12 +1483,12 @@ plotData <- plotData[vegTypeCN %in% ageDataCN$Cover.dendro,
 plotData2 <- copy(plotData)
 plotData2[, vegTypeCN := "landscape"]
 plotData <- rbind(plotData, plotData2)
-                  
+
 plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, mean.FI, Patch.ID)])
 plotData3 <- copy(plotData2)
 plotData3[, Cover.dendro := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
-                    
+
 plot39 <- ggplot() +
   geom_violin(data = plotData,
               aes(x = vegTypeCN, y = meanFreq, fill = scenario, 
