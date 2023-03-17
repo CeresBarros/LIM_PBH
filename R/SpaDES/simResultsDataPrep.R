@@ -91,24 +91,6 @@ if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
 
 amc::.gc()
 
-## GET CAMERON'S AGE DATA AND STAND VEG TYPES -----------------------
-ageDataCN <- fread("data/CameronsAgeData/treelist_outputs_for Ceres.csv")
-patchVegTypeCN <- fread("data/CameronsAgeData/patch outputs_for Ceres_Oct2021.csv")
-
-ageDataCN <- patchVegTypeCN[ageDataCN, on = .(Patch.ID)]
-ageDataCN$Cover.dendro <- sub("Mixedwood", "mixedwood", ageDataCN$Cover.dendro)
-ageDataCN$Cover.dendro <- sub("Broadleaf", "broadleaf", ageDataCN$Cover.dendro)
-ageDataCN$Cover.dendro <- sub("-", "", ageDataCN$Cover.dendro)
-rm(patchVegTypeCN)
-
-## remove a record that seems funky (maybe it's a new cohort?)
-ageDataCN <- ageDataCN[Reconstructed.age != 2018]
-
-## calculate no. cohorts:
-ageDataCN[, noCohorts := length(unique(Est.bin)) , by = .(Patch.ID)]
-
-ageDataCN[, firePresAbs := ifelse(is.na(mean.FI), 0, 1)]
-
 ## reset DT threads
 data.table::setDTthreads(DTthreads)
 rm(DTthreads)
