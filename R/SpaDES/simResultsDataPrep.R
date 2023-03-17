@@ -34,29 +34,30 @@ preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_no
 
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
-paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = as.integer(min(yearSubset)),
-                                                   "endYear" = as.integer(max(yearSubset)),
-                                                   "parallel" = FALSE,
-                                                   "reps" = 1L:5L,
-                                                   "yearSubset" = as.integer(yearSubset),
-                                                   ".useCache" = c("init", "loadSimulationData", "joinSimulationData",
-                                                                   "addVegTypesCN", "averageAcrossYears"))) ## parsing error when caching
-
-objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
-                       "rasterToMatch" = preSimList$rasterToMatch,
-                       "sppEquiv" = preSimList$sppEquiv)
-
-outputsResults <- data.frame(expand.grid(objectName = c("allPixelBurnData"),
-                                         saveTime = 1,
-                                         eventPriority = 10,
-                                         stringsAsFactors = FALSE))
-outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortData",
-                                                   saveTime = 1,
-                                                   eventPriority = 10))
-outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortDataMnt",
-                                                   saveTime = 1,
-                                                   eventPriority = 10))
 if (runPrepResultsModule) {
+  paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = as.integer(min(yearSubset)),
+                                                     "endYear" = as.integer(max(yearSubset)),
+                                                     "parallel" = FALSE,
+                                                     "reps" = 1L:5L,
+                                                     "yearSubset" = as.integer(yearSubset),
+                                                     ".useCache" = c("init", "loadSimulationData", "joinSimulationData",
+                                                                     "addVegTypesCN", "averageAcrossYears"))) ## parsing error when caching
+
+  objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
+                         "rasterToMatch" = preSimList$rasterToMatch,
+                         "sppEquiv" = preSimList$sppEquiv)
+
+  outputsResults <- data.frame(expand.grid(objectName = c("allPixelBurnData"),
+                                           saveTime = 1,
+                                           eventPriority = 10,
+                                           stringsAsFactors = FALSE))
+  outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortData",
+                                                     saveTime = 1,
+                                                     eventPriority = 10))
+  outputsResults <- rbind(outputsResults, data.frame(objectName = "allPixelCohortDataMnt",
+                                                     saveTime = 1,
+                                                     eventPriority = 10))
+
   options("LandR.assertions" = FALSE)
   options("spades.useRequire" = FALSE)
   options("spades.moduleCodeChecks" = FALSE)
