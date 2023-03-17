@@ -211,10 +211,15 @@ At the end of the simulation (or averaged across sampled years), by species
 ## comparing simulated and observed ages - end of sim
 ## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
 ## in the obs data and this would lead to data loss
-plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
-                             list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                  sum((B/100), na.rm = TRUE))),
-                             by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
+## simulated ages below the minimum DBH age are excluded from comparisons.
+plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro)]
+plotData <- unique(ageDataCN[, .(speciesCode, ageAtMinDBH)])[plotData, on = .(speciesCode)]
+plotData <- plotData[age >= ageAtMinDBH,]
+
+plotData <- plotData[,  ## absences can't lower the average ages
+                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                          sum((B/100), na.rm = TRUE))),
+                     by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
 ## observed ages
 plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
 plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
@@ -398,7 +403,11 @@ gc()
 
 ## pixel-level differences from observed mean
 ## don't average across years/pixels -- leave all replicates.
-plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
+plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro)]
+plotData <- unique(ageDataCN[, .(speciesCode, ageAtMinDBH)])[plotData, on = .(speciesCode)]
+plotData <- plotData[age >= ageAtMinDBH,]
+
+plotData <- allPixelCDMntEnd[,  ## absences can't lower the average ages
                              list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
