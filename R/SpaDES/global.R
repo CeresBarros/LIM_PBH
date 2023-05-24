@@ -159,7 +159,7 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 ## Run more data prep -----------------------------
 # Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
-## to prepare objects for simulation and FireSense ignition/fire frquency fits
+## to prepare objects for simulation and FireSense ignition/fire frequency fits
 ## Define simulation params
 # simTimes <- list(start = 2011L, end = 4011L)   ## capture several cycles of Doug-fir dynamics
 # vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
