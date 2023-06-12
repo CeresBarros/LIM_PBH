@@ -62,23 +62,25 @@ options("reproducible.useGDAL" = FALSE)
 simDirName <- "mar2022Runs"
 if (Sys.info()["nodename"] == "W-VIC-A127584") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
-                   , modulePath = file.path("R/SpaDES/m")
-                   , inputPath = file.path("R/SpaDES/inputs")
+                   , modulePath = normPath(file.path("R/SpaDES/m"))
+                   , inputPath = normPath(file.path("R/SpaDES/inputs"))
                    , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
 } else if (grepl("for-cast", Sys.info()["nodename"])) {
   simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
-                   , modulePath = file.path("R/SpaDES/m")
-                   , inputPath = file.path("R/SpaDES/inputs")
-                   , outputPath = file.path("R/SpaDES/outputs", simDirName)
+                   , modulePath = normPath(file.path("R/SpaDES/m"))
+                   , inputPath = normPath(file.path("R/SpaDES/inputs"))
+                   , outputPath = normPath(file.path("R/SpaDES/outputs", simDirName))
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
   data.table::setDTthreads(25)
   options(bitmapType="cairo")
 } else {
-  simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
-                   , modulePath = file.path("R/SpaDES/m")
-                   , inputPath = file.path("R/SpaDES/inputs")
-                   , outputPath = file.path("R/SpaDES/outputs", simDirName))
+  simPaths <- list(cachePath = normPath(file.path("R/SpaDES/cache", simDirName, "postSimAnalyses"))
+                   , modulePath = normPath(file.path("R/SpaDES/m"))
+                   , inputPath = normPath(file.path("R/SpaDES/inputs"))
+                   , outputPath = normPath(file.path("R/SpaDES/outputs", simDirName)))
+  data.table::setDTthreads(5)
+  options(bitmapType="cairo")
 }
 
 ## path to figure folder and cache folder
@@ -102,7 +104,7 @@ dir.create(figOutputPath, recursive = TRUE)
 ### DATA LOADING AND PROCESSING NOTES
 Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 
-```{r dataPrep, include = FALSE, cache = FALSE}
+```{r dataPrep, cache=FALSE, include=FALSE}
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
@@ -208,7 +210,7 @@ At the end of the simulation (or averaged across sampled years), by species
 ```{r testAges}
 ## STAT TESTS ------------------------------------------
 ## AGE SIM VS OBS ----
-## comparing simulated and observed ages - end of sim
+## comparing simulated and observed ages
 ## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
 ## in the obs data and this would lead to data loss
 ## simulated ages below the minimum DBH age are excluded from comparisons.
@@ -266,7 +268,7 @@ plotTest1 <- ggplot(plotData2, aes(x = firePresAbs)) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), 
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Avg. differences from observed ages",
+  labs(title = "Differences between median simulated and observed ages",
        y = expression(bgroup("|", "sim." - bar("obs."), "|")),
        x = "") +
   facet_wrap(~ speciesCode, labeller = labeller(speciesCode = speciesLabels))
@@ -300,7 +302,6 @@ gc()
 ## PLOTS -----------------------------------------------
 ## MODELLED PROPERTIES ---------------------------------
 ## total biomass
-
 ## biomass
 byCols <- c("scenario", "rep", "speciesCode", "firePresAbs", "noFires")
 plotData <- summaryBurnCohortDataSpp[, .SD, .SDcols = c(byCols, "BiomassBySpecies")]
@@ -361,7 +362,6 @@ plot6 <- ggplot(data = plotData,
        subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = label_parsed)
-
 
 gc(reset = TRUE)
 ```
@@ -832,6 +832,7 @@ plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50AgeBySppObs)]
 if (any(is.na(plotData))) stop()
 
+## this mean makes no sense. there should be only one value this is simply a deviation.
 plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
                              meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
                              meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
@@ -1483,6 +1484,7 @@ Non-forest forest type removed, only pixel/plots with fire evidence
 Note that `summaryFireAttributes`  has pixels with fire and without fires. So pixels without fires need to be removed
 Also, in the observed data mean/median fire intervals were not calculated for plots that had one fire event only. So pixels with a single fire event are also removed
 ```{r simVsObsFires, cache = FALSE}
+## TODO: use median FI everywhere. obs median already changed
 ## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 
@@ -1536,6 +1538,8 @@ ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSi
 Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
 Note that `summaryFireAttributes`  has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
 ```{r simVsObsFires2, cache = FALSE}
+## TODO: compare medians, not mean frequencies (obs median already changed)
+
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
@@ -1627,6 +1631,7 @@ gc()
 
 ## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
 ```{r fireAttriPyro, echo = FALSE}
+## TODO: change to medians.
 tempData <- allHVData[year == end(preSimList),
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
 tempData <- melt.data.table(tempData, measure.vars = c("HV_noPM", "HV_PM"),
@@ -1636,7 +1641,7 @@ tempData <- tempData[HVtype == "fireHV", list(Volume = mean(Volume, na.rm = TRUE
                      by = .(rep, vegType, scenario)]
 setnames(tempData, "vegType", "vegTypeCN")
 
-## add only landsdape level HV sizes 
+## add only landscape level HV sizes 
 plotData <- tempData[vegTypeCN == "landscape", .(scenario, rep, Volume)][summaryFireAttributes, on = .(scenario, rep)]
 plotData <- melt(plotData, id.vars = c("scenario", "rep", "Volume", "pixelIndex", "vegTypeCN"))
 plotData[variable %in% c("meanPatchS", "meanSevB"), value := log(value + 0.1)]
