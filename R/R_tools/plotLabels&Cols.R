@@ -73,9 +73,12 @@ names(vegTypeCNColours) <- names(vegTypeCNLabels)[1:(length(vegTypeCNLabels) - 2
 vegTypeCNColours["landscape"] <- "#006400"
 vegTypeCNColours["No veg."] <- "#666666"
 
+## colours for scenario, with "observed"
+scenColours <- c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
+                 "observed" = "grey50")
 
 ## labels for scenario:
-scenLabels <- c("PM" = expression(M[MS]), "noPM" = expression(M[SR]),
+scenLabels <- c("PM" = expression(M[MS]), "noPM" = expression(M[SR]), "observed" = "observed",
                 "HV_PM" = expression(M[MS]), "HV_noPM" = expression(M[SR]))
 
 ## line type for scenario

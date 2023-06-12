@@ -262,7 +262,7 @@ if (isFALSE(class(ageDiffLMList$`1`) == "gls")) {
 plotTest1 <- ggplot(plotData2, aes(x = firePresAbs)) +
   geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
-  scale_fill_discrete(labels = scenLabels) +
+  scale_fill_manual(values = scenColours, labels = scenLabels) +
   theme_pubr(base_size = 16) +
   theme(legend.title = element_blank(), 
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
