@@ -39,7 +39,7 @@ if (runPrepResultsModule) {
                                                      saveTime = 1,
                                                      eventPriority = 10))
 
-  options("LandR.assertions" = FALSE)
+  options("LandR.assertions" = TRUE)
   options("spades.useRequire" = FALSE)
   options("spades.moduleCodeChecks" = FALSE)
   simOut <- Cache(simInitAndSpades,
@@ -62,9 +62,9 @@ if (runPrepResultsModule) {
   gc(reset = TRUE)
 } else {
   ## alternatively:
-  allPixelBurnData <- readRDS(list.files(simPaths$outputPath, "allPixelBurnData", full.names = TRUE))
-  allPixelCohortData <- readRDS(list.files(simPaths$outputPath, "allPixelCohortData_", full.names = TRUE))
-  allPixelCohortDataMnt <- readRDS(list.files(simPaths$outputPath, "allPixelCohortDataMnt", full.names = TRUE))
+  allPixelBurnData <- readRDS(file.path(simPaths$outputPath, "allPixelBurnData_year1.rds"))
+  allPixelCohortData <- readRDS(file.path(simPaths$outputPath, "allPixelCohortData_year1.rds"))
+  allPixelCohortDataMnt <- readRDS(file.path(simPaths$outputPath, "allPixelCohortDataMnt_year1.rds"))
 }
 
 ## not sure why the veg type isn't there..
