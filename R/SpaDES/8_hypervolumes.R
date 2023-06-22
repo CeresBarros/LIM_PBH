@@ -43,7 +43,7 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , outputPath = file.path("R/SpaDES/outputs", simDirName)
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
-  data.table::setDTthreads(25)
+  data.table::setDTthreads(5)
   options(bitmapType="cairo")
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
@@ -69,7 +69,7 @@ gc()
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
 mergePSME <- TRUE ## merge PSME dryPSME
-doMergedOnly <- TRUE ## should HVs only be calculated for the merged veg types?
+doMergedOnly <- FALSE ## should HVs only be calculated for the merged veg types?
 options("LandR.assertions" = TRUE)
 if (mergeDMCPSME) {
   HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes/mergeDMCPSME")
@@ -101,7 +101,7 @@ firePCA <- summaryFireAttributes[, ..cols] %>%
         datatable = .,
         HVidvar = 4,
         noAxes = 3,
-        plotOrdi = FALSE,
+        plotOrdi = TRUE,
         saveOrdi = TRUE,
         saveOrdiSumm = TRUE,
         file.suffix = "fireHVs_FULLPCA",
