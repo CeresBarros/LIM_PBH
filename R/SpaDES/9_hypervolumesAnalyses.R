@@ -2,6 +2,19 @@
 ##  HYPERVOLUMES OF PYRODIVERSITY AND BIODIVERSITY
 ##  Analyses of results
 ## --------------------------------------------------
+if (!exists("pkgDir")) {
+  pkgDir <- file.path(
+    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
+    version$platform,
+    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
+  )
+
+  if (!dir.exists(pkgDir)) {
+    dir.create(pkgDir, recursive = TRUE)
+  }
+  .libPaths(pkgDir)
+}
+
 library(SpaDES)
 library(reproducible)
 library(data.table)
@@ -10,7 +23,7 @@ library(ggpubr)
 library(nlme)
 library(mgcv)
 library(multcomp)
-Require::Require("rvlenth/emmeans (>= 1.8.1-90002)")
+Require::Require("rvlenth/emmeans (>= 1.8.6)")
 library(cowplot)
 library(ToolsCB)
 library(performance)
@@ -31,22 +44,26 @@ simDirName <- "mar2022Runs"
 if (Sys.info()["nodename"] == "W-VIC-A127584") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
-                   , inputPath = file.path("R/SpaDES/inputs")
+                   , inputPath = file.path("F:", basename(getwd()), "R/SpaDES/inputs", simDirName)
                    , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
 } else if (grepl("for-cast", Sys.info()["nodename"])) {
-  simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
+  simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName)
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
-  data.table::setDTthreads(25)
-  options(bitmapType="cairo")
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName))
+}
+
+if (grepl("for-cast", Sys.info()["nodename"]) ||
+    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+  data.table::setDTthreads(5)
+  options(bitmapType="cairo")
 }
 
 ## path to figure folder and cache folder

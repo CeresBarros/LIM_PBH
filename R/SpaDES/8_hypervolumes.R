@@ -34,17 +34,15 @@ simDirName <- "mar2022Runs"
 if (Sys.info()["nodename"] == "W-VIC-A127584") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
-                   , inputPath = file.path("R/SpaDES/inputs")
+                   , inputPath = file.path("F:", basename(getwd()), "R/SpaDES/inputs", simDirName)
                    , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
 } else if (grepl("for-cast", Sys.info()["nodename"])) {
-  simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
+  simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName)
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
-  data.table::setDTthreads(5)
-  options(bitmapType="cairo")
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
@@ -52,6 +50,11 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , outputPath = file.path("R/SpaDES/outputs", simDirName))
 }
 
+if (grepl("for-cast", Sys.info()["nodename"]) ||
+    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+  data.table::setDTthreads(5)
+  options(bitmapType="cairo")
+}
 
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")

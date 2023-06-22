@@ -51,20 +51,25 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName, "noPM"))
 } else if (grepl("for-cast", Sys.info()["nodename"])) {
-  simPaths <- list(cachePath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/cache", simDirName, "noPM")
+  simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "noPM")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName, "noPM")
                    , rasterPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch/raster")
                    , scratchPath = file.path("/mnt/scratch/cbarros", basename(getwd()), "R/SpaDES/scratch"))
-  data.table::setDTthreads(25)
-  options(bitmapType="cairo")
 } else {
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "noPM")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
                    , outputPath = file.path("R/SpaDES/outputs", simDirName, "noPM"))
 }
+
+if (grepl("for-cast", Sys.info()["nodename"]) ||
+    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+  data.table::setDTthreads(25)
+  options(bitmapType="cairo")
+}
+
 eventCaching <- c(".inputObjects", "init")
 
 
