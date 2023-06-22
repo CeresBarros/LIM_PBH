@@ -18,7 +18,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.md", "LIM_resultsDataPrep.Rmd")), ## same file
   reqdPkgs = list("crayon", "data.table", "dplyr", "future", "future.apply",
-                  "raster",
+                  "raster", "terra",
                   "PredictiveEcology/LandR@development (>= 1.0.7.9023)",
                   "PredictiveEcology/reproducible@development (>= 1.2.11)",
                   "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9004)",
@@ -113,14 +113,24 @@ doEvent.LIM_resultsDataPrep = function(sim, eventTime, eventType) {
       # do stuff for this event
       sim <- Init(sim)
       sim <- scheduleEvent(sim, eventTime = start(sim), moduleName = currentModule(sim),
-                           eventType = "loadSimulationData")
+                           eventType = "loadVegData", eventPriority = 1)
       sim <- scheduleEvent(sim, eventTime = start(sim), moduleName = currentModule(sim),
-                           eventType = "joinSimulationData")
+                           eventType = "loadFireData", eventPriority = 1.1)
       sim <- scheduleEvent(sim, eventTime = start(sim), moduleName = currentModule(sim),
-                           eventType = "addVegTypesCN")
+                           eventType = "calcFireMetrics", eventPriority = 2)
+      sim <- scheduleEvent(sim, eventTime = start(sim), moduleName = currentModule(sim),
+                           eventType = "joinSimulationData", eventPriority = 3)
+      sim <- scheduleEvent(sim, eventTime = start(sim), moduleName = currentModule(sim),
+                           eventType = "addVegTypesCN", eventPriority = 4)
     },
-    loadSimulationData = {
-      sim <- loadSimulationDataEvent(sim)
+    loadVegData = {
+      sim <- loadVegetationDataEvent(sim)
+    },
+    loadFireData = {
+      sim <- loadFireDataEvent(sim)
+    },
+    calcFireMetrics = {
+      sim <- calcFireAttributesEvent(sim)
     },
     joinSimulationData = {
       sim <- joinSimulationDataEvent(sim)
@@ -147,8 +157,10 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-loadSimulationDataEvent <- function(sim) {
+loadVegetationDataEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
+  cacheTags <- c(currentModule(sim), "loadVegData")
+
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
 
   grepPattrn <- paste0("/", P(sim)$scenarios)
@@ -161,72 +173,54 @@ loadSimulationDataEvent <- function(sim) {
   names(grepPattrn) <- P(sim)$scenarios
 
   ## make list of stacked rasters -- filters between start and end years
-  rstCurrentFiresStkList <- sapply(grepPattrn,
-                                   FUN = loadStackFromRDS,
-                                   files = sim$rstCurrentFiresFiles,
-                                   startYear = P(sim)$startYear,
-                                   endYear = P(sim)$endYear,
-                                   simplify = FALSE, USE.NAMES = TRUE)
+  pixelGroupMapStkList <- Cache(Map,
+                                x = grepPattrn,
+                                f = loadStackFromRDS,
+                                MoreArgs = list(files = sim$pixelGroupMapFiles,
+                                                startYear = P(sim)$startYear,
+                                                endYear = P(sim)$endYear),
+                                userTags = c(cacheTags, "pixelGroupMapStkList"),
+                                omitArgs = c("userTags"))
 
-  pixelGroupMapStkList <- sapply(grepPattrn,
-                                 FUN = loadStackFromRDS,
-                                 files = sim$pixelGroupMapFiles,
-                                 startYear = P(sim)$startYear,
-                                 endYear = P(sim)$endYear,
-                                 simplify = FALSE, USE.NAMES = TRUE)
-
-  vegTypeMapStkList <- sapply(grepPattrn,
-                              FUN = loadStackFromRDS,
-                              files = sim$vegTypeMapFiles,
-                              startYear = P(sim)$startYear,
-                              endYear = P(sim)$endYear,
-                              simplify = FALSE, USE.NAMES = TRUE)
+  vegTypeMapStkList <- Cache(Map,
+                             x = grepPattrn,
+                             f = loadStackFromRDS,
+                             MoreArgs = list(files = sim$vegTypeMapFiles,
+                                             startYear = P(sim)$startYear,
+                                             endYear = P(sim)$endYear),
+                             userTags = c(cacheTags, "vegTypeMapStkList"),
+                             omitArgs = c("userTags"))
 
 
   ## pixelCohortData tables -- filters between start and end years and yearSubset
-  pixelCohortDataList <- mapply(FUN = loadCohortDataFromRDS,
-                                x = grepPattrn,
-                                pixelGroupMapStk = pixelGroupMapStkList,
-                                MoreArgs = list(files = sim$cohortDataFiles,
-                                                yearSubset = P(sim)$yearSubset,
-                                                startYear = P(sim)$startYear,
-                                                endYear = P(sim)$endYear),
-                                SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  cacheExtra <- sum(stack(sapply(pixelGroupMapStkList, function(ras) sum(ras))))
+  cacheExtra <- sum(cacheExtra[], na.rm = TRUE)
+  pixelCohortDataList <- Cache(Map,
+                               f = loadCohortDataFromRDS,
+                               x = grepPattrn,
+                               pixelGroupMapStk = pixelGroupMapStkList,
+                               MoreArgs = list(files = sim$cohortDataFiles,
+                                               yearSubset = P(sim)$yearSubset,
+                                               startYear = P(sim)$startYear,
+                                               endYear = P(sim)$endYear),
+                               .cacheExtra = cacheExtra,
+                               userTags = c(cacheTags, "pixelCohortDataList"),
+                               omitArgs = c("userTags", "pixelGroupMapStk"))
 
   ## vegTypeData tables -- filters to yearSubset
-  vegTypeDataList <- mapply(FUN = vegTypeDataFromStks,
-                            vegTypeMapStk = vegTypeMapStkList,
-                            pixelGroupMapStk = pixelGroupMapStkList,
-                            MoreArgs = list(yearSubset = P(sim)$yearSubset),
-                            SIMPLIFY = FALSE, USE.NAMES = TRUE)
-
-  ## pixelBurnData tables - all rasters
-  pixelBurnDataList <- sapply(rstCurrentFiresStkList,
-                              FUN = pixelBurnDataFromStks,
-                              simplify = FALSE, USE.NAMES = TRUE)
-
-  ## add scenario column when binding
-  ## exclude NAs early to save memory when binding
-  pixelBurnDataList <- lapply(pixelBurnDataList, function(allPixelBurnData) allPixelBurnData[fireID != "NA"])
-  allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
-
-  ## severityData tables -- filters between start and end years
-  severityDataList <- sapply(grepPattrn,
-                             FUN = loadSeverityDataFromRDS,
-                             files = sim$severityDataFiles,
-                             startYear = P(sim)$startYear,
-                             endYear = P(sim)$endYear,
-                             simplify = FALSE, USE.NAMES = TRUE)
-  ## add scenario column when binding
-  allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
-
-  ## join fire data
-  amc::.gc()
-  allPixelBurnData <- allSeverityData[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
+  cacheExtra2 <- sum(stack(sapply(vegTypeMapStkList, function(ras) sum(ras))))
+  cacheExtra2 <- sum(cacheExtra[], na.rm = TRUE)
+  vegTypeDataList <- Cache(Map,
+                           f = vegTypeDataFromStks,
+                           vegTypeMapStk = vegTypeMapStkList,
+                           pixelGroupMapStk = pixelGroupMapStkList,
+                           MoreArgs = list(yearSubset = P(sim)$yearSubset),
+                           .cacheExtra = cacheExtra,
+                           userTags = c(cacheTags, "vegTypeDataList"),
+                           omitArgs = c("userTags", "vegTypeMapStk", "pixelGroupMapStk"))
 
   ## clean ws
-  rm(rstCurrentFiresStkList, vegTypeMapStkList, pixelGroupMapStkList,
-     pixelBurnDataList, severityDataList, allSeverityData)
+  rm(vegTypeMapStkList, pixelGroupMapStkList)
   amc::.gc()
 
   ## join tables, add scenario col and rbind.
@@ -234,11 +228,14 @@ loadSimulationDataEvent <- function(sim) {
   ## pixelBurntData can also have a different number of years if the saving frequency differs
   ## so join by keeping all pixels, calculate fire properties per pixel, then subset to
   ## cohort data years.
-  pixelCohortDataList <- mapply(FUN = merge,
-                                x = vegTypeDataList,
-                                y = pixelCohortDataList,
-                                MoreArgs = list(by = c("pixelIndex", "pixelGroup", "year", "rep"), all = TRUE),
-                                SIMPLIFY = FALSE, USE.NAMES = TRUE)
+  pixelCohortDataList <- Cache(Map,
+                               f = merge,
+                               x = vegTypeDataList,
+                               y = pixelCohortDataList,
+                               MoreArgs = list(by = c("pixelIndex", "pixelGroup", "year", "rep"), all = TRUE),
+                               .cacheExtra = c(cacheExtra, cacheExtra2),  ## use the same
+                               userTags = c(cacheTags, "merge", "pixelCohortDataList"),
+                               omitArgs = c("userTags", "x", "y"))
   amc::.gc()
 
   ## add scenario column when binding
@@ -246,27 +243,403 @@ loadSimulationDataEvent <- function(sim) {
   if (exists("allPixelCohortData")) rm(pixelCohortDataList, vegTypeDataList)
   amc::.gc()
 
-  ## checks
-  if (mod$doAssertion)  {
-    ## note that some years may not have all the reps in allPixelBurnData if there where no fires
-    ## because we excluded NAs (i.e. pixels without fires)
-    repsFire <- unique(allPixelBurnData[, length(unique(rep)), by = .(scenario)]$V1)
-    repsCohortData <- unique(allPixelCohortData[, length(unique(rep)), by = .(scenario, year)]$V1)
-    test1 <- all(length(repsFire) == 1, length(repsCohortData) == 1)
-    test2 <- all(length(repsFire) == length(repsCohortData),
-                 identical(sort(repsFire), sort(repsCohortData)))
+  ## export to sim
+  sim$allPixelCohortData <- allPixelCohortData
 
-    if (!isTRUE(test1)) {
-      stop("Fire and/or cohort data do not have the same number of reps across scenarios")
-    }
-    if (!isTRUE(test2)) {
-      stop("Fire and cohort data differ in number of reps (per scenario/year)")
-    }
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
+}
+
+loadFireDataEvent <- function(sim) {
+  # ! ----- EDIT BELOW ----- ! #
+  cacheTags <- c(currentModule(sim), "loadFireData")
+
+  mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
+
+  grepPattrn <- paste0("/", P(sim)$scenarios)
+  if (all(!is.na(P(sim)$reps))) {
+    reps <- P(sim)$reps
+    reps[reps < 10] <- paste0("0?", reps[reps < 10])
+    grepPattrn <- paste0(grepPattrn, "_",
+                         "rep", "(", paste0(reps, collapse = "|"), ")/")
+  }
+  names(grepPattrn) <- P(sim)$scenarios
+
+  ## make list of stacked rasters -- filters between start and end years
+  rstCurrentFiresStkList <- Cache(Map,
+                                  x = grepPattrn,
+                                  f = loadStackFromRDS,
+                                  MoreArgs = list(files = sim$rstCurrentFiresFiles,
+                                                  startYear = P(sim)$startYear,
+                                                  endYear = P(sim)$endYear),
+                                  userTags = c(cacheTags, "rstCurrentFiresStkList"),
+                                  omitArgs = c("userTags"))
+
+  ## severityData tables -- filters between start and end years
+  severityDataList <- Cache(Map,
+                            x = grepPattrn,
+                            f = loadSeverityDataFromRDS,
+                            MoreArgs = list(files = sim$severityDataFiles,
+                                            startYear = P(sim)$startYear,
+                                            endYear = P(sim)$endYear),
+                            userTags = c(cacheTags, "severityDataList"),
+                            omitArgs = c("userTags"))
+
+  ## run function for each scenario then bind lists
+  ## note that zeroes are added everywhere  where there is no severity data
+  sevDataLs <- split(severityDataList$PM, by = c("year", "rep"))
+  cacheExtra <- colSums(severityDataList$PM)
+  severityRastersPM <- Cache(Map,
+                             sevData = sevDataLs,
+                             f = makeSevRasters,
+                             MoreArgs = list(rasterToMatch = sim$rasterToMatch),
+                             .cacheExtra = list(cacheExtra),
+                             userTags = c(cacheTags, "severityRastersPM"),
+                             omitArgs = c("userTags", "sevData"))
+
+  ## add year and rep to names, to make the same as rstCurrentFiresStk
+  names(severityRastersPM) <- paste0("year", sub("(.*)\\.(.*)", "\\1_rep\\2", names(severityRastersPM)))
+
+  sevDataLs <- split(severityDataList$noPM, by = c("year", "rep"))
+  cacheExtra <- colSums(severityDataList$noPM)
+
+  severityRastersnoPM <- Cache(Map,
+                               sevData = sevDataLs,
+                               f = makeSevRasters,
+                               MoreArgs = list(rasterToMatch = sim$rasterToMatch),
+                               .cacheExtra = list(cacheExtra),
+                               userTags = c(cacheTags, "severityRastersnoPM"),
+                               omitArgs = c("userTags", "sevData"))
+  names(severityRastersnoPM) <- paste0("year", sub("(.*)\\.(.*)", "\\1_rep\\2", names(severityRastersnoPM)))
+
+  severityRasters <- list(PM = severityRastersPM, noPM = severityRastersnoPM)
+
+  ## export to mod
+  mod$severityRasters <- severityRasters
+  mod$rstCurrentFiresStkList <- rstCurrentFiresStkList
+
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
+}
+
+calcFireAttributesEvent <- function(sim) {
+  # ! ----- EDIT BELOW ----- ! #
+
+  cacheTags <- c(currentModule(sim), "calcFireAttributes")
+
+  ## FIRE ATTRIBUTES ---------------------------------------
+  message(cyan("Calculating fire attributes..."))
+  message(cyan("Patch size"))
+
+  ## make rasters of patch size
+  ## patchSizes are calculated only for fires that burned at least one forest pixel (otherwise there is no severity data)
+  ## but consider the size of patches across forested and non-forested pixels (the severity of the later always being 0)
+  ## then convert everything to a data.table for pixel level calculations
+  ## by scenario and repetition
+  cacheExtra <- sum(rast(lapply(mod$severityRasters$PM, function(ras) ras$severityRas)))
+
+  ## not all fire rasters have severity (in some years fires can remain outside forested pix), but
+  ## all severity years should have a fire raster
+  if (length(setdiff(names(mod$severityRasters$PM), names(mod$rstCurrentFiresStkList$PM)))) {
+    stop("Not all fire severity rasters have an associated fire perimeter raster.")
   }
 
-  ## export to sim
+  # opts <- options(reproducible.useCache = FALSE)  ## test
+  # on.exit(options(opts))
+
+  ## for easier debugging
+  # rasToDo <- names(mod$rstCurrentFiresStkList$PM)[1:3]   ## test
+  rasToDo <- names(mod$rstCurrentFiresStkList$PM)
+  missingRas <- setdiff(rasToDo, names(mod$severityRasters$PM))
+
+  if (length(missingRas)) {
+  ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
+    tempRas <- mod$rstCurrentFiresStkList$PM[[missingRas]]
+    if (inherits(mod$severityRasters$PM[[1]], "SpatRaster") &
+        !inherits(tempRas, "SpatRaster")) {
+      tempRas <- rast(tempRas)
+    }
+    tempRasLs <- lapply(tempRas, function(ras) {
+      ras[!is.na(as.vector(ras[]))] <- 0
+      rast(list(severityRas = ras, severityBRas = ras))
+      })
+    names(tempRasLs) <- names(tempRas)
+    mod$severityRasters$PM <- c(mod$severityRasters$PM, tempRasLs)
+  }
+
+  tempList <- unstack(mod$rstCurrentFiresStkList$PM)   ## Map doesn't like to deal with different indexing of RasterStacks
+  names(tempList) <- names(mod$rstCurrentFiresStkList$PM)
+
+  patchSizeRasPM <- Cache(Map,
+                          sevClassRasLs = mod$severityRasters$PM[rasToDo],
+                          fireRas = tempList[rasToDo], ## subset and re-order to match
+                          f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severityRas, fireRas),
+                          .cacheExtra = list(cacheExtra),
+                          userTags = c(cacheTags, "patchSizeRasPM"),
+                          omitArgs = c("userTags", "sevRasLs", "fireRasLs"))
+
+  cacheExtra2 <- sum(rast(lapply(mod$severityRasters$noPM, function(ras) ras$severityRas)))
+
+  if (length(setdiff(names(mod$severityRasters$noPM), names(mod$rstCurrentFiresStkList$noPM)))) {
+    stop("Not all fire severity rasters have an associated fire perimeter raster.")
+  }
+
+  ## for easier debugging
+  # rasToDo <- names(mod$rstCurrentFiresStkList$noPM)[1:3]   ## test
+  rasToDo <- names(mod$rstCurrentFiresStkList$noPM)
+  missingRas <- setdiff(rasToDo, names(mod$severityRasters$noPM))
+
+  if (length(missingRas)) {
+    ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
+    tempRas <- mod$rstCurrentFiresStkList$noPM[[missingRas]]
+    if (inherits(mod$severityRasters$noPM[[1]], "SpatRaster") &
+        !inherits(tempRas, "SpatRaster")) {
+      tempRas <- rast(tempRas)
+    }
+    tempRasLs <- lapply(tempRas, function(ras) {
+      ras[!is.na(as.vector(ras[]))] <- 0
+      rast(list(severityRas = ras, severityBRas = ras))
+    })
+    names(tempRasLs) <- names(tempRas)
+    mod$severityRasters$noPM <- c(mod$severityRasters$noPM, tempRasLs)
+  }
+
+
+  tempList <- unstack(mod$rstCurrentFiresStkList$noPM)   ## Map doesn't like to deal with different indexing of RasterStacks
+  names(tempList) <- names(mod$rstCurrentFiresStkList$noPM)
+
+  patchSizeRasnoPM <- Cache(Map,
+                            sevClassRasLs = mod$severityRasters$noPM[rasToDo],
+                            fireRas = tempList[rasToDo], ## subset and re-order to match
+                            f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severityRas, fireRas),
+                            .cacheExtra = list(cacheExtra),
+                            userTags = c(cacheTags, "patchSizeRasnoPM"),
+                            omitArgs = c("userTags", "sevRasLs", "fireRasLs"))
+
+  ## make a table of patch size -- use the same cacheExtra
+  ## note that only pixels within fire perimeters are here (even if unforested and with 0 sev)
+  patchSizeDataList <- Cache(Map,
+                             fireAttrRasLs = list(PM = patchSizeRasPM, noPM = patchSizeRasnoPM),
+                             f = fireAttrDTFromRasLs,
+                             .cacheExtra = list(cacheExtra, cacheExtra2, "patchSize"),
+                             userTags = c(cacheTags, "patchSizeDataList"),
+                             omitArgs = c("userTags", "fireAttrRasLs"))
+  allPatchSizeData <- rbindlist(patchSizeDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
+  rm(patchSizeDataList, patchSizeRasnoPM, patchSizeRasPM, tempList); gc(reset = TRUE)
+
+
+  ## make a table of fire severity -- use the same cacheExtra
+  message(cyan("Severity"))
+  ## note that all pixels are here, burnt and unburnt
+
+  ## for easier debugging
+  # rasToDo <- list(PM = names(mod$severityRasters$PM)[1:3],
+  #                 noPM = names(mod$severityRasters$noPM)[1:3]) ## test
+  rasToDo <- list(PM = names(mod$severityRasters$PM),
+                  noPM = names(mod$severityRasters$noPM))
+  rasToDo <- rasToDo[names(mod$severityRasters)] ## ensure order is correct
+  severityDataList <- Cache(Map,
+                            fireAttrRasLs = mod$severityRasters,
+                            i = rasToDo,
+                            f = fireAttrDTFromRasLs,
+                            .cacheExtra = list(cacheExtra, cacheExtra2, "severity"),
+                            userTags = c(cacheTags, "severityDataList"),
+                            omitArgs = c("userTags", "fireAttrRasLs"))
+  ## add scenario column when binding
+  allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
+  setnames(allSeverityData, c("severityRas", "severityBRas"), c("severity", "severityB"))
+
+  rm(severityDataList); gc(reset = TRUE)
+
+  ## make table with fire occurrences and IDs per year/rep -- use same cacheExtra
+  message(cyan("Fire occurrences"))
+
+  ## for easier debugging
+  # rasToDo <- list(PM = names(mod$rstCurrentFiresStkList$PM)[1:3],
+  #                 noPM = names(mod$rstCurrentFiresStkList$noPM)[1:3]) ## testing
+  rasToDo <- list(PM = names(mod$rstCurrentFiresStkList$PM),
+                  noPM = names(mod$rstCurrentFiresStkList$noPM))
+  rasToDo <- rasToDo[names(mod$rstCurrentFiresStkList)] ## to ensure list order is the same
+  pixelBurnDataList <- Cache(Map,
+                             rstCurrentFiresStk = mod$rstCurrentFiresStkList,
+                             i = rasToDo,
+                             f = pixelBurnDataFromStks,
+                             .cacheExtra = list(cacheExtra, cacheExtra2),
+                             userTags = c(cacheTags, "pixelBurnDataList"),
+                             omitArgs = c("userTags", "rstCurrentFiresStk"))
+  ## add scenario column when binding
+  allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
+  rm(pixelBurnDataList); gc(reset = TRUE)
+
+  if (mod$doAssertion)  {
+    test <- allPixelBurnData[!allPatchSizeData, on = .(scenario, rep, year, pixelIndex)]  ## should be empty of burnt pixels.
+    if (nrow(test)) {
+      stop("Some burnt pixels (per scenario/rep/year) have no patch sizes associated to them")
+    }
+
+    test <- allPatchSizeData[!allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]  ## should be empty of burnt pixels.
+    if (nrow(test)) {
+      stop("Some pixels with patch sizes (per scenario/rep/year) have no fire ID")
+    }
+    rm(test); gc(reset = TRUE)
+  }
+
+  ## join other tables
+  allPixelBurnData <- allPatchSizeData[allPixelBurnData, on = .(scenario, rep, year, pixelIndex)]
+  rm(allPatchSizeData); gc(reset = TRUE)   ## clean progressively to release memory
+
+  ## keep only the pixels that burned here -- saves memory if we don't have non-burns per year
+  ## which are NAs in mean severity/patch size calculations.
+  allPixelBurnData <- allPixelBurnData[allSeverityData, nomatch = 0, on = .(scenario, rep, year, pixelIndex)]
+  rm(allSeverityData); gc(reset = TRUE)
+
+  ## no. fires per pixel
+  ## how many times did each pixel burn? total no. fires per pixel/scenario/rep
+  allPixelBurnData[, noFires := as.integer(sum(burnt, na.rm = TRUE)), by = .(scenario, rep, pixelIndex)]
+
+  ## calculate fire size in pixels per fireID/scenario/rep
+  allPixelBurnData[!is.na(fireID), patchSizePix := as.integer(length(unique(pixelIndex))),
+                    by = .(scenario, rep, year, fireID)]
+  ## rename log_area to patchSizeLogHa
+  setnames(allPixelBurnData, "log_area", "patchSizeLogHa")
+
+  ## Fire intervals -------
+  ## calculate fire frequency as mean fire intervals per scenario, rep, pixel, considering start and end years
+  ## (mean FRI in Steel et al 2021, see this paper for limitations and details)
+
+  message(cyan("Fire intervals"))
+
+  ## calculate intervals to a new table (there will be always one interval more than fires)
+  ## first calculate intervals in pixels with a fire history
+  fireIntervals <-  allPixelBurnData[burnt == 1,
+                                     list(fireInt = as.integer(c(P(sim)$startYear, year, P(sim)$endYear) - lag(c(P(sim)$startYear, year, P(sim)$endYear), n = 1)),
+                                          noFires = unique(noFires)),
+                                     by = .(scenario, rep, pixelIndex)]
+  fireIntervals <- fireIntervals[!is.na(fireInt)]   ## NAs come from startYear, and can be removed
+  ## check
+  if (mod$doAssertion) {
+    if (any(fireIntervals[, length(fireInt) != unique(noFires) + 1, by = .(scenario, rep, pixelIndex)]$V1))
+      stop("Fire interval calculations are wrong")
+  }
+
+  ## fire frequency == average fire return interval as in Steel et al 2021
+  fireIntervals[, fireFreq := mean(fireInt, na.rm = TRUE), by = .(scenario, rep, pixelIndex)]
+  fireIntervals <- unique(fireIntervals[, .(scenario, rep, pixelIndex, fireFreq)])
+
+  ## join to datatable
+  setkey(fireIntervals, pixelIndex, scenario, rep)
+  setkey(allPixelBurnData, pixelIndex, scenario, rep)
+
+  allPixelBurnData <- fireIntervals[allPixelBurnData]
+
+  rm(fireIntervals)
+  amc::.gc()
+
+  ## PIXELS WITH NO FIRE HISTORY ------------
+  ## make a table of pixels that have never burned, per scenario
+  noFireHistoryDataLsPM <- Cache(Map,
+                                 r = P(sim)$reps,
+                                 MoreArgs = list(
+                                   rstCurrentFiresStk = mod$rstCurrentFiresStkList$PM,
+                                   rasterToMatch = sim$rasterToMatch,
+                                   doAssertion = mod$doAssertion),
+                                 f = makeNoFireHistoryData,
+                                 .cacheExtra = list(cacheExtra, cacheExtra2),
+                                 userTags = c(cacheTags, "noFireHistoryDataPM"),
+                                 omitArgs = c("userTags", "rstCurrentFiresStk"))
+  noFireHistoryDataPM <- rbindlist(noFireHistoryDataLsPM, use.names = TRUE)
+  rm(noFireHistoryDataLsPM); gc(reset = TRUE)
+
+  noFireHistoryDataLsnoPM <- Cache(Map,
+                                 r = P(sim)$reps,
+                                 MoreArgs = list(
+                                   rstCurrentFiresStk = mod$rstCurrentFiresStkList$noPM,
+                                   rasterToMatch = sim$rasterToMatch,
+                                   doAssertion = mod$doAssertion),
+                                 f = makeNoFireHistoryData,
+                                 .cacheExtra = list(cacheExtra, cacheExtra2),
+                                 useCache = "overwrite",
+                                 userTags = c(cacheTags, "noFireHistoryDatanoPM"),
+                                 omitArgs = c("userTags", "rstCurrentFiresStk"))
+  noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
+  rm(noFireHistoryDataLsnoPM); gc(reset = TRUE)
+
+  ## TODO: LEFT OFF HERE.
+  noFireHistoryData <- rbindlist(list(PM = noFireHistoryDataPM, noPM = noFireHistoryDatanoPM),
+                                 use.names = TRUE, idcol = "scenario")
+  rm(noFireHistoryDataPM, noFireHistoryDatanoPM); gc(reset = TRUE)
+
+  ## add other fire attributes for pixels with no fire history
+  ## make column of noFires
+  noFireHistoryData[, `:=`(noFires = 0L, fireFreq = P(sim)$endYear - P(sim)$startYear,
+                           severity = 0L, severityB = 0, burnt = 0L)]
+  noFireHistoryData[, ID := NULL]
+
+  ## check
+  if (mod$doAssertion) {
+    test <- allPixelBurnData[noFireHistoryData, nomatch = 0, on = .(scenario, rep, pixelIndex)]
+    if (nrow(test)) {
+      stop("There should be no common scenario/rep/pixelIndex combinations between fire history data and no-fire-history data")
+    }
+    rm(test); gc(reset = TRUE)
+  }
+
+  ## bind pixels that never burned
+  allPixelBurnData <- rbindlist(list(allPixelBurnData, noFireHistoryData), fill = TRUE, use.names = TRUE)
+
+  # OLD CODE
+  # ## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
+  # ## note that for noPM we assume severity class (i.e. 'severity' column) to be the maximum = 5
+  # ## only in pixels with a pixelGroup (others are non-forest and had no veg dynamics)
+  # ## also note that we are ignoring if patches are contiguous or not, and simply counting the number of pixels
+  # ## with a given severity per fireID
+  # message(blue("Assuming a severity class 5 for any scenario with 'noPM'"))
+  # allPixelBurnData[grepl("noPM", scenario) & !is.na(pixelGroup), severity := 5]
+  # allPixelBurnData[, severity := as.integer(severity)]
+  # allPixelBurnData[!is.na(severity), patchSize := as.integer(length(unique(pixelIndex))),
+  #                  by = .(scenario, rep, year, severity, fireID)]
+
+  ## fire frequency
+  ## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
+  # setkey(allPixelBurnData, pixelIndex, scenario, rep, year)
+  # allPixelBurnData[, fireInt := as.integer(year - lag(year, n = 1)),
+  #                  by = .(scenario, rep, pixelIndex)]
+  # allPixelBurnData[is.na(fireInt), fireInt := as.integer(year - P(sim)$startYear)] ## NAs mean only one fire, return interval is the difference from start year
+  # allPixelBurnData[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
+  #
+  # allPixelBurnData[, burnt := NULL] ## no longer necessary
+
+  ## checks
+  if (mod$doAssertion)  {
+    test1 <- sapply(split(allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
+      any(duplicated(x[, pixelIndex]))
+    })
+    if (any(test1))
+      stop("Each pixel should only have one record of no. fires per scenario")
+
+    ## OLD CODE
+    # test2 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+    #                  which(is.na(allPixelBurnData$severity)))
+    # test3 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
+    #                  which(is.na(allPixelBurnData$severityB)))
+    # if (length(test2) | length(test3)) {
+    #   stop("NAs differ between pixelGroup and severity/severityB")
+    # }
+
+    test4 <- any(is.na(allPixelBurnData[!is.na(severity), patchSizeLogHa])) |
+      any(is.na(allPixelBurnData[!is.na(severity), patchSizePix]))
+    if (test4) {
+      stop("There are NA's in patch sizes where severity is non-NA")
+    }
+
+    test5 <- any(is.na(allPixelBurnData$fireFreq))
+    if (test5) {
+      stop("NA fire intervals")
+    }
+    suppressWarnings(rm(test1, test2, test3, test4, test5))
+  }
+
   sim$allPixelBurnData <- allPixelBurnData
-  sim$allPixelCohortData <- allPixelCohortData
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
@@ -274,7 +647,7 @@ loadSimulationDataEvent <- function(sim) {
 
 joinSimulationDataEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
-  gc()  ## try to release memory consumed by DT threads
+  gc(reset = TRUE)  ## try to release memory consumed by DT threads
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
 
   ## ECOLOGICAL ZONATION -----------------------------
@@ -308,79 +681,15 @@ joinSimulationDataEvent <- function(sim) {
                             aNPPAct = as.integer(aNPPAct))]
   amc::.gc()
 
-  ## FIRE ATTRIBUTES ---------------------------------------
-  message(cyan("Calculating and adding fire attributes"))
-  ## no. fires per pixel
-  ## how many times did each pixel burn? total no. fires per pixel/scenario/rep
-  allPixelBurnData <- copy(sim$allPixelBurnData)
-  allPixelBurnData[, noFires := as.integer(sum(burnt)), by = .(scenario, rep, pixelIndex)]
-
-  ## calculate fire size in pixels per fireID/scenario/rep
-  ## this accounts for both forest and non-forest pixels
-  allPixelBurnData[, fireSize := as.integer(length(unique(pixelIndex))),
-                   by = .(scenario, rep, year, fireID)]
-
-  ## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
-  ## note that for noPM we assume severity class (i.e. 'severity' column) to be the maximum = 5
-  ## only in pixels with a pixelGroup (others are non-forest and had no veg dynamics)
-  ## also note that we are ignoring if patches are contiguous or not, and simply counting the number of pixels
-  ## with a given severity per fireID
-  message(blue("Assuming a severity class 5 for any scenario with 'noPM'"))
-  allPixelBurnData[grepl("noPM", scenario) & !is.na(pixelGroup), severity := 5]
-  allPixelBurnData[, severity := as.integer(severity)]
-  allPixelBurnData[!is.na(severity), patchSize := as.integer(length(unique(pixelIndex))),
-                   by = .(scenario, rep, year, severity, fireID)]
-
-  ## fire frequency
-  ## calculate fire frequency as the mean fire-intervals per pixel (see Steel et al 2021 for limitations and details)
-  setkey(allPixelBurnData, pixelIndex, scenario, rep, year)
-  allPixelBurnData[, fireInt := as.integer(year - lag(year, n = 1)),
-                   by = .(scenario, rep, pixelIndex)]
-  allPixelBurnData[is.na(fireInt), fireInt := as.integer(year - P(sim)$startYear)] ## NAs mean only one fire, return interval is the difference from start year
-  allPixelBurnData[, fireFreq := mean(fireInt), by = .(scenario, rep, pixelIndex)]
-
-  allPixelBurnData[, burnt := NULL] ## no longer necessary
-
-  ## checks
-  if (mod$doAssertion)  {
-    test1 <- sapply(split(allPixelBurnData, by = c("scenario", "rep", "year")), FUN = function(x){
-      any(duplicated(x[, pixelIndex]))
-    })
-    test2 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
-                     which(is.na(allPixelBurnData$severity)))
-    test3 <- setdiff(which(is.na(allPixelBurnData$pixelGroup)),
-                     which(is.na(allPixelBurnData$severityB)))
-    test4 <- any(is.na(allPixelBurnData[!is.na(severity), patchSize]))
-    test5 <- any(is.na(allPixelBurnData$fireFreq))
-
-    if (any(test1))
-      stop("Each pixel should only have one record of no. fires per scenario")
-
-    if (length(test2) | length(test3)) {
-      stop("NAs differ between pixelGroup and severity/severityB")
-    }
-
-    if (test4) {
-      stop("There are NA's in patch sizes where severity is non-NA")
-    }
-
-    if (test5) {
-      stop("NA fire intervals")
-    }
-    rm(test1, test2, test3, test4, test5)
-  }
-  rm(fireFreqDT)
-  amc::.gc()
-
   ## add noFires to cohortData - no year info, because its the total across the simulation
   cols <- c("scenario", "rep", "pixelIndex", "noFires")
-  allPixelCohortData <- unique(allPixelBurnData[, ..cols])[allPixelCohortData,
-                                                           on = .(scenario, rep, pixelIndex)]
+  allPixelCohortData <- unique(sim$allPixelBurnData[, ..cols])[allPixelCohortData,
+                                                               on = .(scenario, rep, pixelIndex)]
 
   ## checks
   if (mod$doAssertion) {
     cols <- c("scenario", "rep", "pixelIndex")
-    test1 <- allPixelBurnData[allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
+    test1 <- sim$allPixelBurnData[allPixelCohortData[is.na(noFires), ..cols], on = cols, nomatch = 0]
     test1 <- dim(test1)[1]
     if (test1) {
       stop("There shouldn't be any NAs in noFires except in scenario/rep/pixelIndex\n",
@@ -458,7 +767,6 @@ joinSimulationDataEvent <- function(sim) {
 
   ## export to sim
   sim$allPixelCohortData <- allPixelCohortData
-  sim$allPixelBurnData <- allPixelBurnData
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
