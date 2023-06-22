@@ -1,25 +1,6 @@
 ## -----------------------------------
 ##  DATA PREP FOR ANALYSES OF RESULTS
 ## -----------------------------------
-
-## reduce memory footprint
-DTthreads <- getDTthreads()
-setDTthreads(threads = 8)
-
-if (!exists("pkgDir")) {
-  pkgDir <- file.path(
-    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
-    version$platform,
-    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
-  )
-
-  if (!dir.exists(pkgDir)) {
-    dir.create(pkgDir, recursive = TRUE)
-  }
-  .libPaths(pkgDir)
-}
-
-
 if (!exists("yearSubset")) {
   stop("please provide yearSubset vector")
 }
@@ -68,6 +49,7 @@ if (runPrepResultsModule) {
                   objects = objectsResults,
                   outputs = outputsResults,
                   paths = simPaths,
+                  useCache = TRUE,
                   cacheRepo = simPaths$cachePath,
                   userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
                   omitArgs = "userTags")
@@ -90,8 +72,5 @@ if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
   allPixelCohortDataMnt <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, vegType)])[allPixelCohortDataMnt, on = .(scenario, rep, year, pixelIndex)]
 }
 
-amc::.gc()
+gc(reset = TRUE)
 
-## reset DT threads
-data.table::setDTthreads(DTthreads)
-rm(DTthreads)
