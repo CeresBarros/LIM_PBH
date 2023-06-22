@@ -10,9 +10,9 @@
 ## of the simulation
 
 speciesPaths <- list(cachePath = file.path(simPaths$cachePath, "speciesLayers"),
-                    modulePath = file.path("R/SpaDES/m"),
-                    inputPath = file.path("R/SpaDES/inputs"),
-                    outputPath = file.path(simPaths$outputPath, "speciesLayers"))
+                     modulePath = simPaths$modulePath,
+                     inputPath = simPaths$inputPath,
+                     outputPath = file.path(simPaths$outputPath, "speciesLayers"))
 
 speciesParameters <- list(
   Biomass_speciesData = list(

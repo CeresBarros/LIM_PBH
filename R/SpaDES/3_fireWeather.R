@@ -10,9 +10,9 @@
 ## of the simulation
 
 fireWeatherPaths <- list(cachePath = file.path(simPaths$cachePath, "fireWeather"),
-                        modulePath = file.path("R/SpaDES/m"),
-                        inputPath = file.path("R/SpaDES/inputs"),
-                        outputPath = file.path(simPaths$outputPath, "fireWeather"))
+                         modulePath = simPaths$modulePath,
+                         inputPath = simPaths$inputPath,
+                         outputPath = file.path(simPaths$outputPath, "fireWeather"))
 
 fireWeatherParameters <- list(
   fireWeather = list(
