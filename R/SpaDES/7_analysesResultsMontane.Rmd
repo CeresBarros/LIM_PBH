@@ -51,6 +51,7 @@ library(ToolsCB)
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/hypervolumesHelpers.R")
 source("R/R_tools/Useful_functions.R")
+source("R/R_tools/utilsForResultsAnalyses.R")
 options("reproducible.useNewDigestAlgorithm" = 2)
 options("spades.moduleCodeChecks" = FALSE)
 options("reproducible.useCache" = TRUE)
@@ -159,40 +160,40 @@ source("R/R_tools/prepHVData.R")
 ```{r summaryTables, cache=FALSE, include=FALSE}
 ## SUMMARY ACROSS LANDSCAPE -----------------------------------
 byCols <-  c("scenario", "rep", "year", "noFires")
+cols <- which(as.matrix(allPixelCohortDataMnt[, lapply(.SD, is.numeric)]))
+cols <- names(allPixelCohortDataMnt)[cols]
+cacheExtra <- colSums(allPixelCohortDataMnt[, ..cols])
 
 ## BY SPECIES
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
-summaryBurnCohortDataSpp <- allPixelCohortDataMnt[, list(BiomassBySpecies = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                         MortalityBySpecies = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                         aNPPBySpecies = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                         AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                         sum((B/100), na.rm = TRUE))),
-                                                  by = c(byCols, "speciesCode")]
-summaryBurnCohortDataSpp[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
-summaryBurnCohortDataSpp[, firePresAbs := as.integer(noFires != 0)]
+summaryBurnCohortDataSpp <- Cache(makeSummaryTable,
+                                  cohortData = allPixelCohortDataMnt, 
+                                  byCols = c(byCols, "speciesCode"),
+                                  .cacheExtra = list(cacheExtra),
+                                  cacheRepo = simPaths$cachePath,
+                                  userTags = c("summaryBurnCohortDataSpp"),
+                                  omitArgs = c("userTags", "cohortData"))
 gc(reset = TRUE)
 
 ## BY FOREST TYPE (def. as dominant species)
 ## remember that biomass is multiplied by 100 in *boreal*, this will revert the units to tonnes/ha
-summaryBurnCohortDataVegType <- allPixelCohortDataMnt[, list(BiomassByVegType = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                             MortalityByVegType = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                             aNPPByVegType = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                             AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                             sum((B/100), na.rm = TRUE))),
-                                                      by = c(byCols, "vegType")]
-summaryBurnCohortDataVegType[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
-summaryBurnCohortDataVegType[, firePresAbs := as.integer(noFires != 0)]
+summaryBurnCohortDataVegType <- Cache(makeSummaryTable,
+                                      cohortData = allPixelCohortDataMnt, 
+                                      byCols = c(byCols, "vegType"),
+                                      .cacheExtra = list(cacheExtra),
+                                      cacheRepo = simPaths$cachePath,
+                                      userTags = c("summaryBurnCohortDataSpp"),
+                                      omitArgs = c("userTags", "cohortData"))
 gc(reset = TRUE)
 
 ## BY CAMERON'S VEG TYPE
-summaryBurnCohortDataVegTypeCN <- allPixelCohortDataMnt[, list(BiomassByVegType = as.numeric(sum((B/100), na.rm = TRUE)),
-                                                               MortalityByVegType = as.numeric(sum((mortality/100), na.rm = TRUE)),
-                                                               aNPPByVegType = as.numeric(sum((aNPPAct/100), na.rm = TRUE)),
-                                                               AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                                               sum((B/100), na.rm = TRUE))),
-                                                        by = c(byCols, "vegTypeCN")]
-summaryBurnCohortDataVegTypeCN[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
-summaryBurnCohortDataVegTypeCN[, firePresAbs := as.integer(noFires != 0)]
+summaryBurnCohortDataVegTypeCN <- Cache(makeSummaryTable,
+                                        cohortData = allPixelCohortDataMnt, 
+                                        byCols = c(byCols, "vegTypeCN"),
+                                        .cacheExtra = list(cacheExtra),
+                                        cacheRepo = simPaths$cachePath,
+                                        userTags = c("summaryBurnCohortDataSpp"),
+                                        omitArgs = c("userTags", "cohortData")) 
 gc(reset = TRUE)
 ```
 
@@ -214,54 +215,44 @@ At the end of the simulation (or averaged across sampled years), by species
 ## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
 ## in the obs data and this would lead to data loss
 ## simulated ages below the minimum DBH age are excluded from comparisons.
-plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro)]
-plotData <- unique(ageDataCN[, .(speciesCode, ageAtMinDBH)])[plotData, on = .(speciesCode)]
-plotData <- plotData[age >= ageAtMinDBH,]
+## note that species-level comparisons do not use average species ages, so the differences are calculated between 
+## cohort age and the observed median species age
+cols <- which(as.matrix(allPixelCDMntEnd[, lapply(.SD, is.numeric)]))
+cols <- names(allPixelCDMntEnd)[cols]
+cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
+plotData <- Cache(do.call,
+                  what = ageComp_data,
+                  args = list("simData" = allPixelCDMntEnd,
+                              "obsData" = ageDataCN,
+                              "cacheRepo" = simPaths$cachePath),
+                  .cacheExtra = list(cacheExtra),
+                  userTags = "ageComp_data",
+                  omitArgs = c("args", "userTags"),
+                  cacheRepo = simPaths$cachePath)
+plotData[, ageDiffSimObs := age - avgAgeSppObs]
+plotData <- plotData[!is.na(ageDiffSimObs)]
 
-plotData <- plotData[,  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                          sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
-## observed ages
-plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
-plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
-plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
-plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
-plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
-plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
-plotData2 <- plotData2[!is.na(speciesCode)]
-
-plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)), 
-                       by = .(speciesCode, firePresAbs)]
-
-## join simulated and observed
-plotData2 <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
-plotData2[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppObs]
-plotData2 <- plotData2[!is.na(ageDiffSimObs)]
-plotData2[, firePresAbs := as.factor(firePresAbs)]
-
-ageDiffLMList <- lapply(split(plotData2, by = "firePresAbs"), function(DT) {
+ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
   # lm(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, data = DT)
   nlme::gls(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode),
             data = DT)   ## better AIC and residuals
 })
 
-plotData2[firePresAbs == "0", 
-          pred := predict(ageDiffLMList$`0`, type = "response")]
-plotData2[firePresAbs == "1", 
-          pred := predict(ageDiffLMList$`1`, type = "response")]
+plotData[firePresAbs == "0", 
+         pred := predict(ageDiffLMList$`0`, type = "response")]
+plotData[firePresAbs == "1", 
+         pred := predict(ageDiffLMList$`1`, type = "response")]
 if (isFALSE(class(ageDiffLMList$`0`) == "gls")) {
-  plotData2[firePresAbs == "0", 
-            predSE := predict(ageDiffLMList$`0`, type = "response", se = TRUE)["se.fit"]]
+  plotData[firePresAbs == "0", 
+           predSE := predict(ageDiffLMList$`0`, type = "response", se = TRUE)["se.fit"]]
 }
 
 if (isFALSE(class(ageDiffLMList$`1`) == "gls")) {
-  plotData2[firePresAbs == "1", 
-            predSE := predict(ageDiffLMList$`1`, type = "response", se = TRUE)["se.fit"]]
+  plotData[firePresAbs == "1", 
+           predSE := predict(ageDiffLMList$`1`, type = "response", se = TRUE)["se.fit"]]
 }
 
-
-plotTest1 <- ggplot(plotData2, aes(x = firePresAbs)) +
+plotTest1.2 <- ggplot(plotData, aes(x = firePresAbs)) +
   geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
   scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
   scale_fill_manual(values = scenColours, labels = scenLabels) +
@@ -270,19 +261,11 @@ plotTest1 <- ggplot(plotData2, aes(x = firePresAbs)) +
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(title = "Differences between median simulated and observed ages",
        y = expression(bgroup("|", "sim." - bar("obs."), "|")),
-       x = "") +
+       x = "")
+
+plotTest1 <- plotTest1.2 +
   facet_wrap(~ speciesCode, labeller = labeller(speciesCode = speciesLabels))
 
-plotTest1.2 <- ggplot(plotData2, aes(x = firePresAbs)) +
-  geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
-  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank(), 
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Avg. differences from observed ages",
-       y = expression(bgroup("|", "sim." - bar("obs."), "|")),
-       x = "")
 ```
 
 ```{r plot&savePlots, echo = FALSE}
@@ -306,60 +289,47 @@ gc()
 byCols <- c("scenario", "rep", "speciesCode", "firePresAbs", "noFires")
 plotData <- summaryBurnCohortDataSpp[, .SD, .SDcols = c(byCols, "BiomassBySpecies")]
 plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
-plot1 <- ggplot(data = plotData,
-                aes(x = speciesCode, y = log(BiomassBySpecies + 1), colour = speciesCode)) +
-  stat_summary(fun.data = "mean_sd", position = position_dodge(width = 0.8),
-               size = 1) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_colour_manual(values = speciesColours) +
-  scale_x_discrete(labels = speciesLabels) + 
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by species", x = "") +
+plotData[, logBiomassBySpecies := log(BiomassBySpecies + 1)]
+
+plot1 <- summaryPlot(data = plotData, x = "speciesCode", y = "logBiomassBySpecies", 
+                     colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
+                     colLabels = speciesLabels, titleLab = "Total landscape biomass", 
+                     subtitleLab = "by species", yLab = "log-biomass (ton/ha)",
+                     x.text.angle = 45)
+plot1 <- plot1 +
   guides(colour = "none") +
   facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed))
 
-plot2 <- ggplot(data = plotData,
-                aes(x = noFires, y = log(BiomassBySpecies + 1), colour = speciesCode)) +
-  stat_summary(fun= "mean", position = position_dodge(width = 0.8),
+plot2 <- summaryPlot(data = plotData, x = "noFires", y = "logBiomassBySpecies", 
+                     colour = "speciesCode", colValues = speciesColours, 
+                     colLabels = speciesLabels, titleLab = "Total landscape biomass",
+                     subtitleLab = "by species", yLab = "log-biomass (ton/ha)")
+plot2 <- plot2 +
+  stat_summary(fun = "mean", position = position_dodge(width = 0.8),
                geom = "line") +
-  stat_summary(fun.data = "mean_sd", position = position_dodge(width = 0.8)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Total landscape biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = labeller(scenario = label_parsed))
 
 ## average age
-plotData <- allPixelCDMntEnd[, list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),
-                             by = .(scenario, rep, year, firePresAbs, noFires, speciesCode)]
-plotData[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
+plotData <- plotData[,  ## absences can't lower the average ages
+                     list(avgAgeBySppSim = median(age, na.rm = TRUE)),
+                     by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
+plotData[is.nan(avgAgeBySppSim), avgAgeBySppSim := 0]
 plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
-plot5 <- ggplot(data = plotData,
-                aes(x = speciesCode, y = AgeBySppWeighted, colour = speciesCode)) +
-  stat_summary(fun.data = "mean_sd", size = 1) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = speciesLabels) +
-  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age", y = "biomass-weighted age",
-       subtitle = "by species", x = "") +
+plot5 <- summaryPlot(data = plotData, x = "speciesCode", y = "avgAgeBySppSim", 
+                     colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
+                     colLabels = speciesLabels, titleLab = "Species age", 
+                     yLab = "Median biomass-weighted age",
+                     x.text.angle = 45) +
   facet_grid(scenario ~ firePresAbs,
              labeller = labeller(scenario = label_parsed, firePresAbs = c("0" = "no fire", "1" = "fire")))
 
-plot6 <- ggplot(data = plotData,
-                aes(x = noFires, y = AgeBySppWeighted, colour = speciesCode)) +
+plot6 <- summaryPlot(data = plotData, x = "noFires", y = "avgAgeBySppSim", 
+                     colour = "speciesCode", colValues = speciesColours,
+                     colLabels = speciesLabels, titleLab = "Species age", 
+                     yLab = "Median biomass-weighted age") +
   stat_summary(fun = "mean", geom = "line", size = 1) +
-  stat_summary(fun.data = "mean_sd", size = 1) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_colour_manual(values = speciesColours, labels = speciesLabels) +
-  labs(title = "Avg. age", y = "biomass-weighted age",
-       subtitle = "by species") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = label_parsed)
 
@@ -396,139 +366,55 @@ gc()
 ```
 
 ## COMPARING SIMULATED AND OBSERVED DATA
-### Age means CIs - by species
+### Age medians CIs - by species
 ```{r simVsObsAges, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's
+## pixel-level differences from observed medians
 
-## pixel-level differences from observed mean
-## don't average across years/pixels -- leave all replicates.
-plotData <- allPixelCDMntEnd[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro)]
-plotData <- unique(ageDataCN[, .(speciesCode, ageAtMinDBH)])[plotData, on = .(speciesCode)]
-plotData <- plotData[age >= ageAtMinDBH,]
-
-plotData <- allPixelCDMntEnd[,  ## absences can't lower the average ages
-                             list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                  sum((B/100), na.rm = TRUE))),
-                             by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
-plotData$age <- NULL
-plotData <- unique(plotData)
-
-plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
-plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
-plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
-plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
-plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
-plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, biomassWeighted = FALSE, cacheRepo = simPaths$cachePath)
+plotData2 <- copy(ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)])
 plotData2 <- plotData2[!is.na(speciesCode)]
 
-## make sure the data used here is the same in the MAD calculations
-plotData <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)), 
-                      by = .(speciesCode, firePresAbs)][plotData, on = .(speciesCode, firePresAbs)]
+## TODO: avgAgeBySppSim should be raw ages.
+
+plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "avgAgeBySppSim",
+                          colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
+                          xlabels = speciesLabels, x.text.angle = 45,
+                          colValues = scenColours, 
+                          colLabels = scenLabels, 
+                          titleLab = "Biomass-weighted age", subtitleLab = "by species", yLab = "age") 
+plot29 <- plot29 +
+  facet_grid(~ firePresAbs,
+             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
+
 plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppObs]
-plotData <- plotData[!is.na(ageDiffSimObs)]
-
-plot29 <- ggplot() +
-  geom_violin(data = plotData,
-              mapping = aes(x = speciesCode, y = AgeBySppWeighted, fill = scenario, colour = scenario),
-              alpha = 0.3, position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData,
-               mapping = aes(x = speciesCode, y = AgeBySppWeighted, colour = scenario),
-               fun.data = "mean_cl_boot", 
-               position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              mapping = aes(x = speciesCode, y = Reconstructed.age, colour = "observed", fill = "observed"),
-              alpha = 0.3) +
-  stat_summary(data = plotData2,
-               aes(x = speciesCode, y = Reconstructed.age, colour = "observed"),
-               fun.data = "mean_cl_boot") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), 
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = speciesLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "by species") +
-  facet_grid( ~ firePresAbs,
-              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
-
-plot30 <- ggplot() +
-  geom_violin(data = plotData,
-              mapping = aes(x = as.factor(firePresAbs), y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData,
-               mapping = aes(x = as.factor(firePresAbs), y = AgeBySppWeighted, colour = scenario),
-               fun.data = "mean_cl_boot", 
-               position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              mapping = aes(x = as.factor(firePresAbs), y = Reconstructed.age, fill = "observed", 
-                            colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData2,
-               aes(x = as.factor(firePresAbs), y = Reconstructed.age, colour = "observed"),
-               fun.data = "mean_cl_boot") +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "across species")
-
+plotData2[, firePresAbs := as.factor(firePresAbs)]
+plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "avgAgeBySppSim",
+                          colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
+                          xlabels = c("0" = "no fire", "1" = "fire"), 
+                          colValues = scenColours, 
+                          colLabels = scenLabels, 
+                          titleLab = "Biomass-weighted age", subtitleLab = "across species", yLab = "age") 
 
 ## only fire pixels, no means
 plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
-setnames(plotData3, "Reconstructed.age", "AgeBySppWeighted")
+setnames(plotData3, "Reconstructed.age", "avgAgeBySppSim")
 plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
 plotData3[, scenario := factor(scenario, levels = c("noPM", "observed", "PM"))]
-plot29.1 <- ggplot() +
-  geom_violin(data = plotData3,
-              mapping =  aes(x = speciesCode, y = AgeBySppWeighted,
-                             fill = scenario, colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = speciesLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "by species")
 
-plot30.1 <- ggplot() +
-  geom_violin(data = plotData3,
-              mapping = aes(x = scenario, y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = scenLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "across species")
+plot29.1 <- simObsDistsPlot(simData = plotData3, x = "speciesCode", ySim = "avgAgeBySppSim",
+                            showMeans = FALSE, colSim = "scenario", xlabels = speciesLabels, 
+                            colValues = scenColours, 
+                            x.text.angle = 45,
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "by species", yLab = "age")
+
+plot30.1 <- simObsDistsPlot(simData = plotData3, x = "scenario", ySim = "avgAgeBySppSim",
+                            showMeans = FALSE, colSim = "scenario", xlabels = scenLabels, 
+                            colValues = scenColours,
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "across species", yLab = "age")
 
 ```
 
@@ -554,143 +440,60 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 ```
 
-### Age means CIs - by forest type
+### Age medians CIs - by forest type
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
 ```{r simVsObsAges_vegType, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's
-pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
-plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, vegTypeCN, pixelIndex)]
-
-## average age by species!
-# don't average across years/pixels/species -- leave all replicates like the observed data
-plotData <- plotData[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                          sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
-plotData$age <- NULL
-plotData <- unique(plotData)
-
-if (any(is.na(plotData$AgeBySppWeighted))) {
-  stop("there should be no NAs")
-}
-
-plotData2 <- copy(ageDataCN[, .(Cover.dendro, Reconstructed.age, firePresAbs)])
+plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, speciesLevel = FALSE, cacheRepo = simPaths$cachePath)
+plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
+plotData2 <- plotData2[, list(avgAgeBySppObs = median(Stand.age.3, na.rm = TRUE)),
+                       by = .(vegTypeCN, firePresAbs)]
 
-## add means per vegType: make sure the data used here is the same as in the MAD calculations
-plotData <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)), 
-                      by = .(vegTypeCN, firePresAbs)][plotData, on = .(vegTypeCN, firePresAbs)]
-plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData[, ageDiffSimObs := AgeBySppWeighted - avgAgeBySppObs]
-plotData <- plotData[!is.na(ageDiffSimObs)]
+## TODO: avgAgeBySppSim should be stand ages.
 
-plot29.2 <- ggplot() +
-  geom_violin(data = plotData,
-              mapping = aes(x = vegTypeCN, y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData,
-               mapping = aes(x = vegTypeCN, y = AgeBySppWeighted, colour = scenario),
-               fun.data = "mean_cl_boot",
-               position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              mapping = aes(x = vegTypeCN, y = Reconstructed.age, fill = "observed", 
-                            colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData2,
-               aes(x = vegTypeCN, y = Reconstructed.age, colour = "observed"),
-               fun.data = "mean_cl_boot",
-               position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "by forest type") +
+plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "avgAgeBySppSim",
+                            colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
+                            xlabels = vegTypeCNLabels, x.text.angle = 45,
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "by forest type", yLab = "age") 
+plot29.2 <- plot29.2 +
   facet_grid( ~ firePresAbs,
               labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
 
-plot30.2 <- ggplot() +
-  geom_violin(data = plotData,
-              mapping = aes(x = as.factor(firePresAbs), y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData,
-               mapping = aes(x = as.factor(firePresAbs), y = AgeBySppWeighted, colour = scenario),
-               fun.data = "mean_cl_boot",
-               position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              aes(x = as.factor(firePresAbs), y = Reconstructed.age, fill = "observed", 
-                  colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  stat_summary(data = plotData2,
-               aes(x = as.factor(firePresAbs), y = Reconstructed.age, colour = "observed"),
-               fun.data = "mean_cl_boot") +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "across forest type")
+plotData[, firePresAbs := as.factor(firePresAbs)]
+plotData2[, firePresAbs := as.factor(firePresAbs)]
+plot30.2 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "avgAgeBySppSim",
+                            colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
+                            xlabels = c("0" = "no fire", "1" = "fire"),
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "across forest type", yLab = "age") 
 
 
 ## only fire pixels, no means
 plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
-setnames(plotData3, "Reconstructed.age", "AgeBySppWeighted")
+setnames(plotData3, "Stand.age.3", "avgAgeBySppSim")
 plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
 plotData3[, scenario := factor(scenario, levels = c("noPM", "observed", "PM"))]
-plot29.3 <- ggplot() +
-  geom_violin(data = plotData3,
-              mapping = aes(x = vegTypeCN, y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "by forest type")
 
-plot30.3 <- ggplot() +
-  geom_violin(data = plotData3,
-              mapping = aes(x = scenario, y = AgeBySppWeighted, fill = scenario, 
-                            colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = scenLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                                 "observed" = "grey50"),
-                      labels = c(scenLabels, "observed" = "observed"), guide = "none") +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2],
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  labs(title = "Avg. age", y = "age", x = "",
-       subtitle = "across forest type")
+plot29.3 <- simObsDistsPlot(simData = plotData3, x = "vegTypeCN", ySim = "avgAgeBySppSim",
+                            colSim = "scenario", x.text.angle = 45,
+                            xlabels = vegTypeCNLabels, showMeans = FALSE,
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "by forest type", yLab = "age") 
+
+plot30.3 <- simObsDistsPlot(simData = plotData3, x = "scenario", ySim = "avgAgeBySppSim",
+                            colSim = "scenario",
+                            xlabels = scenLabels, showMeans = FALSE,
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Biomass-weighted age", subtitleLab = "across forest type", yLab = "age") 
 ```
 
 ```{r plot&savePlots8, echo = FALSE}
@@ -715,8 +518,8 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 ```
 
-### Mean absolute deviations and quantile deviations of simulated ages by stand type
-(typical MAD, and quantile deviations - 50, 75, 95%)
+### Median absolute deviations and quantile deviations of simulated ages by stand type
+(quantile deviations - 50, 75, 95%)
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
@@ -724,105 +527,58 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## mean age differences
 ## calculate avg weighted ages (per species) per pixel first, then average across species per pixel
 ## then take the absolute difference of each stand to the observed average (per veg type) across reps
-pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
-
-plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, pixelIndex)]
-plotData[, vegTypeCN := i.vegTypeCN]
-plotData[, i.vegTypeCN := NULL]
-plotData <- plotData[B > 0 & vegTypeCN %in% unique(ageDataCN$Cover.dendro),
-                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                          sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
-## repeat values for landscape
-plotData2 <- copy(plotData)
-plotData2[, vegTypeCN := "landscape"]
-plotData <- rbind(plotData, plotData2)
-plotData <- plotData[,
-                     list(AgeBySppWeighted = mean(AgeBySppWeighted)),
+plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, speciesLevel = FALSE, 
+                         addLandscape = TRUE, cacheRepo = simPaths$cachePath)
+plotData <- plotData[, avgAgeBySppSim := median(avgAgeBySppSim, na.rm = TRUE),
                      by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
-
-if (any(is.na(plotData$AgeBySppWeighted))) {
-  stop("There should be no NAs")
-}
-
-plotData2 <- rbind(ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
-                       by = .(Cover.dendro, firePresAbs)],
-                   ageDataCN[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE),
-                                    Cover.dendro = "landscape"),
-                             by = .(firePresAbs)])
-plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
-setnames(plotData, "Cover.dendro", "vegTypeCN")
+plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeBySppObs)]
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - avgAgeBySppObs))),
+plotData <- unique(plotData)
+
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(avgAgeBySppSim - avgAgeBySppObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
 ## differences
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
-plot32 <- ggplot(plotData,
-                 aes(x = vegTypeCN,
-                     y = AgeBySppWeighted - avgAgeBySppObs,
-                     fill = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = vegTypeCNLabels, limits = x_order) +
-  scale_fill_discrete(labels = scenLabels) +
-  labs(title = "Avg. differences from observed ages",
-       y = expression("sim." - bar("obs.")), x = "") +
-  facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+plot32 <- DevPlot(plotData, x = "vegTypeCN", y = avgAgeBySppSim - avgAgeBySppObs,
+                  xlabels = vegTypeCNLabels, xorder = x_order,
+                  fillLabels = scenLabels, fillValues = scenColours,
+                  xFacet = "firePresAbs", 
+                  labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                  titleLab = "Avg. differences from observed ages",
+                  yLab = expression("sim." - bar("obs.")))
+
 
 ## mean absolute differences
-plot32.2 <- ggplot(plotData2,
-                   aes(x = vegTypeCN, y = meanAbsDevSimObs,
-                       colour = scenario)) +
-  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.5)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
-  scale_colour_discrete(labels = scenLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = rev(x_order)) +
-  labs(title = "Mean abs. deviation from observed ages",
-       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
-  coord_flip() +
-  facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs", 
+                    colour = "scenario", colValues = scenColours, 
+                    colLabels = scenLabels, xlabels = vegTypeCNLabels,
+                    xorder = x_order, xFacet = "firePresAbs", 
+                    labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                    titleLab = "Mean abs. deviation from observed ages",
+                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
 
+## QUANTILE DEVIATIONS
 ## forest-type-level differences between simulated and observed upper quantiles
-pixelIDs <- unique(allPixelCDMntEnd[, .(scenario, rep, year, vegTypeCN, pixelIndex)])
+plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, speciesLevel = FALSE, 
+                         addLandscape = TRUE, cacheRepo = simPaths$cachePath)
+plotData[, speciesCode := NULL]
+plotData <- plotData[!is.na(avgAgeBySppObs)]
+plotData <- unique(plotData)
 
-plotData <- allPixelCDMntEnd[pixelIDs, on = .(scenario, rep, year, pixelIndex)]
-plotData[, vegTypeCN := i.vegTypeCN]
-plotData[, i.vegTypeCN := NULL]
-
-plotData <- plotData[B > 0  & vegTypeCN %in% unique(ageDataCN$Cover.dendro),  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                          sum((B/100), na.rm = TRUE))),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN, speciesCode)]
-## add landscape
-plotData2 <- copy(plotData) 
-plotData2[, vegTypeCN := "landscape"]
-plotData <- rbind(plotData, plotData2)
-plotData <- plotData[,  ## absences can't lower the average ages
-                     list(AgeBySppWeighted = mean(AgeBySppWeighted)),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
-plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
-                            quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
-                            quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
+plotData <- plotData[, `:=`(quant50AgeBySpp = quantile(avgAgeBySppSim, probs = 0.5, na.rm = TRUE),
+                            quant75AgeBySpp = quantile(avgAgeBySppSim, probs = 0.75, na.rm = TRUE),
+                            quant95AgeBySpp = quantile(avgAgeBySppSim, probs = 0.95, na.rm = TRUE)),
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
 plotData2 <- rbind(
-  ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
-                   quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
-                   quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
+  ageDataCN[, list(quant50AgeBySppObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
+                   quant75AgeBySppObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
+                   quant95AgeBySppObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE)), 
             by = .(Cover.dendro, firePresAbs)],
-  ageDataCN[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
-                   quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
-                   quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE),
+  ageDataCN[, list(quant50AgeBySppObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
+                   quant75AgeBySppObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
+                   quant95AgeBySppObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE),
                    Cover.dendro = "landscape"), 
             by = .(firePresAbs)])
 
@@ -962,8 +718,8 @@ gc()
 ## then the absolute difference of each stand to the observed average (per veg type) across reps
 ## don't average across years/pixels -- leave all replicates.
 plotData <- allPixelCDMntEnd[B > 0,
-                             list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                  sum((B/100), na.rm = TRUE))),
+                             list(avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
 plotData$age <- NULL
 plotData <- unique(plotData)
@@ -971,67 +727,44 @@ plotData2 <- copy(plotData)
 plotData2[ , speciesCode := "landscape"]
 plotData <- rbind(plotData, plotData2)
 
-plotData2 <- ageDataCN[, .(Species, Reconstructed.age, firePresAbs)]
-plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
-plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
-plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
-plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
-plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
 plotData2 <- plotData2[!is.na(speciesCode)]
 
 plotData3 <- copy(plotData2)
 plotData3[, speciesCode := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
-  
-plotData2 <- plotData2[, list(avgAgeBySppObs = mean(Reconstructed.age, na.rm = TRUE)),
+
+plotData2 <- plotData2[, list(avgAgeBySppObs = median(Reconstructed.age, na.rm = TRUE)),
                        by = .(speciesCode, firePresAbs)]
 
 plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
-plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(AgeBySppWeighted)]
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(AgeBySppWeighted - mean(avgAgeBySppObs)))),
+plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(avgAgeBySppSim)]
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(avgAgeBySppSim - median(avgAgeBySppObs)))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
 
 ## differences
-plot43 <- ggplot(plotData,
-                 aes(x = speciesCode,
-                     y = AgeBySppWeighted - avgAgeBySppObs,
-                     fill = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  geom_boxplot() +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  scale_x_discrete(labels = speciesLabels) +
-  scale_fill_discrete(labels = scenLabels) +
-  theme(legend.title = element_blank(), 
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Avg. differences from observed ages",
-       y = expression("sim." - bar("obs.")), x = "") +
-  facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+plot43 <- DevPlot(plotData, x = "speciesCode", y = avgAgeBySppSim - avgAgeBySppObs,
+                  xlabels = speciesLabels, fillValues = scenColours,
+                  fillLabels = scenLabels, xFacet = "firePresAbs", 
+                  labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                  titleLab = "Avg. differences from observed ages",
+                  yLab = expression("sim." - bar("obs.")))
+
 
 ## mean absolute differences
-plot43.2 <- ggplot(plotData2,
-                   aes(x = speciesCode, y = meanAbsDevSimObs,
-                       colour = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.5)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_x_discrete(labels = c(speciesLabels, landscape = "landscape"), 
-                   limits = c("landscape", names(speciesLabels))) +
-  scale_colour_discrete(labels = scenLabels) +
-  labs(title = "Mean abs. deviation from observed ages",
-       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "") +
-  coord_flip() +
-  facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire")))
+plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs", 
+                    colour = "scenario", colValues = scenColours, colLabels = scenLabels, 
+                    xlabels = c(speciesLabels, landscape = "landscape"),
+                    xorder = c("landscape", names(speciesLabels)), xFacet = "firePresAbs", 
+                    labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                    titleLab = "Mean abs. deviation from observed ages",
+                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
 
 
 ## species-level differences between simulated and observed upper quantiles
 plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
-                             list(AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                  sum((B/100), na.rm = TRUE))),
+                             list(avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
 plotData$age <- NULL
 plotData <- unique(plotData)
@@ -1039,17 +772,12 @@ plotData2 <- copy(plotData)
 plotData2[ , speciesCode := "landscape"]
 plotData <- rbind(plotData, plotData2)
 
-plotData <- plotData[, list(quant50AgeBySpp = quantile(AgeBySppWeighted, probs = 0.5, na.rm = TRUE),
-                            quant75AgeBySpp = quantile(AgeBySppWeighted, probs = 0.75, na.rm = TRUE),
-                            quant95AgeBySpp = quantile(AgeBySppWeighted, probs = 0.95, na.rm = TRUE)),
+plotData <- plotData[, list(quant50AgeBySpp = quantile(avgAgeBySppSim, probs = 0.5, na.rm = TRUE),
+                            quant75AgeBySpp = quantile(avgAgeBySppSim, probs = 0.75, na.rm = TRUE),
+                            quant95AgeBySpp = quantile(avgAgeBySppSim, probs = 0.95, na.rm = TRUE)),
                      by = .(scenario, rep, firePresAbs, speciesCode)]
 
-plotData2 <- copy(ageDataCN[, .(Species, Reconstructed.age, firePresAbs)])
-plotData2[grepl("POBA|POTR", Species), speciesCode := "Popu_sp"]  ## collapse populus
-plotData2[grepl("ABLA", Species), speciesCode := "Abie_sp"]
-plotData2[grepl("PIEN", Species), speciesCode := "Pice_eng"]
-plotData2[grepl("PICO", Species), speciesCode := "Pinu_sp"]
-plotData2[grepl("PSME", Species), speciesCode := "Pseu_men"]
+plotData2 <- copy(ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)])
 plotData2 <- plotData2[!is.na(speciesCode)]
 
 plotData3 <- copy(plotData2)
@@ -1204,27 +932,14 @@ gc()
 ### No. fires, fire frequency, fire size and fire severity
 ```{r simVsObsFires, cache = FALSE}
 ## fire size distribution
-plot37 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."],
-                 aes(x = meanPatchS + 1, fill = scenario, alpha = scenario)) +
-  geom_density(adjust = 1.5) +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_x_log10() +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Fire mean patch size distribution", 
-       x = "Mean patch size (no. pixels)")
+plot37 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
+                      x = meanPatchS + 1, fill = "scenario", alpha = "scenario",
+                      fillValues = scenColours, fillLabels = scenLabels, 
+                      alphaValues = c("PM" = 0.6, "noPM" = 1),
+                      titleLab = "Fire patch size distribution",
+                      xLab = "Mean patch size (no. pixels)")
 
-plot37.2 <- ggplot(summaryFireAttributes[vegTypeCN != "No veg."],
-                   aes(x = meanPatchS + 1, fill = scenario, alpha = scenario)) +
-  geom_density(adjust = 1.5) +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_x_log10() +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Fire mean patch size distribution", 
-       x = "Mean patch size (no. pixels)") +
+plot37.2 <- plot37.2 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## average no. of pixels with certain fire frequency
@@ -1264,47 +979,27 @@ plot36 <- ggplot(plotData) +
   labs(y = "no. fires", x = "")
 
 ## only simulated fire intervals
-plot39.3 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."],
-                   aes(x = meanFreq + 1, fill = scenario, alpha = scenario)) +
-  geom_density() +
-  scale_x_log10() +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "Mean fire interval", colour = "")
+plot39.3 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
+                        x = meanFreq + 1, fill = "scenario", alpha = "scenario",
+                        fillValues = scenColours, fillLabels = scenLabels, 
+                        alphaValues = c("PM" = 0.6, "noPM" = 1),
+                        titleLab = "Fire interval distribution",
+                        xLab = "Mean fire interval")
 
-plot39.4 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."],
-                   aes(x = meanFreq + 1, fill = scenario, alpha = scenario)) +
-  geom_density() +
-  scale_x_log10() +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "Mean fire interval", colour = "") + 
+plot39.4 <- plot39.3 + 
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## distribution of fire severity per stand across landscape
-plot40 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."]) +
-  geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
-  scale_x_log10() +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "Mean fire severity\n(biomass lost, ton/ha)", colour = "")
+plot40 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
+                      x = meanSevB + 1, fill = "scenario", alpha = "scenario",
+                      fillValues = scenColours, fillLabels = scenLabels, 
+                      alphaValues = c("PM" = 0.6, "noPM" = 1),
+                      titleLab = "Fire severity distribution",
+                      xLab = "Mean fire severity\n(biomass lost, ton/ha)")
 
 ## distribution of fire severity per stand by veg types defined for a sample of years across the quasi equilibrium period.
 ## as used for HVs
-plot41 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."]) +
-  geom_density(aes(x = meanSevB + 0.1, fill = scenario, alpha = scenario)) +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_fill_discrete(labels = scenLabels) +
-  scale_x_log10() +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "Mean fire severity\n(biomass lost, ton/ha)", colour = "") +
+plot41 <- plot40 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## distribution of fire severity by veg types defined every year
@@ -1312,15 +1007,14 @@ plot41 <- ggplot(data = summaryFireAttributes[vegTypeCN != "No veg."]) +
 plotData <- unique(allPixelCohortDataMnt[vegTypeCN != "No veg.", .(scenario, rep, year, pixelIndex, vegTypeCN)])
 plotData <- summaryFireAttributes[vegTypeCN != "No veg.",
                                   .(scenario, rep, pixelIndex, meanSevB)][plotData, on = .(scenario, rep, pixelIndex)]
-plot42 <- ggplot(data = plotData) +
-  geom_density(aes(x = log(meanSevB + 1), fill = scenario, alpha = scenario)) +
-  scale_alpha_manual(values = c("PM" = 0.6, "noPM" = 1), guide = "none") +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(x = "Mean fire severity\n(log-biomass lost, ton/ha)", colour = "") +
+plot42 <- densityPlot(plotData, 
+                      x = log(meanSevB + 1), fill = "scenario", alpha = "scenario",
+                      fillValues = scenColours, fillLabels = scenLabels, 
+                      alphaValues = c("PM" = 0.6, "noPM" = 1),
+                      titleLab = "Fire severity distribution",
+                      xLab = "Mean fire severity\n(biomass lost, ton/ha)")
+plot42 <- plot42 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
-
 ```
 
 ```{r plot&savePlots15, echo = FALSE}
@@ -1378,46 +1072,21 @@ Non-forest forest types and pixels w/o included since these plots are showing da
 ```{r fireAttr_boxplots, cache = FALSE}
 x_order <- names(vegTypeCNLabels)
 ## fire size
-plot45 <- ggplot(summaryFireAttributes) +
-  geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = "landscape"),
-               outlier.size = 0.5) +
-  geom_boxplot(aes(y = meanPatchS + 1, fill = scenario, x = vegTypeCN),
-               outlier.size = 0.5) +
-  scale_y_log10() +
-  scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = x_order) +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(y = "Mean patch size (no. pixels)", x = "")
+plot45 <- boxPlot(data, x = "vegTypeCN", y = meanPatchS + 1, 
+                  fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
+                  fillValues = scenColours, fillLabels = scenLabels,
+                  titleLab = NULL, yLab = "Mean patch size (no. pixels)")
 
-plot46 <- ggplot(summaryFireAttributes) +
-  geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = "landscape"),
-               outlier.size = 0.5) +
-  geom_boxplot(aes(y = meanFreq + 1, fill = scenario, x = vegTypeCN),
-               outlier.size = 0.5) +
-  scale_y_log10() +
-  scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = x_order) +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(y = "Mean fire interval (years)", x = "")
+plot46 <- boxPlot(summaryFireAttributes, x = "vegTypeCN", y = meanFreq + 1, 
+                  fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
+                  fillValues = scenColours, fillLabels = scenLabels,
+                  titleLab = NULL, yLab = "Mean fire interval (years)")
 
 ## fire severity
-plot47 <- ggplot(summaryFireAttributes) +
-  geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = "landscape"),
-               outlier.size = 0.5) +
-  geom_boxplot(aes(y = meanSevB + 1, fill = scenario, x = vegTypeCN),
-               outlier.size = 0.5) +
-  scale_y_log10() +
-  scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = x_order) +
-  scale_fill_discrete(labels = scenLabels) +
-  theme_pubr(base_size = 14, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(y =  "Mean fire severity\n(biomass lost, ton/ha)", x = "")
-
+plot47 <- boxPlot(summaryFireAttributes, x = "vegTypeCN", y = meanSevB + 1, 
+                  fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
+                  fillValues = scenColours, fillLabels = scenLabels,
+                  titleLab = NULL, yLab = "Mean fire severity\n(biomass lost, ton/ha)")
 ```
 
 ```{r plot&savePlots17, echo = FALSE}
@@ -1496,36 +1165,24 @@ plotData2 <- copy(plotData)
 plotData2[, vegTypeCN := "landscape"]
 plotData <- rbind(plotData, plotData2)
 
-plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, mean.FI, Patch.ID)])
+plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, median.FI, Patch.ID)])
 plotData3 <- copy(plotData2)
 plotData3[, Cover.dendro := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
 
-plot39 <- ggplot() +
-  geom_violin(data = plotData,
-              aes(x = vegTypeCN, y = meanFreq, fill = scenario, 
-                  colour = scenario),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  geom_violin(data = plotData2,
-              aes(x = Cover.dendro, y = mean.FI, fill = "observed", 
-                  colour = "observed"),
-              alpha = 0.3,
-              position = position_dodge(width = 0.9)) +
-  geom_point(data = plotData2[Cover.dendro %in% c("broadleaf", "PIEN")],   ## these only have one point
-             aes(x = Cover.dendro, y = mean.FI, colour = "observed"),
-             position = position_dodge(width = 0.9), show.legend = FALSE) +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_colour_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                                 "observed" = "grey50")) +
-  scale_fill_manual(values = c("noPM" = scales::hue_pal()(2)[1], "PM" = scales::hue_pal()(2)[2], 
-                               "observed" = "grey50"),
-                    labels = c(scenLabels, "observed" = "observed")) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  guides(colour = "none") +
-  labs(title = "Mean fire interval", subtitle = "by forest type",
-       y = "Fire interval", x = "", colour = "")
+setnames(plotData2, "Cover.dendro", "vegTypeCN")
+
+plot39 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "meanFreq", 
+                          colSim = "scenario",
+                          obsData = plotData2, yObs = "median.FI", xlabels = vegTypeCNLabels,
+                          colValues = scenColours, colLabels = scenLabels, x.text.angle = 45,
+                          showMeans = FALSE,
+                          titleLab = "Mean fire interval", subtitleLab = "by forest type",
+                          yLab = "Fire interval")
+plot39 <- plot39 + 
+  geom_point(data = plotData2[vegTypeCN %in% c("broadleaf", "PIEN")],   ## these only have one point
+             aes(x = vegTypeCN, y = median.FI, colour = "observed"),
+             position = position_dodge(width = 0.9), show.legend = FALSE) 
 ```
 
 ```{r plot&savePlots16, echo = FALSE}
@@ -1558,23 +1215,23 @@ plotData2 <- ageDataCN[firePresAbs > 0,]
 plotData3 <- copy(plotData2)
 plotData3[, Cover.dendro := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
-plotData2 <- plotData2[, list(avgMean.FIObs = mean(mean.FI, na.rm = TRUE)),
+plotData2 <- plotData2[, list(avgMedian.FIObs = mean(median.FI, na.rm = TRUE)),
                        by = .(Cover.dendro)]
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 plotData <- plotData2[plotData, on = "vegTypeCN"]
 
-if (nrow(plotData[is.na(avgMean.FIObs) | is.na(meanFreq)])) {
+if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(meanFreq)])) {
   stop("NAs detected")
 }
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - avgMean.FIObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - avgMedian.FIObs))),
                       by = .(scenario, rep, vegTypeCN)]
 
 ## boxplot differences
 plot44 <- ggplot(plotData,
                  aes(x = vegTypeCN,
-                     y = meanFreq - avgMean.FIObs,
+                     y = meanFreq - avgMedian.FIObs,
                      fill = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   geom_boxplot() +
@@ -1587,20 +1244,11 @@ plot44 <- ggplot(plotData,
 
 ## mean absolute differences
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
-plot44.2 <- ggplot(plotData2,
-                   aes(x = vegTypeCN, y = meanAbsDevSimObs, colour = scenario, 
-                       shape = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  stat_summary(fun.data = "mean_sd", position = position_dodge(width = 0.5), size = 0.7) +
-  scale_y_continuous(limits = c(0, max(plotData2$meanAbsDevSimObs))) +
-  scale_x_discrete(labels = vegTypeCNLabels, limits = x_order) +
-  scale_shape_discrete(labels = scenLabels, name = "") +
-  scale_color_discrete(labels = scenLabels, name = "") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(),
-        panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Mean abs. deviation from fire intervals",
-       y = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))), x = "")
+plot44.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
+                    colour = "scenario", colValues = scenColours, colLabels = scenLabels,
+                    labllr, xlabels = vegTypeCNLabels, xorder = x_order,
+                    x.text.angle = 45, titleLab = "Mean abs. deviation from observed median fire intervals", 
+                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
 
 ```
 
@@ -1740,10 +1388,10 @@ Only on the sampled years; only B and averg. weighted age
 plotData <- allPixelCDMntEnd[, list(vegTypeCN = vegTypeCN,
                                     noFires = noFires,
                                     B = B,
-                                    AgeBySppWeighted = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                    sum((B/100), na.rm = TRUE))),
+                                    avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                                  sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, speciesCode)]
-plotData[is.nan(AgeBySppWeighted), AgeBySppWeighted := 0]
+plotData[is.nan(avgAgeBySppSim), avgAgeBySppSim := 0]
 ## sum B per spp
 plotData[, B := sum(B), by = .(scenario, rep, year, pixelIndex, speciesCode)]
 plotData <- unique(plotData)
@@ -1759,84 +1407,53 @@ plotData[noFires > 0, noPixels := round(mean(noPixels)), by = .(scenario, vegTyp
 ## SPECIES BIOMASS
 ## cross pixel sums
 ## just mean across reps and scaled from 0-1
-plot7 <- ggplot(data = plotData[noFires > 0]) +
-  stat_summary(aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode),
-               fun = "mean", geom = "bar", position = "fill") +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
+plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
+                             x = "vegTypeCN", y = "BiomassBySpecies",
+                             fill = "speciesCode", fillValues = speciesColours, 
+                             fillLabels = speciesLabels, xFacet = "scenario", 
+                             xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                             titleLab = "Species biomass", yLab = "Proportion of biomass")
+plot7 <- plot7 + 
   geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
-            aes(x = vegTypeCN, y = 1.05, label = noPixels)) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  scale_y_continuous(breaks = c(seq(0, 1, 0.25)),
-                     labels = c(as.character(seq(0, 1, 0.25)))) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Total biomass", y = "Proportion of biomass",
-       subtitle = "by species", x = "") +
-  guides(colour = "none") +
-  facet_grid(~ scenario, 
-             labeller = labeller(scenario = label_parsed))
+            aes(x = vegTypeCN, y = 1.05, label = noPixels))
 
 ## with mean and SD
-plot7.2 <- ggplot(data = plotData[noFires > 0],
-                  aes(x = vegTypeCN, y = BiomassBySpecies, fill = speciesCode)) +
-  stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
-  stat_summary( fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by species", x = "") +
-  guides(colour = "none") +
-  facet_grid(~ scenario, 
-             labeller = labeller(scenario = label_parsed))
+plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
+                               x = "vegTypeCN", y = "BiomassBySpecies",
+                               fill = "speciesCode", fillValues = speciesColours, 
+                               fillLabels = speciesLabels, xFacet = "scenario", 
+                               errorBar = TRUE,
+                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                               titleLab = "Species biomass", yLab = "Total biomass")
 
 ## pixel averages
 ## just mean across reps and scaled from 0-1
-plot7.3 <- ggplot(data = plotData[noFires > 0],
-                  aes(x = vegTypeCN, y = B, fill = speciesCode)) +
-  stat_summary(fun = "mean", geom = "bar", position = "fill") +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by species, within pixels", x = "") +
-  guides(colour = "none") +
-  facet_grid(~ scenario, 
-             labeller = labeller(scenario = label_parsed))
+plot7.3 <- sppCompositionPlots(data = plotData[noFires > 0],
+                               x = "vegTypeCN", y = "B",
+                               fill = "speciesCode", fillValues = speciesColours, 
+                               fillLabels = speciesLabels, xFacet = "scenario", 
+                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                               titleLab = "Species biomass", yLab = "Relative biomass",
+                               subtitleLab = "by species, within pixels")
 
 ## with mean and SD
-plot7.4 <- ggplot(data = plotData[noFires > 0],
-                  aes(x = vegTypeCN, y = B, fill = speciesCode)) +
-  stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
-  stat_summary( fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  labs(title = "Total biomass", y = "log-biomass (ton/ha)",
-       subtitle = "by species, within pixels", x = "") +
-  guides(colour = "none") +
-  facet_grid(~ scenario, 
-             labeller = labeller(scenario = label_parsed))
-
+plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
+                               x = "vegTypeCN", y = "B", errorBar = TRUE,
+                               fill = "speciesCode", fillValues = speciesColours, 
+                               fillLabels = speciesLabels, xFacet = "scenario", 
+                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                               titleLab = "Species biomass", yLab = "Total biomass",
+                               subtitleLab = "by species, within pixels")
 
 ## SPECIES BIOMASS-WEIGHTED AGE
 ## with mean and SD
-plot8 <- ggplot(data = plotData[noFires > 0],
-                aes(x = vegTypeCN, y = AgeBySppWeighted, fill = speciesCode)) +
-  stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
-  stat_summary( fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9)) +
-  theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  scale_fill_manual(values = speciesColours, labels = speciesLabels) +
-  scale_x_discrete(labels = vegTypeCNLabels) + 
-  labs(title = "Avg. age", y = "biomass-weighted age",
-       subtitle = "by species, within pixels", x = "") +
-  guides(colour = "none") +
-  facet_grid(~ scenario, 
-             labeller = labeller(scenario = label_parsed))
+plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
+                               x = "vegTypeCN", y = "avgAgeBySppSim", errorBar = TRUE,
+                               fill = "speciesCode", fillValues = speciesColours, 
+                               fillLabels = speciesLabels, xFacet = "scenario", 
+                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                               titleLab = "Mean weighted age", yLab = "Biomass-weighted age",
+                               subtitleLab = "by species, within pixels")
 
 ```
 
