@@ -558,7 +558,6 @@ calcFireAttributesEvent <- function(sim) {
                                    doAssertion = mod$doAssertion),
                                  f = makeNoFireHistoryData,
                                  .cacheExtra = list(cacheExtra, cacheExtra2),
-                                 useCache = "overwrite",
                                  userTags = c(cacheTags, "noFireHistoryDatanoPM"),
                                  omitArgs = c("userTags", "rstCurrentFiresStk"))
   noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
