@@ -24,7 +24,7 @@ if (getOption("LandR.assertions", TRUE)) {
 
   test2 <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$pixelIndex][summaryFireAttributes[is.na(meanFreq), .(scenario, rep, pixelIndex)],
                                                                               on = .(scenario, rep, pixelIndex), nomatch = 0]
-  if (nrows(test2)) {
+  if (nrow(test2)) {
     stop("pixels that had fire and veg data in allPixelBurnData were ",
          "accidentally dropped when adding vegTypeCN")
   }
