@@ -89,7 +89,9 @@ dir.create(HVoutputPath, recursive = TRUE)
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 ## FIRE DATA SUMMARY FOR HVs -----------------------
+opts <- options("LandR.assertions", FALSE)
 source("R/R_tools/prepFireData4HVs.R")
+options(opts)
 
 ## Global pyrodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
