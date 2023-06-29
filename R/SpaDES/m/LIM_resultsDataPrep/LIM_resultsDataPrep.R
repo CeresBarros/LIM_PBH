@@ -511,7 +511,7 @@ calcFireAttributesEvent <- function(sim) {
 
   ## calculate intervals to a new table (there will be always one interval more than fires)
   ## first calculate intervals in pixels with a fire history
-  fireIntervals <-  allPixelBurnData[burnt == 1,
+  fireIntervals <-  allPixelBurnData[noFires > 0,
                                      list(fireInt = as.integer(c(P(sim)$startYear, year, P(sim)$endYear) - lag(c(P(sim)$startYear, year, P(sim)$endYear), n = 1)),
                                           noFires = unique(noFires)),
                                      by = .(scenario, rep, pixelIndex)]
