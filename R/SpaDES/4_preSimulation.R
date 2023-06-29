@@ -240,6 +240,7 @@ LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules
   simPaths2$cachePath <- file.path(simPaths2$cachePath, scenario)
   simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
   simModules2 <- simModules[[scenario]]
+  simObjects$speciesLayers <- stack(normPath(file.path(simPaths2$outputPath, "speciesLayers_NA.gri")))
   Cache(simInitAndSpades
         , times = simTimes
         , params = simParams
