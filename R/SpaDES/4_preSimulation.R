@@ -256,9 +256,16 @@ LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules
         , omitArgs = c("userTags", ".plotInitialTime", "debug"))
 }, simPaths = simPaths, simModules = simModules, simParams = simParams)
 
-## save
+## zip with all objects in memory -- more foolproof for recovery
 lapply(names(LIM_simInitList), FUN = function(scenario) {
-  saveSimList(LIM_simInitList[[scenario]],
-              file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")))
+  zipSimList(LIM_simInitList[[scenario]],
+             zipfile = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".zip")),
+             filename = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")),
+             fileBackend = 2)
 })
 
+## save without pulling file backed rasters to memory - these are the simlists to be used for simulation
+lapply(names(LIM_simInitList), FUN = function(scenario) {
+  saveSimList(LIM_simInitList[[scenario]],
+             filename = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")))
+})
