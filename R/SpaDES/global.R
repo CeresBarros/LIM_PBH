@@ -22,18 +22,6 @@ if (!exists("pkgDir")) {
   .libPaths(pkgDir)
 }
 
-# devtools::install_github("PredictiveEcology/reproducible@cb41d78c2cdcaa06d5a98412302c1f4d01850e78", dependencies = FALSE)
-# devtools::install_github("achubaty/amc@15c5229951700f9a638fd186f176f0e793d76c10", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/pemisc@dd2be4a9a15981d0d6f3740d8b3d4de07f255b95", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/map@9b401b88ac4d2ceef6de821d718f66a525599d74", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/LandR@466836778f4050d752bc8348d021655226cd504e", dependencies = FALSE)
-# devtools::install_github("ianmseddy/LandR.CS@2b056a5d9efea150f3145c8497b33b7fbb726488", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/quickPlot@878dcb2a421c239adfc6d65de37edde58689492b", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.tools@e4add9495d8e9c38d31e5325f37282140d38d8af", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/SpaDES.core@8a7886a6afd7f3b90df10ea6b87caae8661f8709")
-# devtools::install_github("PredictiveEcology/SpaDES.experiment@5a23c40f8aa9a9efc6dc16e040f8771561059152", dependencies = FALSE)
-# devtools::install_github("PredictiveEcology/fireSenseUtils@4a23a2071599b0c8322d07997871eb53c77db5ff", dependencies = FALSE)
-
 if (!require("Require")) {
   if (!require("devtools")) {
     install.packages("devtools")
@@ -46,44 +34,39 @@ if (FALSE) {
   # Much later on a different or same machine
   # Require::Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
 }
-Require::Require("PredictiveEcology/SpaDES.install@development")
 
 # SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")   ## not happy with LandR
+if (FALSE){
+  Require::Require("PredictiveEcology/SpaDES.install@development")
+  Require::Require(c(
+    "PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd",   ## as of mar2022
+    "CeresBarros/SpaDES.core@2e8b95b04cf6b93bc45796ddc8a55c8d1618432d",
+    "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752",
+    "ianmseddy/PSPclean@3c3f0e7082e14c111a607c3ba803abf0396343e6",
+    "CeresBarros/SpaDES.experiment@c594ea3b4ede1a8949307b4197909453762111ec",
+    "CeresBarros/LandR@2d716c75d5face38162403df4217fca4b357e1d6",
+    "CeresBarros/ToolsCB@8cdcc5494fdb48c3a3df47c93b2d2cc65c21ce96"
+  ),
+  require = FALSE, update = FALSE)
+}
 
-Require::Require(c("PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd",
-                   "CeresBarros/SpaDES.core@2e8b95b04cf6b93bc45796ddc8a55c8d1618432d",
-                   "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752",
-                   "ianmseddy/PSPclean@development",
-                   "CeresBarros/SpaDES.experiment@c594ea3b4ede1a8949307b4197909453762111ec"
-),
-require = FALSE)
+
+## workaround, Require not happy
+if (packageVersion("LandR") != numeric_version("1.0.7.9024")) {
+  devtools::install_github("CeresBarros/LandR@2d716c75d5face38162403df4217fca4b357e1d6", upgrade = FALSE)
+}
 
 Require::Require(c("raster",
                    "SpaDES",
                    "data.table",
-                   "CeresBarros/ToolsCB",
-                   "PredictiveEcology/SpaDES.experiment",
-                   # "CeresBarros/LandR@developmentCeres (>= 1.0.7.9017)",  ## workaround below
-                   "PredictiveEcology/reproducible",
+                   "ToolsCB",
+                   "SpaDES.experiment",
+                   "LandR",
+                   "reproducible",
                    "future"
 ),
-upgrade = FALSE)
+upgrade = FALSE, install = FALSE)
 
-## workaround, Require not happy
-if (packageVersion("LandR") < numeric_version("1.0.7.9022")) {
-  devtools::install_github("CeresBarros/LandR@b1ef7b9df464772c55f2f942c15b13302095ed75")
-}
-
-options("reproducible.useNewDigestAlgorithm" = 2,
-        "spades.moduleCodeChecks" = FALSE,
-        "reproducible.useCache" = TRUE,
-        "reproducible.inputPaths" = normPath("R/SpaDES/inputs"),  ## store everything in data/ so that there are no duplicated files across modules
-        "reproducible.destinationPath" = normPath("R/SpaDES/inputs"),
-        "reproducible.useGDAL" = FALSE,
-        "reproducible.cacheSaveFormat" = "qs",
-        "reproducible.useMemoise" = TRUE,
-        "mc.cores" = 1,
-        "spades.useRequire" = TRUE)
 ## to prevent overflow to threads that aren't actually available
 data.table::setDTthreads(threads = 1)
 
@@ -134,9 +117,22 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 if (grepl("for-cast", Sys.info()["nodename"]) ||
     grepl("4458e1a42ddc", Sys.info()["nodename"])) {
-  data.table::setDTthreads(25)
   options(bitmapType="cairo")
 }
+
+
+options("reproducible.useNewDigestAlgorithm" = 2,
+        "spades.moduleCodeChecks" = FALSE,
+        "reproducible.useCache" = TRUE,
+        "reproducible.inputPaths" = simPaths$inputPath,  ## store everything in data/ so that there are no duplicated files across modules
+        "reproducible.destinationPath" = simPaths$inputPath,
+        "reproducible.useGDAL" = FALSE,
+        "reproducible.cacheSaveFormat" = "qs",
+        "reproducible.useMemoise" = TRUE,
+        "mc.cores" = 1,
+        "spades.useRequire" = TRUE,
+        "reproducible.useTerra" = FALSE,
+        "reproducible.rasterRead" = "raster::raster")
 
 # ## Get necessary objects -----------------------
 # source("R/SpaDES/1_simObjects.R")
@@ -223,8 +219,8 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## using experiment:
 ## multicore no longer available from RStudio
-# plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
-plan("multicore", workers = 5)   ## add interactive check for this one/
+plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+# plan("multisession", workers = 5)   ## add interactive check for this one/
 # plan("sequential")
 
 # opts <- options("spades.useRequire" = FALSE)
