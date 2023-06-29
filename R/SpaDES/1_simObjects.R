@@ -23,6 +23,7 @@ foothillsMED <- raster::buffer(foothills, width = -15000)
 
 ## RASTER TO MATCH LARGE AND KNN 2010 THINGS -----------
 ## get rawBiomassMap first
+sets <- options("reproducible.cachePath" = simPaths$cachePath)
 rawBiomassMapURL <- paste0("http://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
                            "canada-forests-attributes_attributs-forests-canada/",
                            "2011-attributes_attributs-2011/",
@@ -47,7 +48,6 @@ rawBiomassMap <- Cache(prepInputs,
                        method = "bilinear",
                        datatype = "INT2U",
                        filename2 = NULL,
-                       cacheRepo = simPaths$cachePath,
                        userTags = c(cacheTags, "rawBiomassMap"),
                        omitArgs = c("destinationPath", "targetFile", "userTags", "stable"))
 
@@ -59,7 +59,6 @@ rasterToMatchLarge <- Cache(writeOutputs, rasterToMatchLarge,
                             filename2 = file.path(simPaths$cachePath, "rasters", "rasterToMatchLarge.tif"),
                             datatype = "INT2U", overwrite = TRUE,
                             userTags = c(cacheTags, "rasterToMatchLarge"),
-                            cacheRepo = simPaths$cachePath,
                             omitArgs = c("userTags"))
 
 ## and standAgeMap
@@ -192,3 +191,4 @@ PSPgis_sppParams <- Cache(prepInputs,
                           cacheRepo = "data/cache",
                           userTags = "PSPgis_sppParams",
                           omitArgs = c("userTags"))
+options(sets)
