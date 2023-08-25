@@ -2,9 +2,13 @@
 ## DEFINE PRE-SIMULATION PARAMETERS AND INPUT OBJECTS
 ## --------------------------------------------------
 
-## this script defines the parameterisation modules (their own parameters, input objects and outputs)
-## for SpaDES simulations in the Foothills of SW Alberta.
-## pre-simulations are used to prepare all inputs for the simulation modules
+## this script defines the modules, parameters, objects and outputs of
+## SpaDES PRE- simulations in the Foothills of SW Alberta, according to
+## the run name defined in global.R. Run names can differ in their
+## parametrisation, modules used and necessary objects
+
+## pre-simulations are used to prepare objects necessary to estimate
+## fire frequency using FireSense
 
 ## CUSTOMIZE SPECIES TRAIT VALUES -------
 ## pass a list of species traits parameter values to LandR::updateSpeciesTable
@@ -22,7 +26,7 @@ speciesParams <- list(
 
 ## SIM MODULES AND PARAMETERS -----------------------------------------
 ## make two lists of sim modules, one noPM and one PM
-preSimModules <- list(
+simModules <- list("noPM" = list(
   "Biomass_borealDataPrep"
   , "Biomass_speciesParameters"
   , "Biomass_core"
@@ -31,10 +35,25 @@ preSimModules <- list(
   , "fireSense_IgnitionFit"
   , "fireSense_IgnitionPredict"
   , "fireProperties"
+  , "FavierFireSpread"
+  , "Biomass_regeneration"
+)
+, "PM" = list(
+  "Biomass_borealDataPrep"
+  , "Biomass_speciesParameters"
+  , "Biomass_core"
+  , "Biomass_fuelsPFG"
+  , "fireSense_dataPrep"
+  , "fireSense_IgnitionFit"
+  , "fireSense_IgnitionPredict"
+  , "fireProperties"
+  , "FavierFireSpread"
+  , "Biomass_regenerationPM"
+)
 )
 
-## noPM and PM modules can both be in the same parameter list.
-preSimParams <- list(
+## noPM and PM moduels can both be in the same parameter list.
+simParams <- list(
   .globals = list("dataYear" = 2011L    ## will not be used as the layers have been pre-preped, but just in case...
                   , "initialB" = NA     ## use LANDIS approach to estimate initial cohort B
                   , "sppEquivCol" = sppEquivCol
@@ -100,6 +119,18 @@ preSimParams <- list(
     , "vegFeedback" = TRUE
     , ".plots" = NA
   )
+  , Biomass_regeneration = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = fireTimestep
+    , ".plots" = NA
+  )
+  , Biomass_regenerationPM = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "successionTimestep" = fireTimestep
+    , ".plots" = NA
+  )
   , fireSense_dataPrep = list(
     "averageWeather4Pred" = TRUE
     , "fitRes" = 1000
@@ -131,11 +162,19 @@ preSimParams <- list(
   , fireSense_IgnitionPredict = list(
     ".runInterval" = NA    ## only run once at the start
   )
+  , FavierFireSpread = list(
+    "fireInitialTime" = fireInitialTime
+    , "fireTimestep" = fireTimestep
+    , "noStartPix" = NA  ## NA to make sure this isn't used to randomly draw fires.
+    # , "spreadProbRange" = c(0.20, 0.25)   ## over-estimated small fires and under estimated medium/large
+    , "spreadProbRange" = c(0.23, 0.25)     ## better alignment with fire size distributions -- see playing with spreadProb.pptx
+    , ".plots" = NA
+  )
 )
 
 ## SIM OBJECTS ------------------------------------------------
 ## make base object list
-preSimObjects <- list(
+simObjects <- list(
   # "studyArea" = foothillsSMALL  ## tests
   # , "studyAreaLarge" = foothillsMED   ## tests
   "ecoregionLayer" = ecoregionLayer
@@ -165,40 +204,67 @@ preSimObjects <- list(
 
 ## SIM OUTPUTS ------------------------------------------------
 ## save objects at the end of each year
-preSimOutputs <- data.frame(expand.grid(objectName = c("cohortData"),
-                                  saveTime = simTimes$start,
-                                  eventPriority = 1,
+outputs <- data.frame(expand.grid(objectName = c("cohortData"),
+                                  saveTime = unique(sort(c(simTimes$end,
+                                                           seq(simTimes$start, simTimes$end, by = 5)))),
+                                  eventPriority = 10,
                                   stringsAsFactors = FALSE))
-preSimOutputs <- rbind(preSimOutputs, data.frame(objectName = "vegTypeMap",
-                                     saveTime = simTimes$start,
-                                     eventPriority = 1))
-preSimOutputs <- rbind(preSimOutputs, data.frame(objectName = "pixelGroupMap",
-                                     saveTime = simTimes$start,
-                                     eventPriority = 1))
+outputs <- rbind(outputs, data.frame(objectName = "rstCurrentFires",
+                                     saveTime = seq(simParams$FavierFireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$FavierFireSpread$fireTimestep),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "severityData",
+                                     saveTime = seq(simParams$FavierFireSpread$fireInitialTime,
+                                                    simTimes$end, by = simParams$FavierFireSpread$fireTimestep),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "vegTypeMap",
+                                     saveTime = unique(sort(c(simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
+                                     eventPriority = 10))
+outputs <- rbind(outputs, data.frame(objectName = "pixelGroupMap",
+                                     saveTime = unique(sort(c(simTimes$end,
+                                                              seq(simTimes$start, simTimes$end, by = 5)))),
+                                     eventPriority = 10))
+
+## on the first year save at the start.
+outputs[outputs$saveTime == simTimes$start, "eventPriority"] <- 1
 
 ## -----------------------------------------------
-## SIMULATION PARAMETERISATION
-## ----------------------------------------------
-LIM_preSimulation <- Cache(simInitAndSpades
-                           , times = list("start" = simTimes$start, "end" = simTimes$start)
-                           , params = preSimParams
-                           , modules = preSimModules
-                           , loadOrder = unlist(preSimModules)
-                           , paths = simPaths
-                           , objects = preSimObjects
-                           , outputs = preSimOutputs
-                           # , events = "init"
-                           , debug = TRUE
-                           , cacheRepo = simPaths$cachePath
-                           , userTags = c("preSimulation")
-                           , omitArgs = c("userTags", ".plotInitialTime", "debug"))
+## SIMULATION INITIALISATION
+## --------------------------------------------
+
+## Run two simInit calls, plus init events
+names(runName) <- runName
+LIM_simInitList <- lapply(runName, FUN = function(scenario, simPaths, simModules, simParams) {
+  simPaths2 <- simPaths
+  simPaths2$cachePath <- file.path(simPaths2$cachePath, scenario)
+  simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
+  simModules2 <- simModules[[scenario]]
+  Cache(simInitAndSpades
+        , times = list("start" = simTimes$start, "end" = simTimes$start)
+        , params = simParams
+        , modules = simModules2
+        , loadOrder = unlist(simModules2)
+        , paths = simPaths2
+        , objects = simObjects
+        , outputs = outputs
+        # , events = "init"
+        , debug = TRUE
+        , cacheRepo = simPaths2$cachePath
+        , userTags = c("simInitAndInits", scenario)
+        , omitArgs = c("userTags", ".plotInitialTime", "debug"))
+}, simPaths = simPaths, simModules = simModules, simParams = simParams)
 
 ## zip with all objects in memory -- more foolproof for recovery
-zipSimList(LIM_preSimulation,
-           zipfile = file.path(outputPath(LIM_preSimulation), paste0("LIM_preSimulation.zip")),
-           filename = file.path(outputPath(LIM_preSimulation), paste0("LIM_preSimulation.qs")),
-           fileBackend = 2)
+lapply(names(LIM_simInitList), FUN = function(scenario) {
+  zipSimList(LIM_simInitList[[scenario]],
+             zipfile = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".zip")),
+             filename = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")),
+             fileBackend = 2)
+})
 
 ## save without pulling file backed rasters to memory - these are the simlists to be used for simulation
-saveSimList(LIM_preSimulation,
-            filename = file.path(outputPath(LIM_preSimulation), paste0("LIM_preSimulation.qs")))
+lapply(names(LIM_simInitList), FUN = function(scenario) {
+  saveSimList(LIM_simInitList[[scenario]],
+             filename = file.path(outputPath(LIM_simInitList[[scenario]]), paste0("LIM_simInit_", scenario, ".qs")))
+})
