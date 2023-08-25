@@ -8,7 +8,7 @@
 ## STUDY AREA(S) ---------------------------------------
 
 ## Foothills and a smaller region for testing
-## prepInputs doens't work with kmz, so download and unzipping need to be done externally.
+## prepInputs doens't work with kmz, so download and unzipping need to be done externally
 foothills <- Cache(prepKMZ2shapefile,
                    url = "https://drive.google.com/open?id=1OCqRRIjRNFi6LmxY6m8QH4gMBOLTNeDs",
                    archive = "Foothills_study_area.zip",
