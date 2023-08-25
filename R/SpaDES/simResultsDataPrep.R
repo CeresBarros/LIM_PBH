@@ -49,8 +49,9 @@ if (runPrepResultsModule) {
                   objects = objectsResults,
                   outputs = outputsResults,
                   paths = simPaths,
-                  useCache = TRUE,
+                  # useCache = FALSE,
                   cacheRepo = simPaths$cachePath,
+                  showSimilar = TRUE,
                   userTags = c("simInitAndSpades", "LIM_resultsDataPrep"),
                   omitArgs = "userTags")
 
