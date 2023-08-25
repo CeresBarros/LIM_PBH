@@ -5,10 +5,6 @@
 ## Ceres: Nov 2017
 ## ------------------------------------------------------
 
-## clean workspace
-rm(list = ls()); amc::.gc()
-
-
 if (!exists("pkgDir")) {
   pkgDir <- file.path(
     if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
