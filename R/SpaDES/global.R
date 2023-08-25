@@ -106,7 +106,7 @@ if (grepl("for-cast", Sys.info()["nodename"]) ||
 options("reproducible.useNewDigestAlgorithm" = 2,
         "spades.moduleCodeChecks" = FALSE,
         "reproducible.useCache" = TRUE,
-        "reproducible.inputPaths" = simPaths$inputPath,  ## store everything in data/ so that there are no duplicated files across modules
+        "reproducible.inputPaths" = simPaths$inputPath,
         "reproducible.destinationPath" = simPaths$inputPath,
         "reproducible.useGDAL" = FALSE,
         "reproducible.cacheSaveFormat" = "qs",
@@ -140,28 +140,32 @@ options("reproducible.useNewDigestAlgorithm" = 2,
 # source("R/SpaDES/3_fireWeather.R")
 
 ## Run more data prep -----------------------------
-# Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
+## Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
 ## to prepare objects for simulation and FireSense ignition/fire frequency fits
 ## Define simulation params
-# simTimes <- list(start = 2011L, end = 4011L)   ## capture several cycles of Doug-fir dynamics
-# vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
-# # If all are below this, then it is a "mixed" stand
-# fireInitialTime <- simTimes$start + 5L
-# fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
-# successionTimestep <- 10L
+simTimes <- list(start = 2011L, end = 4011L)   ## capture several cycles of Doug-fir dynamics
+vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
+## If all are below this, then it is a "mixed" stand
+fireInitialTime <- simTimes$start + 5L
+fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
+successionTimestep <- 10L
 
+# source("R/SpaDES/4_preSimulation.R")
+# LIM_preSimulation <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+
+## re-initialize simulation modules (overcoming seed problem)
 # reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
 # reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
-# opts <- options("spades.useRequire" = FALSE)
-# source("R/SpaDES/4_preSimulation.R")
-# options(opts)
+# source("R/SpaDES/4_preSimulationPART2.R")
+
 simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
+simListFiles <- grep("PART2.qs$", simListFiles, value = TRUE)
 names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
 LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 ## tests
-# end(LIM_simInitList[[1]]) <- 2111
-# end(LIM_simInitList[[2]]) <- 2111
+# end(LIM_simInitList[[1]]) <- 2020
+# end(LIM_simInitList[[2]]) <- 2020
 
 ## try increasing max spread to simulate a greater spread of fire sizes
 # P(LIM_simInitList$noPM, "spreadProbRange", "FavierFireSpread") <- c(0.23, 0.26)
@@ -175,10 +179,8 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 #                        "Biomass_core", "plotAvgs", eventPriority = 9.00 + 0.5)
 # })
 #
-# opts <- options(spades.useRequire = FALSE)
 # simOut1 <- spades(LIM_simInitList[["noPM"]])
 # simOut2 <- spades(LIM_simInitList[["PM"]])
-# options(opts)
 
 
 # saveSimList(simOut1, filename = file.path(simPaths$outputPath, "noPM", "simOut1.qs"))
@@ -186,9 +188,7 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 # plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
-# opts <- options(spades.useRequire = FALSE)
 # spades(LIM_simInitList[["noPM"]])
-# options(opts)
 
 ## -----------------------------------------------
 ## SIMULATION RUN
@@ -199,31 +199,49 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 # rm(simOutSpeciesLayers, simOutFireWeather);
 # gc()
 
+LIM_simInitList$noPM$._randomSeed <- NULL
+LIM_simInitList$PM$._randomSeed <- NULL
+
 ## using experiment:
 ## multicore no longer available from RStudio
-plan("multisession", workers = 2)   ## each worker consuming roughly 16Gb
+plan("multicore", workers = 2)   ##
+# plan("multisession", workers = 2)   ## each worker consuming more than 70GB
 # plan("multisession", workers = 5)   ## add interactive check for this one/
 # plan("sequential")
 
-# opts <- options("spades.useRequire" = FALSE)
 # out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
 # future:::ClusterRegistry("stop")
-# options(opts)
-#
-# opts <- options("spades.useRequire" = FALSE)
-# out2 <- spades(LIM_simInitList[["PM"]], .saveInitialTime = NA)
-# options(opts)
 
-opts <- options("spades.useRequire" = FALSE)
+# out2 <- spades(LIM_simInitList[["PM"]], debug = "fireDisturbance",
+#                .saveInitialTime = NA)
+
+# clearSimEnv <- TRUE
+# simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
+#                                 PM = LIM_simInitList[["PM"]],
+#                                 clearSimEnv = clearSimEnv,
+#                                 replicates = 5,
+#                                 useCache = FALSE,
+#                                 meanStaggerIntervalInSecs = 60)
+# future:::ClusterRegistry("stop")
+#
+# ## save simLists object.
+# if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
+#   for (i in seq_along(simExperimentOut)) {
+#     rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
+#   }
+# }
+# qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste0("LIM_simLists_PM", ".qs")))
+#
+# rm(simExperimentOut); gc(reset = TRUE)
+
 clearSimEnv <- TRUE
-simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
+simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
                                 PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
                                 replicates = 5,
                                 useCache = FALSE,
                                 meanStaggerIntervalInSecs = 60)
 future:::ClusterRegistry("stop")
-options(opts)
 
 ## save simLists object.
 if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
@@ -231,6 +249,6 @@ if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env b
     rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
   }
 }
-qs::qsave(simExperimentOut, file.path(simPaths$outputPath, paste0("LIM_simLists_noPM_PM", ".qs")))
+qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste0("LIM_simLists_PM", ".qs")))
 
 q("no")
