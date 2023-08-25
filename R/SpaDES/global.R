@@ -19,37 +19,23 @@ if (!exists("pkgDir")) {
 }
 
 if (!require("Require")) {
-  if (!require("devtools")) {
-    install.packages("devtools")
-  }
-  devtools::install_github("PredictiveEcology/Require@development")
+  remotes::install_github("PredictiveEcology/Require@7eaa3af6443fa9acf8ef461d9a02e544174eda38", upgrade = FALSE)
 }
 
 if (FALSE) {
-  Require::pkgSnapshot("packages/pkgSnapshot.txt", standAlone = TRUE, exact = TRUE)
+  ## write file
+  # Require::pkgSnapshot("packages_docker/pkgSnapshot.txt", standAlone = TRUE, exact = TRUE)
   # Much later on a different or same machine
-  # Require::Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
-}
+  Require::Require(packageVersionFile = "packages_docker/pkgSnapshot.txt", standAlone = TRUE)
 
-# SpaDES.install::makeSureAllPackagesInstalled("R/SpaDES/m")   ## not happy with LandR
-if (FALSE){
-  Require::Require("PredictiveEcology/SpaDES.install@development")
-  Require::Require(c(
-    "PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd",   ## as of mar2022
-    "CeresBarros/SpaDES.core@2e8b95b04cf6b93bc45796ddc8a55c8d1618432d",
-    "CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752",
-    "ianmseddy/PSPclean@3c3f0e7082e14c111a607c3ba803abf0396343e6",
-    "CeresBarros/SpaDES.experiment@c594ea3b4ede1a8949307b4197909453762111ec",
-    "CeresBarros/LandR@2d716c75d5face38162403df4217fca4b357e1d6",
-    "CeresBarros/ToolsCB@8cdcc5494fdb48c3a3df47c93b2d2cc65c21ce96"
-  ),
-  require = FALSE, update = FALSE)
-}
-
-
-## workaround, Require not happy
-if (packageVersion("LandR") != numeric_version("1.0.7.9024")) {
-  devtools::install_github("CeresBarros/LandR@2d716c75d5face38162403df4217fca4b357e1d6", upgrade = FALSE)
+  ## these versions need to be ensured and if not on the snapshot file
+  devtools::install_github("PredictiveEcology/reproducible@97f147033f10061dfe40da4ce76575dfef89dfbd", upgrade = FALSE)
+  devtools::install_github("CeresBarros/SpaDES.core@2e8b95b04cf6b93bc45796ddc8a55c8d1618432d", upgrade = FALSE)
+  devtools::install_github("CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752", upgrade = FALSE)
+  devtools::install_github("ianmseddy/PSPclean@3c3f0e7082e14c111a607c3ba803abf0396343e6", upgrade = FALSE)
+  devtools::install_github("CeresBarros/SpaDES.experiment@82ffdb7cce912013e19a49d70da2572448605250", upgrade = FALSE)
+  devtools::install_github("CeresBarros/LandR@4b1695cc7db6ea12870bff915ea34ef99d0a7b4c", upgrade = FALSE)
+  devtools::install_github("CeresBarros/ToolsCB@8cdcc5494fdb48c3a3df47c93b2d2cc65c21ce96", upgrade = FALSE)
 }
 
 Require::Require(c("raster",
@@ -126,7 +112,7 @@ options("reproducible.useNewDigestAlgorithm" = 2,
         "reproducible.cacheSaveFormat" = "qs",
         "reproducible.useMemoise" = TRUE,
         "mc.cores" = 1,
-        "spades.useRequire" = TRUE,
+        "spades.useRequire" = FALSE,
         "reproducible.useTerra" = FALSE,
         "reproducible.rasterRead" = "raster::raster")
 
