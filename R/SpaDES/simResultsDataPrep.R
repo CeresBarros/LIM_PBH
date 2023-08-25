@@ -21,8 +21,8 @@ if (runPrepResultsModule) {
                                                      "parallel" = FALSE,
                                                      "reps" = 1L:5L,
                                                      "yearSubset" = as.integer(yearSubset),
-                                                     ".useCache" = c("init", "loadVegData", "loadFireData",
-                                                                     "calcFireMetrics", "joinSimulationData"))) ## parsing error when caching
+                                                     ".useCache" = c("init", "loadVegData",
+                                                                      "joinSimulationData", "addVegTypesCN"))) ## parsing error when caching
 
   objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
                          "rasterToMatch" = preSimList$rasterToMatch,
