@@ -11,7 +11,7 @@ if (!exists("runPrepResultsModule")) {
 
 
 ## load one of the preSim lists to get years and later the ecolocations map
-preSimList <- loadSimList(file.path(simPaths$outputPath, "noPM", "LIM_simInit_noPM.qs"))
+preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
 
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
