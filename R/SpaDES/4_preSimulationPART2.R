@@ -122,12 +122,12 @@ LIM_simInitList <- Map(scenario = runName,
                                         simParams = simParams,
                                         simOutputs = simOutputs),
                         f = function(scenario, simInitOut, simModules, simTimes, simParams, simOutputs) {
+
                           simModules <- simModules[[scenario]]
                           simPaths2 <- paths(simInitOut)
                           simPaths2$cachePath <- file.path(simPaths2$cachePath, scenario)
                           simPaths2$outputPath <- file.path(simPaths2$outputPath, scenario)
                           simObjects <- mget(ls(simInitOut@.xData), as.environment(simInitOut))
-
                           Cache(simInit
                                 , times = simTimes
                                 , params = simParams

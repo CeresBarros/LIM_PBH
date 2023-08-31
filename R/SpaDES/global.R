@@ -212,7 +212,7 @@ plan("multicore", workers = 2)   ##
 # out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
 # future:::ClusterRegistry("stop")
 
-# out2 <- spades(LIM_simInitList[["PM"]], debug = "fireDisturbance",
+# out2 <- spades(LIM_simInitList[["PM"]],
 #                .saveInitialTime = NA)
 
 # clearSimEnv <- TRUE
