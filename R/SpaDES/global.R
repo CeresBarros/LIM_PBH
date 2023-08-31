@@ -216,8 +216,8 @@ plan("multicore", workers = 2)   ##
 #                .saveInitialTime = NA)
 
 # clearSimEnv <- TRUE
-# simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
-#                                 PM = LIM_simInitList[["PM"]],
+# simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
+#                                 #PM = LIM_simInitList[["PM"]],
 #                                 clearSimEnv = clearSimEnv,
 #                                 replicates = 5,
 #                                 useCache = FALSE,
@@ -230,7 +230,7 @@ plan("multicore", workers = 2)   ##
 #     rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
 #   }
 # }
-# qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste0("LIM_simLists_PM", ".qs")))
+# qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["noPM"]]), paste0("LIM_simLists_noPM", ".qs")))
 #
 # rm(simExperimentOut); gc(reset = TRUE)
 
