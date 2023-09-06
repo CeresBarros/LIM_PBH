@@ -212,27 +212,8 @@ plan("multicore", workers = 2)   ##
 # out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
 # future:::ClusterRegistry("stop")
 
-# out2 <- spades(LIM_simInitList[["PM"]],
-#                .saveInitialTime = NA)
-
-# clearSimEnv <- TRUE
-# simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
-#                                 #PM = LIM_simInitList[["PM"]],
-#                                 clearSimEnv = clearSimEnv,
-#                                 replicates = 5,
-#                                 useCache = FALSE,
-#                                 meanStaggerIntervalInSecs = 60)
-# future:::ClusterRegistry("stop")
-#
-# ## save simLists object.
-# if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
-#   for (i in seq_along(simExperimentOut)) {
-#     rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
-#   }
-# }
-# qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["noPM"]]), paste0("LIM_simLists_noPM", ".qs")))
-#
-# rm(simExperimentOut); gc(reset = TRUE)
+out2 <- spades(LIM_simInitList[["PM"]],
+               .saveInitialTime = NA)
 
 clearSimEnv <- TRUE
 simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
@@ -250,5 +231,24 @@ if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env b
   }
 }
 qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste0("LIM_simLists_PM", ".qs")))
+
+rm(simExperimentOut); gc(reset = TRUE)
+
+clearSimEnv <- TRUE
+simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
+                                #PM = LIM_simInitList[["PM"]],
+                                clearSimEnv = clearSimEnv,
+                                replicates = 5,
+                                useCache = FALSE,
+                                meanStaggerIntervalInSecs = 60)
+future:::ClusterRegistry("stop")
+
+## save simLists object.
+if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
+  for (i in seq_along(simExperimentOut)) {
+    rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
+  }
+}
+qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["noPM"]]), paste0("LIM_simLists_noPM", ".qs")))
 
 q("no")
