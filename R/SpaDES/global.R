@@ -34,7 +34,7 @@ if (FALSE) {
   devtools::install_github("CeresBarros/SpaDES.tools@780cd50cbf156faa86d7cb3a609c6d5edf359752", upgrade = FALSE)
   devtools::install_github("ianmseddy/PSPclean@3c3f0e7082e14c111a607c3ba803abf0396343e6", upgrade = FALSE)
   devtools::install_github("CeresBarros/SpaDES.experiment@82ffdb7cce912013e19a49d70da2572448605250", upgrade = FALSE)
-  devtools::install_github("CeresBarros/LandR@4b1695cc7db6ea12870bff915ea34ef99d0a7b4c", upgrade = FALSE)
+  devtools::install_github("PredictiveEcology/LandR@a2df2a33fcde78ee16f73565102716fa58917d8b", upgrade = FALSE)
   devtools::install_github("CeresBarros/ToolsCB@8cdcc5494fdb48c3a3df47c93b2d2cc65c21ce96", upgrade = FALSE)
 }
 
