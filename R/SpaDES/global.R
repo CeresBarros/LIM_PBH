@@ -154,8 +154,8 @@ successionTimestep <- 10L
 # LIM_preSimulation <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
 
 ## re-initialize simulation modules (overcoming seed problem)
-# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), userTags = "simInitAndSpades", ask = FALSE)
-# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), userTags = "simInitAndSpades", ask = FALSE)
+# reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), ask = FALSE)
+# reproducible::clearCache(file.path(simPaths$cachePath, "PM"), ask = FALSE)
 # source("R/SpaDES/4_preSimulationPART2.R")
 
 simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
@@ -212,8 +212,8 @@ plan("multicore", workers = 2)   ##
 # out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
 # future:::ClusterRegistry("stop")
 
-out2 <- spades(LIM_simInitList[["PM"]],
-               .saveInitialTime = NA)
+# out2 <- spades(LIM_simInitList[["PM"]],
+#                .saveInitialTime = NA)
 
 clearSimEnv <- TRUE
 simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
