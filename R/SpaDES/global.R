@@ -188,8 +188,19 @@ LIM_simInitList <- lapply(simListFiles, loadSimList)
 
 # plotnoPM <- qs::qread(file.path(simPaths$outputPath, "noPM", "figures", "biomass_by_species_gg.qs"))
 
-# spades(LIM_simInitList[["noPM"]])
-
+# LIM_simInitList$PM <- loadSimList(simListFiles[2])
+# LIM_simInitList$PM$cohortData <- readRDS("R/SpaDES/outputs/mar2022Runs/PM/PM_rep1/cohortData_year2371.rds")
+# LIM_simInitList$PM$pixelGroupMap <- readRDS("R/SpaDES/outputs/mar2022Runs/PM/PM_rep1/pixelGroupMap_year2371.rds")
+# LIM_simInitList$PM$vegTypeMap <- readRDS("R/SpaDES/outputs/mar2022Runs/PM/PM_rep1/vegTypeMap_year2371.rds")
+# LIM_simInitList$PM$fireYear <- 2011
+#
+# params(LIM_simInitList$PM)$Biomass_regenerationPM$fireInitialTime <- 2011
+# params(LIM_simInitList$PM)$fireProperties$fireInitialTime <- 2011
+# params(LIM_simInitList$PM)$FavierFireSpread$fireInitialTime <- 2011
+# params(LIM_simInitList$PM)$Biomass_fuelsPFG$fireInitialTime <- 2011
+#
+# reproducible::clearCache(cachePath(LIM_simInitList$PM), userTags = c("init", "FavierFireSpread"))
+# spades(LIM_simInitList[["PM"]], debug = "fireDisturbance")
 ## -----------------------------------------------
 ## SIMULATION RUN
 ## -----------------------------------------------
@@ -211,9 +222,6 @@ plan("multicore", workers = 2)   ##
 
 # out <- future.apply::future_replicate(1, spades(LIM_simInitList[["PM"]], .saveInitialTime = NA))  ## no errors
 # future:::ClusterRegistry("stop")
-
-# out2 <- spades(LIM_simInitList[["PM"]],
-#                .saveInitialTime = NA)
 
 clearSimEnv <- TRUE
 simExperimentOut <- experiment2(#noPM = LIM_simInitList[["noPM"]],
