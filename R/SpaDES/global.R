@@ -242,7 +242,6 @@ qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste
 
 rm(simExperimentOut); gc(reset = TRUE)
 
-clearSimEnv <- TRUE
 simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
                                 #PM = LIM_simInitList[["PM"]],
                                 clearSimEnv = clearSimEnv,
