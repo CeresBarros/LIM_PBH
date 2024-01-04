@@ -370,10 +370,10 @@ calcFireAttributesEvent <- function(sim) {
   patchSizeRasPM <- Cache(Map,
                           sevClassRasLs = mod$severityRasters$PM[rasToDo],
                           fireRas = tempList[rasToDo], ## subset and re-order to match
-                          f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severityRas, fireRas),
+                          f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severity, fireRas),
                           .cacheExtra = list(cacheExtra),
                           userTags = c(cacheTags, "patchSizeRasPM"),
-                          omitArgs = c("userTags", "sevRasLs", "fireRasLs"))
+                          omitArgs = c("userTags", "sevClassRasLs", "fireRas"))
 
   cacheExtra2 <- sum(rast(lapply(mod$severityRasters$noPM, function(ras) ras[[1]])))
 
@@ -386,21 +386,16 @@ calcFireAttributesEvent <- function(sim) {
   rasToDo <- names(mod$rstCurrentFiresStkList$noPM)
   missingRas <- setdiff(rasToDo, names(mod$severityRasters$noPM))
 
+
   if (length(missingRas)) {
     ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
-    tempRas <- mod$rstCurrentFiresStkList$noPM[[missingRas]]
-    if (inherits(mod$severityRasters$noPM[[1]], "SpatRaster") &
-        !inherits(tempRas, "SpatRaster")) {
-      tempRas <- rast(tempRas)
-    }
-    tempRasLs <- lapply(tempRas, function(ras) {
-      ras[!is.na(as.vector(ras[]))] <- 0
-      rast(list(severityRas = ras, severityBRas = ras))
-    })
-    names(tempRasLs) <- names(tempRas)
+    tempRasLs <- lapply(missingRas, function(x, tempSevRasStk) {
+      tempSevRasStk[][] <- 0L
+      tempSevRasStk
+    }, tempSevRasStk = mod$severityRasters$noPM[[1]])
+    names(tempRasLs) <- missingRas
     mod$severityRasters$noPM <- c(mod$severityRasters$noPM, tempRasLs)
   }
-
 
   tempList <- unstack(mod$rstCurrentFiresStkList$noPM)   ## Map doesn't like to deal with different indexing of RasterStacks
   names(tempList) <- names(mod$rstCurrentFiresStkList$noPM)
@@ -408,10 +403,10 @@ calcFireAttributesEvent <- function(sim) {
   patchSizeRasnoPM <- Cache(Map,
                             sevClassRasLs = mod$severityRasters$noPM[rasToDo],
                             fireRas = tempList[rasToDo], ## subset and re-order to match
-                            f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severityRas, fireRas),
+                            f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severity, fireRas),
                             .cacheExtra = list(cacheExtra),
                             userTags = c(cacheTags, "patchSizeRasnoPM"),
-                            omitArgs = c("userTags", "sevRasLs", "fireRasLs"))
+                            omitArgs = c("userTags", "sevClassRasLs", "fireRas"))
 
   ## make a table of patch size -- use the same cacheExtra
   ## note that only pixels within fire perimeters are here (even if unforested and with 0 sev)
@@ -440,7 +435,7 @@ calcFireAttributesEvent <- function(sim) {
                             f = fireAttrDTFromRasLs,
                             .cacheExtra = list(cacheExtra, cacheExtra2, "severity"),
                             userTags = c(cacheTags, "severityDataList"),
-                            omitArgs = c("userTags", "fireAttrRasLs"))
+                            omitArgs = c("userTags", "fireAttrRasLs", "i"))
   ## add scenario column when binding
   allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
   setnames(allSeverityData, c("severityRas", "severityBRas"), c("severity", "severityB"))
@@ -462,7 +457,7 @@ calcFireAttributesEvent <- function(sim) {
                              f = pixelBurnDataFromStks,
                              .cacheExtra = list(cacheExtra, cacheExtra2),
                              userTags = c(cacheTags, "pixelBurnDataList"),
-                             omitArgs = c("userTags", "rstCurrentFiresStk"))
+                             omitArgs = c("userTags", "rstCurrentFiresStk", "i"))
   ## add scenario column when binding
   allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
   rm(pixelBurnDataList); gc(reset = TRUE)
@@ -539,9 +534,9 @@ calcFireAttributesEvent <- function(sim) {
                                    rasterToMatch = sim$rasterToMatch,
                                    doAssertion = mod$doAssertion),
                                  f = makeNoFireHistoryData,
-                                 .cacheExtra = list(cacheExtra, cacheExtra2),
+                                 .cacheExtra = list(cacheExtra, cacheExtra2, sim$rasterToMatch),
                                  userTags = c(cacheTags, "noFireHistoryDataPM"),
-                                 omitArgs = c("userTags", "rstCurrentFiresStk"))
+                                 omitArgs = c("userTags", "MoreArgs"))
   noFireHistoryDataPM <- rbindlist(noFireHistoryDataLsPM, use.names = TRUE)
   rm(noFireHistoryDataLsPM); gc(reset = TRUE)
 
@@ -552,9 +547,9 @@ calcFireAttributesEvent <- function(sim) {
                                    rasterToMatch = sim$rasterToMatch,
                                    doAssertion = mod$doAssertion),
                                  f = makeNoFireHistoryData,
-                                 .cacheExtra = list(cacheExtra, cacheExtra2),
+                                 .cacheExtra = list(cacheExtra, cacheExtra2, sim$rasterToMatch),
                                  userTags = c(cacheTags, "noFireHistoryDatanoPM"),
-                                 omitArgs = c("userTags", "rstCurrentFiresStk"))
+                                 omitArgs = c("userTags", "MoreArgs"))
   noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
   rm(noFireHistoryDataLsnoPM); gc(reset = TRUE)
 
