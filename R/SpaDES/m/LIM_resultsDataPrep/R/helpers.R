@@ -378,9 +378,16 @@ convertToCNVegType <- function(DT, groupingCols = c("pixelGroup"), pureCutoff = 
 #'
 #' @param rasterToMatch raster layer to use to rasterize fire data.
 #'   Must have `ncell` matching `pixelIndex` in `sevData`
-#' @param sevData data.table with columns 'pixelIndex', 'severity', 'severityB'.
+#' @param sevData data.table with columns listed in `sevCols`.
+#' @param sevCols character. Names of columns with severity data to extract to
+#'   make severity rasters. Column names will determine raster names.
+#'
+#' @return SpatRaster stack of raster of severity properties defined
+#'  in `sevCols`.
+#'
 #' @export
-makeSevRasters <- function(rasterToMatch, sevData) {
+makeSevRasters <- function(rasterToMatch, sevData,
+                           sevCols = c("severity", "severityB", "severityPropB")) {
   if (!"severity" %in% names(sevData)) {
     sevData[, severity := 5L]
   }
