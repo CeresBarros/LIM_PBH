@@ -42,6 +42,9 @@ if (runPrepResultsModule) {
   options("LandR.assertions" = TRUE)
   options("spades.useRequire" = FALSE)
   options("spades.moduleCodeChecks" = FALSE)
+
+  dtthreads <- data.table::getDTthreads()
+  data.table::setDTthreads(1)
   simOut <- Cache(simInitAndSpades,
                   times = list(start = 1, end = 1),
                   params = paramsResults,
@@ -61,6 +64,7 @@ if (runPrepResultsModule) {
 
   rm(simOut)   ## cache not working. maybe because the data's too big.
   gc(reset = TRUE)
+  data.table::setDTthreads(dtthreads)
 } else {
   ## alternatively:
   allPixelBurnData <- readRDS(file.path(simPaths$outputPath, "allPixelBurnData_year1.rds"))
