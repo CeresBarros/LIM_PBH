@@ -90,7 +90,8 @@ defineModule(sim, list(
                                "'fireInt'), fire frequency (mean `fireInt`; 'fireFreq'), severity (severity",
                                "class from *Biomass_regenerationPM*, assumed `5L` in stand-replacing ('noPM')",
                                "scenario), patch size (no. pixels with same severity class within a fire ID;",
-                               "'patchSize') and killed biomass ('severityB').")),
+                               "'patchSize') and killed total biomass ('severityB') and relative biomass",
+                               "('severityPropB').")),
     createsOutput("allPixelCohortData", "data.table",
                   desc = paste("Pixelwise cohort data across the simulation landscape, plus total no fires",
                                "('noFires') and fire presence/absence ('firePresAbs').")),
@@ -196,8 +197,8 @@ loadVegetationDataEvent <- function(sim) {
   cacheExtra <- sum(stack(sapply(pixelGroupMapStkList, function(ras) sum(ras))))
   cacheExtra <- sum(cacheExtra[], na.rm = TRUE)
   pixelCohortDataList <- Cache(Map,
-                               f = loadCohortDataFromRDS,
                                x = grepPattrn,
+                               f = loadCohortDataFromRDS,
                                pixelGroupMapStk = pixelGroupMapStkList,
                                MoreArgs = list(files = sim$cohortDataFiles,
                                                yearSubset = P(sim)$yearSubset,
@@ -302,7 +303,6 @@ loadFireDataEvent <- function(sim) {
 
   sevDataLs <- split(severityDataList$noPM, by = c("year", "rep"))
   cacheExtra <- colSums(severityDataList$noPM)
-
   severityRastersnoPM <- Cache(Map,
                                sevData = sevDataLs,
                                f = makeSevRasters,
@@ -324,7 +324,6 @@ loadFireDataEvent <- function(sim) {
 
 calcFireAttributesEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
-
   cacheTags <- c(currentModule(sim), "calcFireAttributes")
 
   ## FIRE ATTRIBUTES ---------------------------------------
@@ -431,7 +430,6 @@ calcFireAttributesEvent <- function(sim) {
   ## make a table of fire severity -- use the same cacheExtra
   message(cyan("Severity"))
   ## note that all pixels are here, burnt and unburnt
-
   ## for easier debugging
   # rasToDo <- list(PM = names(mod$severityRasters$PM)[1:3],
   #                 noPM = names(mod$severityRasters$noPM)[1:3]) ## test
@@ -506,7 +504,6 @@ calcFireAttributesEvent <- function(sim) {
   ## Fire intervals -------
   ## calculate fire frequency as mean fire intervals per scenario, rep, pixel, considering start and end years
   ## (mean FRI in Steel et al 2021, see this paper for limitations and details)
-
   message(cyan("Fire intervals"))
 
   ## calculate intervals to a new table (there will be always one interval more than fires)
