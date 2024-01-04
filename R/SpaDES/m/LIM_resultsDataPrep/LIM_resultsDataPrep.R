@@ -551,7 +551,6 @@ calcFireAttributesEvent <- function(sim) {
   noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
   rm(noFireHistoryDataLsnoPM); gc(reset = TRUE)
 
-  ## TODO: LEFT OFF HERE.
   noFireHistoryData <- rbindlist(list(PM = noFireHistoryDataPM, noPM = noFireHistoryDatanoPM),
                                  use.names = TRUE, idcol = "scenario")
   rm(noFireHistoryDataPM, noFireHistoryDatanoPM); gc(reset = TRUE)
