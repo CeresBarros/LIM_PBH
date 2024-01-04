@@ -338,7 +338,7 @@ calcFireAttributesEvent <- function(sim) {
   ## but consider the size of patches across forested and non-forested pixels (the severity of the later always being 0)
   ## then convert everything to a data.table for pixel level calculations
   ## by scenario and repetition
-  cacheExtra <- sum(rast(lapply(mod$severityRasters$PM, function(ras) ras$severityRas)))
+  cacheExtra <- sum(rast(lapply(mod$severityRasters$PM, function(ras) ras[[1]])), na.rm = TRUE)
 
   ## not all fire rasters have severity (in some years fires can remain outside forested pix), but
   ## all severity years should have a fire raster
@@ -380,7 +380,7 @@ calcFireAttributesEvent <- function(sim) {
                           userTags = c(cacheTags, "patchSizeRasPM"),
                           omitArgs = c("userTags", "sevRasLs", "fireRasLs"))
 
-  cacheExtra2 <- sum(rast(lapply(mod$severityRasters$noPM, function(ras) ras$severityRas)))
+  cacheExtra2 <- sum(rast(lapply(mod$severityRasters$noPM, function(ras) ras[[1]])))
 
   if (length(setdiff(names(mod$severityRasters$noPM), names(mod$rstCurrentFiresStkList$noPM)))) {
     stop("Not all fire severity rasters have an associated fire perimeter raster.")
