@@ -356,16 +356,11 @@ calcFireAttributesEvent <- function(sim) {
 
   if (length(missingRas)) {
   ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
-    tempRas <- mod$rstCurrentFiresStkList$PM[[missingRas]]
-    if (inherits(mod$severityRasters$PM[[1]], "SpatRaster") &
-        !inherits(tempRas, "SpatRaster")) {
-      tempRas <- rast(tempRas)
-    }
-    tempRasLs <- lapply(tempRas, function(ras) {
-      ras[!is.na(as.vector(ras[]))] <- 0
-      rast(list(severityRas = ras, severityBRas = ras))
-      })
-    names(tempRasLs) <- names(tempRas)
+    tempRasLs <- lapply(missingRas, function(x, tempSevRasStk) {
+      tempSevRasStk[][] <- 0L
+      tempSevRasStk
+      }, tempSevRasStk = mod$severityRasters$PM[[1]])
+    names(tempRasLs) <- missingRas
     mod$severityRasters$PM <- c(mod$severityRasters$PM, tempRasLs)
   }
 
