@@ -441,7 +441,7 @@ calcPatchSize <- function(sevClassRas, fireRas) {
   }
 
   ## loop through fire IDs
-  fireIDs <- na.exclude(unique(fireRas[]))
+  fireIDs <- na.exclude(unique(as.vector(fireRas[])))
 
   ## storage raster
   patchSizeRas <- rast(sevClassRas)
