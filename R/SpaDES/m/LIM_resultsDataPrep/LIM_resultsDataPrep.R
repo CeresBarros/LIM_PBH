@@ -626,6 +626,53 @@ calcFireAttributesEvent <- function(sim) {
     suppressWarnings(rm(test1, test2, test3, test4, test5))
   }
 
+  ## at this stage burnt non-forest pixels have severity class 0 and biomass lost = 0
+  ## they should have get severity class 1 and biomass lost 0 and count towards fires
+  nonForestPix <- setdiff(allPixelBurnData$pixelIndex, sim$allPixelCohortData$pixelIndex)
+  test <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires > 0, severity])
+  test2 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires > 0, severityB])
+  test3 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires > 0, severityPropB])
+  if (isTRUE(sum(test, test2, test3) == 0)) {
+    message(cyan("Assigning sev. class 1 to burnt non-forested pixels. Biomass lost remains 0"))
+    allPixelBurnData[pixelIndex %in% nonForestPix & noFires > 0, severity := 1]
+  } else {
+    stop("Some burnt non-forest pixels have severity class > 0 or lost biomass, which is unexpected.",
+         "\n  Were they really non-forested?")
+  }
+
+  ## check that unburnt non-forested also have all sev == 0
+  test <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severity])
+  test2 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityB])
+  test3 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityPropB])
+  if (isTRUE(sum(test, test2, test3) > 0)) {
+    stop("Some unburnt non-forest pixels have severity class > 0 or lost biomass, which is unexpected.",
+         "\n  Were they really non-forested?")
+  }
+
+  ## now check forested pixels
+  forestPix <- intersect(allPixelBurnData$pixelIndex, sim$allPixelCohortData$pixelIndex)
+  ## in this case sevB and sevBProp can have 0 and non-zero values
+  test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severity])
+  test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityB])
+  test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityPropB])
+  if (any(test == 0) & isTRUE(sum(test2, test3) == 0)) {
+    stop("Some unburnt forested pixels have severity class > 0 or lost biomass, which is unexpected.",
+         "\n  Did they really not burn?")
+  }
+
+  test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severity])
+  test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityB])
+  test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityPropB])
+  if (isTRUE(sum(test, test2, test3) > 0)) {
+    stop("Some unburnt forested pixels have severity class > 0 or lost biomass, which is unexpected.",
+         "\n  Did they really not burn?")
+  }
+
+  ## more checks
+  if (any(is.na(allPixelBurnData[noFires > 1, year]))) {
+    stop("There should be no NA fire years in pixels that have a fire record,",
+         "\n  as only fire years are included in 'allPixelBurnData'")
+  }
   sim$allPixelBurnData <- allPixelBurnData
 
   # ! ----- STOP EDITING ----- ! #
