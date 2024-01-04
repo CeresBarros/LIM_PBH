@@ -572,6 +572,7 @@ calcFireAttributesEvent <- function(sim) {
 
   ## bind pixels that never burned
   allPixelBurnData <- rbindlist(list(allPixelBurnData, noFireHistoryData), fill = TRUE, use.names = TRUE)
+  rm(noFireHistoryData); gc(reset = TRUE)
 
   # OLD CODE
   # ## calculate patch size, as the number of in pixels per severity (class)/fireID/scenario/rep
