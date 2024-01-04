@@ -240,7 +240,10 @@ loadVegetationDataEvent <- function(sim) {
   amc::.gc()
 
   ## add scenario column when binding
-  allPixelCohortData <- rbindlist(pixelCohortDataList, use.names = TRUE, idcol = "scenario")
+  allPixelCohortData <- rbindlist(pixelCohortDataList, use.names = TRUE, fill = TRUE, idcol = "scenario")
+  cols <- c("scenario",  "pixelIndex", "pixelGroup", "year", "rep", "vegType", "speciesCode",
+            "ecoregionGroup", "age", "B", "mortality", "aNPPAct")   ## keep these columns only
+  allPixelCohortData <- allPixelCohortData[, ..cols]
   if (exists("allPixelCohortData")) rm(pixelCohortDataList, vegTypeDataList)
   amc::.gc()
 
