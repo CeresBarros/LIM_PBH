@@ -131,9 +131,12 @@ pixelBurnDataFromStks <- function(rstCurrentFiresStk, i = NULL) {
 #'
 #' Assumes list names are <year>.<rep>, or just <year>
 #'
-#' @param fireAttrRasLs list of stacks of severity maps
-#'  'severity' (severity class) and 'severityB'
-#'  (actual burnt biomass)
+#' @param fireAttrRasLs list of stacks of fire attribute maps
+#'
+#' @return data.table of raster attributes with columns
+#'  "year", "rep" and "pixelIndex"
+#'
+#' @importFrom data.table rbindlist
 
 fireAttrDTFromRasLs <- function(fireAttrRasLs, i = NULL) {
   if (is.null(i)) i <- names(fireAttrRasLs)
@@ -143,6 +146,7 @@ fireAttrDTFromRasLs <- function(fireAttrRasLs, i = NULL) {
   rbindlist(DTLs, use.names = TRUE)
 }
 
+#' @importFrom data.table as.data.table setnames
 .getFireAttr <- function(i, fireAttrRasLs) {
   ii <- sub("year", "", sub("_rep", ".", i, fixed = TRUE))
   yr <- strsplit(ii, split = "\\.")[[1]][1]
@@ -386,24 +390,29 @@ makeSevRasters <- function(rasterToMatch, sevData) {
     RTM <- rast(RTM)
   }
 
-  sevClassRas <- RTM
-  sevBRas <- RTM
-  sevClassRas[] <- NA_integer_
-  sevBRas[] <- NA_integer_
+  RTM[] <- NA_integer_
 
-  sevClassRas[sevData[["pixelIndex"]]] <- sevData[["severity"]]
-  sevBRas[sevData[["pixelIndex"]]] <- sevData[["severityB"]]
+  sevRasters <- sapply(sevCols, function(ccol, sevData, RTM) {
+    sevRaster <- RTM
 
-  ## for now add a 0 severity (class and B) in unburnt pixels
-  RTM[!is.na(as.vector(RTM[]))] <- 0L
-  sevClassRas <- terra::cover(sevClassRas, RTM, values = NA)
-  sevBRas <- terra::cover(sevBRas, RTM, values = NA)
+    sevRaster[sevData[["pixelIndex"]]] <- sevData[[ccol]]
 
-  return(rast(list(severityRas = sevClassRas, severityBRas = sevBRas)))
+    ## for now add a 0 severity (class and B) in unburnt pixels
+    RTM[!is.na(as.vector(RTM[]))] <- 0L
+    sevRaster <- terra::cover(sevRaster, RTM, values = NA)
+
+    names(sevRaster) <- ccol
+    sevRaster
+  }, sevData = sevData, RTM = RTM, simplify = FALSE, USE.NAMES = TRUE)
+
+  return(rast(sevRasters))
 }
 
 #' Calculates patch size as the area in log-ha of discrete
-#' patches of distinct severity classes.
+#' patches of distinct severity classes. All fire patches
+#' (in and outside of forested pixels) are considered. Patches
+#' in non-forested pixels are assumed to have 1 severity class
+#' (`severity`) with 0 lost biomass (`severityB` and `severityBProp`).
 #'
 #' Adapted from [Steel et al 2021](https://github.com/zacksteel/pyrodiversity/blob/main/code/patch_surface.R).
 #'
