@@ -438,8 +438,6 @@ calcFireAttributesEvent <- function(sim) {
                             omitArgs = c("userTags", "fireAttrRasLs", "i"))
   ## add scenario column when binding
   allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
-  setnames(allSeverityData, c("severityRas", "severityBRas"), c("severity", "severityB"))
-
   rm(severityDataList); gc(reset = TRUE)
 
   ## make table with fire occurrences and IDs per year/rep -- use same cacheExtra
