@@ -558,7 +558,7 @@ calcFireAttributesEvent <- function(sim) {
   ## add other fire attributes for pixels with no fire history
   ## make column of noFires
   noFireHistoryData[, `:=`(noFires = 0L, fireFreq = P(sim)$endYear - P(sim)$startYear,
-                           severity = 0L, severityB = 0, burnt = 0L)]
+                           severity = 0L, severityB = 0, severityPropB = 0, burnt = 0L)]
   noFireHistoryData[, ID := NULL]
 
   ## check
