@@ -451,8 +451,11 @@ calcPatchSize <- function(sevClassRas, fireRas) {
       focalFireRas <- fireRas
       focalFireRas[as.vector(focalFireRas[]) != fire] <- NA
 
-      ## mask severity to fire perimeter -- pixels outside fire perimeter will get an NA for patch size.
+      ## "mask" severity to fire perimeter -- pixels outside fire perimeter will get an NA for patch size.
+      ## pixels with no severity but that burned (non forested pixels) get severity class = 1
       focalFireSevRas <- mask(sevClassRas, focalFireRas)
+      burntNonForest <- which(is.na(as.vector(focalFireSevRas[])) & !is.na(as.vector(focalFireRas[])))
+      focalFireSevRas[burntNonForest] <- 1L
 
       ## convert to vector
       focalFireSevPoly <- as.polygons(focalFireSevRas, dissolve = TRUE)
