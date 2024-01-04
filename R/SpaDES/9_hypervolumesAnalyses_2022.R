@@ -1,6 +1,6 @@
 ## --------------------------------------------------
 ##  HYPERVOLUMES OF PYRODIVERSITY AND BIODIVERSITY
-##  Analyses of results
+##  Analyses of results (2022)
 ## --------------------------------------------------
 if (!exists("pkgDir")) {
   pkgDir <- file.path(
