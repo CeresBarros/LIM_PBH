@@ -63,7 +63,7 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 
 ## LOAD DATA (RESULTS)  -------------------
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
-runPrepResultsModule <- FALSE
+runPrepResultsModule <- TRUE
 source("R/SpaDES/simResultsDataPrep.R")
 
 rm(allPixelCohortData)
