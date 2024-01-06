@@ -404,7 +404,7 @@ calcFireAttributesEvent <- function(sim) {
                             sevClassRasLs = mod$severityRasters$noPM[rasToDo],
                             fireRas = tempList[rasToDo], ## subset and re-order to match
                             f = function(sevClassRasLs, fireRas) calcPatchSize(sevClassRasLs$severity, fireRas),
-                            .cacheExtra = list(cacheExtra),
+                            .cacheExtra = list(cacheExtra2),
                             userTags = c(cacheTags, "patchSizeRasnoPM"),
                             omitArgs = c("userTags", "sevClassRasLs", "fireRas"))
 
@@ -435,7 +435,7 @@ calcFireAttributesEvent <- function(sim) {
                             f = fireAttrDTFromRasLs,
                             .cacheExtra = list(cacheExtra, cacheExtra2, "severity"),
                             userTags = c(cacheTags, "severityDataList"),
-                            omitArgs = c("userTags", "fireAttrRasLs", "i"))
+                            omitArgs = c("userTags", "fireAttrRasLs"))
   ## add scenario column when binding
   allSeverityData <- rbindlist(severityDataList, idcol = "scenario", fill = TRUE, use.names = TRUE)
   rm(severityDataList); gc(reset = TRUE)
@@ -455,7 +455,7 @@ calcFireAttributesEvent <- function(sim) {
                              f = pixelBurnDataFromStks,
                              .cacheExtra = list(cacheExtra, cacheExtra2),
                              userTags = c(cacheTags, "pixelBurnDataList"),
-                             omitArgs = c("userTags", "rstCurrentFiresStk", "i"))
+                             omitArgs = c("userTags", "rstCurrentFiresStk"))
   ## add scenario column when binding
   allPixelBurnData <- rbindlist(pixelBurnDataList, idcol = "scenario", use.names = TRUE)
   rm(pixelBurnDataList); gc(reset = TRUE)
