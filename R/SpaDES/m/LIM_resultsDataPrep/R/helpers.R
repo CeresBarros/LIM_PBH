@@ -511,31 +511,36 @@ makeNoFireHistoryData <- function(rstCurrentFiresStk, rasterToMatch, r = NULL,
     r <- 1L
   }
 
-  ## make a raster with 0/1 fore pixels w/o or w/ fire history, respectively
-  burnRas <- sum(rstCurrentFiresStk, na.rm = TRUE)
-  burnRas[as.vector(is.na(burnRas[]))]  <- 0L  ## NAs have no fire history
+  ## make a raster with 1/0 for pixels w/o or w/ fire history, respectively
+  ## pixels with > 0 have a fire history, so get a zero as we're interested in
+  ## the non-burnt patches
+  browser()
+  unburnRas <- sum(rstCurrentFiresStk, na.rm = TRUE)
+  unburnRas[as.vector(unburnRas[]) == 0]  <- -1L  ## 0s have no fire history, we'll assign -1 for now
+  unburnRas[as.vector(is.na(unburnRas[]))]  <- -1L  ## NAs have no fire history, we'll assign -1 for now
+  unburnRas[as.vector(unburnRas[]) > 0] <- 0L  ## these had fires but will not be the focus of the patch sizes here.
+
+  ## now convert -1L to 1L
+  unburnRas[] <- abs(as.vector(unburnRas[]))
 
   ## now mask again to put NAs outside SA
-  burnRas <- mask(burnRas, rasterToMatch)
-
-  ## pixels with > 0 have a fire history
-  burnRas[as.vector(burnRas[]) > 0] <- 1L
-  names(burnRas) <- "burnt"
+  unburnRas <- mask(unburnRas, rasterToMatch)
+  names(unburnRas) <- "unburnt"
 
   ## calculate unburnt patch area - as in Steel et al 2021.
-  burnRasPoly <- as.polygons(burnRas, dissolve = TRUE)
-  burnRasPoly <- disagg(burnRasPoly)
+  unburnRasPoly <- as.polygons(unburnRas, dissolve = TRUE)
+  unburnRasPoly <- disagg(unburnRasPoly)
 
   ## Calculate log-area
-  burnRasPoly$log_area <- log(expanse(burnRasPoly, unit = 'ha'))
+  unburnRasPoly$log_area <- log(expanse(unburnRasPoly, unit = 'ha'))
 
   ## rasterize and add to output raster
-  patchSizeRas <- rasterize(burnRasPoly, burnRas, field = "log_area")
+  patchSizeRas <- rasterize(unburnRasPoly, unburnRas, field = "log_area")
 
   ## calculate patch size in pixels
-  burnRasPoly$ID <- 1:length(burnRasPoly)
+  unburnRasPoly$ID <- 1:length(unburnRasPoly)
 
-  unburnPatches <- rasterize(burnRasPoly, burnRas, field = "ID")
+  unburnPatches <- rasterize(unburnRasPoly, unburnRas, field = "ID")
   patchSizeNoPix <- as.data.table(unburnPatches, cell = TRUE)
   patchSizeNoPix[, patchSizePix := .N, by = ID]
 
@@ -552,7 +557,7 @@ makeNoFireHistoryData <- function(rstCurrentFiresStk, rasterToMatch, r = NULL,
     }
   }
 
-  unburntPix <- which(as.vector(burnRas[]) == 0)
+  unburntPix <- which(as.vector(unburnRas[]) == 1)
   noFireHistoryData <- noFireHistoryData[pixelIndex %in% unburntPix]
   noFireHistoryData[, rep := r]
 
