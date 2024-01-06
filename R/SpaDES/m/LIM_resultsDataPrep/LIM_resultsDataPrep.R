@@ -675,6 +675,10 @@ calcFireAttributesEvent <- function(sim) {
   }
   sim$allPixelBurnData <- allPixelBurnData
 
+  ## clean to free memory
+  mod$severityRasters <- NULL
+  mod$rstCurrentFiresStkList <- NULL
+
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
