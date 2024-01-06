@@ -329,6 +329,7 @@ calcFireAttributesEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   cacheTags <- c(currentModule(sim), "calcFireAttributes")
 
+  browser()
   ## FIRE ATTRIBUTES ---------------------------------------
   message(cyan("Calculating fire attributes..."))
   message(cyan("Patch size"))
