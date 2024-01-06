@@ -514,7 +514,6 @@ makeNoFireHistoryData <- function(rstCurrentFiresStk, rasterToMatch, r = NULL,
   ## make a raster with 1/0 for pixels w/o or w/ fire history, respectively
   ## pixels with > 0 have a fire history, so get a zero as we're interested in
   ## the non-burnt patches
-  browser()
   unburnRas <- sum(rstCurrentFiresStk, na.rm = TRUE)
   unburnRas[as.vector(unburnRas[]) == 0]  <- -1L  ## 0s have no fire history, we'll assign -1 for now
   unburnRas[as.vector(is.na(unburnRas[]))]  <- -1L  ## NAs have no fire history, we'll assign -1 for now
