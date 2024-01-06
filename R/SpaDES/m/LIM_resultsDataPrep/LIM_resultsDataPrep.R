@@ -386,7 +386,6 @@ calcFireAttributesEvent <- function(sim) {
   rasToDo <- names(mod$rstCurrentFiresStkList$noPM)
   missingRas <- setdiff(rasToDo, names(mod$severityRasters$noPM))
 
-
   if (length(missingRas)) {
     ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
     tempRasLs <- lapply(missingRas, function(x, tempSevRasStk) {
