@@ -49,7 +49,8 @@ options("reproducible.useNewDigestAlgorithm" = 2
 ## general paths
 # simDirName <- "mar2021Runs"
 simDirName <- "mar2022Runs"
-if (Sys.info()["nodename"] == "W-VIC-A127584") {
+if (Sys.info()["nodename"] == "W-VIC-A127584" |
+    Sys.info()["nodename"] == "L-VIC-A155348") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("F:", basename(getwd()), "R/SpaDES/inputs", simDirName)
