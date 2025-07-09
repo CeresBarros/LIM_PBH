@@ -17,5 +17,6 @@ packages_docker/*
 GDriveTokens
 
 !packages/pkgSnapshot.txt
+!packages_docker/pkgSnapshot.txt
 
 analyses.zip
