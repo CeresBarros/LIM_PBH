@@ -1,4 +1,4 @@
-Require("dplyr")
+Require("dplyr", install = FALSE)
 
 #' Wrapper function to calculate vegetation attributes hypervolumes
 vegHVWrapper <- function(allData, HVcols, IDcols, HVIDcol, file.suffix, addNoise = TRUE, ...) {
