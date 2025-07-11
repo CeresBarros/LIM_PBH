@@ -23,18 +23,22 @@ if (!exists("pkgDir")) {
   .libPaths(pkgDir)
 }
 
-library(SpaDES)
-library(reproducible)
-library(data.table)
-library(ggplot2)
-library(ggpubr)
-library(nlme)
-library(mgcv)
-library(multcomp)
-Require::Require("rvlenth/emmeans (>= 1.8.6)")
-library(cowplot)
-library(ToolsCB)
-library(performance)
+library(Require)
+
+Require(c("SpaDES",
+          "reproducible",
+          "data.table",
+          "ggplot2",
+          "ggpubr",
+          "nlme",
+          "mgcv",
+          "multcomp",
+          "rvlenth/emmeans (>= 1.8.6)",
+          "cowplot",
+          "ToolsCB",
+          # "performance",
+          "dplyr"), install = FALSE)
+
 
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
