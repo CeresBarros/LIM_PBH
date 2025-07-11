@@ -6,7 +6,7 @@
 
 
 ## before switching to proj lib, install an updated version of Require in default lib
-remotes::install_github("PredictiveEcology/Require@70720ac5fd104b37c0c72f7613d79b81ec437dc7")
+remotes::install_github("PredictiveEcology/Require@hasHEAD")
 
 ## RESTART R AND KEEP GOING
 
@@ -22,8 +22,8 @@ if (!exists("pkgDir")) {
   if (!dir.exists(pkgDir)) {
     dir.create(pkgDir, recursive = TRUE)
   }
-  .libPaths(pkgDir)
 }
+.libPaths(pkgDir)
 
 ## old code
 # if (!require("Require")) {
@@ -37,7 +37,7 @@ if (FALSE) {
 
   # Much later on a different or same machine
   # Require::Require(packageVersionFile = "packages_docker/pkgSnapshot.txt", standAlone = TRUE)
-  Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
+  Require(packageVersionFile = "packages/pkgSnapshot.txt")
 
   ## these versions need to be ensured and if not on the snapshot file
   Install("PredictiveEcology/Require@7eaa3af6443fa9acf8ef461d9a02e544174eda38", dependencies = FALSE)
