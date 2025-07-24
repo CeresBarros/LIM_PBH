@@ -12,3 +12,5 @@ inputs/*
 
 ## don't ignore
 !m/*/data/CHECKSUMS.txt
+
+!inputs/CHECKSUMS.txt
