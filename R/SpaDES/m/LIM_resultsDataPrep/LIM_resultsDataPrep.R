@@ -329,7 +329,6 @@ calcFireAttributesEvent <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   cacheTags <- c(currentModule(sim), "calcFireAttributes")
 
-  browser()
   ## FIRE ATTRIBUTES ---------------------------------------
   message(cyan("Calculating fire attributes..."))
   message(cyan("Patch size"))
@@ -525,6 +524,8 @@ calcFireAttributesEvent <- function(sim) {
 
   ## PIXELS WITH NO FIRE HISTORY ------------
   ## make a table of pixels that have never burned, per scenario
+  browser()
+  message(cyan("Pixels with no fire history"))
   noFireHistoryDataLsPM <- Cache(Map,
                                  r = P(sim)$reps,
                                  MoreArgs = list(
@@ -532,7 +533,7 @@ calcFireAttributesEvent <- function(sim) {
                                    rasterToMatch = sim$rasterToMatch,
                                    doAssertion = mod$doAssertion),
                                  f = makeNoFireHistoryData,
-                                 .cacheExtra = list(cacheExtra, cacheExtra2, sim$rasterToMatch),
+                                 .cacheExtra = list(cacheExtra, sim$rasterToMatch),
                                  userTags = c(cacheTags, "noFireHistoryDataPM"),
                                  omitArgs = c("userTags", "MoreArgs"))
   noFireHistoryDataPM <- rbindlist(noFireHistoryDataLsPM, use.names = TRUE)
@@ -545,7 +546,7 @@ calcFireAttributesEvent <- function(sim) {
                                    rasterToMatch = sim$rasterToMatch,
                                    doAssertion = mod$doAssertion),
                                  f = makeNoFireHistoryData,
-                                 .cacheExtra = list(cacheExtra, cacheExtra2, sim$rasterToMatch),
+                                 .cacheExtra = list(cacheExtra2, sim$rasterToMatch),
                                  userTags = c(cacheTags, "noFireHistoryDatanoPM"),
                                  omitArgs = c("userTags", "MoreArgs"))
   noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
@@ -678,6 +679,7 @@ calcFireAttributesEvent <- function(sim) {
   ## clean to free memory
   mod$severityRasters <- NULL
   mod$rstCurrentFiresStkList <- NULL
+  amc::.gc()
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
@@ -811,6 +813,7 @@ joinSimulationDataEvent <- function(sim) {
 }
 
 addVegTypesCNEvent <- function(sim) {
+  browser()
   # ! ----- EDIT BELOW ----- ! #
   gc()  ## try to release memory consumed by DT threads
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...

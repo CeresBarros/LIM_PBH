@@ -21,8 +21,7 @@ if (runPrepResultsModule) {
                                                      "parallel" = FALSE,
                                                      "reps" = 1L:5L,
                                                      "yearSubset" = as.integer(yearSubset),
-                                                     ".useCache" = c("init", "loadVegData", "calcFireMetrics",
-                                                                      "joinSimulationData", "addVegTypesCN")))
+                                                     ".useCache" = c("init")))
 
   objectsResults <- list("ecoregionLayer" = preSimList$ecoregionLayer,
                          "rasterToMatch" = preSimList$rasterToMatch,

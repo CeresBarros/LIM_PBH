@@ -517,7 +517,7 @@ makeNoFireHistoryData <- function(rstCurrentFiresStk, rasterToMatch, r = NULL,
   unburnRas <- sum(rstCurrentFiresStk, na.rm = TRUE)
   unburnRas[as.vector(unburnRas[]) == 0]  <- -1L  ## 0s have no fire history, we'll assign -1 for now
   unburnRas[as.vector(is.na(unburnRas[]))]  <- -1L  ## NAs have no fire history, we'll assign -1 for now
-  unburnRas[as.vector(unburnRas[]) > 0] <- 0L  ## these had fires but will not be the focus of the patch sizes here.
+  unburnRas[as.vector(unburnRas[]) > 0] <- NA  ## these had fires but will not be the focus of the patch sizes here.
 
   ## now convert -1L to 1L
   unburnRas[] <- abs(as.vector(unburnRas[]))
@@ -548,16 +548,7 @@ makeNoFireHistoryData <- function(rstCurrentFiresStk, rasterToMatch, r = NULL,
   noFireHistoryData <- noFireHistoryData[patchSizeNoPix, on = "cell"]
   setnames(noFireHistoryData, c("cell", "log_area"), c("pixelIndex", "patchSizeLogHa"))
 
-  ## check
-  if (doAssertion) {
-    test <- setdiff(which(!is.na(as.vector(rasterToMatch[]))), noFireHistoryData$pixelIndex)
-    if (length(test)) {
-      stop("All active pixels in study area should exist in this table; please debug 'makeNoFireHistoryData'.")
-    }
-  }
-
-  unburntPix <- which(as.vector(unburnRas[]) == 1)
-  noFireHistoryData <- noFireHistoryData[pixelIndex %in% unburntPix]
+  ## add rep
   noFireHistoryData[, rep := r]
 
   return(noFireHistoryData)
