@@ -7,7 +7,6 @@
 *.pdf
 *.RData
 figs/*
-outputs/*
 packages/*
 packages_docker/*
 *.rds
