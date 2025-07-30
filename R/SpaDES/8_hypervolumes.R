@@ -37,7 +37,8 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("F:", basename(getwd()), "R/SpaDES/inputs", simDirName)
                    , outputPath = file.path("F:", basename(getwd()), "R/SpaDES/outputs", simDirName))
-} else if (grepl("for-cast", Sys.info()["nodename"])) {
+} else if (grepl("for-cast|ad4d65210e84", Sys.info()["nodename"])) {
+  ## settings for for-cast and coco machines
   simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("R/SpaDES/inputs")
