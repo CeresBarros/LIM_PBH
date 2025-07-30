@@ -3,10 +3,11 @@
 ## --------------------------------------------------
 
 if (!exists("pkgDir")) {
+  rver <- paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
   pkgDir <- file.path(
-    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
+    if (Sys.info()[["sysname"]] == "Linux" && rver == "4.1") "packages_docker" else "packages",
     version$platform,
-    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
+    rver
   )
 
   if (!dir.exists(pkgDir)) {
