@@ -53,6 +53,7 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 
 if (grepl("for-cast", Sys.info()["nodename"]) ||
     grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+  ## settings for for-cast and coco machines
   data.table::setDTthreads(5)
   options(bitmapType="cairo")
 }
