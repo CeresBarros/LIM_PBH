@@ -1,10 +1,18 @@
 ## ------------------------------------------------------
-## FIRE MODELLING WITH SpaDES -- package installation
+## FIRE MODELLING WITH SpaDES -- package installation never used
 ##
 ## Ceres: July 2025
 ## ------------------------------------------------------
 
+## note that on coco Docker I had to:
+install.packages("http://cran.r-project.org/src/contrib/Archive/sp/sp_1.4-6.tar.gz")
+install.packages("http://cran.r-project.org/src/contrib/Archive/rgdal/rgdal_1.5-30.tar.gz")
+install.packages("http://cran.r-project.org/src/contrib/Archive/terra/terra_1.5-34.tar.gz")
+install.packages("http://cran.r-project.org/src/contrib/Archive/sf/sf_1.0-7.tar.gz")
+devtools::install_github("CeresBarros/ToolsCB@4b12ff37e29455350abbaa340f1fedc6aee38a49", dependencies = FALSE)
 
+
+## CODE BELOW NEVER USED ON DOCKER:
 ## before switching to proj lib, install an updated version of Require in default lib
 remotes::install_github("PredictiveEcology/Require@70720ac5fd104b37c0c72f7613d79b81ec437dc7")
 
