@@ -1,7 +1,7 @@
 ## set CRAN repos; use binary linux packages if on Ubuntu
 local({
-  options("repos" = c(CRAN = "https://cran.rstudio.com",
-                      PE = "https://predictiveecology.r-universe.dev/")
+  options("repos" = c(CRAN = "http://cran.rstudio.com",
+                      PE = "http://predictiveecology.r-universe.dev/")
           )
 
   if (Sys.info()[["sysname"]] == "Linux" && grepl("Ubuntu", utils::osVersion)) {
@@ -12,18 +12,16 @@ local({
 })
 
 ## package installation location
+rver <- paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
 pkgDir <- file.path(
-  if (Sys.info()[["user"]] %in% c("rstudio", "root")) "packages_docker" else "packages",
+  if (Sys.info()[["sysname"]] == "Linux" && rver == "4.1") "packages_docker" else "packages",
   version$platform,
   paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
 )
 
-## settings for for-cast
-if (grepl("for-cast", Sys.info()["nodename"])) {
-  data.table::setDTthreads(25)
-  options(bitmapType="cairo")
-}
+
 if (!dir.exists(pkgDir)) {
   dir.create(pkgDir, recursive = TRUE)
 }
-# .libPaths(pkgDir)
+.libPaths(pkgDir)
+
