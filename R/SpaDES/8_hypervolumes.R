@@ -13,9 +13,9 @@ if (!exists("pkgDir")) {
   if (!dir.exists(pkgDir)) {
     dir.create(pkgDir, recursive = TRUE)
   }
-  .libPaths(pkgDir)
 }
 
+.libPaths(pkgDir)
 
 library(SpaDES.core)
 library(ToolsCB)
