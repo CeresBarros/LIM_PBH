@@ -22,3 +22,7 @@ ln -s /mnt/storage/cbarros/LandscapesInMotion/analyses/fireDataSummary /home/cba
 ln -s /mnt/storage/cbarros/LandscapesInMotion/analyses/FireEvents /home/cbarros/GitHub/LandscapesInMotion/analyses/FireEvents
 ln -s /mnt/storage/cbarros/LandscapesInMotion/analyses/firesInFMAs /home/cbarros/GitHub/LandscapesInMotion/analyses/firesInFMAs
 
+## for coco -- create symlink from scratch to match for-cast paths
+
+mkdir -r /mnt/scratch/cbarros/LandscapesInMotion/R/SpaDES/
+ln -s ~/LandscapesInMotion/R/SpaDES/cache /mnt/scratch/cbarros/LandscapesInMotion/R/SpaDES
