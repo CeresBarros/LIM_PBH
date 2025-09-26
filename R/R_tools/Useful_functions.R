@@ -502,3 +502,181 @@ averagAllPixelCDMntEnd <- function(allPixelCDMntEnd) {
 
   allPixelCDMntEnd
 }
+
+
+
+
+# importFrom caret createFolds
+# importFrom purrr pmap
+# importFrom pROC roc
+runXGBOOST <- function(dat, dig, nFolds = 5, colnamesPred, colnamesResp = "SEV_PROP"
+                       #, crossValType = c("time-ordered", "crossValidation")  ## automatically decided
+) {
+  # dat <- dat[sample(NROW(dat), size = 1e4)]
+  # tt <- table(dat$SEV_PROP)
+
+  # Add dummy variables for factor columns -- i.e., the random effects
+  if (all(sapply(dat, is.numeric)) %in% FALSE)
+    dat <- #{
+      model.matrix(~ . + 0, data = dat) |>
+      Cache(omitArgs = c("object", "data", "x"), .cacheExtra = dig) # Creates dummy variables
+
+  dat <- as.data.table(dat)
+
+  savedSeed <- .Random.seed
+  on.exit(assign(".Random.seed", savedSeed, envir = .GlobalEnv), add = TRUE)
+  set.seed(12345) # so kfolds are same, so Caching works correctly below; if dat3 changes number of rows,
+  # it will be a totally different sequence; but it will be the same sequence
+  # if number of rows doesn't change
+
+  # Setup k-folds
+  yearColname <- grep("year", tolower(colnames(dat)), value = TRUE)
+  indexNames <- c("allData", "evalData")
+
+  if (length(yearColname)) {
+    crossValType <- "time-ordered"
+    times <- unique(dat[[yearColname]])
+    testLength <- 3
+    initialWindow <- length(times) - testLength - nFolds + 1
+    trainIndexK <- createTimeSlices(times, initialWindow = initialWindow, testLength, fixedWindow = FALSE)
+    trainIndexK <- Map(tr = trainIndexK$train, te = trainIndexK$test, function(tr, te) {
+      allData <- which(dat[[yearColname]] %in% times[c(tr, te)])
+      evalData <- which(dat[[yearColname]] %in% times[te])
+      list(allData, evalData) |> setNames(indexNames)
+    })
+  } else {
+    crossValType <- "crossValidation"
+    ## create folds and make a list with indices of full dataset and eahc fold
+    trainIndexK <- createFolds(dat[[colnamesResp]], k = nFolds, list = TRUE, returnTrain = FALSE)
+    trainIndexK <- Map(tr = trainIndexK, function(tr) {
+      list(seq(NROW(dat)), tr) |> setNames(indexNames)
+    })
+  }
+
+  ## sample columns after setting seed for caching (if different, then chace is triggered)
+  colOrder <- setdiff(colnames(dat), c("pixID", yearColname))
+  colOrder <- sample(colOrder)
+  dat <- dat[, ..colOrder]
+  dig <- .robustDigest(dat)
+
+  ## subset predictor data
+  if (missing(colnamesPred)) {
+    message(cyan("No predictor columns ('colnamesPred') provided.",
+                 "\nAssuming all but 'colnamesResp' are predictors"))
+    colnamesPred <- setdiff(colnames(dat), colnamesResp)
+  }
+  datPreds <- dat[, ..colnamesPred]
+
+  st <- system.time(
+    mm <- pmap(
+      list(dataFolds = trainIndexK, kFold = seq(nFolds)),
+      function(dataFolds, kFold)#, indexName = indexNames, digInner = dig, dat3ForxgboostInner = dat,
+        #         datPredsInner = datPreds)
+      {
+        ## get row IDs for training data (allData) and testing data
+        allDataIDs <- dataFolds[[indexNames[[1]]]]
+        testIDs <- dataFolds[[indexNames[[2]]]]   ## eval data
+        digValInd <- .robustDigest(dataFolds) ## TODO ask Eliot: should be eval set?
+
+        # xgboost objects do not save with `qs` ... must be `rds`
+        # opt <- options(reproducible.cacheSaveFormat = "rds")
+        # on.exit(options(opt)) # redundant; but necessary if it fails during fit
+        mMSE <- xgboost(x = datPreds[allDataIDs],
+                        , y = dat[, get(colnamesResp)][allDataIDs]
+                        # objective = "count:poisson", #
+                        # objective = "reg:tweedie",
+                        , nthread = 10
+                        , eval_set = testIDs, # 0.2, # should be evalData
+                        , monitor_training = TRUE
+                        # verbosity = 0,
+                        , eval_metric = c("auc", "logloss")
+                        , nrounds = 100
+                        , max_depth = 2
+                        # reg_lambda = 0.5,
+                        # learning_rate = 0.15
+        ) #|> Cache(omitArgs = c("x", "y", "eval_set"),
+                   # # ) |> list()} |> Cache(omitArgs = c("x", "y", "eval_set", "..."),
+                   # .functionName = functionNameHelper("xgboost", type, kFold),
+                   # .cacheExtra = c(dig, digValInd, type),
+                   # cacheSaveFormat = "rds")
+                   #
+
+        ## calculate predictions and residuals
+        valData <- dat[testIDs,]
+        valData <- cbind(valData,
+                         obs =  dat[, get(colnamesResp)][testIDs],
+                         pred = predict(mMSE, dat[testIDs, ]))
+        valData[, resid := pred - get(colnamesResp)]
+
+        ## calculate R^2 -- probably not adequate
+        # sstot <- sum((valData$pred - mean(valData$obs))^2)
+        # ssresid <- sum(valData$resid^2)
+        # sprintf("percent variance explained, R^2: %1.1f%%", 100 * (1 - ssresid / sstot))
+
+        # mMSE <- mMSE[[1]] # remove the list
+        # Predict probabilities
+
+        if (FALSE) {
+          ignZeroAndOnes <- pmin(1, valData[, ignitions])
+          # (roc_curvePoisson <- roc(ignZeroAndOnes, d$valData$predPoisson))
+          (roc_curveTweedie <- roc(ignZeroAndOnes, valData[["predTweedie"]]))
+        }
+browser()
+        shap_values <- shap.values(mMSE, datPreds) #|>
+          # Cache(omitArgs = formalArgs(shap.values),
+                # .functionName = functionNameHelper("shap.values", type, kFold),
+                # .cacheExtra = c(dig, digValInd, type))
+        shapContrib <- shap_values$shap_score
+        shapContrib <- shapContrib[, -"(Intercept)"]
+        shap_long <- shap.prep(# xgb_model = mMSE,
+          shap_contrib = shapContrib, X_train = datPreds)  #|>
+          # Cache(omitArgs = formalArgs(shap.prep),
+                # .functionName = functionNameHelper("shap.prep", type, kFold),
+                # .cacheExtra = c(dig, digValInd, type))
+        # list(valData = valData, mod = mMSE, shap_long = shap_long)
+
+        shap.plot.summary(shap_long, dilute = 20, scientific = TRUE)
+        shap.plot.dependence(data_long = shap_long,
+                             x = 'CMDsm',
+                             y = 'FlamConif',
+                             color_feature = 'Column_WV') +
+                ggtitle("SHAP values of Pice_var vs. CMDsm")
+      })
+  )
+
+  if (FALSE)  {
+    # ggIgnit <-
+    ggplot(df) +
+      aes(x = value, y = predictedProb, group = variable, col = variable) +
+      # ggIgnit <- ggplot(df) + aes(x = value, y = predictedProb, group = variable, col = variable) +
+      geom_smooth(span = 1) +
+      # ggplot2::geom_jitter(height = 0.00002, size = 0.5) +
+      geom_point(size = 0.3) +
+      # geom_line() +
+      theme_bw() +
+      scale_color_brewer(palette="Paired") +
+      xlab(paste0("Scaled, centred")) +
+      ylab(paste0("Predicted probability of ", type)) +
+      guides(col = guide_legend(reverse = FALSE, col = factor(df$predictedProb)))
+  }
+
+  rocs <- lapply(mm, function(d) {
+    ignZeroAndOnes <- pmin(1L, d$valData[[ignOrEscapeColName]])
+    # (roc_curvePoisson <- roc(ignZeroAndOnes, d$valData$predPoisson))
+    (roc_curveTweedie <- roc(ignZeroAndOnes, d$valData[["predTweedie"]]))
+    roc_curveTweedie
+  })
+
+  tweedie <- mapply(r = rocs, function(r) {
+    as.numeric(r$auc)
+  })
+  # poiss <- mapply(r = rocs, function(r) {
+  #   as.numeric(r$roc_curvePoisson$auc)
+  # })
+  print(paste("mean roc: ", format(mean(tweedie), digits = 3)))
+  # mean(poiss)
+  mm2 <- Map(m = mm, function(m) m$mod)
+  mm2 <- append(mm2, list(rocs = rocs))
+
+  return(mm2)
+}
