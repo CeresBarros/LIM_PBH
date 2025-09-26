@@ -211,7 +211,7 @@ calculateNgbSevWrapper <- function(dists, sevPoints, sevColID, parallel = TRUE) 
     if (parallel) {
       message("Starting parallelization...")
       require(future.apply)
-      plan(multiprocess(gc = TRUE))
+      plan(multisession(gc = TRUE))
       ngbSEVList <- future_lapply(dists, FUN = .calculateNgbSev,
                                   sevPoints = sevPoints, sevColID = sevColID)
 
@@ -284,7 +284,7 @@ calculateNgbBurnsWrapper <- function(dists, sevPoints, sevColID, fireColID,
       if (is.null(cores)) {
         cores <- availableCores()
       }
-      plan(multiprocess(gc = TRUE), workers = cores)
+      plan(multisession(gc = TRUE), workers = cores)
       ngbSEVList <- future_mapply(FUN = .calculateNgbBurns, dist = fireBufferCombos$dists,
                                   fireID = fireBufferCombos$fireID,
                                   MoreArgs = list(sevPoints = sevPoints, sevColID = sevColID,
