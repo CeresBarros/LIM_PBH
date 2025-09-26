@@ -1,5 +1,5 @@
 ## ----------------------------------------
-## RUN K-FOLD CROSS VALIDATION
+## RUN K-FOLD CROSS VALIDATION -- Functions moved to ToolsCB
 ##
 ## Ceres Feb 26th 2020
 ## ----------------------------------------
@@ -105,7 +105,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
   trainModel <- tryCatch(update(object = statsModel, data = trainData), error = function(e) e)
 
   if (is(trainModel, "error")) {
-    validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA)
+    validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA, AUC = NA)
   } else {
     params <- c("mu", "nu", "tau")
     names(params) <- params
@@ -155,6 +155,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
 
     ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
+    browser()
+    ##calculate AUC
     RsqGAMLSS <- Rsq(trainModel)
     TGDstats <- getTGD(trainModel, newdata = testData[, .SD, .SDcols = names(trainData)], data = trainData)   ## testData may have additional cols (sampID)
     Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)
