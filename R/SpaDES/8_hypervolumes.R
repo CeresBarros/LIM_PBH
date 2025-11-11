@@ -437,12 +437,12 @@ if (useFirstLastYear) {
          }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
 }
 
-## Hypervolumes across the landscape ----------------
+### Hypervolumes across the landscape ----------------
 ## only montane belt
 ## Now we follow all pixels, so there is no need to subset pixels by veg type in
 ## in the first year
 
-## HV comparisons per year, between scenarios --------------
+#### HV comparisons per year, between scenarios --------------
 ## split by year and rep to calculate and compare hypervolumes between
 ## scenarios for each year
 
