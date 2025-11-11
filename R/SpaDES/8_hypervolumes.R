@@ -17,9 +17,11 @@ if (!exists("pkgDir")) {
 
 .libPaths(pkgDir)
 
-library(SpaDES.core)
-library(ToolsCB)
-library(data.table)
+Require::Require(c("data.table",
+                   "dplyr",
+                   "SpaDES.core",
+                   "ToolsCB"),
+                 install = FALSE)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
@@ -53,8 +55,8 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 }
 
 if (grepl("for-cast", Sys.info()["nodename"]) ||
-    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
-  ## settings for for-cast and coco machines
+    grepl("45eafed436c8", Sys.info()["nodename"])) {
+  ## settings for for-cast and spades106 docker machines
   data.table::setDTthreads(5)
   options(bitmapType="cairo")
 }
@@ -70,7 +72,7 @@ runPrepResultsModule <- TRUE
 source("R/SpaDES/simResultsDataPrep.R")
 
 rm(allPixelCohortData)
-gc()
+gc(reset = TRUE)  ## about 50Gb used at this point
 
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
@@ -91,12 +93,12 @@ dir.create(HVoutputPath, recursive = TRUE)
 
 ## FIRE ATTRIBUTES HYPERVOLUMES -----------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
-## FIRE DATA SUMMARY FOR HVs -----------------------
-opts <- options("LandR.assertions", FALSE)
+### FIRE DATA SUMMARY FOR HVs -----------------------
+# opts <- options(LandR.assertions = FALSE)
 source("R/R_tools/prepFireData4HVs.R")
-options(opts)
+# options(opts)
 
-## Global pyrodiversity PCA ----------
+### Global pyrodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
 ## hypervolume sizes can be compared across repetitions and forest types.
 
@@ -121,7 +123,7 @@ firePCA <- summaryFireAttributes[, ..cols] %>%
 fireHVdata <- as.data.table(firePCA$HVpoints)
 fireHVdata <- cbind(fireHVdata, summaryFireAttributes[, .(scenario, rep, pixelIndex, vegTypeCN)])
 
-## Hypervolumes by vegetation type ----------
+### Hypervolumes by vegetation type ----------
 ## only montane belt
 if (mergeDMCPSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "DMCPSME"]
@@ -172,7 +174,7 @@ lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
        }, HVoutputPath = HVoutputPath, doAll = doAll)   ## if doAll == FALSE, only missing HV intersection pairs will be computed
 
 
-## Hypervolumes across the landscape ----------------
+### Hypervolumes across the landscape ----------------
 ## only montane belt
 doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
@@ -214,6 +216,7 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
        }, HVoutputPath = HVoutputPath, doAll = doAll)
 
 
+
 ## VEGETATION ATTRIBUTES HYPERVOLUMES -----------
 
 ## for each rep, we will randomly draw 5 years from each 100yrs window (the same years are used across scenarios).
@@ -226,7 +229,7 @@ source("R/R_tools/prepVegData4HVs.R")
 rm(allPixelBurnData, allPixelCohortDataMnt)
 gc(reset = TRUE)
 
-## Global biodiversity PCA ----------
+### Global biodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
 ## hypervolume sizes can be compared across repetitions and forest types.
 
@@ -272,10 +275,10 @@ cols <- c(grep("PC(1|2|3|4)", names(vegHVdata), value = TRUE),
           grep("^PC", names(vegHVdata), value = TRUE, invert = TRUE))
 vegHVdata <- vegHVdata[, ..cols]
 
-## Hypervolumes by vegetation type --------------
+### Hypervolumes by vegetation type --------------
 ## only montane belt
 
-## HV comparisons per year, between scenarios --------------
+#### HV comparisons per year, between scenarios --------------
 ## note that splitting by veg type has to be done on the last
 ## year as vegTypes can change (cannot use first fire year, because cohortData will have
 ## been impacted by fire already). Splitting is done by rep only
@@ -503,7 +506,7 @@ lapply(ifelse(useFirstLastYear,
        }, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
 
 
-## HV comparisons per scenario, between years --------------
+#### HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
 ## now split by scenario and rep to calculate and compare hypervolumes between
 ## years for each scenario

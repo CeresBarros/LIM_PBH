@@ -362,7 +362,7 @@
 "rgbif","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","3.7.1",NA,NA,NA,NA
 "rgdal","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","1.5-30",NA,NA,NA,NA
 "rgeos","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.5-9",NA,NA,NA,NA
-"rgl","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.108.3",NA,NA,NA,NA
+"rgl","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","1.3.24",NA,NA,NA,NA
 "RhpcBLASctl","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.21-247.1",NA,NA,NA,NA
 "ridigbio","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.3.5",NA,NA,NA,NA
 "rio","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.5.29",NA,NA,NA,NA
@@ -464,7 +464,7 @@
 "tinytex","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.37",NA,NA,NA,NA
 "TMB","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","1.8.1",NA,NA,NA,NA
 "tmvnsim","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","1.0-2",NA,NA,NA,NA
-"ToolsCB","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.0.3.9010","ToolsCB","CeresBarros","HEAD","4b12ff37e29455350abbaa340f1fedc6aee38a49"
+"ToolsCB","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.0.9","ToolsCB","CeresBarros","master","5479d48eb5889b56e3c3711b7070712854e347eb"
 "triebeard","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.3.0",NA,NA,NA,NA
 "tripack","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","1.3-9.1",NA,NA,NA,NA
 "trust","/home/cbarros/GitHub/LandscapesInMotion/packages/x86_64-pc-linux-gnu/4.1","0.1-8",NA,NA,NA,NA

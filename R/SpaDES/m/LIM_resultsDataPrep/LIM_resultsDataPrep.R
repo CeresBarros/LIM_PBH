@@ -355,11 +355,11 @@ calcFireAttributesEvent <- function(sim) {
   missingRas <- setdiff(rasToDo, names(mod$severityRasters$PM))
 
   if (length(missingRas)) {
-  ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
+    ## add missing severity rasters from fires that did not burn forested pixels (severity is 0)
     tempRasLs <- lapply(missingRas, function(x, tempSevRasStk) {
       tempSevRasStk[][] <- 0L
       tempSevRasStk
-      }, tempSevRasStk = mod$severityRasters$PM[[1]])
+    }, tempSevRasStk = mod$severityRasters$PM[[1]])
     names(tempRasLs) <- missingRas
     mod$severityRasters$PM <- c(mod$severityRasters$PM, tempRasLs)
   }
@@ -487,7 +487,7 @@ calcFireAttributesEvent <- function(sim) {
 
   ## calculate fire size in pixels per fireID/scenario/rep
   allPixelBurnData[!is.na(fireID), patchSizePix := as.integer(length(unique(pixelIndex))),
-                    by = .(scenario, rep, year, fireID)]
+                   by = .(scenario, rep, year, fireID)]
   ## rename log_area to patchSizeLogHa
   setnames(allPixelBurnData, "log_area", "patchSizeLogHa")
 
@@ -524,7 +524,6 @@ calcFireAttributesEvent <- function(sim) {
 
   ## PIXELS WITH NO FIRE HISTORY ------------
   ## make a table of pixels that have never burned, per scenario
-  browser()
   message(cyan("Pixels with no fire history"))
   noFireHistoryDataLsPM <- Cache(Map,
                                  r = P(sim)$reps,
@@ -540,15 +539,15 @@ calcFireAttributesEvent <- function(sim) {
   rm(noFireHistoryDataLsPM); gc(reset = TRUE)
 
   noFireHistoryDataLsnoPM <- Cache(Map,
-                                 r = P(sim)$reps,
-                                 MoreArgs = list(
-                                   rstCurrentFiresStk = mod$rstCurrentFiresStkList$noPM,
-                                   rasterToMatch = sim$rasterToMatch,
-                                   doAssertion = mod$doAssertion),
-                                 f = makeNoFireHistoryData,
-                                 .cacheExtra = list(cacheExtra2, sim$rasterToMatch),
-                                 userTags = c(cacheTags, "noFireHistoryDatanoPM"),
-                                 omitArgs = c("userTags", "MoreArgs"))
+                                   r = P(sim)$reps,
+                                   MoreArgs = list(
+                                     rstCurrentFiresStk = mod$rstCurrentFiresStkList$noPM,
+                                     rasterToMatch = sim$rasterToMatch,
+                                     doAssertion = mod$doAssertion),
+                                   f = makeNoFireHistoryData,
+                                   .cacheExtra = list(cacheExtra2, sim$rasterToMatch),
+                                   userTags = c(cacheTags, "noFireHistoryDatanoPM"),
+                                   omitArgs = c("userTags", "MoreArgs"))
   noFireHistoryDatanoPM <- rbindlist(noFireHistoryDataLsnoPM, use.names = TRUE)
   rm(noFireHistoryDataLsnoPM); gc(reset = TRUE)
 
@@ -641,39 +640,42 @@ calcFireAttributesEvent <- function(sim) {
          "\n  Were they really non-forested?")
   }
 
-  ## check that unburnt non-forested also have all sev == 0
-  test <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severity])
-  test2 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityB])
-  test3 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityPropB])
-  if (isTRUE(sum(test, test2, test3) > 0)) {
-    stop("Some unburnt non-forest pixels have severity class > 0 or lost biomass, which is unexpected.",
-         "\n  Were they really non-forested?")
+  if (mod$doAssertion)  {
+    ## check that unburnt non-forested also have all sev == 0
+    test <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severity])
+    test2 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityB])
+    test3 <- unique(allPixelBurnData[pixelIndex %in% nonForestPix & noFires == 0, severityPropB])
+    if (isTRUE(sum(test, test2, test3) > 0)) {
+      stop("Some unburnt non-forest pixels have severity class > 0 or lost biomass, which is unexpected.",
+           "\n  Were they really non-forested?")
+    }
+
+    ## now check forested pixels
+    forestPix <- intersect(allPixelBurnData$pixelIndex, sim$allPixelCohortData$pixelIndex)
+    ## in this case sevB and sevBProp can have 0 and non-zero values
+    test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severity])
+    test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityB])
+    test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityPropB])
+    if (any(test == 0) & isTRUE(sum(test2, test3) == 0)) {
+      stop("Some burnt forested pixels have severity class = 0 or no lost biomass, which is unexpected.",
+           "\n  Did they really burn?")
+    }
+
+    test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severity])
+    test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityB])
+    test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityPropB])
+    if (isTRUE(sum(test, test2, test3) > 0)) {
+      stop("Some unburnt forested pixels have severity class > 0 or lost biomass, which is unexpected.",
+           "\n  Did they really not burn?")
+    }
+
+    ## more checks
+    if (any(is.na(allPixelBurnData[noFires > 1, year]))) {
+      stop("There should be no NA fire years in pixels that have a fire record,",
+           "\n  as only fire years are included in 'allPixelBurnData'")
+    }
   }
 
-  ## now check forested pixels
-  forestPix <- intersect(allPixelBurnData$pixelIndex, sim$allPixelCohortData$pixelIndex)
-  ## in this case sevB and sevBProp can have 0 and non-zero values
-  test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severity])
-  test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityB])
-  test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires > 0, severityPropB])
-  if (any(test == 0) & isTRUE(sum(test2, test3) == 0)) {
-    stop("Some unburnt forested pixels have severity class > 0 or lost biomass, which is unexpected.",
-         "\n  Did they really not burn?")
-  }
-
-  test <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severity])
-  test2 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityB])
-  test3 <- unique(allPixelBurnData[pixelIndex %in% forestPix & noFires == 0, severityPropB])
-  if (isTRUE(sum(test, test2, test3) > 0)) {
-    stop("Some unburnt forested pixels have severity class > 0 or lost biomass, which is unexpected.",
-         "\n  Did they really not burn?")
-  }
-
-  ## more checks
-  if (any(is.na(allPixelBurnData[noFires > 1, year]))) {
-    stop("There should be no NA fire years in pixels that have a fire record,",
-         "\n  as only fire years are included in 'allPixelBurnData'")
-  }
   sim$allPixelBurnData <- allPixelBurnData
 
   ## clean to free memory
@@ -813,7 +815,6 @@ joinSimulationDataEvent <- function(sim) {
 }
 
 addVegTypesCNEvent <- function(sim) {
-  browser()
   # ! ----- EDIT BELOW ----- ! #
   gc()  ## try to release memory consumed by DT threads
   mod$doAssertion <- getOption("LandR.assertions", TRUE)  ## this is not being cached...
