@@ -440,6 +440,7 @@ getLoadings4Plot <- function(x, choices = c(1,2), scale = 1, pc.biplot = FALSE,
 
 
 
+## SAMPLE SIMULATION YEARS -----------------------
 #' SAMPLE SIMULATION YEARS
 #' samples 5 years (per rep) at regular intervals (every century) within the last 500 years of sampling
 #'
@@ -474,7 +475,7 @@ sample5SimYears <- function(yearRepTable, .seed = 123) {
 }
 
 
-
+## Average AllPixelCDMntEnd columns across sampled years -----------------------
 #' Average AllPixelCDMntEnd columns across sampled years
 #'
 #' Averages, takes the unique values, or the most frequent values
@@ -553,7 +554,7 @@ runXGBOOST <- function(dat, dig, nFolds = 5, colnamesPred, colnamesResp = "SEV_P
     })
   }
 
-  ## sample columns after setting seed for caching (if different, then chace is triggered)
+  ## sample columns after setting seed for caching (if different, then cache is triggered)
   colOrder <- setdiff(colnames(dat), c("pixID", yearColname))
   colOrder <- sample(colOrder)
   dat <- dat[, ..colOrder]
