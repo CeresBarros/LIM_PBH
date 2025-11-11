@@ -310,79 +310,82 @@ if (useFirstLastYear) {
 }
 
 doAll <- FALSE
-lapply(pixelIndexList,
-       FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll, useFirstLastYear) {
-         r <- unique(pixelIndexDT$rep)
-         veg <- unique(pixelIndexDT$vegTypeCN)
 
-         ## filter data to appropriate pixels, note that vegType may change in the second year
-         allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+future::plan(future::multisession, gc = TRUE, workers = 5)
+future.apply::future_lapply(pixelIndexList,
+                            FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll, useFirstLastYear) {
+                              r <- unique(pixelIndexDT$rep)
+                              veg <- unique(pixelIndexDT$vegTypeCN)
 
-         if (!useFirstLastYear) {
-           allData[, year := NA_integer_] ## don't need year anymore, all will be integrated
-         }
+                              ## filter data to appropriate pixels, note that vegType may change in the second year
+                              allData <- vegHVdata[pixelIndexDT[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
 
-         # if necessary split by year to calculate and compare hypervolumes between
-         # scenarios for each year
-         # not relevant when using last 500yrs of a 2000yrs simulation
-         lapply(split(allData, by = "year"),
-                FUN = function(allData, HVoutputPath, r, veg, doAll) {
-                  yr <- unique(allData$year)
-                  if (!is.na(yr)) {
-                    file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
-                  } else {
-                    file.suffix <- paste0("vegHVs_", veg, "_rep", r)
-                  }
+                              if (!useFirstLastYear) {
+                                allData[, year := NA_integer_] ## don't need year anymore, all will be integrated
+                              }
 
-                  IDcols <- c("scenario", "rep", "pixelIndex")
+                              # if necessary split by year to calculate and compare hypervolumes between
+                              # scenarios for each year
+                              # not relevant when using last 500yrs of a 2000yrs simulation
+                              lapply(split(allData, by = "year"),
+                                     FUN = function(allData, HVoutputPath, r, veg, doAll) {
+                                       yr <- unique(allData$year)
+                                       if (!is.na(yr)) {
+                                         file.suffix <- paste0("vegHVs_", veg, "_yr", yr, "_rep", r)
+                                       } else {
+                                         file.suffix <- paste0("vegHVs_", veg, "_rep", r)
+                                       }
 
-                  no.runs <- 3
-                  skip <- FALSE
-                  if (!doAll) {
-                    ## check if all HV intersections were computed already
-                    computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
-                                            list.files(HVoutputPath), value = TRUE)
-                    if (length(computedHVpairs) == no.runs) {
-                      skip <- TRUE
-                    }
-                  }
+                                       IDcols <- c("scenario", "rep", "pixelIndex")
 
-                  if (skip) {
-                    message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
-                                         "'doAll' is", doAll,"... Skipping"))
-                  } else {
-                    print(file.suffix)
-                    vegHVWrapper(allData,
-                                 IDcols,
-                                 HVcols = c("PC1", "PC2", "PC3", "PC4"),
-                                 HVIDcol = "scenario",
-                                 file.suffix,
-                                 # noAxes = 4,
-                                 ordination = "none",
-                                 HVmethod = "svm",
-                                 no.runs = no.runs,
-                                 svm.gamma = 0.01,
-                                 outputs.dir = HVoutputPath,
-                                 do.scale = FALSE,
-                                 addNoise = TRUE,
-                                 # do.scale = TRUE,
-                                 # saveOrdi = TRUE,
-                                 # plotOrdi = TRUE,
-                                 plotHV = TRUE,
-                                 verbose = FALSE)
-                  }
-                }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
-       },
-       vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
+                                       no.runs <- 3
+                                       skip <- FALSE
+                                       if (!doAll) {
+                                         ## check if all HV intersections were computed already
+                                         computedHVpairs <- grep(paste0(pattern = file.suffix, "_Intersection.*(1|2|3).rds$"),
+                                                                 list.files(HVoutputPath), value = TRUE)
+                                         if (length(computedHVpairs) == no.runs) {
+                                           skip <- TRUE
+                                         }
+                                       }
 
+                                       if (skip) {
+                                         message(crayon::blue(file.suffix, ": all", no.runs, "done already.",
+                                                              "'doAll' is", doAll,"... Skipping"))
+                                       } else {
+                                         print(file.suffix)
+                                         vegHVWrapper(allData,
+                                                      IDcols,
+                                                      HVcols = c("PC1", "PC2", "PC3", "PC4"),
+                                                      HVIDcol = "scenario",
+                                                      file.suffix,
+                                                      # noAxes = 4,
+                                                      ordination = "none",
+                                                      HVmethod = "svm",
+                                                      no.runs = no.runs,
+                                                      svm.gamma = 0.01,
+                                                      outputs.dir = HVoutputPath,
+                                                      do.scale = FALSE,
+                                                      addNoise = TRUE,
+                                                      # do.scale = TRUE,
+                                                      # saveOrdi = TRUE,
+                                                      # plotOrdi = TRUE,
+                                                      plotHV = TRUE,
+                                                      verbose = FALSE)
+                                       }
+                                     }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
+                            },
+                            vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
+future:::ClusterRegistry("stop")
 
-## HV comparisons per scenario, between years --------------
+#### HV comparisons per scenario, between years --------------
 ## gaussian HVs were extremely slow
 
 ## not relevant when using last 500yrs of a 2000yrs simulation
 if (useFirstLastYear) {
   doAll <- FALSE
-  lapply(pixelIndexList,
+  future::plan(future::multisession, gc = TRUE, workers = 5)
+  future.apply::future_lapply(pixelIndexList,
          FUN = function(pixelIndexDT, vegHVdata, HVoutputPath, doAll) {
            r <- unique(pixelIndexDT$rep)
            veg <- unique(pixelIndexDT$vegTypeCN)
@@ -435,6 +438,8 @@ if (useFirstLastYear) {
                     }
                   }, HVoutputPath = HVoutputPath, r = r, veg = veg, doAll = doAll)
          }, vegHVdata = vegHVdata, HVoutputPath = HVoutputPath, doAll = doAll)
+  future:::ClusterRegistry("stop")
+
 }
 
 ### Hypervolumes across the landscape ----------------
@@ -449,7 +454,9 @@ if (useFirstLastYear) {
 ## year split not relevant when using last 500yrs of a 2000yrs simulation
 
 doAll <- FALSE
-lapply(ifelse(useFirstLastYear,
+## here oct 2 2025
+future::plan(future::multisession, gc = TRUE, workers = 7)
+future.apply::future_lapply(ifelse(useFirstLastYear,
               split(vegHVdata, by = c("rep", "year")),
               split(vegHVdata, by = c("rep"))),
        FUN = function(allData, HVoutputPath, doAll, useFirstLastYear) {
@@ -504,6 +511,7 @@ lapply(ifelse(useFirstLastYear,
                         verbose = FALSE)
          }
        }, HVoutputPath = HVoutputPath, doAll = doAll, useFirstLastYear)
+future:::ClusterRegistry("stop")
 
 
 #### HV comparisons per scenario, between years --------------
@@ -515,7 +523,8 @@ lapply(ifelse(useFirstLastYear,
 
 if (useFirstLastYear) {
   doAll <- FALSE
-  lapply(split(vegHVdata, by = c("rep","scenario")),
+  future::plan(future::multisession, gc = TRUE, workers = 5)
+  future.apply::future_lapply(split(vegHVdata, by = c("rep","scenario")),
          FUN = function(allData, HVoutputPath, doAll) {
            r <- unique(allData$rep)
            scen <- unique(allData$scenario)
@@ -558,5 +567,6 @@ if (useFirstLastYear) {
                           verbose = FALSE)
            }
          }, HVoutputPath = HVoutputPath, doAll = doAll)
+  future:::ClusterRegistry("stop")
 
 }
