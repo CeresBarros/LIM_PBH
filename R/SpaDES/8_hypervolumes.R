@@ -454,7 +454,6 @@ if (useFirstLastYear) {
 ## year split not relevant when using last 500yrs of a 2000yrs simulation
 
 doAll <- FALSE
-## here oct 2 2025
 future::plan(future::multisession, gc = TRUE, workers = 7)
 future.apply::future_lapply(ifelse(useFirstLastYear,
               split(vegHVdata, by = c("rep", "year")),
