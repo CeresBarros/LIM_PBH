@@ -83,8 +83,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     stop("'fullDT' needs to include all the columns in 'origData'")
 
   ## subset
-  trainData <- na.omit(fullDT[sampID != samp, ..origDataVars])
-  testData <- na.omit(fullDT[sampID == samp, ..origDataVars])
+  trainData <<- fullDT[sampID != samp, ..origDataVars]
+  testData <- fullDT[sampID == samp, ..origDataVars]
 
   ## checks
   if (length(setdiff(unique(fullDT$FIRE_NAME),
@@ -92,6 +92,9 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
       length(setdiff(unique(fullDT$FIRE_NAME),
                      unique(trainData$FIRE_NAME))))
     stop("Fires lost in sampling!")
+
+    if (any(is.na(trainData)) | any(is.na(testData)))
+    stop("Please remove NAs from the variables going in the model")
 
 
   ## trainData an testData cannot have extra cols
