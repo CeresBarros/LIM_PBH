@@ -100,7 +100,7 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
   trainData <<- trainData   ## needs to be in .GlobalEnv for gamlss
   testData <- testData[, ..cols]
 
-  ## refit model on training sample - this is failing due to singularity
+  ## refit model on training sample
   ## then predict
   trainModel <- tryCatch(update(object = statsModel, data = trainData), error = function(e) e)
 
