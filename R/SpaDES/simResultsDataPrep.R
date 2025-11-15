@@ -10,12 +10,13 @@ if (!exists("runPrepResultsModule")) {
 }
 
 
-## load one of the preSim lists to get years and later the ecolocations map
-preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
-
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 if (runPrepResultsModule) {
+  ## load one of the preSim lists to get maps
+  preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+  preSimList$rasterToMatch@file@name <- sub(".*/LandscapesInMotion", getwd(), filename(preSimList$rasterToMatch))  ## paths change between machines.
+
   paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = as.integer(min(yearSubset)),
                                                      "endYear" = as.integer(max(yearSubset)),
                                                      "parallel" = FALSE,
