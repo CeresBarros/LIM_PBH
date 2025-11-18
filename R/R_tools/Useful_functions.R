@@ -592,8 +592,6 @@ browser()
   dig <- .robustDigest(dat)
 
   ## Tune parameters on full data with caret first ----
-  datPreds <- dat[, ..colnamesPred]
-
   params <- .tunexgboost(dig,
                          dat[, .SD, .SDcols = c(colnamesPred, colnamesResp)],
                          colnamesResp = colnamesResp,
@@ -601,6 +599,9 @@ browser()
     Cache(omitArgs = c("dat", "figDir")
           #, cacheId = "7b1de6940b00ff51"
     )
+
+  ## subset predictor data
+  datPreds <- dat[, ..colnamesPred]
 
   st <- system.time(
     mm <- pmap(
