@@ -790,6 +790,8 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
     savePlot <- TRUE
   }
 
+  colnamesPred <- setdiff(colnames(dat), colnamesResp)
+
   ## Step 1. tune learning rate.
   ## eta = learning rate.
   param_grid1 <- data.frame(nrounds = 200,
@@ -813,8 +815,8 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   message(cyan("Tuning learning rate..."))
   st <- system.time(
     {
-      xgb_tuned <- train(SEV_PROP ~ .,
-                         data = as.data.frame(dat),
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
                          trControl = xgb_trcontrol,
                          tuneGrid = param_grid1,
                          method = "xgbTree"
