@@ -1,5 +1,5 @@
 ## ----------------------------------------
-## RUN K-FOLD CROSS VALIDATION
+## RUN K-FOLD CROSS VALIDATION -- Functions moved to ToolsCB
 ##
 ## Ceres Feb 26th 2020
 ## ----------------------------------------
@@ -83,8 +83,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     stop("'fullDT' needs to include all the columns in 'origData'")
 
   ## subset
-  trainData <- na.omit(fullDT[sampID != samp, ..origDataVars])
-  testData <- na.omit(fullDT[sampID == samp, ..origDataVars])
+  trainData <<- fullDT[sampID != samp, ..origDataVars]
+  testData <- fullDT[sampID == samp, ..origDataVars]
 
   ## checks
   if (length(setdiff(unique(fullDT$FIRE_NAME),
@@ -93,6 +93,9 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
                      unique(trainData$FIRE_NAME))))
     stop("Fires lost in sampling!")
 
+    if (any(is.na(trainData)) | any(is.na(testData)))
+    stop("Please remove NAs from the variables going in the model")
+
 
   ## trainData an testData cannot have extra cols
   cols <- names(origData)
@@ -100,12 +103,12 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
   trainData <<- trainData   ## needs to be in .GlobalEnv for gamlss
   testData <- testData[, ..cols]
 
-  ## refit model on training sample - this is failing due to singularity
+  ## refit model on training sample
   ## then predict
   trainModel <- tryCatch(update(object = statsModel, data = trainData), error = function(e) e)
 
   if (is(trainModel, "error")) {
-    validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA)
+    validMetrics <- c("RMSE" = NA, "Rsquared" = NA, "MAE" = NA, AUC = NA)
   } else {
     params <- c("mu", "nu", "tau")
     names(params) <- params
@@ -155,6 +158,8 @@ calcCrossValidMetrics <- function(samp, fullDT, origData, level = NULL, idCol, s
     confMatrix <- caret::confusionMatrix(data = predictionsDT$predSEV_CLASS, reference = predictionsDT$SEV_CLASS)
 
     ## VALIDATION STATISTICS WITH CONTINUOUS VARIABLE -----------------------
+    browser()
+    ##calculate AUC
     RsqGAMLSS <- Rsq(trainModel)
     TGDstats <- getTGD(trainModel, newdata = testData[, .SD, .SDcols = names(trainData)], data = trainData)   ## testData may have additional cols (sampID)
     Rsquared <- caret::postResample(pred = predictionsDT$predSEV_PROP, obs = predictionsDT$SEV_PROP)

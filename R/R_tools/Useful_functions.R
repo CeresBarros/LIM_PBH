@@ -440,6 +440,7 @@ getLoadings4Plot <- function(x, choices = c(1,2), scale = 1, pc.biplot = FALSE,
 
 
 
+## SAMPLE SIMULATION YEARS -----------------------
 #' SAMPLE SIMULATION YEARS
 #' samples 5 years (per rep) at regular intervals (every century) within the last 500 years of sampling
 #'
@@ -474,7 +475,7 @@ sample5SimYears <- function(yearRepTable, .seed = 123) {
 }
 
 
-
+## Average AllPixelCDMntEnd columns across sampled years -----------------------
 #' Average AllPixelCDMntEnd columns across sampled years
 #'
 #' Averages, takes the unique values, or the most frequent values
@@ -501,4 +502,769 @@ averagAllPixelCDMntEnd <- function(allPixelCDMntEnd) {
   , by = .(scenario, rep, pixelIndex, speciesCode)]
 
   allPixelCDMntEnd
+}
+
+
+## XGBoost wrapper -----------------------
+#' Wrapper for XGBoost
+#'
+#' Tune, fits and tests XGBoost models with
+#' k-fold cross-validation.
+#'
+#' @param dat a `data.table` containing predictors and response variable.
+#' @param dig a digest passed to `Cache(..., .cacheExtra)` to bypass digesting
+#'    `dat`. Often `dig` is a digest of `dat`.
+#' @param nFolds number of folds for cross-validating the final model
+#'    (i.e. the model using tuned parameters).
+#' @param colnamesResp Name of column in `dat` to use as response variable.
+#'    All other columns will be used as predictors
+#' @param interaction_constraints passed to `xgboost::xgboost`.
+#'    By default no interaction constraints.
+#' @param SHAPthresh. Quantile threshold used for feature (i.e. variable) selection
+#'    based on SHAP values. Features with SHAP values below the quantile threshold
+#'    are excluded and the model re-run. A warning is issued if this resulted in poorer
+#'    performace (based on AUC score), in which case one may consider relaxing (i.e. lowering)
+#'    the threshold.
+#' @param figDir if not `NULL`, diagnostic tuning plots will be saved to this directory.
+#'
+#' @return a list (one entry per fold) of lists with:
+#'   * `$mod`: fitted model
+#'   * `shap_values`: SHAP values for the fitted model
+#'   * `shap_long`: long version of the SHAP values for the fitted model (used for plotting)
+#' @importFrom caret createFolds
+#' @importFrom purrr pmap
+#' @importFrom pROC roc
+#' @importFrom crayon cyan
+#' @importFrom SHAPforxgboost shap.values
+#' @importFrom reproducible Cache
+runXGBOOST <- function(dat, dig, nFolds = 5, colnamesResp = "SEV_PROP",
+                       interaction_constraints = NULL, SHAPthresh = 0,
+                       figDir = NULL) {
+  # dat <- dat[sample(NROW(dat), size = 1e4)]
+  # tt <- table(dat$SEV_PROP)
+
+  # Add dummy variables for factor columns -- i.e., the random effects
+  if (all(sapply(dat, is.numeric)) %in% FALSE)
+    dat <- model.matrix(~ . + 0, data = dat) |>
+      Cache(omitArgs = c("object", "data", "x")
+            , .cacheExtra = dig
+            # , cacheid = "f5c41c45b1ca9cbc"
+            ) # Creates dummy variables
+
+  dat <- as.data.table(dat)
+
+  colnamesPred <- setdiff(colnames(dat), colnamesResp) ## after model.matrix bcs colnames change
+
+  ## Setup k-folds -----
+  savedSeed <- .Random.seed
+  on.exit(assign(".Random.seed", savedSeed, envir = .GlobalEnv), add = TRUE)
+  set.seed(12345) # so kfolds are same, so Caching works correctly below; if dat changes number of rows,
+  # it will be a totally different sequence; but it will be the same sequence
+  # if number of rows doesn't change
+
+  yearColname <- grep("year", tolower(colnames(dat)), value = TRUE)
+  indexNames <- c("allData", "evalData")
+
+  if (length(yearColname)) {
+    crossValType <- "time-ordered"
+    times <- unique(dat[[yearColname]])
+    testLength <- 3
+    initialWindow <- length(times) - testLength - nFolds + 1
+    trainIndexK <- createTimeSlices(times, initialWindow = initialWindow, testLength, fixedWindow = FALSE)
+    trainIndexK <- Map(tr = trainIndexK$train, te = trainIndexK$test, function(tr, te) {
+      allData <- which(dat[[yearColname]] %in% times[c(tr, te)])
+      evalData <- which(dat[[yearColname]] %in% times[te])
+      list(allData, evalData) |> setNames(indexNames)
+    })
+  } else {
+    crossValType <- "crossValidation"
+    ## create folds and make a list with indices of full dataset and eahc fold
+    trainIndexK <- createFolds(dat[[colnamesResp]], k = nFolds, list = TRUE, returnTrain = FALSE)
+    trainIndexK <- Map(tr = trainIndexK, function(tr) {
+      list(seq(NROW(dat)), tr) |> setNames(indexNames)
+    })
+  }
+
+  ## sample columns after setting seed for caching (if different, then cache is triggered)
+  colOrder <- setdiff(colnames(dat), c(yearColname))
+  colOrder <- sample(colOrder)
+  dat <- dat[, ..colOrder]
+  dig <- .robustDigest(dat)
+
+  ## Tune parameters on full data with caret first ----
+  params <- .tunexgboost(dig,
+                         dat[, .SD, .SDcols = c(colnamesPred, colnamesResp)],
+                         colnamesResp = colnamesResp,
+                         figDir) |>
+    Cache(omitArgs = c("dat", "figDir")
+          #, cacheId = "7b1de6940b00ff51"
+    )
+
+  ## subset predictor data
+  datPreds <- dat[, ..colnamesPred]
+
+  st <- system.time(
+    mm <- pmap(
+      list(dataFolds = trainIndexK, kFold = seq(nFolds)),
+      function(dataFolds, kFold) {
+        ## get row IDs for training data (allData) and testing data
+        allDataIDs <- dataFolds[[indexNames[[1]]]]
+        testIDs <- dataFolds[[indexNames[[2]]]]   ## eval data
+        dig2 <- .robustDigest(dataFolds)
+
+        # xgboost objects do not save with `qs` ... must be `rds`
+        # opt <- options(reproducible.cacheSaveFormat = "rds")
+        # on.exit(options(opt)) # redundant; but necessary if it fails during fit
+        lowSHAPcols <- 1
+        calcThresh <- TRUE
+        # SHAPthresh <- 0.25  ## test
+        cols2keep <- colnames(datPreds)
+
+        modOut <- NULL
+
+        while (length(lowSHAPcols)) {
+          ## TODO: test: go back to previous model if AUC decreases after removing features
+          browser()
+
+          modOut2 <- xgboost(x = datPreds[allDataIDs],
+                             , y = dat[[colnamesResp]][allDataIDs]
+                             , interaction_constraints = interaction_constraints
+                             # , objective = "reg:tweedie" ## no improvements
+                             , nthread = 10
+                             , eval_set = testIDs,
+                             , monitor_training = TRUE
+                             , eval_metric = c("auc", "rmse", "logloss")
+                             , early_stopping_rounds = 100
+                             , max_depth = params$max_depth   ## improved fit.
+                             , nrounds = params$nrounds
+                             , learning_rate = params$eta
+                             , min_split_loss = params$gamma
+                             , min_child_weight = params$min_child_weight
+                             , colsample_bytree = params$colsample_bytree
+
+          ) |>
+            Cache(omitArgs = c("x", "y", "eval_set"),
+                  .functionName = .functionNameHelper("xgboost", kFold),
+                  .cacheExtra = c(dig, dig2, cols2keep),
+                  showSimilar = TRUE,
+                  cacheSaveFormat = "rds")
+
+          if (is.null(modOut)) {
+            modOut <- modOut2
+            AUCout <- tail(attr(modOut, "evaluation_log"), 1)$train_auc
+          }
+
+          ## get last AUC
+          AUCout2 <- tail(attr(modOut2, "evaluation_log"), 1)$train_auc
+          ## make sure it's at least 0.1 worse
+          dAUC <- AUCout - AUCout2  ## negative dAUC = improvement
+
+          if (dAUC >= 0.01) {
+            message("AUC decreased 0.01 or more after removing features.\n",
+                    "  The previous model will be retained, instead")
+          } else {
+            modOut <- modOut2
+          }
+          AUCout <- AUCout2
+
+          rm(modOut2); gc(reset = TRUE)  ## free memory
+
+          ## calculate predictions and residuals
+          valData <- datPreds[testIDs,]
+          valData <- cbind(valData,
+                           obs =  dat[[colnamesResp]][testIDs],
+                           pred = predict(modOut, datPreds[testIDs, ]))
+          valData[, resid := pred - obs]
+
+          ## Feature selection -- remove features (variables) with low SHAP values
+          ## based on a quantile threshold
+          dig3 <- .robustDigest(modOut)
+          shap_values <- shap.values(modOut, datPreds) |>
+            Cache(omitArgs = formalArgs(shap.values),
+                  .functionName = .functionNameHelper("shap.values", "xgboost", kFold),
+                  .cacheExtra = c(dig, dig2, dig3, cols2keep))
+          meanSHAP <- shap_values$mean_shap_score
+
+          if (calcThresh) {
+            SHAPthresh <- quantile(meanSHAP, prob = SHAPthresh)
+            calcThresh <- FALSE ## we only calculate the threshold once
+          }
+
+          lowSHAPcols <- names(which(meanSHAP < SHAPthresh))
+          if (length(lowSHAPcols)) {
+            cols2keep <- setdiff(colnames(datPreds), lowSHAPcols)
+            datPreds <- datPreds[, ..cols2keep]
+
+            message("Removing features with SHAP < ", SHAPthresh, ":\n",
+                    paste(lowSHAPcols, collapse = ", "))
+          }
+
+        }
+
+        ## more outputs
+        shapContrib <- shap_values$shap_score
+        shapContrib <- shapContrib[, -"(Intercept)"]
+        shap_long <- shap.prep(shap_contrib = shapContrib, X_train = datPreds) |>
+          Cache(omitArgs = formalArgs(shap.prep),
+                .functionName = .functionNameHelper("shap.prep", kFold),
+                .cacheExtra = c(dig, dig2, cols2keep))
+
+        list(valData = valData,
+             mod = modOut,
+             shap_values = shap_values,
+             shap_long = shap_long)
+      })
+  )
+
+  return(mm)
+}
+
+#' Tune XGBoost parameters with `caret`
+#'
+#' Tuning is done in 3 steps.
+#' Step 1. Tune learning rate (called `learning_rate` in `xgboost`
+#' and `eta` in `caret`)
+#' Step 2. Take the best learning rate and tune all other parameters
+#' (from those passed to `xgboost` by `[caret::train()]`) except
+#' `rnounds` and `sample` (which is always kept as 1).
+#' Step 3. Take the best parameters values from Steps 1 and 2 and tune
+#' `nrounds`.
+#'
+#' @returns a data.frame of best parameter values.
+#'
+#' @inheritParams runXGBOOST
+#' @importFrom caret trainControl train caretTheme
+#' @importFrom reproducible Cache
+#' @importFrom lattice trellis.par.set
+.tunexgboost <- function(dig, dat, colnamesResp, figDir) {
+  ## use devtools::load_all("C:/Users/cbarros/GitHub/caret/pkg/caret/")
+  ## bug reported at: https://github.com/topepo/caret/issues/1412
+
+  savePlot <- FALSE
+  if (!is.null(figDir)) {
+    dir.create(figDir, showWarnings = FALSE, recursive = TRUE)
+    savePlot <- TRUE
+  }
+
+  colnamesPred <- setdiff(colnames(dat), colnamesResp)
+
+  ## Step 1. tune learning rate.
+  ## eta = learning rate.
+  param_grid1 <- data.frame(nrounds = 200,
+                            eta = seq(0.01, 1, by =  0.01),
+                            ## defaults in xgboost:
+                            max_depth = 6,
+                            gamma = 0,
+                            colsample_bytree = 1,
+                            min_child_weight = 1,
+                            subsample = 1)
+
+  xgb_trcontrol <- trainControl(
+    method = "cv",
+    number = 5,
+    verboseIter = TRUE,
+    returnData = FALSE,
+    returnResamp = "final",
+    allowParallel = TRUE,
+    savePredictions = "final"
+  )
+  message(cyan("Tuning learning rate..."))
+  st <- system.time(
+    {
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
+                         trControl = xgb_trcontrol,
+                         tuneGrid = param_grid1,
+                         method = "xgbTree"
+      ) |>
+        Cache(omitArgs = c("data", "x"),
+              .functionName = .functionNameHelper("train", "tune_learningrate"),
+              .cacheExtra = c(dig),
+              showSimilar = TRUE,
+              cacheId = "8a518e3d96830586",   ## fix for now
+              cacheSaveFormat = "rds")
+    }
+  )
+
+  paramsF <- xgb_tuned$bestTune
+  message(cyan("Finished in", st[["elapsed"]], "sec."))
+
+  ## save tuning output
+  if (savePlot) {
+    png(file.path(figDir, "tuning_learningRate.png"), height = 4, width = 6,
+        units = "in", res = 300)
+    trellis.par.set(caretTheme())
+    print(plot(xgb_tuned))
+    dev.off()
+  }
+
+  ## Step 2. fix best learning rate and vary the rest
+  param_grid2 <- expand.grid(nrounds = 200,
+                             max_depth = c(1:10),
+                             eta = paramsF$eta,
+                             gamma = c(0, 0.05, 0.1), #0.1, 1 , 2, 5, 10), ## tested with more initially, but not necessary
+                             colsample_bytree = c(0.5, 1), # 0.1, ## tested with more initially, but not necessary
+                             min_child_weight = c(0, 5, 10),  ## 0:5 had no influence, expanding range
+                             subsample = 1)
+
+  ## clean-up
+  rm(xgb_tuned)
+  for (i in 1:3) gc(reset = TRUE)
+  ## tune other parameters
+  message(cyan("Tuning remaining XGBoost parameters..."))
+  st <- system.time(
+    {
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
+                         trControl = xgb_trcontrol,
+                         tuneGrid = param_grid2,
+                         method = "xgbTree"
+      ) |>
+        Cache(omitArgs = c("x", "y"),
+              .functionName = .functionNameHelper("train", "tune_all"),
+              .cacheExtra = c(dig),
+              showSimilar = TRUE,
+              ## cacheId = "d76ffa84709d8db0", # more params
+              cacheId = "cd64c0826cfcecc2", #param grid above.
+              cacheSaveFormat = "rds")
+    }
+  )
+
+  paramsF <- xgb_tuned$bestTune
+  message(cyan("Finished in", st[["elapsed"]], "sec."))   ## about 4hrs
+
+  ## save tuning output
+  if (savePlot) {
+    png(file.path(figDir, "tuning_all.png"), height = 12, width = 12,
+        units = "in", res = 300)
+    trellis.par.set(caretTheme())
+    print(plot(xgb_tuned))
+    dev.off()
+  }
+
+  ## Step 3. vary only no. rounds
+  param_grid3 <- expand.grid(nrounds = c(100, 200, 500, 1000, 1500, 2000),
+                             max_depth = paramsF$max_depth,
+                             eta = paramsF$eta,
+                             gamma = paramsF$gamma,
+                             colsample_bytree = paramsF$colsample_bytree,
+                             min_child_weight = paramsF$min_child_weight,
+                             subsample = 1)
+
+  ## clean-up
+  rm(xgb_tuned)
+  for (i in 1:3) gc(reset = TRUE)
+  ## tune other parameters
+  message(cyan("Tuning no. rounds (trees)..."))
+  st <- system.time(
+    {
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
+                         trControl = xgb_trcontrol,
+                         tuneGrid = param_grid3,
+                         method = "xgbTree"
+      ) |>
+        Cache(omitArgs = c("x", "y"),
+              .functionName = .functionNameHelper("train", "tune_nrounds"),
+              .cacheExtra = c(dig),
+              showSimilar = TRUE,
+              cacheId = "3499577823e6a19d",
+              cacheSaveFormat = "rds")
+    }
+  )
+
+  paramsF <- xgb_tuned$bestTune
+  message(cyan("Finished in", st[["elapsed"]], "sec."))
+  message(cyan("Best parameters:"))
+  message(cyan(paste0(capture.output(paramsF), collapse = "\n")))
+
+  ## save tuning output
+  if (savePlot) {
+    png(file.path(figDir, "tuning_nrounds.png"), height = 4, width = 6,
+        units = "in", res = 300)
+    trellis.par.set(caretTheme())
+    print(plot(xgb_tuned))
+    dev.off()
+  }
+
+  for (i in 1:3) gc(reset = TRUE)
+  return(paramsF)
+}
+
+#' Calculate confidence matrices from continuous prediction from
+#' XGBoost model
+#'
+#' @param mod a list containing `valData`, a `data.table` containing the
+#'   validation data, predictions, observations and residuals from an xgboost
+#'   cross-validation fold.
+#' @param classMap a data.table of class to continuous value correspondences,
+#'   with column names being `classVar` and `contVar`
+#' @param classes vector of classes.
+#' @param classVar the class variable/column name
+#' @param contVAR the continuous variable/column name
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contVAR = "SEV_PROP") {
+  predictionsDT <- copy(mod$valData)
+  setnames(predictionsDT, "obs", "SEV_PROP")
+
+  mappedClasses <- classMap[match(predictionsDT[[contVAR]], classMap[[contVAR]]), ..classVar]
+  predictionsDT[, obsCLASS := mappedClasses]
+
+  ## convert to classes, using the quantiles corresponding to the observed class proportions
+  ## accumulate proportions to get probabilities
+  quantProbs <- cumsum(table(predictionsDT$obsCLASS)/nrow(predictionsDT))
+  classRanges <- c(0, quantile(predictionsDT$pred, probs = quantProbs))
+
+  predictionsDT[, predCLASS := cut(pred, breaks = classRanges,
+                                   include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
+
+  ## convert to numbered factor (subtracting one, because classes are 0-5)
+  predictionsDT[, predCLASS := as.numeric(predCLASS)-1]
+  predictionsDT[, `:=`(obsCLASS = factor(obsCLASS, levels = classes),
+                       predCLASS = factor(predCLASS, levels = classes))]
+
+  validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = obsCLASS,
+                                                                pred = predCLASS)],
+                                           lev = classes)
+  ## calculate confusion matrix
+  confMatrix <- caret::confusionMatrix(data = predictionsDT$predCLASS,
+                                       reference = predictionsDT$obsCLASS)
+}
+
+
+## GPBoost wrapper -----------------------
+#' Wrapper for gpboost
+#' @inheritParams runXGBOOST
+runGPBOOST <- function(dat, dig, nFolds = 5, colnamesResp = "SURV_PROP",
+                       colnamesGrp, colnamesCat, SHAPthresh = 0) {
+  browser() ## check order of fucniton as in runxgboost
+  savedSeed <- .Random.seed
+  on.exit(assign(".Random.seed", savedSeed, envir = .GlobalEnv), add = TRUE)
+  set.seed(12345) # so kfolds are same, so Caching works correctly below; if dat changes number of rows,
+  # it will be a totally different sequence; but it will be the same sequence
+  # if number of rows doesn't change
+
+  # Setup k-folds
+  indexNames <- c("allData", "evalData")
+
+  ## create folds and make a list with indices of full dataset and eahc fold
+  trainIndexK <- createFolds(dat[[colnamesResp]], k = nFolds, list = TRUE, returnTrain = FALSE)
+  trainIndexK <- Map(tr = trainIndexK, function(tr) {
+    list(seq(NROW(dat)), tr) |> setNames(indexNames)
+  })
+
+  ## sample columns after setting seed for caching (if different, then cache is triggered)
+  colOrder <- colnames(dat)
+  colOrder <- sample(colOrder)
+  dat <- dat[, ..colOrder]
+  dig <- .robustDigest(dat)
+
+  ## subset predictor data
+  if (missing(colnamesPred)) {
+    message(cyan("No predictor columns ('colnamesPred') provided.",
+                 "\nAssuming all but 'colnamesResp' and 'colnamesGrp' are predictors"))
+    colnamesPred <- setdiff(c(colnames(dat), colnamesGrp), colnamesResp)
+  }
+  datPreds <- dat[, ..colnamesPred]
+
+  st <- system.time(
+    mm <- pmap(
+      list(dataFolds = trainIndexK, kFold = seq(nFolds)),
+      function(dataFolds, kFold) {
+        ## get row IDs for training data (allData) and testing data
+        allDataIDs <- dataFolds[[indexNames[[1]]]]
+        testIDs <- dataFolds[[indexNames[[2]]]]   ## eval data
+        dig2 <- .robustDigest(dataFolds)
+
+        lowSHAPcols <- 1
+        calcThresh <- TRUE
+        # SHAPthresh <- 0.25  ## test
+        cols2keep <- colnames(datPreds)
+        modelGPBfit <- NULL
+
+        while (length(lowSHAPcols)) {
+          ## TODO: export RMSEs; go back to previous model if AUC decreases after removing features
+          browser()
+
+          gp_train <- gpb.Dataset(as.matrix(datPreds[allDataIDs]),
+                                  label = dat[[colnamesResp]][allDataIDs],
+                                  categorical_feature = colnamesCat,
+                                  free_raw_data = FALSE)
+          gp_model <- GPModel(group_data = dat[[colnamesGrp]][allDataIDs],
+                              likelihood = "zero_inflated_gamma",
+                              free_raw_data = FALSE)
+          gp_model$set_optim_params(params = list(trace = TRUE))
+
+          ## TODO: do a 2 step approach. tun learning_rate first, then the rest.
+          ## define a parameter grid and fixed parameters to optimize
+
+          N <- length(dat[[colnamesResp]][allDataIDs])
+          param_grid <- list("learning_rate" = c(0.01, 0.1, 1),
+                             "min_data_in_leaf" = c(1, 10, 100, 1000),
+                             "max_depth" = c(-1, 1:5),
+                             "num_leaves" = 2^(1:10),
+                             "lambda_l2" = c(0, 1, 10, 100),
+                             "max_bin" = c(250, 500, 1000, min(N,10000)),
+                             "line_search_step_length" = c(TRUE, FALSE))
+
+          ## TODO: RE-RUN AFTER PRESENTATION
+          opt_params <- loadFromCache(cacheId = "da3593ff30bbc3f7")
+          # opt_params <- gpb.grid.search.tune.parameters(param_grid = param_grid,
+          #                                               data = gp_train,
+          #                                               gp_model = gp_model,
+          #                                               num_try_random = 1,
+          #                                               folds = list(testIDs),
+          #                                               nrounds = 20,
+          #                                               early_stopping_rounds = 10,
+          #                                               verbose_eval = 1,
+          #                                               metric = "rmse") |>
+          #   Cache(omitArgs = c("data", "gp_model"),
+          #         .functionName = .functionNameHelper("gpb.tune.parameters"),
+          #         .cacheExtra = c(dig, dig2, cols2keep, colnamesGrp, kFold),
+          #         showSimilar = TRUE,
+          #         cacheSaveFormat = "rds")
+
+          ## Stage 1: run cross-validation to
+          ## (i) determine to optimal number of iterations
+          params <- opt_params$best_params
+          modelGPBcv <- gpb.cv2(data = gp_train
+                                , gp_model = gp_model
+                                , metric = c("auc", "rmse")
+                                , eval = c("auc", "rmse")
+                                , nrounds = 200
+                                , folds = list(testIDs)
+                                , early_stopping_rounds = opt_params$best_iter + 10
+                                , params = params
+                                # , use_gp_model_for_validation = FALSE ## this causes a fatal error
+          ) |>
+            Cache(omitArgs = c("data", "gp_model"),
+                  .functionName = .functionNameHelper("gpb.cv2", kFold),
+                  .cacheExtra = c(dig, dig2, cols2keep, colnamesGrp),
+                  showSimilar = TRUE,
+                  cacheSaveFormat = "rds")
+
+          print(paste0("Optimal number of iterations: ", modelGPBcv$best_iter,
+                       ", best test error: ", modelGPBcv$best_score))
+
+          ## Stage 2: Train tree-boosting model
+          modelGPBfit2 <- (function(){
+            out <- gpb.train(data = gp_train,
+                             gp_model = gp_model,
+                             nrounds = modelGPBcv$best_iter + 10,
+                             params = params)
+
+            list(modelGPBfit = out, gp_model = gp_model)
+          })() |>
+            Cache(.functionName = .functionNameHelper("gpb.train", kFold),
+                  .cacheExtra = c(dig, dig2, cols2keep),
+                  showSimilar = TRUE,
+                  cacheSaveFormat = "rds")
+
+
+          if (is.null(modelGPBfit)) {
+            modelGPBfit <- modelGPBfit2
+            AUCout <- tail(attr(modelGPBfit, "evaluation_log"), 1)$train_auc
+          }
+
+          ## get last AUC
+          AUCout2 <- tail(attr(modelGPBfit2, "evaluation_log"), 1)$train_auc
+          if (AUCout2 < AUCout) {
+            message("AUC decreased after removing features.\n",
+                    "  The previous model will be retained, instead")
+          } else {
+            modelGPBfit <- modelGPBfit2
+          }
+          AUCout <- AUCout2
+
+          ## calculate predictions and residuals
+          valData <- datPreds[testIDs,]
+          ## here: error in predict
+          pred <- modelGPBfit$modelGPBfit$predict(
+            data = as.matrix(datPreds[testIDs, ]),
+            group_data_pred = dat[[colnamesGrp]][testIDs]
+          )
+          valData <- cbind(valData,
+                           obs =  dat[[colnamesResp]][testIDs],
+                           pred = pred$response_mean
+          )
+          valData[, resid := pred - obs]
+
+          ## Feature selection -- remove features (variables) with low SHAP values
+          ## based on a quantile threshold
+          shap_values <- shap.values(modelGPBfit$modelGPBfit, as.matrix(datPreds[allDataIDs])) |>
+            Cache(omitArgs = formalArgs(shap.values),
+                  .functionName = .functionNameHelper("shap.values", "gpboost", kFold),
+                  .cacheExtra = c(dig, dig2, cols2keep))
+          meanSHAP <- shap_values$mean_shap_score
+
+          if (calcThresh) {
+            SHAPthresh <- quantile(meanSHAP, prob = SHAPthresh)
+            calcThresh <- FALSE ## we only calculate the threshold once
+          }
+
+          lowSHAPcols <- names(which(meanSHAP < SHAPthresh))
+          if (length(lowSHAPcols)) {
+            cols2keep <- setdiff(colnames(datPreds), lowSHAPcols)
+            datPreds <- datPreds[, ..cols2keep]
+            colnamesCat <- intersect(colnamesCat, colnames(datPreds))
+
+            message("Removing features with SHAP < ", SHAPthresh, ":\n",
+                    paste(lowSHAPcols, collapse = ", "))
+          }
+        }
+
+        ## more outputs
+        shapContrib <- shap_values$shap_score
+        shapContrib <- suppressWarnings(shapContrib[, -"(Intercept)"])
+        shap_long <- shap.prep(shap_contrib = shapContrib, X_train = datPreds[allDataIDs]) |>
+          Cache(omitArgs = formalArgs(shap.prep),
+                .functionName = .functionNameHelper("shap.prep", "gpboost", kFold),
+                .cacheExtra = c(dig, dig2, cols2keep))
+
+        list(valData = valData,
+             modelGPBfit = modelGPBfit,
+             modelGPBcv = modelGPBcv,
+             shap_values = shap_values,
+             shap_long = shap_long)
+      })
+  )
+
+  return(mm)
+}
+
+.predfunGAMLSS <- function(x, newdata) {
+  ## note shapr::explain documentation is wrong, first arg needs to be called x
+  dig <- .robustDigest(newdata)
+  dig2 <- .robustDigest(x)
+  preds <- predictAll(x, newdata = newdata, type = "response") |>
+    Cache(omitArgs = formalArgs(predictAll),
+          .cacheExtra = c(dig, dig2))
+
+  calcMeanBEINF(preds$mu, preds$nu, preds$tau)
+}
+
+.modelspecsfunGAMLSS <- function(x) {
+  featlabs <- c(labels(x$mu.terms),
+                labels(x$nu.terms),
+                labels(x$sigma.terms),
+                labels(x$tau.terms))
+  featlabs <- unlist(strsplit(featlabs, split = ":"))
+  featlabs <- unique(featlabs)
+
+  featclass <- c(attr(x$mu.terms, "dataClasses")[-1],
+                 attr(x$nu.terms, "dataClasses")[-1],
+                 attr(x$sigma.terms, "dataClasses")[-1],
+                 attr(x$tau.terms, "dataClasses")[-1])
+  featclass <- featclass[featlabs]
+
+  featlabs <- sub(".*(FIRE_NAME).*", "\\1",  featlabs)
+  names(featclass) <- sub(".*(FIRE_NAME).*", "\\1",  names(featclass))
+  featclass["FIRE_NAME"] <- "factor"
+
+  feature_specs <- list()
+  feature_specs$labels <- featlabs
+  feature_specs$classes <- featclass
+
+
+  m <- length(feature_specs$labels)
+  feature_specs$factor_levels <- setNames(vector("list", m), feature_specs$labels)
+  feature_specs$factor_levels[feature_specs$classes == "factor"] <- NA # model object doesn't contain factor levels info
+
+  return(feature_specs)
+}
+
+.functionNameHelper <- function(..., sep = "_") {
+  paste(..., sep = sep)
+}
+
+#' Calculate confidence matrices from continuous prediction from
+#' GPBoost model
+#'
+#' @param mod a list containing `valData`, a `data.table` containing the
+#'   validation data, predictions, observations and residuals from an xgboost
+#'   cross-validation fold.
+#' @param classMap a data.table of class to continuous value correspondences,
+#'   with column names being `classVar` and `contVar`
+#' @param classes vector of classes.
+#' @param classVar the class variable/column name
+#' @param contVAR the continuous variable/column name
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+gpboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contVAR = "SEV_PROP") {
+  predictionsDT <- copy(mod$valData)
+  predictionsDT[, `:=`(pred = 1 - pred,
+                       obs = 1 - obs)]  ## back transform to severity
+  setnames(predictionsDT, "obs", contVAR)
+
+  mappedClasses <- classMap[match(predictionsDT[[contVAR]], classMap[[contVAR]]), ..classVar]
+  predictionsDT[, obsCLASS := mappedClasses]
+
+  ## convert to classes, using the quantiles corresponding to the observed class proportions
+  ## accumulate proportions to get probabilities
+  quantProbs <- cumsum(table(predictionsDT$obsCLASS)/nrow(predictionsDT))
+  classRanges <- c(0, quantile(predictionsDT$pred, probs = quantProbs))
+
+  predictionsDT[, predCLASS := cut(pred, breaks = classRanges,
+                                   include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
+
+  ## convert to numbered factor (subtracting one, because classes are 0-5)
+  predictionsDT[, predCLASS := as.numeric(predCLASS)-1]
+  predictionsDT[, `:=`(obsCLASS = factor(obsCLASS, levels = classes),
+                       predCLASS = factor(predCLASS, levels = classes))]
+
+  validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = obsCLASS,
+                                                                pred = predCLASS)],
+                                           lev = classes)
+  ## calculate confusion matrix
+  confMatrix <- caret::confusionMatrix(data = predictionsDT$predCLASS,
+                                       reference = predictionsDT$obsCLASS)
+
+  list(validMetrics = validMetrics, confMatrix = confMatrix)
+}
+
+
+
+## Plotting functions -------------
+plotFun <- function(firePoints, var, fireID, varTitle) {
+  fireID <- sub("_(obs|pred|p1|varY)", "", fireID)
+  ggplot(firePoints[firePoints$FIRE_NAME == fireID]) +
+    geom_spatvector(aes_string(colour = var)) +
+    scale_color_distiller(palette = "RdYlBu", direction = -1,
+                          limits = c(0,1)) +
+    theme(axis.text.x = element_text(hjust = 1, angle = 20)) +
+    labs(colour = "", x = "Longitude", y = "Latitude",
+         title = varTitle)
+}
+
+
+plotResiduals <- function(valData, filename = NULL) {
+  plot1 <- ggplot(valData, aes(x = pred, y = resid)) +
+    geom_point() +
+    theme_bw()
+
+  plot2 <- ggplot(valData, aes(x = 1:nrow(valData), y = resid)) +
+    geom_point() +
+    theme_bw()
+
+  plot3 <- ggplot(valData, aes(x = resid)) +
+    geom_density() +
+    theme_bw()
+
+  plot4 <- ggplot(valData, aes(sample = resid)) +
+    stat_qq() +
+    stat_qq_line() +
+    theme_bw()
+
+  if (!is.null(filename)) {
+    png(filename, width = 7, height = 7, units = "in", res = 300)
+    on.exit(dev.off(), add = TRUE)
+  }
+  ggarrange(plotlist = list(plot1, plot2, plot3, plot4))
 }
