@@ -719,50 +719,6 @@ browser()
   return(mm)
 }
 
-#' Calculate confidence matrices from continuous prediction from
-#' XGBoost model
-#'
-#' @param mod a list containing `valData`, a `data.table` containing the
-#'   validation data, predictions, observations and residuals from an xgboost
-#'   cross-validation fold.
-#' @param classMap a data.table of class to continuous value correspondences,
-#'   with column names being `classVar` and `contVar`
-#' @param classes vector of classes.
-#' @param classVar the class variable/column name
-#' @param contVAR the continuous variable/column name
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contVAR = "SEV_PROP") {
-  predictionsDT <- copy(mod$valData)
-  setnames(predictionsDT, "obs", "SEV_PROP")
-
-  mappedClasses <- classMap[match(predictionsDT[[contVAR]], classMap[[contVAR]]), ..classVar]
-  predictionsDT[, obsCLASS := mappedClasses]
-
-  ## convert to classes, using the quantiles corresponding to the observed class proportions
-  ## accumulate proportions to get probabilities
-  quantProbs <- cumsum(table(predictionsDT$obsCLASS)/nrow(predictionsDT))
-  classRanges <- c(0, quantile(predictionsDT$pred, probs = quantProbs))
-
-  predictionsDT[, predCLASS := cut(pred, breaks = classRanges,
-                                   include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
-
-  ## convert to numbered factor (subtracting one, because classes are 0-5)
-  predictionsDT[, predCLASS := as.numeric(predCLASS)-1]
-  predictionsDT[, `:=`(obsCLASS = factor(obsCLASS, levels = classes),
-                       predCLASS = factor(predCLASS, levels = classes))]
-
-  validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = obsCLASS,
-                                                                pred = predCLASS)],
-                                           lev = classes)
-  ## calculate confusion matrix
-  confMatrix <- caret::confusionMatrix(data = predictionsDT$predCLASS,
-                                       reference = predictionsDT$obsCLASS)
-}
-
 #' Tune XGBoost parameters with `caret`
 #'
 #' Tuning is done in 3 steps.
@@ -935,12 +891,57 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   return(paramsF)
 }
 
+#' Calculate confidence matrices from continuous prediction from
+#' XGBoost model
+#'
+#' @param mod a list containing `valData`, a `data.table` containing the
+#'   validation data, predictions, observations and residuals from an xgboost
+#'   cross-validation fold.
+#' @param classMap a data.table of class to continuous value correspondences,
+#'   with column names being `classVar` and `contVar`
+#' @param classes vector of classes.
+#' @param classVar the class variable/column name
+#' @param contVAR the continuous variable/column name
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contVAR = "SEV_PROP") {
+  predictionsDT <- copy(mod$valData)
+  setnames(predictionsDT, "obs", "SEV_PROP")
+
+  mappedClasses <- classMap[match(predictionsDT[[contVAR]], classMap[[contVAR]]), ..classVar]
+  predictionsDT[, obsCLASS := mappedClasses]
+
+  ## convert to classes, using the quantiles corresponding to the observed class proportions
+  ## accumulate proportions to get probabilities
+  quantProbs <- cumsum(table(predictionsDT$obsCLASS)/nrow(predictionsDT))
+  classRanges <- c(0, quantile(predictionsDT$pred, probs = quantProbs))
+
+  predictionsDT[, predCLASS := cut(pred, breaks = classRanges,
+                                   include.lowest = TRUE, right = FALSE)]  ## classify as with intervals as ],]
+
+  ## convert to numbered factor (subtracting one, because classes are 0-5)
+  predictionsDT[, predCLASS := as.numeric(predCLASS)-1]
+  predictionsDT[, `:=`(obsCLASS = factor(obsCLASS, levels = classes),
+                       predCLASS = factor(predCLASS, levels = classes))]
+
+  validMetrics <- caret::multiClassSummary(predictionsDT[, list(obs = obsCLASS,
+                                                                pred = predCLASS)],
+                                           lev = classes)
+  ## calculate confusion matrix
+  confMatrix <- caret::confusionMatrix(data = predictionsDT$predCLASS,
+                                       reference = predictionsDT$obsCLASS)
+}
+
+
 ## GPBoost wrapper -----------------------
 #' Wrapper for gpboost
 #' @inheritParams runXGBOOST
-runGPBOOST <- function(dat, dig, nFolds = 5, colnamesPred, colnamesResp = "SURV_PROP",
+runGPBOOST <- function(dat, dig, nFolds = 5, colnamesResp = "SURV_PROP",
                        colnamesGrp, colnamesCat, SHAPthresh = 0) {
-
+  browser() ## check order of fucniton as in runxgboost
   savedSeed <- .Random.seed
   on.exit(assign(".Random.seed", savedSeed, envir = .GlobalEnv), add = TRUE)
   set.seed(12345) # so kfolds are same, so Caching works correctly below; if dat changes number of rows,
