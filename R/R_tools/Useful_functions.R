@@ -553,7 +553,7 @@ browser()
 
   dat <- as.data.table(dat)
 
-  colnamesPred <- setdiff(colnames(dat), colnamesResp)
+  colnamesPred <- setdiff(colnames(dat), colnamesResp) ## after model.matrix bcs colnames change
 
   ## Setup k-folds -----
   savedSeed <- .Random.seed
@@ -591,10 +591,9 @@ browser()
   dat <- dat[, ..colOrder]
   dig <- .robustDigest(dat)
 
-  ## subset predictor data
+  ## Tune parameters on full data with caret first ----
   datPreds <- dat[, ..colnamesPred]
 
-  ## Tune parameters with caret first ----
   params <- .tunexgboost(dig,
                          dat[, .SD, .SDcols = c(colnamesPred, colnamesResp)],
                          colnamesResp = colnamesResp,
