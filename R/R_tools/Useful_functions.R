@@ -857,13 +857,13 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   message(cyan("Tuning remaining XGBoost parameters..."))
   st <- system.time(
     {
-      xgb_tuned <- train(SEV_PROP ~.,
-                         data = as.data.frame(dat),
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
                          trControl = xgb_trcontrol,
                          tuneGrid = param_grid2,
                          method = "xgbTree"
       ) |>
-        Cache(omitArgs = c("data", "x"),
+        Cache(omitArgs = c("x", "y"),
               .functionName = .functionNameHelper("train", "tune_all"),
               .cacheExtra = c(dig),
               showSimilar = TRUE,
@@ -899,13 +899,13 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   message(cyan("Tuning no. rounds (trees)..."))
   st <- system.time(
     {
-      xgb_tuned <- train(SEV_PROP ~.,
-                         data = as.data.frame(dat),
+      xgb_tuned <- train(x = as.data.frame(dat[, ..colnamesPred]),
+                         y = dat[[colnamesResp]],
                          trControl = xgb_trcontrol,
                          tuneGrid = param_grid3,
                          method = "xgbTree"
       ) |>
-        Cache(omitArgs = c("data", "x"),
+        Cache(omitArgs = c("x", "y"),
               .functionName = .functionNameHelper("train", "tune_nrounds"),
               .cacheExtra = c(dig),
               showSimilar = TRUE,
