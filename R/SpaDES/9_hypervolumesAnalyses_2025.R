@@ -28,15 +28,15 @@ library(Require)
 Require(c("SpaDES",
           "reproducible",
           "data.table",
-          "ggplot2",
+          "ggplot2 (>= 4.0.1.9000)",
           "ggpubr",
           "nlme",
           "mgcv",
           "multcomp",
-          "rvlenth/emmeans (>= 1.8.6)",
-          "cowplot",
+          "rvlenth/emmeans (>= 2.0.0)",
+          "cowplot (>= 1.2.0)",
           "ToolsCB",
-          # "performance",
+          "performance",
           "dplyr"), install = FALSE)
 
 
@@ -73,11 +73,12 @@ if (Sys.info()["nodename"] == "W-VIC-A127584" |
                    , outputPath = file.path("R/SpaDES/outputs", simDirName))
 }
 
-if (grepl("for-cast", Sys.info()["nodename"]) ||
-    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+if (grepl("for-cast|dc709f2508f1|45eafed436c8",
+          Sys.info()["nodename"])) {
   data.table::setDTthreads(5)
   options(bitmapType="cairo")
 }
+
 
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane")
@@ -104,7 +105,7 @@ dir.create(statsOutputPath, recursive = TRUE)
 
 ## PREP FIRE AND VEG DATA -------------------
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
-runPrepResultsModule <- TRUE
+runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
 source("R/R_tools/prepFireData4HVs.R")
 
@@ -134,54 +135,68 @@ modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
 
 modelData[, scenario := relevel(scenario, "HV_noPM")]
 modelData[, vegType := relevel(vegType, "No veg.")]
+modelData[, logVolume := log(Volume)]
+
+if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(unique(modelData$vegType)) * length(unique(modelData$rep)) * length(unique(modelData$repHV)))) {
+  stop("Missing replicates")
+}
 
 ## model landscape separately
 fireHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData[vegType == "landscape"])
 ## the data seems very dispersed - some reps are extreme outliers - logging helps -- Jul 14 2022 this is no longer true with 4000 years
 hist(modelData[vegType == "landscape", Volume], breaks = 1000)
-fireHVVolumeLandscape.lm2 <- lm(log(Volume) ~ scenario,
+fireHVVolumeLandscape.lm2 <- lm(logVolume ~ scenario,
                                 modelData[vegType == "landscape"])   ## a bit better even with 4000 years
 summary(fireHVVolumeLandscape.lm)
-AIC(fireHVVolumeLandscape.lm,
-    fireHVVolumeLandscape.lm2) ## better
+
+check_model(fireHVVolumeLandscape.lm) ## looks better
+check_model(fireHVVolumeLandscape.lm2)
+
+caret::RMSE(fitted(fireHVVolumeLandscape.lm), modelData$Volume)
+caret::RMSE(exp(fitted(fireHVVolumeLandscape.lm2)), exp(modelData$logVolume)) ## only marginally better, slightly worse resids
 
 fireHVVolumeLandscape.gls <- gls(Volume ~ scenario, weights = varIdent(form = ~ 1 | scenario),
                                  modelData[vegType == "landscape"])
-fireHVVolumeLandscape.gls2 <- gls(log(Volume) ~ scenario, weights = varIdent(form = ~ 1 | scenario),
+fireHVVolumeLandscape.gls2 <- gls(logVolume ~ scenario, weights = varIdent(form = ~ 1 | scenario),
                                   modelData[vegType == "landscape"])
-## no big improvements, result is similar and AIC is worse
-plot(fireHVVolumeLandscape.gls)
-AIC(fireHVVolumeLandscape.lm,
-    fireHVVolumeLandscape.lm2, #best
-    fireHVVolumeLandscape.gls,
+## no big improvements
+check_model(fireHVVolumeLandscape.gls)
+check_model(fireHVVolumeLandscape.gls2)  # slightly worse
+caret::RMSE(fitted(fireHVVolumeLandscape.lm), modelData$Volume)
+caret::RMSE(exp(fitted(fireHVVolumeLandscape.lm2)), exp(modelData$logVolume))
+caret::RMSE(fitted(fireHVVolumeLandscape.gls), modelData$Volume)
+caret::RMSE(exp(fitted(fireHVVolumeLandscape.gls2)), exp(modelData$logVolume)) ## only marginally better, slightly worse resids
+
+## can't directly compare transformed and non-transformed AICs
+AIC(fireHVVolumeLandscape.lm,  ## better
+    fireHVVolumeLandscape.gls)
+AIC(fireHVVolumeLandscape.lm2,  ## better
     fireHVVolumeLandscape.gls2)
 
 
 png(file.path(figOutputPath, "fireHVVolumeLandscapelmRESIDUALS.png"))
 ## a bit heteroskedastic, but not that much
-check_model(fireHVVolumeLandscape.lm2)
+check_model(fireHVVolumeLandscape.lm)
 dev.off()
 
 sink(file.path(statsOutputPath, "fireHVVolumeLandscapelmSUMMARY.txt"))
-anova(fireHVVolumeLandscape.lm2)
+anova(fireHVVolumeLandscape.lm)
 cat("\n*********************\n")
-summary(fireHVVolumeLandscape.lm2)
+summary(fireHVVolumeLandscape.lm)
 cat("\n*********************\n")
-emmeans(fireHVVolumeLandscape.lm2, specs = "scenario")
+emmeans(fireHVVolumeLandscape.lm, specs = "scenario")
 sink()
 
 ## model vegTypes
 fireHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != "landscape"])
 ## same issue as before
-fireHVVolumeVegTypes.lm2 <- lm(log(Volume) ~ scenario * vegType, modelData[vegType != "landscape"])
+fireHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData[vegType != "landscape"])
 
-sets <- par(mfrow = c(2,2))
-plot(fireHVVolumeVegTypes.lm)
-plot(fireHVVolumeVegTypes.lm2) ## better
-par(sets)
+check_model(fireHVVolumeVegTypes.lm) ## better (Nov 2025)
+check_model(fireHVVolumeVegTypes.lm2)
 
-AIC(fireHVVolumeVegTypes.lm,
-    fireHVVolumeVegTypes.lm2)
+caret::RMSE(fitted(fireHVVolumeVegTypes.lm), modelData[vegType != "landscape", Volume])  ## marginally better
+caret::RMSE(exp(fitted(fireHVVolumeVegTypes.lm2)), exp(modelData[vegType != "landscape", logVolume]))
 
 ## glht can't see the missing levels, so we fit the model on a separate data table
 modelData2 <- as.data.frame(modelData[vegType != "landscape"])
@@ -190,25 +205,28 @@ modelData2$vegType <- factor(modelData2$vegType)
 modelData2$scenario <- relevel(modelData2$scenario, "HV_noPM")
 modelData2$vegType <- relevel(modelData2$vegType, "No veg.")
 
-fireHVVolumeVegTypes.gls <- gls(log(Volume) ~ scenario * vegType,
+fireHVVolumeVegTypes.gls <- gls(Volume ~ scenario * vegType,
                                 weights = varIdent(form = ~ 1 | scenario * vegType),
                                 modelData2)
-plot(fireHVVolumeVegTypes.gls)  ## looks better
+check_model(fireHVVolumeVegTypes.gls)  ## looks better
 anova(fireHVVolumeVegTypes.gls)    ## all significant
 summary(fireHVVolumeVegTypes.gls)   ## all significant
 
-fireHVVolumeVegTypes.gls2 <- gls(log(Volume) ~ scenario + vegType,
+fireHVVolumeVegTypes.gls2 <- gls(Volume ~ scenario + vegType,
                                  weights = varIdent(form = ~ 1 | scenario*vegType),
                                  data = modelData2)
 anova(fireHVVolumeVegTypes.gls, fireHVVolumeVegTypes.gls2)   ## interaction model is much better.
 
 AIC(fireHVVolumeVegTypes.lm,
-    fireHVVolumeVegTypes.lm2,
-    fireHVVolumeVegTypes.gls,   ## best
+    fireHVVolumeVegTypes.gls,  ## best
     fireHVVolumeVegTypes.gls2)
 
+caret::RMSE(fitted(fireHVVolumeVegTypes.lm), modelData[vegType != "landscape", Volume])  ## marginally better
+caret::RMSE(fitted(fireHVVolumeVegTypes.gls), modelData2$Volume)
+caret::RMSE(fitted(fireHVVolumeVegTypes.gls2), modelData2$Volume)   ## marginally better, go with anova results above
+
 png(file.path(figOutputPath, "fireHVVolumeVegTypesglsRESIDUALS.png"))
-plot(fireHVVolumeVegTypes.gls)
+check_model(fireHVVolumeVegTypes.gls)
 dev.off()
 
 sink(file.path(statsOutputPath, "fireHVVolumeVegTypesglsSUMMARY.txt"))
@@ -234,36 +252,66 @@ modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
 
 modelData[, scenario := relevel(scenario, "HV_noPM")]
 modelData[, vegType := relevel(vegType, "No veg.")]
+modelData[, logVolume := log(Volume)]
+
+if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(unique(modelData$vegType)) * length(unique(modelData$rep)) * length(unique(modelData$repHV)))) {
+  stop("Missing replicates")
+}
 
 ## model landscape separately
 modelData2 <- modelData[vegType == "landscape"]
-vegHVVolumeLandscape.lm <- lm(log(Volume) ~ scenario, modelData2)
+vegHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData2)
+vegHVVolumeLandscape.lm2 <- lm(logVolume ~ scenario, modelData2)
 
-vegHVVolumeLandscape.gls <- gls(log(Volume) ~ scenario,
+caret::RMSE(fitted(vegHVVolumeLandscape.lm), modelData2$Volume)
+caret::RMSE(exp(fitted(vegHVVolumeLandscape.lm2)), exp(modelData2$logVolume)) ## a little worse
+
+check_model(vegHVVolumeLandscape.lm)
+check_model(vegHVVolumeLandscape.lm2) ## better
+
+vegHVVolumeLandscape.gls <- gls(Volume ~ scenario,
                                 weights = varIdent(form = ~ 1 | scenario),
                                 data = modelData2)
 
+vegHVVolumeLandscape.gls2 <- gls(logVolume ~ scenario,
+                                 weights = varIdent(form = ~ 1 | scenario),
+                                 data = modelData2)
+
 AIC(vegHVVolumeLandscape.lm,
-    vegHVVolumeLandscape.gls)  ## slightly better
+    vegHVVolumeLandscape.gls)  ## better
+check_model(vegHVVolumeLandscape.gls) ## less deviation?
+caret::RMSE(fitted(vegHVVolumeLandscape.lm), modelData2$Volume)
+caret::RMSE(fitted(vegHVVolumeLandscape.gls), modelData2$Volume)  ## identical
+
+AIC(vegHVVolumeLandscape.lm2,
+    vegHVVolumeLandscape.gls2)  ## worse
+check_model(vegHVVolumeLandscape.gls2) ## less deviation?
+caret::RMSE(fitted(vegHVVolumeLandscape.gls), modelData2$Volume)
+caret::RMSE(exp(fitted(vegHVVolumeLandscape.gls2)), modelData2$Volume)  ## slightly worse
+
 
 png(file.path(figOutputPath, "vegHVVolumeLandscapeglsRESIDUALS.png"))
-plot(vegHVVolumeLandscape.gls) ## not too bad for an anova
+check_model(vegHVVolumeLandscape.gls2)
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVVolumeLandscapeglsSUMMARY.txt"))
-anova(vegHVVolumeLandscape.gls)
+anova(vegHVVolumeLandscape.gls2)
 cat("\n*********************\n")
-summary(vegHVVolumeLandscape.gls)
+summary(vegHVVolumeLandscape.gls2)
 cat("\n*********************\n")
-emmeans(vegHVVolumeLandscape.gls, specs = "scenario", data = modelData2)
+emmeans(vegHVVolumeLandscape.gls2, specs = "scenario", data = modelData2)
 sink()
 
 ## model vegTypes
 modelData2 <- modelData[vegType != "landscape"]
-vegHVVolumeVegTypes.lm <- lm(log(Volume) ~ scenario * vegType, modelData2)
+vegHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData2)
+vegHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData2)
 
 ## some heteroscedasticity
 check_model(vegHVVolumeVegTypes.lm)
+check_model(vegHVVolumeVegTypes.lm2) ## better
+caret::RMSE(fitted(vegHVVolumeVegTypes.lm), modelData2$Volume)
+caret::RMSE(exp(fitted(vegHVVolumeVegTypes.lm2)), modelData2$Volume)  ## worse
 
 modelData2 <- as.data.frame(modelData[vegType != "landscape"])
 modelData2$scenario <- factor(modelData2$scenario)
@@ -271,20 +319,26 @@ modelData2$vegType <- factor(modelData2$vegType)
 modelData2$scenario <- relevel(modelData2$scenario, "HV_noPM")
 modelData2$vegType <- relevel(modelData2$vegType, "No veg.")
 
-vegHVVolumeVegTypes.gls <- gls(log(Volume) ~ scenario * vegType,
+vegHVVolumeVegTypes.gls <- gls(Volume ~ scenario * vegType,
                                weights = varIdent(form = ~ 1 | scenario * vegType),
                                data = modelData2)
+vegHVVolumeVegTypes.gls2 <- gls(logVolume ~ scenario * vegType,
+                                weights = varIdent(form = ~ 1 | scenario * vegType),
+                                data = modelData2)
+
+check_model(vegHVVolumeVegTypes.gls)
+check_model(vegHVVolumeVegTypes.gls2)   ## better than lm2
 
 png(file.path(figOutputPath, "vegHVVolumeVegTypesglsRESIDUALS.png"))
-plot(vegHVVolumeVegTypes.gls) ## better
+check_model(vegHVVolumeVegTypes.gls2) ## better
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVVolumeVegTypesglsSUMMARY.txt"))
-anova(vegHVVolumeVegTypes.gls)
+anova(vegHVVolumeVegTypes.gls2)
 cat("\n*********************\n")
-summary(vegHVVolumeVegTypes.gls)
+summary(vegHVVolumeVegTypes.gls2)
 cat("\n*********************\n")
-emmeans(vegHVVolumeVegTypes.gls, pairwise ~ scenario | vegType, adjust = "tukey",
+emmeans(vegHVVolumeVegTypes.gls2, pairwise ~ scenario | vegType, adjust = "tukey",
         deata = modelData2)    ## tukey contrasts for scenarios within vegTypes
 cat("\n*********************\n")
 sink()
@@ -372,18 +426,32 @@ modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
                              variable.name = "scenario", value.name = "Volume")
 
 modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
+modelData[, `:=`(logFireHV = log(fireHV),
+                 logVegHV = log(vegHV))]
 modelData2 <- modelData[vegType == "landscape"]
 
 ## model landscape separately
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData2)
-## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps
+## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps -- no longer tru Nov 2025
 hist(modelData[vegType == "landscape", fireHV], breaks = 1000)
 # hist(modelData[vegType == "landscape" & fireHV > 500, fireHV], breaks = 1000)   # no longer exists in 4000 years sims
 
-## log variables
-modelData2[, `:=`(logFireHV = log(fireHV),
-                  logVegHV = log(vegHV))]
 pyroVSbiodiversityLandscape.lm2 <- lm(logVegHV ~ logFireHV*scenario, data = modelData2)
+check_model(pyroVSbiodiversityLandscape.lm)
+check_model(pyroVSbiodiversityLandscape.lm2)  ## a bit better
+
+anova(pyroVSbiodiversityLandscape.lm2) ## interaction not significant
+
+pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ logFireHV + scenario, data = modelData2)
+anova(pyroVSbiodiversityLandscape.lm3) ## scenarion effect not significant
+check_model(pyroVSbiodiversityLandscape.lm3)  ## probably as bad.
+anova(pyroVSbiodiversityLandscape.lm2, pyroVSbiodiversityLandscape.lm3) ## not sign. different (AIC is marginally better, see below)
+
+pyroVSbiodiversityLandscape.lm4 <- lm(logVegHV ~ logFireHV, data = modelData2)
+anova(pyroVSbiodiversityLandscape.lm4) ## scenarion effect not significant
+check_model(pyroVSbiodiversityLandscape.lm4)  ## probably as bad.
+anova(pyroVSbiodiversityLandscape.lm3, pyroVSbiodiversityLandscape.lm4) ## not sign. different (AIC is marginally better, see below)
+
 
 ## try quadratic (as per Steel et al 2021 and He et al 2019)
 ## note that by default, we're using orthogonal polinomials - AIC is the same, so are residuals
@@ -394,88 +462,100 @@ pyroVSbiodiversityLandscape.lm2 <- lm(logVegHV ~ logFireHV*scenario, data = mode
 
 ## the bug was fixed
 
-pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
-                                      data = modelData2)
 # modelData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
 #           by = .(scenario, vegType)]
 # pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario,
 #                                       data = modelData2)
-
-## interaction appears non significant in models above
-anova(pyroVSbiodiversityLandscape.lm2)
-pyroVSbiodiversityLandscape.lm4 <- lm(logVegHV ~ logFireHV+scenario, data = modelData2)
-pyroVSbiodiversityLandscape.lm5 <- lm(logVegHV ~ poly(logFireHV, 2)+scenario,
+pyroVSbiodiversityLandscape.lm5 <- lm(logVegHV ~ poly(logFireHV, 2), data = modelData2)
+check_model(pyroVSbiodiversityLandscape.lm5)  ## as bad as previous
+anova(pyroVSbiodiversityLandscape.lm4, pyroVSbiodiversityLandscape.lm5)  ## not sign. different, AIC slightly worse
+pyroVSbiodiversityLandscape.lm6 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
                                       data = modelData2)
 
-AIC(pyroVSbiodiversityLandscape.lm,
-    pyroVSbiodiversityLandscape.lm2,
-    pyroVSbiodiversityLandscape.lm3,
-    pyroVSbiodiversityLandscape.lm4, ## best by less than 1 point
-    pyroVSbiodiversityLandscape.lm5)
+## nov 2025, no support for the following models
+# pyroVSbiodiversityLandscape.lm7 <- lm(logVegHV ~ logFireHV+scenario, data = modelData2)
+# pyroVSbiodiversityLandscape.lm8 <- lm(logVegHV ~ poly(logFireHV, 2)+scenario,
+#                                       data = modelData2)
 
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm)
 AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm2)
 AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4) ## best by 2 points
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4)  ## best, but very marginally
 AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm5)
-
-anova(pyroVSbiodiversityLandscape.lm2, pyroVSbiodiversityLandscape.lm3) ## not signficantly different
-anova(pyroVSbiodiversityLandscape.lm4, pyroVSbiodiversityLandscape.lm5) ## not significantly different
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm7)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm8)
 
 ## and if we allow the variance to change?
-pyroVSbiodiversityLandscape.gls <- nlme::gls(logVegHV ~ logFireHV + scenario,
+pyroVSbiodiversityLandscape.gls <- nlme::gls(logVegHV ~ logFireHV * scenario,
                                              weights = nlme::varIdent(form = ~ 1 | scenario),
-                                             data = modelData2)   ## much better!
-pyroVSbiodiversityLandscape.gls2 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)+scenario,
+                                             data = modelData2)
+anova(pyroVSbiodiversityLandscape.gls)  ## interaction not significant
+pyroVSbiodiversityLandscape.gls2 <- nlme::gls(logVegHV ~ logFireHV + scenario,
                                               weights = nlme::varIdent(form = ~ 1 | scenario),
                                               data = modelData2)
-
-## try adding interaction again
-pyroVSbiodiversityLandscape.gls3 <- nlme::gls(logVegHV ~ logFireHV * scenario,
+anova(pyroVSbiodiversityLandscape.gls2) ## senario effect not significant
+pyroVSbiodiversityLandscape.gls3 <- nlme::gls(logVegHV ~ logFireHV,
                                               weights = nlme::varIdent(form = ~ 1 | scenario),
-                                              data = modelData2)   ## much better!
-pyroVSbiodiversityLandscape.gls4 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scenario,
-                                              weights = nlme::varIdent(form = ~ 1 | scenario),
-                                              data = modelData2)   ## much better!
+                                              data = modelData2)
+anova(pyroVSbiodiversityLandscape.gls3)
 
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls) ## worse by less than 1 point
+check_model(pyroVSbiodiversityLandscape.gls)  ## still pretty bad
+check_model(pyroVSbiodiversityLandscape.gls3) ## still pretty bad
+
+## try adding polinomial again
+pyroVSbiodiversityLandscape.gls4 <- nlme::gls(logVegHV ~ poly(logFireHV, 2),
+                                              weights = nlme::varIdent(form = ~ 1 | scenario),
+                                              data = modelData2)
+pyroVSbiodiversityLandscape.gls5 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scenario,
+                                              weights = nlme::varIdent(form = ~ 1 | scenario),
+                                              data = modelData2)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4)   ## second best
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls)   ## third best
 AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls2)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls3) ## best by 2 points
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls4) ## worse by less than 3 points
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls3)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls4)  ## worse
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls5)  ## best by less than 2 points
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6)
 
-anova(pyroVSbiodiversityLandscape.gls, pyroVSbiodiversityLandscape.gls2)  ## not sign different
-anova(pyroVSbiodiversityLandscape.gls, pyroVSbiodiversityLandscape.gls3)  ## not sign different
-anova(pyroVSbiodiversityLandscape.gls, pyroVSbiodiversityLandscape.gls4)   ## gls4 sign. better
-anova(pyroVSbiodiversityLandscape.gls3, pyroVSbiodiversityLandscape.gls4)   ## not sign different, note here AIC is better for gls4
+anova(pyroVSbiodiversityLandscape.gls, pyroVSbiodiversityLandscape.gls5)  ## sign different
+anova(pyroVSbiodiversityLandscape.gls5)  ## but interactions are not significant
 
-anova(pyroVSbiodiversityLandscape.gls3)  ## interactions with scenario not significant
-anova(pyroVSbiodiversityLandscape.gls4)  ## interactions with scenario not significant
+## Nov 2025: in PM, replicate 4 seems to be an outlier, without it the relationship would be flatter
+## also, scenario does seem to have an impact on mean volumes and the slopes.
+## I think it seems reasonable to include the scenario interaction and with more data it'd prbably be a significant effect
+plotData <- modelData2
+plotData[, pred := predict(pyroVSbiodiversityLandscape.gls5)]
+ggplot(
+  # plotData[scenario != "HV_noPM" & rep != 4]
+  # plotData[scenario == "HV_noPM"]
+  plotData
+  , aes(x = logFireHV, y = logVegHV)) +
+  geom_smooth(aes(linetype = scenario), formula = y ~ poly(x, 2),
+              colour = "red",
+              method = "lm", se = FALSE) +
+  geom_smooth(aes(linetype = scenario), formula = y ~ x,
+              colour = "blue",
+              method = "lm", se = FALSE) +
+  geom_smooth(formula = y ~ poly(x, 2),
+              colour = "red",
+              method = "lm", se = FALSE) +
+  geom_smooth(formula = y ~ x,
+              colour = "blue",
+              method = "lm", se = FALSE) +
+  geom_point(aes(colour = as.factor(rep), shape = scenario))
 
-## for the noPM scenario the relationship seems like an exponential decay
-pyroVSbiodiversityLandscape.lm2.2 <- lm(logVegHV ~ logFireHV,
-                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
-pyroVSbiodiversityLandscape.lm2.3 <- lm(logVegHV ~ fireHV,
-                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
-# pyroVSbiodiversityLandscape.lm3.2 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2)),
-#                                         data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
-pyroVSbiodiversityLandscape.lm3.2 <- lm(logVegHV ~ poly(logFireHV, 2),
-                                        data = modelData[vegType == "landscape" & scenario == "HV_noPM"])
-
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm2.2)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm2.3)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3.2)   ## marginally worse
 
 png(file.path(figOutputPath, "pyroVSbiodiversityLandscapeglsRESIDUALS.png"))
-plot(pyroVSbiodiversityLandscape.gls)
+plot(pyroVSbiodiversityLandscape.gls5)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityLandscapeglsSUMMARY.txt"))
-anova(pyroVSbiodiversityLandscape.gls)
+anova(pyroVSbiodiversityLandscape.gls5)
 cat("\n*********************\n")
-summary(pyroVSbiodiversityLandscape.gls)
+summary(pyroVSbiodiversityLandscape.gls5)
 cat("\n*********************\n")
-emtrends(pyroVSbiodiversityLandscape.gls, specs = c("scenario"),
+emtrends(pyroVSbiodiversityLandscape.gls5, specs = c("scenario"),
          var = "logFireHV", data = modelData2)
 sink()
 
@@ -485,67 +565,45 @@ modelData2 <- modelData[vegType != "landscape"]
 modelData2[, `:=`(logFireHV = log(fireHV),
                   logVegHV = log(vegHV))]
 pyroVSbiodiversityVegTypes.lm <- lm(vegHV ~ fireHV*scenario*vegType, data = modelData2)
-## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps
-hist(modelData[vegType != "landscape", fireHV], breaks = 1000)
-hist(modelData[vegType != "landscape" & fireHV > 500, fireHV], breaks = 1000)
-hist(modelData[vegType != "landscape" & fireHV < 500, fireHV], breaks = 1000)
-
-pyroVSbiodiversityVegTypes.lm2 <- lm(logVegHV ~ logFireHV *scenario*vegType,
+pyroVSbiodiversityVegTypes.lm2 <- lm(logVegHV ~ logFireHV*scenario*vegType,
                                      data = modelData2)
+check_model(pyroVSbiodiversityVegTypes.lm)
+check_model(pyroVSbiodiversityVegTypes.lm2)  ## much better
+
 pyroVSbiodiversityVegTypes.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
                                      data = modelData2)
-# pyroVSbiodiversityVegTypes.lm3 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario*vegType,
+check_model(pyroVSbiodiversityVegTypes.lm3)  ## maybe a bit better?
+anova(pyroVSbiodiversityVegTypes.lm2, pyroVSbiodiversityVegTypes.lm3) # sign. different
+anova(pyroVSbiodiversityVegTypes.lm3)   ## interactions are significant
+
+## interactions are significant. no point in removing them.
+# pyroVSbiodiversityVegTypes.lm4 <- lm(logVegHV ~ logFireHV*scenario + logFireHV*vegType + scenario*vegType,
 #                                      data = modelData2)
-anova(pyroVSbiodiversityVegTypes.lm2) ## 3-way interaction is no significant
+# pyroVSbiodiversityVegTypes.lm5 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario + poly(logFireHV, 2)*vegType + scenario*vegType,
+#                                      data = modelData2)
 
-pyroVSbiodiversityVegTypes.lm4 <- lm(logVegHV ~ logFireHV*scenario + logFireHV*vegType + scenario*vegType,
-                                     data = modelData2)
-pyroVSbiodiversityVegTypes.lm5 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario + poly(logFireHV, 2)*vegType + scenario*vegType,
-                                     data = modelData2)
-
-AIC(pyroVSbiodiversityVegTypes.lm,
-    pyroVSbiodiversityVegTypes.lm2,
-    pyroVSbiodiversityVegTypes.lm3,
-    pyroVSbiodiversityVegTypes.lm4, ## best
-    pyroVSbiodiversityVegTypes.lm5)
-
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm)
+# AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm)  ## don't compare non-logged
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm2)
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3)
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4)  ## best
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm5)  ## residuals look a little better here.
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3) ## best
+# AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4)
+# AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm5)
 
-sets <- par(mfrow = c(2,2))
-plot(pyroVSbiodiversityVegTypes.lm4)
-plot(pyroVSbiodiversityVegTypes.lm5)
-par(sets)
-
-
-pyroVSbiodiversityVegTypes.gls <- nlme::gls(logVegHV ~ logFireHV*scenario + logFireHV*vegType + scenario*vegType,
+pyroVSbiodiversityVegTypes.gls <- nlme::gls(logVegHV ~ logFireHV*scenario*vegType,
                                             weights = nlme::varIdent(form = ~ 1 | scenario * vegType),
                                             data = modelData2)
-pyroVSbiodiversityVegTypes.gls2 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scenario + poly(logFireHV, 2)*vegType + scenario*vegType,
+pyroVSbiodiversityVegTypes.gls2 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
                                              weights = nlme::varIdent(form = ~ 1 | scenario * vegType),
                                              data = modelData2)   ## much better!
 pyroVSbiodiversityVegTypes.gam <- mgcv::gam(logVegHV ~ s(logFireHV, k = 3, by = scenario) + s(logFireHV, k = 3, by = vegType),
                                             data =  modelData2)
 
-AIC(pyroVSbiodiversityVegTypes.lm4,
-    pyroVSbiodiversityVegTypes.lm5,
-    pyroVSbiodiversityVegTypes.gls,
-    pyroVSbiodiversityVegTypes.gls2, ## best
-    pyroVSbiodiversityVegTypes.gam)
-
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4)
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3)
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gls)
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gls2)  ## best
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gam)
 
-plot(pyroVSbiodiversityVegTypes.gls2)
-
-
 png(file.path(figOutputPath, "pyroVSbiodiversityVegTypesglsRESIDUALS.png"))
-plot(pyroVSbiodiversityVegTypes.gls2)
+check_model(pyroVSbiodiversityVegTypes.gls2)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityVegTypesglsSUMMARY.txt"))
@@ -556,7 +614,6 @@ cat("\n*********************\n")
 emtrends(pyroVSbiodiversityVegTypes.gls2, pairwise ~ scenario | vegType,
          var = "logFireHV", max.degree = 2, mode = "df.error")
 sink()
-
 
 ## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
 ## how does scenario affect hypervolume sizes at the end of the simulation?
@@ -571,9 +628,11 @@ plotData <- allHVData[year == max(yearSubset),
                         rep, repHV, vegType)]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
+plotData[, logVolume := log(Volume)]
+
 
 pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "fireHV"],
-                                   aes(x = vegType, y = log(Volume)
+                                   aes(x = vegType, y = logVolume
                                        , alpha = scenario
                                        , fill = vegType)) +
   geom_boxplot() +
@@ -581,11 +640,11 @@ pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
                      labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
-  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  theme_pubr(base_size = 12, margin = FALSE) +
   theme(legend.box = "vertical",
         strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
   labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
 # facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
@@ -593,17 +652,17 @@ pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "
 #                                           "fireHV" = "Pyrodiversity")))
 
 bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "vegHV"],
-                                  aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
+                                  aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
   geom_boxplot() +
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
                      labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
-  theme_pubr(base_size = 12, x.text.angle = 30, margin = FALSE) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  theme_pubr(base_size = 12, margin = FALSE) +
   theme(legend.box = "vertical",
         strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
   labs(x = "", y = "log-hypervolume size", fill = "", alpha = "", title = "Forest diversity") +
   guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
@@ -612,16 +671,16 @@ bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "v
 
 
 pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "fireHV"],
-                                    aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
+                                    aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
   geom_boxplot() +
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
                      labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
   labs(x = "", y = "log-hypervolume size", fill = "", title = "Pyrodiversity") +
   guides(alpha = "none", fill = "none")
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
@@ -629,16 +688,16 @@ pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == 
 #                                           "fireHV" = "Pyrodiversity")))
 
 bioHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "vegHV"],
-                                   aes(x = vegType, y = log(Volume), alpha = scenario, fill = vegType)) +
+                                   aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
   geom_boxplot() +
   scale_x_discrete(labels = vegTypeCNLabels) +
   scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
   scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
                      labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.3))) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
   theme_pubr(base_size = 12, margin = FALSE) +
   theme(strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
   labs(x = "", y = "log-hypervolume size", fill = "", title = "Forest diversity") +
   guides(alpha = "none", fill = "none")
 # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
@@ -661,7 +720,7 @@ plotSave <- plot_grid(
               labels = c("a", "b")),
     plot_grid(alignedVegPlots[[2]],
               alignedLandPlots[[2]],
-              ncol = 2, nrow = 1, align = "h", axis = "b", rel_widths = c(1, 0.5),
+              ncol = 2, nrow = 1, align = "v", axis = "b", rel_widths = c(1, 0.5),
               labels = c("c", "d")),
     ncol = 1, nrow = 2, align = "v", axis = "l", rel_heights = c(0.76, 1)),
   get_legend(bioHVvolumeVegTypesPlot + theme(legend.box = "horizontal")),
@@ -734,7 +793,7 @@ if (useFirstLastYear) {
          width = 8, height = 6, bg = "white")
 }
 
-## relationship between pyrodiversity and biodiversity --------------------
+## PLOTS: relationship between pyrodiversity and biodiversity ----------------------
 ## melt volume data and dcast by volume type to relate the two
 plotData <- allHVData[year == max(yearSubset),
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
@@ -747,41 +806,52 @@ plotData[, `:=`(logFireHV = log(fireHV),
 plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
          by = .(scenario, vegType)]
 
-plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.gls, type = "response")]   ## just to compare with smoother
+plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.gls5, type = "response")]   ## just to compare with smoother
 plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls2, type = "response")]   ## just to compare with smoother
 
+## see influential replicates -- the same replicate is not influential across all veg types.
+ggplot(plotData, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
+  geom_point() +
+  facet_grid(scenario ~ vegType, scales = "free")
 
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
 ## SEs are removed because they are not the same as the gls's
 plotBioPyroFunSmooth <- function(plotData, title = "") {
-  if (all(plotData$vegType == "landscape")) {
-    form <- quote(y ~ x)
-  } else {
-    # form <- quote(y ~ x + I(x^2))   ## needs logFireHVcenter below
-    form <- quote(y ~ poly(x, 2))
-  }
+  # if (all(plotData$vegType == "landscape")) {
+  #   form <- quote(y ~ x)
+  # } else {
+  # form <- quote(y ~ x + I(x^2))   ## needs logFireHVcenter below
+  form <- quote(y ~ poly(x, 2))
+  # }
 
   ggplot(plotData,
-         aes(x = logFireHVcenter, y = logVegHV,
-             # linetype = scenario,
-             # shape = scenario,
-             colour = vegType)) +
+         aes(
+           # x = logFireHVcenter
+           x = logFireHV
+           , y = logVegHV
+           # linetype = scenario,
+           # shape = scenario,
+           , colour = vegType
+         )) +
     geom_point() +
-    geom_line(aes(y = pred)) +  ## just to check if it matches smoother
+    # geom_line(aes(y = pred)) +  ## just to check if it matches smoother
     stat_smooth(method = "lm", formula = form, se = FALSE) +
     scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
     # scale_linetype_manual(labels = scenLabels,
     #                       values = scenLinetype) +
     # scale_shape_discrete(labels = scenLabels) +
-    scale_x_continuous(limits = range(plotData[, logFireHVcenter])) +
+    # scale_x_continuous(limits = range(plotData[, logFireHVcenter])) +
+    scale_x_continuous(limits = range(plotData[, logFireHV])) +
     theme_pubr(base_size = 12, margin = TRUE) +
     theme(legend.box = "vertical",
           strip.background = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(x = "Pyrodiversity", y = "Forest diversity", title = title, colour = "", linetype = "", shape = "") +
-    facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
-                scales = "free") +
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(x = "Pyrodiversity", y = "Forest diversity", title = title, colour = ""
+         # , linetype = "", shape = ""
+    ) +
+    # facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
+    #             scales = "free") +
     guides(linetype = guide_legend(override.aes = list(colour = "black")))
 }
 
@@ -798,13 +868,13 @@ plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlot
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothnoPM.png"),
-       width = 14, height = 8, bg = "white")
+       width = 14, height = 7, bg = "white")
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothPM.png"),
-       width = 14, height = 8, bg = "white")
+       width = 14, height = 7, bg = "white")
 
 
 ## without the smoother, with SEs, but using "smoothed" predictions

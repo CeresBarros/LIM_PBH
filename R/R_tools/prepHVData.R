@@ -13,6 +13,33 @@ if (mergePSME) {
                 grep("_PSME_", list.files(HVoutputPathMergedVegType, "Intersection.*.rds", full.names = TRUE), value = TRUE)) ## add HV for merged vegType
 }
 
+## check all simulation and HV reps are present
+fireFiles <- grep("fireHVs", allFiles, value = TRUE)
+vegTypes <- unique(sub(".*fireHVs_(.*)_rep.*", "\\1", fireFiles))
+if (length(setdiff(
+  c("broadleaf", "DMCPSME", "landscape", "mixedwood", "MMC", "No veg.", "PICO", "PIEN", "PSME"),
+  vegTypes)
+)) {
+  stop("Missing veg. types in fire hypervolumes")
+}
+
+out <- lapply(vegTypes, function(veg) {
+  ff <- grep(veg, fireFiles, value = TRUE)
+  pattern <- sapply(paste0("rep", 1:3), function(X) paste0(X, "_Intersection_results_", 1:3), simplify = FALSE) |>
+    unlist()
+
+  out <- lapply(pattern, function(X) {
+    any(grepl(X, ff))
+    }) |>
+    unlist()
+  out
+}) |>
+  unlist()
+
+if (any(!out)) {
+  stop("Missing simulation/HV replicates in fire hypervolumes")
+}
+
 
 fireHVData <- loadHVResultsFromRDS("fireHVs", allFiles)
 if ("HVid" %in% names(fireHVData)) {
@@ -45,7 +72,35 @@ if (getOption("LandR.assertions")) {
 
 ## get between and within year (between scenarios) comparisons separately
 withinYearFiles <- grep("yr", allFiles, value = TRUE)
+
 if (length(withinYearFiles)) {
+  ## check all reps are here
+  vegTypes <- unique(sub(".*vegHVs_(.*)_rep.*", "\\1", withinYearFiles))
+  if (length(setdiff(
+    c("broadleaf", "DMCPSME", "landscape", "mixedwood", "MMC", "No veg.", "PICO", "PIEN", "PSME"),
+    vegTypes)
+  )) {
+    stop("Missing veg. types in vegetation hypervolumes")
+  }
+
+  browser() ## code below needs to be iterated per year.
+  out <- lapply(vegTypes, function(veg) {
+    ff <- grep(veg, withinYearFiles, value = TRUE)
+    pattern <- sapply(paste0("rep", 1:3), function(X) paste0(X, "_Intersection_results_", 1:3), simplify = FALSE) |>
+      unlist()
+
+    out <- lapply(pattern, function(X) {
+      any(grepl(X, ff))
+    }) |>
+      unlist()
+    out
+  }) |>
+    unlist()
+
+  if (any(!out)) {
+    stop("Missing simulation/HV replicates in vegetation hypervolumes")
+  }
+
   vegHVDataWYrComparisons <- loadHVResultsFromRDS("vegHVs", withinYearFiles)
   if ("HVid" %in% names(vegHVDataWYrComparisons)) {
     vegHVDataWYrComparisons[, tempHVid := as.numeric(HVid)]
@@ -77,7 +132,34 @@ if (length(withinYearFiles)) {
 }
 
 ## between year comparisons data -- or the temporally integrated HVs
-betweenYearFiles <- grep("yr", allFiles, value = TRUE, invert = TRUE)
+betweenYearFiles <- grep("vegHVs", grep("yr", allFiles, value = TRUE, invert = TRUE), value = TRUE)
+
+## check all reps are here
+vegTypes <- unique(sub(".*vegHVs_(.*)_rep.*", "\\1", betweenYearFiles))
+if (length(setdiff(
+  c("broadleaf", "DMCPSME", "landscape", "mixedwood", "MMC", "No veg.", "PICO", "PIEN", "PSME"),
+  vegTypes)
+)) {
+  stop("Missing veg. types in vegetation hypervolumes")
+}
+
+out <- lapply(vegTypes, function(veg) {
+  ff <- grep(veg, betweenYearFiles, value = TRUE)
+  pattern <- sapply(paste0("rep", 1:3), function(X) paste0(X, "_Intersection_results_", 1:3), simplify = FALSE) |>
+    unlist()
+
+  out <- lapply(pattern, function(X) {
+    any(grepl(X, ff))
+  }) |>
+    unlist()
+  out
+}) |>
+  unlist()
+
+if (any(!out)) {
+  stop("Missing simulation/HV replicates in vegetation hypervolumes")
+}
+
 vegHVDataBYrComparisons <- loadHVResultsFromRDS("vegHVs", betweenYearFiles)
 if ("HVid" %in% names(vegHVDataBYrComparisons)) {
   vegHVDataBYrComparisons[, tempHVid := as.numeric(HVid)]
