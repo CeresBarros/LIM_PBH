@@ -542,7 +542,7 @@ runXGBOOST <- function(dat, dig, nFolds = 5, colnamesResp = "SEV_PROP",
                        figDir = NULL) {
   # dat <- dat[sample(NROW(dat), size = 1e4)]
   # tt <- table(dat$SEV_PROP)
-browser()
+
   # Add dummy variables for factor columns -- i.e., the random effects
   if (all(sapply(dat, is.numeric)) %in% FALSE)
     dat <- model.matrix(~ . + 0, data = dat) |>
