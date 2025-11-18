@@ -678,10 +678,11 @@ browser()
 
           ## Feature selection -- remove features (variables) with low SHAP values
           ## based on a quantile threshold
+          dig3 <- .robustDigest(modOut)
           shap_values <- shap.values(modOut, datPreds) |>
             Cache(omitArgs = formalArgs(shap.values),
                   .functionName = .functionNameHelper("shap.values", "xgboost", kFold),
-                  .cacheExtra = c(dig, dig2, cols2keep))
+                  .cacheExtra = c(dig, dig2, dig3, cols2keep))
           meanSHAP <- shap_values$mean_shap_score
 
           if (calcThresh) {
