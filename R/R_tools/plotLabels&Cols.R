@@ -1,5 +1,9 @@
 ## PLOT LABELS AND COLOURS --------------------------------
 
+if (!exists("preSimList")) {
+  preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+}
+
 ## make species labels/colours
 if (exists("summaryBurnCohortDataSpp")) {
   allSpeciesCodes <- unique(summaryBurnCohortDataSpp$speciesCode)
