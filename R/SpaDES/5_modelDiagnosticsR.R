@@ -65,7 +65,7 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
 }
 
 if (grepl("for-cast", Sys.info()["nodename"]) ||
-    grepl("4458e1a42ddc", Sys.info()["nodename"])) {
+    grepl("45eafed436c8", Sys.info()["nodename"])) {
   data.table::setDTthreads(25)
   options(bitmapType="cairo")
 }
