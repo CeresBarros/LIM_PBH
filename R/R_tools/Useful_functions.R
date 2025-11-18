@@ -546,7 +546,10 @@ browser()
   # Add dummy variables for factor columns -- i.e., the random effects
   if (all(sapply(dat, is.numeric)) %in% FALSE)
     dat <- model.matrix(~ . + 0, data = dat) |>
-      Cache(omitArgs = c("object", "data", "x"), .cacheExtra = dig) # Creates dummy variables
+      Cache(omitArgs = c("object", "data", "x")
+            , .cacheExtra = dig
+            # , cacheid = "f5c41c45b1ca9cbc"
+            ) # Creates dummy variables
 
   dat <- as.data.table(dat)
 
@@ -596,8 +599,8 @@ browser()
                          dat[, .SD, .SDcols = c(colnamesPred, colnamesResp)],
                          colnamesResp = colnamesResp,
                          figDir) |>
-    Cache(omitArgs = c("dat", "figDir"),
-          #cacheId = "e95a84d83bac39e9"
+    Cache(omitArgs = c("dat", "figDir")
+          #, cacheId = "7b1de6940b00ff51"
     )
 
   st <- system.time(
@@ -856,7 +859,8 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
               .functionName = .functionNameHelper("train", "tune_all"),
               .cacheExtra = c(dig),
               showSimilar = TRUE,
-              ## cacheId = "d76ffa84709d8db0",
+              ## cacheId = "d76ffa84709d8db0", # more params
+              cacheId = "cd64c0826cfcecc2", #param grid above.
               cacheSaveFormat = "rds")
     }
   )
@@ -897,7 +901,7 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
               .functionName = .functionNameHelper("train", "tune_nrounds"),
               .cacheExtra = c(dig),
               showSimilar = TRUE,
-              ## cacheId = "42d9114a51b67432",
+              cacheId = "3499577823e6a19d",
               cacheSaveFormat = "rds")
     }
   )
