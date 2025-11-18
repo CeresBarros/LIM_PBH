@@ -816,7 +816,7 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
               .functionName = .functionNameHelper("train", "tune_learningrate"),
               .cacheExtra = c(dig),
               showSimilar = TRUE,
-              ## cacheId = "8a518e3d96830586",
+              cacheId = "8a518e3d96830586",   ## fix for now
               cacheSaveFormat = "rds")
     }
   )
