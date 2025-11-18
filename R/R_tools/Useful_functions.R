@@ -667,6 +667,8 @@ browser()
           }
           AUCout <- AUCout2
 
+          rm(modOut2); gc(reset = TRUE)  ## free memory
+
           ## calculate predictions and residuals
           valData <- datPreds[testIDs,]
           valData <- cbind(valData,
