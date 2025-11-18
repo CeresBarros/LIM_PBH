@@ -847,13 +847,14 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   param_grid2 <- expand.grid(nrounds = 200,
                              max_depth = c(1:10),
                              eta = paramsF$eta,
-                             gamma = c(0, 0.1, 1, 2),#, 5, 10), ## tested with more initially, but not necessary
-                             colsample_bytree = c(0.1, 0.5, 1),
-                             min_child_weight = c(0, 1, 2, 5),
+                             gamma = c(0, 0.05, 0.1), #0.1, 1 , 2, 5, 10), ## tested with more initially, but not necessary
+                             colsample_bytree = c(0.5, 1), # 0.1, ## tested with more initially, but not necessary
+                             min_child_weight = c(0, 5, 10),  ## 0:5 had no influence, expanding range
                              subsample = 1)
 
   ## tune other parameters
   for (i in 1:3) gc(reset = TRUE)
+  ## tune other parameters
   message(cyan("Tuning remaining XGBoost parameters..."))
   st <- system.time(
     {
@@ -886,7 +887,7 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   }
 
   ## Step 3. vary only no. rounds
-  param_grid3 <- expand.grid(nrounds = c(100, 200, 500, 1000, 1500),
+  param_grid3 <- expand.grid(nrounds = c(100, 200, 500, 1000, 1500, 2000),
                              max_depth = paramsF$max_depth,
                              eta = paramsF$eta,
                              gamma = paramsF$gamma,
@@ -896,6 +897,7 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
 
   ## tune other parameters
   for (i in 1:3) gc(reset = TRUE)
+  ## tune other parameters
   message(cyan("Tuning no. rounds (trees)..."))
   st <- system.time(
     {
