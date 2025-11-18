@@ -656,8 +656,11 @@ browser()
 
           ## get last AUC
           AUCout2 <- tail(attr(modOut2, "evaluation_log"), 1)$train_auc
-          if (AUCout2 < AUCout) {
-            message("AUC decreased after removing features.\n",
+          ## make sure it's at least 0.1 worse
+          dAUC <- AUCout - AUCout2  ## negative dAUC = improvement
+
+          if (dAUC >= 0.01) {
+            message("AUC decreased 0.01 or more after removing features.\n",
                     "  The previous model will be retained, instead")
           } else {
             modOut <- modOut2
