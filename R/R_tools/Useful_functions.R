@@ -843,7 +843,6 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
   }
 
   ## Step 2. fix best learning rate and vary the rest
-  browser()
   param_grid2 <- expand.grid(nrounds = 200,
                              max_depth = c(1:10),
                              eta = paramsF$eta,
@@ -852,7 +851,8 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
                              min_child_weight = c(0, 5, 10),  ## 0:5 had no influence, expanding range
                              subsample = 1)
 
-  ## tune other parameters
+  ## clean-up
+  rm(xgb_tuned)
   for (i in 1:3) gc(reset = TRUE)
   ## tune other parameters
   message(cyan("Tuning remaining XGBoost parameters..."))
@@ -895,7 +895,8 @@ xgboostConfMat <- function(mod, classMap, classes, classVar = "SEV_CLASS", contV
                              min_child_weight = paramsF$min_child_weight,
                              subsample = 1)
 
-  ## tune other parameters
+  ## clean-up
+  rm(xgb_tuned)
   for (i in 1:3) gc(reset = TRUE)
   ## tune other parameters
   message(cyan("Tuning no. rounds (trees)..."))
