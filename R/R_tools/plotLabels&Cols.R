@@ -88,3 +88,6 @@ scenLabels <- c("PM" = expression(M[MS]), "noPM" = expression(M[SR]), "observed"
 ## line type for scenario
 scenLinetype <- c("PM" = 1, "noPM" = 2,
                   "HV_PM" = 1, "HV_noPM" = 1)
+
+## fire labels
+fireLabels <- c("0" = "no fire", "1" = "fire")
