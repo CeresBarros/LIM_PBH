@@ -117,14 +117,15 @@ ageComp_data <- function(simData, obsData, addLandscape = FALSE, ...) {
   ## simulated median biomass-weighted pixel/stand age
   simData <- simData[, standAgeSim := median(ageWeighted, na.rm = TRUE),
                      by = .(scenario, rep, year, pixelIndex)]
-  ## simulated median biomass-weighted species-age per pixel
+  ## simulated median species-age per pixel
   simData <- simData[, sppAgeSim := median(age, na.rm = TRUE),
                      by = .(scenario, rep, year, pixelIndex, speciesCode)]
 
   ## observed median species-age across patches by species/landscape
   obsData <- obsData[, avgAgeSppObs := median(Reconstructed.age, na.rm = TRUE),
                      by = .(speciesCode, firePresAbs)]
-  ## observed median species-age across patches by forest type/landscape
+  ## observed median basal-area-weighted (see stand.age.func)
+  ## species-age across patches by forest type/landscape
   obsData <- obsData[, avgAgeStandObs := median(Stand.age.3, na.rm = TRUE),
                      by = .(vegTypeCN, firePresAbs)]
 
