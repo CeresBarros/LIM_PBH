@@ -9,7 +9,7 @@ ageDataCN <- ageDataCN[Establishment.date <= 1940]
 ## remove funky record
 ageDataCN <- ageDataCN[Reconstructed.age != 2018]
 
-## calculate stand-ages for FT-level comparisons
+## calculate basal-area-weighted stand-ages for FT-level comparisons
 cols <- c("Stand.age.1", "Stand.age.2", "Stand.age.3", "Species.age.3")
 ageDataCN[, (cols) := stand.age.func(.SD), by = Patch.ID]
 
