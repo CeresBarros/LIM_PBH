@@ -70,7 +70,7 @@ ageComp_data <- function(simData, obsData, addLandscape = FALSE, ...) {
   ## subset simData
   simData <- simData[B > 0 & vegTypeCN %in% unique(obsData$vegTypeCN)]
   simData <- unique(obsData[, .(speciesCode, ageAtMinDBH)])[simData, on = .(speciesCode)]
-  simData <- simData[age >= ageAtMinDBH,]
+  simData <- simData[B >= 10 & age >= ageAtMinDBH,] ## there are some very old cohorts that have virtually no biomass
   simData[, ageAtMinDBH := NULL]
 
   ## calculate weighted cohort ages first
