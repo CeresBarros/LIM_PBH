@@ -222,15 +222,16 @@ plot1 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "speciesCode", y = "lo
                      colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Total landscape biomass", 
                      subtitleLab = "by species", yLab = "log-biomass (ton/ha)",
-                     x.text.angle = 45)
+                     x.text.angle = 45, xLab = "")
 plot1 <- plot1 +
   guides(colour = "none") +
-  facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed))
+  facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed,
+                                                         firePresAbs = fireLabels))
 
 plot2 <- summaryPlot(data = plotData, x = "noFires", y = "logBiomassBySpecies", 
                      colour = "speciesCode", colValues = speciesColours, 
                      colLabels = speciesLabels, titleLab = "Total landscape biomass",
-                     subtitleLab = "by species", yLab = "log-biomass (ton/ha)")
+                     subtitleLab = "by species", yLab = "log-biomass (ton/ha)", xLab = "No. fires")
 plot2 <- plot2 +
   stat_summary(fun = "mean", position = position_dodge(width = 0.8),
                geom = "line") +
@@ -241,14 +242,18 @@ plot5 <- summaryPlot(data = plotData, x = "speciesCode", y = "avgAgeBySppSim",
                      colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Species age", 
                      yLab = "Median biomass-weighted age",
-                     x.text.angle = 45) +
+                     x.text.angle = 45, xLab = "") +
   facet_grid(scenario ~ firePresAbs,
-             labeller = labeller(scenario = label_parsed, firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(scenario = label_parsed, firePresAbs = fireLabels))
+plot5 <- plot5 +
+  guides(colour = "none") +
+  facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed,
+                                                         firePresAbs = fireLabels))
 
 plot6 <- summaryPlot(data = plotData, x = "noFires", y = "avgAgeBySppSim", 
                      colour = "speciesCode", colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Species age", 
-                     yLab = "Median biomass-weighted age") +
+                     yLab = "Median biomass-weighted age", xLab = "No. fires") +
   stat_summary(fun = "mean", geom = "line", size = 1) +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = label_parsed)
@@ -258,31 +263,29 @@ gc(reset = TRUE)
 
 ```{r plot&savePlots3, echo = FALSE}
 ## biomass
-plotSave <- ggarrange(plot1,
+plotSave <- plot_grid(plot1 + theme(axis.title.x = element_blank()),
                       plot2 +
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+                      nrow = 1, rel_widths = c(0.4, 0.7),
+                      labels = "auto", label_size = 20, axis = "b", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeB.tiff"),
        width = 14, height = 7)
 
 ## age
-plotSave <- ggarrange(plot5,
+plotSave <- plot_grid(plot5 + theme(axis.title.y = element_blank()),
                       plot6 +
                         theme(axis.title.y = element_blank(), axis.text.y = element_blank()) +
                         labs(title = "", subtitle = ""),
-                      widths = c(0.4, 0.7),
-                      legend = "bottom", common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20))
+                      rel_widths = c(0.4, 0.7), align = "h", axis = "b", nrow = 1,
+                      labels = "auto", label_size = 20)
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_landscapeAge.tiff"),
        width = 14, height = 7)
 
 rm(plot1, plot2, plot5, plot6)
-gc()
+gc(reset = TRUE)
 ```
 
 ## COMPARING SIMULATED AND OBSERVED DATA
@@ -381,38 +384,51 @@ plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeS
                           xlabels = speciesLabels, x.text.angle = 45,
                           colValues = scenColours, 
                           colLabels = scenLabels, 
-                          titleLab = "Biomass-weighted age", subtitleLab = "by species", yLab = "age") 
+                          titleLab = "Species age", yLab = "years") 
 plot29 <- plot29 +
+  theme(axis.title.x = element_blank()) +
   facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
+             labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
 
 plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "sppAgeSim",
                           colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
-                          xlabels = c("0" = "no fire", "1" = "fire"), 
+                          xlabels = fireLabels, 
                           colValues = scenColours, 
                           colLabels = scenLabels, 
-                          titleLab = "Biomass-weighted age", subtitleLab = "across species", yLab = "age") 
+                          titleLab = "Landscape-wide age", yLab = "years") 
 
 plot30 <- plot30 + theme(axis.title.x = element_blank())
 
-plot29.1 <- simObsDistsPlot(simData = plotData3, x = "speciesCode", ySim = "avgAgeBySppSim",
-                            showMeans = FALSE, colSim = "scenario", xlabels = speciesLabels, 
+## only fire pixels, no means/whiskers
+plot29.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+                            x = "speciesCode", ySim = "sppAgeSim",
+                            colSim = "scenario", 
+                            obsData = plotData2[firePresAbs == 1], yObs = "Reconstructed.age", 
+                            xlabels = speciesLabels, x.text.angle = 45,
                             colValues = scenColours, 
-                            x.text.angle = 45,
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "by species", yLab = "age")
+                            showMeans = FALSE,
+                            titleLab = "Species age", yLab = "years") 
+plot29.1 <- plot29.1 + theme(axis.title.x = element_blank())
 
-plot30.1 <- simObsDistsPlot(simData = plotData3, x = "scenario", ySim = "avgAgeBySppSim",
-                            showMeans = FALSE, colSim = "scenario", xlabels = scenLabels, 
-                            colValues = scenColours,
+plotData2[, scenario := "observed"]
+plot30.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+                            x = "scenario", ySim = "sppAgeSim",
+                            colSim = "scenario", 
+                            obsData = plotData2[firePresAbs == 1], yObs = "Reconstructed.age", 
+                            xlabels = scenLabels, 
+                            colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "across species", yLab = "age")
-
+                            showMeans = FALSE,
+                            titleLab = "Landscape-wide age", yLab = "years") 
+plot30.1 <- plot30.1 + theme(axis.title.x = element_blank())
 ```
 
 ```{r plot&savePlots7, echo = FALSE}
-plotSave <- plot_grid(plot_grid(plot29 + theme(legend.position = "none"),
-                                plot30 + theme(legend.position = "none"),
+plotSave <- plot_grid(plot_grid(plot29 + 
+                                  theme(legend.position = "none", axis.title.x = element_blank()),
+                                plot30 + 
+                                  theme(legend.position = "none", axis.title.x = element_blank()),
                                 nrow = 1, rel_widths = c(1, 0.7),
                                 labels = "auto", label_size = 20, axis = "b", align = "h"),
                       get_legend(plot29 + theme(legend.direction = "vertical")), 
@@ -421,8 +437,10 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
        width = 14, height = 7)
 
-plotSave <- plot_grid(plot_grid(plot29.1 + theme(legend.position = "none"),
-                                plot30.1 + theme(legend.position = "none"),
+plotSave <- plot_grid(plot_grid(plot29.1 + 
+                                  theme(legend.position = "none", axis.title.x = element_blank()),
+                                plot30.1 + 
+                                  theme(legend.position = "none", axis.title.x = element_blank()),
                                 nrow = 1, rel_widths = c(1, 0.7),
                                 labels = "auto", label_size = 20, axis = "b", align = "h"),
                       get_legend(plot29.1 + theme(legend.direction = "vertical")), 
@@ -432,66 +450,75 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 ```
 
-### Age medians CIs - by forest type
+### Age violins - by forest type
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
 ```{r simVsObsAges_vegType, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
-## age distribution at end of simulation vs cameron's
-plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, speciesLevel = FALSE, cacheRepo = simPaths$cachePath)
+## age distribution at "end" of simulation vs cameron's
+
+## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
+## there were some old cohorts with virtually no biomass
+## ageComp_data calculates median biomass-weighted (sim) or basal area weighted (obs.) 
+## stand ages, and median raw ages for species-level averages.
+
+## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
+plotData <- Cache(do.call,
+                  what = ageComp_data,
+                  args = list("simData" = allPixelCDMntEnd,
+                              "obsData" = ageDataCN,
+                              "cacheRepo" = simPaths$cachePath),
+                  .cacheExtra = list(cacheExtra),
+                  userTags = "ageComp_data",
+                  omitArgs = c("args", "userTags"),
+                  cacheRepo = simPaths$cachePath)
 plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
-plotData2 <- plotData2[, list(avgAgeBySppObs = median(Stand.age.3, na.rm = TRUE)),
-                       by = .(vegTypeCN, firePresAbs)]
 
-## TODO: avgAgeBySppSim should be stand ages.
-
-plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "avgAgeBySppSim",
+plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "standAgeSim",
                             colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
                             xlabels = vegTypeCNLabels, x.text.angle = 45,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "by forest type", yLab = "age") 
+                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
 plot29.2 <- plot29.2 +
   facet_grid( ~ firePresAbs,
-              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
+              labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
 
-plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData2[, firePresAbs := as.factor(firePresAbs)]
-plot30.2 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "avgAgeBySppSim",
+plot30.2 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "standAgeSim",
                             colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
-                            xlabels = c("0" = "no fire", "1" = "fire"),
+                            xlabels = fireLabels,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "across forest type", yLab = "age") 
+                            titleLab = "Landscape-level stand age", yLab = "years") 
 
 
 ## only fire pixels, no means
-plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
-setnames(plotData3, "Stand.age.3", "avgAgeBySppSim")
-plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
-plotData3[, scenario := factor(scenario, levels = c("noPM", "observed", "PM"))]
-
-plot29.3 <- simObsDistsPlot(simData = plotData3, x = "vegTypeCN", ySim = "avgAgeBySppSim",
+plot29.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+                            x = "vegTypeCN", ySim = "standAgeSim",
+                            obsData = plotData2[firePresAbs == 1], yObs = "Stand.age.3",
                             colSim = "scenario", x.text.angle = 45,
                             xlabels = vegTypeCNLabels, showMeans = FALSE,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "by forest type", yLab = "age") 
+                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
 
-plot30.3 <- simObsDistsPlot(simData = plotData3, x = "scenario", ySim = "avgAgeBySppSim",
+plotData2[, scenario := "observed"]
+plot30.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
+                            x = "scenario", ySim = "standAgeSim",
+                            obsData = plotData2[firePresAbs == 1], yObs = "Stand.age.3",
                             colSim = "scenario",
                             xlabels = scenLabels, showMeans = FALSE,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Biomass-weighted age", subtitleLab = "across forest type", yLab = "age") 
+                            titleLab = "Landscape-level stand age", yLab = "years") 
 ```
 
 ```{r plot&savePlots8, echo = FALSE}
 plotSave <- plot_grid(plot_grid(plot29.2 + theme(legend.position = "none"),
                                 plot30.2 + theme(legend.position = "none"),
-                                nrow = 1, rel_widths = c(1, 0.7),
+                                nrow = 1, rel_widths = c(1, 0.6),
                                 labels = "auto", label_size = 20, axis = "b", align = "h"),
                       get_legend(plot29.2 + theme(legend.direction = "vertical")), 
                       rel_widths = c(1, 0.15))
@@ -514,7 +541,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 (quantile deviations - 50, 75, 95%)
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
-
+## HERE - Nov 27 2025
 ```{r simVsObsAgesDif, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages (per species) per pixel first, then average across species per pixel
@@ -536,7 +563,7 @@ plot32 <- DevPlot(plotData, x = "vegTypeCN", y = avgAgeBySppSim - avgAgeBySppObs
                   xlabels = vegTypeCNLabels, xorder = x_order,
                   fillLabels = scenLabels, fillValues = scenColours,
                   xFacet = "firePresAbs", 
-                  labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                  labllr = labeller(firePresAbs = fireLabels),
                   titleLab = "Avg. differences from observed ages",
                   yLab = expression("sim." - bar("obs.")))
 
@@ -546,7 +573,7 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     colour = "scenario", colValues = scenColours, 
                     colLabels = scenLabels, xlabels = vegTypeCNLabels,
                     xorder = x_order, xFacet = "firePresAbs", 
-                    labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                    labllr = labeller(firePresAbs = fireLabels),
                     titleLab = "Mean abs. deviation from observed ages",
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
 
@@ -609,7 +636,7 @@ plot32.3 <- ggplot(plotData2,
        y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
   coord_flip() +
   facet_wrap(~ firePresAbs, scales = "free_x", 
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(firePresAbs = fireLabels))
 
 ## only pixels with fire
 ## order veg types, with landscape at the end
@@ -699,7 +726,7 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
        width = 10, height = 10)
 
-gc()
+gc(reset = TRUE)
 ```
 
 ### Mean absolute deviations and quantile deviations of simulated ages by species
@@ -738,7 +765,7 @@ plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(avgAgeBySppSim - 
 plot43 <- DevPlot(plotData, x = "speciesCode", y = avgAgeBySppSim - avgAgeBySppObs,
                   xlabels = speciesLabels, fillValues = scenColours,
                   fillLabels = scenLabels, xFacet = "firePresAbs", 
-                  labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                  labllr = labeller(firePresAbs = fireLabels),
                   titleLab = "Avg. differences from observed ages",
                   yLab = expression("sim." - bar("obs.")))
 
@@ -748,7 +775,7 @@ plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs",
                     colour = "scenario", colValues = scenColours, colLabels = scenLabels, 
                     xlabels = c(speciesLabels, landscape = "landscape"),
                     xorder = c("landscape", names(speciesLabels)), xFacet = "firePresAbs", 
-                    labllr = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")),
+                    labllr = labeller(firePresAbs = fireLabels),
                     titleLab = "Mean abs. deviation from observed ages",
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
 
@@ -815,7 +842,7 @@ plot43.3 <- ggplot(plotData2,
        y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
   coord_flip() +
   facet_wrap(~ firePresAbs, scales = "free_x", 
-             labeller = labeller(firePresAbs = c("0" = "no fire", "1" = "fire")))
+             labeller = labeller(firePresAbs = fireLabels))
 
 ## only pixels with fire
 ## order veg types, with landscape at the end
@@ -918,7 +945,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 10, height = 10)
 
 # rm(plot43, plot43.2, plotTest1.2)
-gc()
+gc(reset = TRUE)
 ```
 
 ### No. fires, fire frequency, fire size and fire severity
@@ -1059,7 +1086,7 @@ ggsave(plot = plotSave,
 
 ```
 
-### boxplots of  no. fires, fire frequency, fire size and fire severity
+#### boxplots of  no. fires, fire frequency, fire size and fire severity
 Non-forest forest types and pixels w/o included since these plots are showing data used for PBRs
 ```{r fireAttr_boxplots, cache = FALSE}
 x_order <- names(vegTypeCNLabels)
@@ -1094,6 +1121,8 @@ ggsave(plot = plotSave,
        width = 10, height = 12, dpi = 300)
 
 ```
+
+
 
 ### "Fire regime" plots
 As in Cameron & Daniels 2020 (Fig. 9b,c): median and  SD of fire interval~severity, per forest type
@@ -1265,7 +1294,7 @@ plotSave <- plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle
 
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN.tiff"),
        width = 8, height = 8)
-gc()
+gc(reset = TRUE)
 ```
 
 
@@ -1440,12 +1469,12 @@ plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
 ## SPECIES BIOMASS-WEIGHTED AGE
 ## with mean and SD
 plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
-                               x = "vegTypeCN", y = "avgAgeBySppSim", errorBar = TRUE,
-                               fill = "speciesCode", fillValues = speciesColours, 
-                               fillLabels = speciesLabels, xFacet = "scenario", 
-                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                               titleLab = "Mean weighted age", yLab = "Biomass-weighted age",
-                               subtitleLab = "by species, within pixels")
+                             x = "vegTypeCN", y = "avgAgeBySppSim", errorBar = TRUE,
+                             fill = "speciesCode", fillValues = speciesColours, 
+                             fillLabels = speciesLabels, xFacet = "scenario", 
+                             xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
+                             titleLab = "Mean weighted age", yLab = "Biomass-weighted age",
+                             subtitleLab = "by species, within pixels")
 
 ```
 
