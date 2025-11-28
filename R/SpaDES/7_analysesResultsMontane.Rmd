@@ -291,12 +291,9 @@ gc()
 ## MODELLED PROPERTIES ---------------------------------
 ## total biomass
 ## biomass
-byCols <- c("scenario", "rep", "speciesCode", "firePresAbs", "noFires")
-plotData <- summaryBurnCohortDataSpp[, .SD, .SDcols = c(byCols, "BiomassBySpecies")]
-plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
-plotData[, logBiomassBySpecies := log(BiomassBySpecies + 1)]
+summaryBurnCohortDataSpp[, logBiomassBySpecies := log(BiomassBySpecies + 1)]
 
-plot1 <- summaryPlot(data = plotData, x = "speciesCode", y = "logBiomassBySpecies", 
+plot1 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "speciesCode", y = "logBiomassBySpecies", 
                      colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Total landscape biomass", 
                      subtitleLab = "by species", yLab = "log-biomass (ton/ha)",
@@ -314,13 +311,6 @@ plot2 <- plot2 +
                geom = "line") +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = labeller(scenario = label_parsed))
-
-## average age
-plotData <- plotData[,  ## absences can't lower the average ages
-                     list(avgAgeBySppSim = median(age, na.rm = TRUE)),
-                     by = .(scenario, rep, pixelIndex, year, firePresAbs, speciesCode)]
-plotData[is.nan(avgAgeBySppSim), avgAgeBySppSim := 0]
-plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
 plot5 <- summaryPlot(data = plotData, x = "speciesCode", y = "avgAgeBySppSim", 
                      colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
@@ -377,13 +367,25 @@ gc()
 ## age distribution at end of simulation vs cameron's
 ## pixel-level differences from observed medians
 
-plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, biomassWeighted = FALSE, cacheRepo = simPaths$cachePath)
-plotData2 <- copy(ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)])
-plotData2 <- plotData2[!is.na(speciesCode)]
+## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
+## there were some old cohorts with virtually no biomass
+## ageComp_data calculates median biomass-weighted (sim) or basal area weighted (obs.) 
+## stand ages, and median raw ages for species-level averages.
 
-## TODO: avgAgeBySppSim should be raw ages.
+## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
 
-plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "avgAgeBySppSim",
+plotData <- Cache(do.call,
+                  what = ageComp_data,
+                  args = list("simData" = allPixelCDMntEnd,
+                              "obsData" = ageDataCN,
+                              "cacheRepo" = simPaths$cachePath),
+                  .cacheExtra = list(cacheExtra),
+                  userTags = "ageComp_data",
+                  omitArgs = c("args", "userTags"),
+                  cacheRepo = simPaths$cachePath)
+plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
+
+plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeSim",
                           colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
                           xlabels = speciesLabels, x.text.angle = 45,
                           colValues = scenColours, 
@@ -393,20 +395,14 @@ plot29 <- plot29 +
   facet_grid(~ firePresAbs,
              labeller = labeller(scenario = scenLabels, firePresAbs = c("0" = "no fire", "1" = "fire"))) 
 
-plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData2[, firePresAbs := as.factor(firePresAbs)]
-plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "avgAgeBySppSim",
+plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "sppAgeSim",
                           colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
                           xlabels = c("0" = "no fire", "1" = "fire"), 
                           colValues = scenColours, 
                           colLabels = scenLabels, 
                           titleLab = "Biomass-weighted age", subtitleLab = "across species", yLab = "age") 
 
-## only fire pixels, no means
-plotData3 <- data.table(plotData2[firePresAbs == 1], scenario = "observed")
-setnames(plotData3, "Reconstructed.age", "avgAgeBySppSim")
-plotData3 <- rbind(plotData3, plotData[firePresAbs == 1], fill = TRUE, use.names = TRUE)
-plotData3[, scenario := factor(scenario, levels = c("noPM", "observed", "PM"))]
+plot30 <- plot30 + theme(axis.title.x = element_blank())
 
 plot29.1 <- simObsDistsPlot(simData = plotData3, x = "speciesCode", ySim = "avgAgeBySppSim",
                             showMeans = FALSE, colSim = "scenario", xlabels = speciesLabels, 
