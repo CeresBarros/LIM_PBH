@@ -28,25 +28,28 @@ if (!exists("pkgDir")) {
   .libPaths(pkgDir)
 }
 
-library(data.table)
-library(ggplot2)
-library(ggpubr)
-library(ggspatial)
-library(cowplot)
-library(raster)
-library(stars)
-library(sf)
-library(quickPlot)
-library(SpaDES)
-library(qs)
-library(purrr)
-library(magick)
-library(LandR)
-library(future)
-library(future.apply)
-library(lme4)
-library(MuMIn)
-library(ToolsCB)
+library(Require)
+
+Require(
+  c("data.table",
+    "ggplot2",
+    "ggpubr",
+    "ggspatial",
+    "cowplot",
+    "raster",
+    "stars", 
+    "sf",
+    "quickPlot",
+    "SpaDES",
+    "qs",
+    "purrr",
+    "magick",
+    "LandR",
+    "future",
+    "future.apply",
+    "lme4",
+    "MuMIn",
+    "ToolsCB"), install = FALSE)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/hypervolumesHelpers.R")
