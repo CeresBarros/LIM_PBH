@@ -207,82 +207,7 @@ source("R/R_tools/plotLabels&Cols.R")
 
 ## remove large objs rasters to save memory
 rm(list = c(grep("Stk", ls(), value = TRUE)))
-amc::.gc()
-```
-
-### TESTING DIFFERENCES BETWEEN OBSERVED AND SIMULATED DATA
-AGES
-At the end of the simulation (or averaged across sampled years), by species
-```{r testAges}
-## STAT TESTS ------------------------------------------
-## AGE SIM VS OBS ----
-## comparing simulated and observed ages
-## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
-## in the obs data and this would lead to data loss
-## simulated ages below the minimum DBH age are excluded from comparisons.
-## note that species-level comparisons do not use average species ages, so the differences are calculated between 
-## cohort age and the observed median species age
-cols <- which(as.matrix(allPixelCDMntEnd[, lapply(.SD, is.numeric)]))
-cols <- names(allPixelCDMntEnd)[cols]
-cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
-plotData <- Cache(do.call,
-                  what = ageComp_data,
-                  args = list("simData" = allPixelCDMntEnd,
-                              "obsData" = ageDataCN,
-                              "cacheRepo" = simPaths$cachePath),
-                  .cacheExtra = list(cacheExtra),
-                  userTags = "ageComp_data",
-                  omitArgs = c("args", "userTags"),
-                  cacheRepo = simPaths$cachePath)
-plotData[, ageDiffSimObs := age - avgAgeSppObs]
-plotData <- plotData[!is.na(ageDiffSimObs)]
-
-ageDiffLMList <- lapply(split(plotData, by = "firePresAbs"), function(DT) {
-  # lm(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, data = DT)
-  nlme::gls(abs(abs(ageDiffSimObs)) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode),
-            data = DT)   ## better AIC and residuals
-})
-
-plotData[firePresAbs == "0", 
-         pred := predict(ageDiffLMList$`0`, type = "response")]
-plotData[firePresAbs == "1", 
-         pred := predict(ageDiffLMList$`1`, type = "response")]
-if (isFALSE(class(ageDiffLMList$`0`) == "gls")) {
-  plotData[firePresAbs == "0", 
-           predSE := predict(ageDiffLMList$`0`, type = "response", se = TRUE)["se.fit"]]
-}
-
-if (isFALSE(class(ageDiffLMList$`1`) == "gls")) {
-  plotData[firePresAbs == "1", 
-           predSE := predict(ageDiffLMList$`1`, type = "response", se = TRUE)["se.fit"]]
-}
-
-plotTest1.2 <- ggplot(plotData, aes(x = firePresAbs)) +
-  geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
-  scale_x_discrete(labels = c("0" = "no fire", "1" = "fire")) +
-  scale_fill_manual(values = scenColours, labels = scenLabels) +
-  theme_pubr(base_size = 16) +
-  theme(legend.title = element_blank(), 
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Differences between median simulated and observed ages",
-       y = expression(bgroup("|", "sim." - bar("obs."), "|")),
-       x = "")
-
-plotTest1 <- plotTest1.2 +
-  facet_wrap(~ speciesCode, labeller = labeller(speciesCode = speciesLabels))
-
-```
-
-```{r plot&savePlots, echo = FALSE}
-plotSave <- ggarrange(plotTest1, 
-                      plotTest1.2, common.legend = TRUE,
-                      labels = "auto", font.label = list(size = 20),
-                      widths = c(1, 0.6))
-plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest.tiff"),
-       width = 14, height = 7)
-rm(plotTest1)  ## plotTest1.2 is used again later
-gc()
+amc::.gc(reset = TRUE)
 ```
 
 ## BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY SPECIES
@@ -361,7 +286,73 @@ gc()
 ```
 
 ## COMPARING SIMULATED AND OBSERVED DATA
-### Age medians CIs - by species
+### TESTING DIFFERENCES BETWEEN OBSERVED AND SIMULATED DATA
+AGES
+At the end of the simulation (or averaged across sampled years), by species
+```{r testAges}
+## STAT TESTS ------------------------------------------
+## AGE SIM VS OBS ----
+## comparing simulated and observed ages
+## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
+## in the obs data and this would lead to data loss
+## simulated ages below the minimum DBH age are excluded from comparisons.
+## note that species-level comparisons do not use average species ages, so the differences are calculated between 
+## cohort age and the observed median species age
+cols <- which(as.matrix(allPixelCDMntEnd[, lapply(.SD, is.numeric)]))
+cols <- names(allPixelCDMntEnd)[cols]
+cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
+plotData <- Cache(do.call,
+                  what = ageComp_data,
+                  args = list("simData" = allPixelCDMntEnd,
+                              "obsData" = ageDataCN,
+                              "cacheRepo" = simPaths$cachePath),
+                  .cacheExtra = list(cacheExtra),
+                  userTags = "ageComp_data",
+                  omitArgs = c("args", "userTags"),
+                  cacheRepo = simPaths$cachePath)
+plotData[, ageDiffSimObs := age - avgAgeSppObs]   ## use raw ages when species-level
+plotData <- plotData[!is.na(ageDiffSimObs)]
+plotData[firePresAbs == 1]   ## there are no observed data without fire record
+
+ageDifflm <- lm(abs(ageDiffSimObs) ~ scenario * speciesCode, data = plotData)   ## better AIC and residuals
+ageDiffgls <- nlme::gls(abs(ageDiffSimObs) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode), data = plotData)   ## better AIC and residuals
+
+AICcmodavg::AICc(ageDifflm)
+AICcmodavg::AICc(ageDiffgls)  ## better
+opts <- par(mfrow = c(2,2))
+plot(ageDifflm)
+par(opts)
+plot(ageDiffgls)   ## not much better.
+
+plotData[, pred := predict(ageDiffgls, type = "response")]
+
+plotTest1.2 <- ggplot(plotData, aes(x = scenario)) +
+  geom_boxplot(aes(y = abs(ageDiffSimObs), fill = scenario)) +
+  scale_x_discrete(labels = scenLabels) +
+  scale_fill_manual(values = scenColours, labels = scenLabels, guide = NULL) +
+  theme_pubr(base_size = 16) +
+  theme(legend.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+  labs(title = "Differences between median simulated and observed ages",
+       y = expression(bgroup("|", "sim." - bar("obs."), "|")),
+       x = "")
+
+plotTest1 <- plotTest1.2 +
+  facet_wrap(~ speciesCode, labeller = labeller(speciesCode = speciesLabels))
+```
+
+```{r plot&savePlots, echo = FALSE}
+plotSave <- ggarrange(plotTest1, 
+                      plotTest1.2, common.legend = TRUE,
+                      labels = "auto", font.label = list(size = 20),
+                      widths = c(1, 0.6))
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest.tiff"),
+       width = 14, height = 7)
+rm(plotTest1)  ## plotTest1.2 is used again later
+gc(reset = TRUE)
+```
+
+### Age violins - by species
 ```{r simVsObsAges, cache = FALSE}
 ## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at end of simulation vs cameron's
