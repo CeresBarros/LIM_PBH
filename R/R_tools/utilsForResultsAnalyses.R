@@ -159,14 +159,18 @@ summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels
                  size = 1) +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = x.text.angle) +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    scale_colour_manual(values = colValues) +
-    if (!is.null(xlabels)) {
-      plotOut <- plotOut +
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    scale_colour_manual(values = colValues)
+  if (!is.null(xlabels)) {
+    plotOut <- plotOut +
+      if (is(simData[[x]], "numeric")) {
+        scale_x_manual(labels = xlabels)
+      } else {
         scale_x_discrete(labels = xlabels)
-    }
+      }
+  }
   plotOut <- plotOut +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab)
+    labs(title = titleLab, y = yLab, x = xLab, subtitle = subtitleLab)
   plotOut
 }
 
@@ -184,7 +188,7 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
     plotOut <- plotOut +
       stat_summary(data = simData,
                    mapping = aes(x = !!sym(x), y = !!sym(ySim), colour = !!sym(colSim)),
-                   fun.data = "median_hillow_",
+                   fun.data = "median_hilow_",
                    position = position_dodge(width = 0.9))
   }
 
@@ -198,8 +202,16 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
       plotOut <- plotOut +
         stat_summary(data = obsData,
                      aes(x = !!sym(x), y = !!sym(yObs), colour = "observed"),
-                     fun.data = "median_hillow_") +
-        scale_x_discrete(labels = xlabels)
+                     fun.data = "median_hilow_")
+    }
+  }
+
+  if (!is.null(xlabels)) {
+    plotOut <- plotOut +
+    if (is(simData[[x]], "numeric")) {
+      scale_x_manual(labels = xlabels)
+    } else {
+      scale_x_discrete(labels = xlabels)
     }
   }
 
@@ -208,8 +220,8 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
     scale_fill_manual(values = colValues, labels = colLabels) +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = x.text.angle) +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab)
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
   plotOut
 }
 
@@ -222,7 +234,7 @@ DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
     geom_boxplot() +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
 
     if (is.null(xorder)) {
       plotOut <- plotOut + scale_x_discrete(labels = xlabels)
@@ -232,7 +244,7 @@ DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
 
   plotOut <- plotOut +
     scale_fill_manual(values = fillValues, labels = fillLabels) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
     facet_grid(~ !!sym(xFacet), labeller = labllr)
 
   plotOut
@@ -250,9 +262,9 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
     scale_x_discrete(labels = xlabels, limits = rev(xorder)) +   ## rev because we flip axes
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = x.text.angle) +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-          panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab) +
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted"),
+          panel.grid.major.x = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
     coord_flip()
   if (!is.null(xFacet)) {
     plotOut <- plotOut +
@@ -273,8 +285,8 @@ densityPlot <- function(data, x, fill, alpha, fillValues, fillLabels, alphaValue
     scale_fill_manual(values = fillValues, labels = fillLabels) +
     theme_pubr(base_size = 14, legend = "bottom") +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab)
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
 }
 
 
@@ -291,8 +303,8 @@ boxPlot <- function(data, x, y, fill, xlabels, xorder, fillValues, fillLabels,
     scale_fill_manual(values = fillValues, labels = fillLabels) +
     theme_pubr(base_size = 14, legend = "bottom") +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab)
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
 }
 
 
@@ -318,8 +330,8 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
                        labels = c(as.character(seq(0, 1, 0.25)))) +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
     theme(legend.title = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = ylab, subtitle = subtitleLab, x = xlab)
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
     facet_grid(~ xFacet,
                labeller = labllr)
 }
