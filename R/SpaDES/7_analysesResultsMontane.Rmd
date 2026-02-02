@@ -572,6 +572,7 @@ plotData <- Cache(
 options(opts)
 
 plotData[, speciesCode := NULL]
+## HERE!!
 plotData <- plotData[!is.na(avgAgeBySppObs)]
 plotData <- unique(plotData)
 
