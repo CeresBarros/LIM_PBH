@@ -576,7 +576,7 @@ plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeBySppObs)]
 plotData <- unique(plotData)
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(avgAgeBySppSim - avgAgeBySppObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeBySppObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
 ## differences
