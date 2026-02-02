@@ -303,21 +303,30 @@ At the end of the simulation (or averaged across sampled years), by species
 cols <- which(as.matrix(allPixelCDMntEnd[, lapply(.SD, is.numeric)]))
 cols <- names(allPixelCDMntEnd)[cols]
 cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
-plotData <- Cache(do.call,
-                  what = ageComp_data,
-                  args = list("simData" = allPixelCDMntEnd,
-                              "obsData" = ageDataCN,
-                              "cacheRepo" = simPaths$cachePath),
-                  .cacheExtra = list(cacheExtra),
-                  userTags = "ageComp_data",
-                  omitArgs = c("args", "userTags"),
-                  cacheRepo = simPaths$cachePath)
-plotData[, ageDiffSimObs := age - avgAgeSppObs]   ## use raw ages when species-level
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = preSimList$species,
+  omitArgs = c("simData", "obsData", "userTags"))
+options(opts)
+plotData[, ageDiffSimObs := age - avgAgeSppObs]   ## use median species ages based on raw cohort ages at the species-level
 plotData <- plotData[!is.na(ageDiffSimObs)]
 plotData[firePresAbs == 1]   ## there are no observed data without fire record
 
 ageDifflm <- lm(abs(ageDiffSimObs) ~ scenario * speciesCode, data = plotData)   ## better AIC and residuals
-ageDiffgls <- nlme::gls(abs(ageDiffSimObs) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode), data = plotData)   ## better AIC and residuals
+
+savedSeed <- .Random.seed
+set.seed(12345)
+cacheExtra2 <- plotData[sample(1:nrow(plotData), 100),]
+assign(".Random.seed", savedSeed, envir = .GlobalEnv)
+
+## Dec 3: to repeat
+ageDiffgls <- nlme::gls(abs(ageDiffSimObs) ~ scenario * speciesCode, weights = nlme::varIdent(form = ~1|speciesCode), data = plotData) |> 
+  Cache(omitArgs = "data",
+        .cacheExtra = cacheExtra2,
+        cacheRepo = simPaths$cachePath) ## better AIC and residuals
 
 AICcmodavg::AICc(ageDifflm)
 AICcmodavg::AICc(ageDiffgls)  ## better
@@ -370,15 +379,14 @@ cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
 
-plotData <- Cache(do.call,
-                  what = ageComp_data,
-                  args = list("simData" = allPixelCDMntEnd,
-                              "obsData" = ageDataCN,
-                              "cacheRepo" = simPaths$cachePath),
-                  .cacheExtra = list(cacheExtra),
-                  userTags = "ageComp_data",
-                  omitArgs = c("args", "userTags"),
-                  cacheRepo = simPaths$cachePath)
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = preSimList$species,
+  omitArgs = c("simData", "obsData", "userTags"))
+options(opts)
 plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
 
 plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeSim",
@@ -466,15 +474,14 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## stand ages, and median raw ages for species-level averages.
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
-plotData <- Cache(do.call,
-                  what = ageComp_data,
-                  args = list("simData" = allPixelCDMntEnd,
-                              "obsData" = ageDataCN,
-                              "cacheRepo" = simPaths$cachePath),
-                  .cacheExtra = list(cacheExtra),
-                  userTags = "ageComp_data",
-                  omitArgs = c("args", "userTags"),
-                  cacheRepo = simPaths$cachePath)
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = preSimList$species,
+  omitArgs = c("simData", "obsData", "userTags"))
+options(opts)
 plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
@@ -553,10 +560,15 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
 
 ## then take the absolute difference of each stand to the observed average (per veg type) across reps
-plotData <- ageComp_data(allPixelCDMntEnd, ageDataCN, speciesLevel = FALSE, 
-                         addLandscape = TRUE, cacheRepo = simPaths$cachePath)
-plotData <- plotData[, avgAgeBySppSim := median(avgAgeBySppSim, na.rm = TRUE),
-                     by = .(scenario, rep, year, pixelIndex, firePresAbs, vegTypeCN)]
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = preSimList$species,
+  omitArgs = c("simData", "obsData", "userTags"))
+options(opts)
+
 plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeBySppObs)]
 plotData <- unique(plotData)
