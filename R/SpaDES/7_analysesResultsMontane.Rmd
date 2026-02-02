@@ -387,6 +387,7 @@ plotData <- Cache(
   omitArgs = c("simData", "obsData", "userTags"))
 options(opts)
 plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
+plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
 
 plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeSim",
                           colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
