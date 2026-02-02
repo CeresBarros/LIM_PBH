@@ -36,31 +36,34 @@ makeSummaryTable <- function(cohortData, byCols) {
 #' @return a `data.table` with columns:
 #'   - age: the raw simulated cohort ages per pixel
 #'   - ageWeighted: the simulated biomass-weighted species ages per pixel
-#'   - sppAgesim: the simulated *median* species ages per pixel
+#'   - sppAgesim: the simulated *median* species age per pixel
 #'   - standAgeSim: the simulated *median* biomass-weighted stand age per pixel
-#'   - avgAgeSppObs: the *median* observed species age calculated across patches
-#'     per species
+#'   - avgAgeSppObs: the *median* observed species age (basal-area-weighted)
+#'     calculated across patches per species
 #'   - avgAgeStandObs: the *median* observed stand age calculated across patches
-#'     per fores type
+#'     per forest type
 #'
-#' @details Cohorts with 0 biomass (`B = 0`) and age lower than age at minimum DBH
-#'   (`age < ageAtMinDBH`) are excluded from calculations, as are any pixels whose
-#'   forest type differs from forest types sampled in the field (`vegTypeCN %in% unique(obsData$Cover.dendro)`).
+#' @details Cohorts with biomass low biomass at old ages and cohorts with ages lower than age at minimum DBH
+#'   (`age < ageAtMinDBH`) are excluded from calculations. Low biomass at old age was defined as a biomass
+#'   value equal to minimum biomass at `age < ageAtMinDBH`, per species. "Old age" was defined as 0.9*longevity
+#'   of the species.
+#'   Pixels whose forest type differs from forest types sampled in the field
+#'   (`vegTypeCN %in% unique(obsData$Cover.dendro)`) were excluded.
 #'   Records in the observed data that correspond to species absent from the simulations
 #'   are also excluded.
-#'   Species-level median ages (`"sppAgesim"` and `"avgAgeSppObs"`) will be
+#'   Species-level median ages (`"sppAgesim"` and `"avgAgeSppObs"`) are
 #'   calculated on raw simulated (`"age"`) and observed (`"Reconstructed.age"`)
-#'   ages by species within each pixel (`"sppAgesim"`) an across patches (`"avgAgeSppObs"`).
-#'   Stand-level median ages (`"standAgeSim"` and `"avgAgeStandObs"`) will be calculated as
-#'   the median of weighted stand ages by pixel (`"standAgeSim"`), and across patches
-#'   of a given forest type (`"vegTypeCN"`). Simulated weighted stand ages are
-#'   calculated as biomass-weighted median ages in a pixel (with cohort biomass as
-#'   weights, `"standAgeSim"`) and observed weighted stand ages are basal-area-weighted
+#'   ages by species within each simulated pixel or across observed patches, respectively.
+#'   Stand-level median ages (`"standAgeSim"` and `"avgAgeStandObs"`) are calculated as
+#'   by pixel (`"standAgeSim"`), and across patches
+#'   of a given forest type (`"vegTypeCN"`). Simulated stand ages are
+#'   calculated as biomass-weighted median ages in a pixel (with cohort biomass/100 as
+#'   weights, `"standAgeSim"`) and observed weighted stand ages are weighted by basal-area
 #'   median ages in a patch (`"standAgeObs"`).
 #'   All calculations on simulated data are done per year, scenario and replicate.
 #'
 #' @export
-ageComp_data <- function(simData, obsData, addLandscape = FALSE, ...) {
+ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, ...) {
   ## subset obsData
   setnames(obsData, "Cover.dendro", "vegTypeCN", skip_absent = TRUE)
   allCols <- c("Reconstructed.age", "Stand.age.3", "ageAtMinDBH", "speciesCode", "vegTypeCN", "firePresAbs")
@@ -70,8 +73,25 @@ ageComp_data <- function(simData, obsData, addLandscape = FALSE, ...) {
   ## subset simData
   simData <- simData[B > 0 & vegTypeCN %in% unique(obsData$vegTypeCN)]
   simData <- unique(obsData[, .(speciesCode, ageAtMinDBH)])[simData, on = .(speciesCode)]
-  simData <- simData[B >= 10 & age >= ageAtMinDBH,] ## there are some very old cohorts that have virtually no biomass
-  simData[, ageAtMinDBH := NULL]
+  simData <- simData[age >= ageAtMinDBH,]   ## to match field methods
+
+  ## there are some very old cohorts that have virtually no biomass, when compared to very young cohorts
+  ## remove cohorts with too low biomass
+  minBs <- copy(simData)
+  minBs[, minAge := min(age), by = speciesCode]
+  minBs <- minBs[age == minAge][, minB := min(B, na.rm = TRUE), by = speciesCode]
+  minBs <- unique(minBs[, .(speciesCode, minAge, minB)])
+  simData <- minBs[simData, on = "speciesCode"]
+  simData <- speciesTraits[, .(speciesCode, longevity)][simData, on = .(speciesCode)]
+  simData[, longevity := longevity * 0.9]  ## exclude small cohorts near longevity
+  simData[, exclude := FALSE]
+  simData[B <= minB & age > longevity, exclude := TRUE] ## there are some very old cohorts that have virtually no biomass
+  simData <- simData[exclude == isFALSE(exclude)]
+  simData[, `:=`(ageAtMinDBH = NULL,
+                 minAge = NULL,
+                 minB = NULL,
+                 longevity = NULL,
+                 exclude = NULL)]
 
   ## calculate weighted cohort ages first
   ## don't average across years/pixels -- leave all replicates.
@@ -193,6 +213,12 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
   }
 
   if (!is.null(obsData)) {
+    if (class(simData[[x]]) != class(obsData[[x]])) {
+      message("class(simData[[x]]) != class(obsData[[x]]), will try to coherce the later")
+      coherceFun <- paste0("as.", class(simData[[x]]), "(obsData[[x]])")
+      obsData[[x]] <- eval(parse(text = coherceFun))
+    }
+
     plotOut <- plotOut +
       geom_violin(data = obsData,
                   mapping = aes(x = !!sym(x), y = !!sym(yObs),
