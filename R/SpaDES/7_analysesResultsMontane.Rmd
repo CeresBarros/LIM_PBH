@@ -365,7 +365,6 @@ gc(reset = TRUE)
 
 ### Age violins - by species
 ```{r simVsObsAges, cache = FALSE}
-## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at "end" of simulation vs cameron's
 ## pixel-level differences from observed medians
 cols <- which(as.matrix(allPixelCDMntEnd[, lapply(.SD, is.numeric)]))
@@ -375,7 +374,7 @@ cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
 ## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
 ## there were some old cohorts with virtually no biomass
 ## ageComp_data calculates median biomass-weighted (sim) or basal area weighted (obs.) 
-## stand ages, and median raw ages for species-level averages.
+## stand ages (equivalent to what was previously median(avgAgeBySppSim) in a pixel, across species), and median raw ages for species-level averages.
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't -- we've decided to weight at the stand level but not at the species level
 
@@ -465,7 +464,6 @@ Forest types are defined for a sample of years across the quasi equilibrium peri
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
 ```{r simVsObsAges_vegType, cache = FALSE}
-## SIMULATED VS. OBSERVED DATA ------------
 ## age distribution at "end" of simulation vs cameron's
 
 ## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
@@ -548,9 +546,12 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 
 ### Median absolute deviations and quantile deviations of simulated ages by stand type
 (quantile deviations - 50, 75, 95%)
+
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
-## HERE - Nov 27 2025
+
+HERE!!!
+
 ```{r simVsObsAgesDif, cache = FALSE}
 ## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
 ## there were some old cohorts with virtually no biomass
