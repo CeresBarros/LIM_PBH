@@ -37,7 +37,7 @@ makeSummaryTable <- function(cohortData, byCols) {
 #' @return a `data.table` with columns:
 #'   - age: the raw simulated cohort ages per pixel
 #'   - ageWeighted: the simulated biomass-weighted species ages per pixel
-#'   - sppAgesim: the simulated *median* species age per pixel
+#'   - sppAgeSim: the simulated *median* species age per pixel
 #'   - standAgeSim: the simulated *median* biomass-weighted stand age per pixel
 #'   - avgAgeSppObs: the *median* observed species age (basal-area-weighted)
 #'     calculated across patches per species
@@ -52,7 +52,7 @@ makeSummaryTable <- function(cohortData, byCols) {
 #'   (`vegTypeCN %in% unique(obsData$Cover.dendro)`) were excluded.
 #'   Records in the observed data that correspond to species absent from the simulations
 #'   are also excluded.
-#'   Species-level median ages (`"sppAgesim"` and `"avgAgeSppObs"`) are
+#'   Species-level median ages (`"sppAgeSim"` and `"avgAgeSppObs"`) are
 #'   calculated on raw simulated (`"age"`) and observed (`"Reconstructed.age"`)
 #'   ages by species within each simulated pixel or across observed patches, respectively.
 #'   Stand-level median ages (`"standAgeSim"` and `"avgAgeStandObs"`) are calculated as
