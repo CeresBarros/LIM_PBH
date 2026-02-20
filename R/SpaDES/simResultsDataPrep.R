@@ -9,12 +9,15 @@ if (!exists("runPrepResultsModule")) {
   stop("please provide runPrepResultsModule TRUE/FALSE")
 }
 
+## load one of the preSim lists to get maps, species traits and end(sim)
+preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+
+speciesTraits <- preSimList$species
+endYear <- end(preSimList)
 
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 if (runPrepResultsModule) {
-  ## load one of the preSim lists to get maps
-  preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
   preSimList$rasterToMatch@file@name <- sub(".*/LandscapesInMotion", getwd(), filename(preSimList$rasterToMatch))  ## paths change between machines.
 
   paramsResults <- list("LIM_resultsDataPrep" = list("startYear" = as.integer(min(yearSubset)),
@@ -78,5 +81,6 @@ if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
   allPixelCohortDataMnt <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, vegType)])[allPixelCohortDataMnt, on = .(scenario, rep, year, pixelIndex)]
 }
 
-gc(reset = TRUE)
+rm(preSimList)  ## not needed anymore
+for (i in 1:3) gc(reset = TRUE)
 

@@ -28,7 +28,8 @@ makeSummaryTable <- function(cohortData, byCols) {
 #' @param obsData `data.table`. All observed tree and stand age data. With columns
 #'   `c("ageAtMinDBH", "Reconstructed.age", "Stand.age.3", "speciesCode", "Cover.dendro", "firePresAbs")`
 #' @param addLandscape `logical`. If `TRUE`, biomass/basal-area weighted median ages
-#'   will be calculated across the whole landscape (i.e. of forest types). If `speciesLevel`
+#'   will be calculated across the whole landscape (i.e. of forest types).
+#' @param speciesLevel `logical`. When `addLandscape == TRUE`, if `speciesLevel`
 #'   is `TRUE` a new "landscape" species is added to `speciesCode`, otherwise a "landscape"
 #'   forest type is added to `vegTypeCN`.
 #' @param ... passed to `reproducible::Cache`
@@ -63,7 +64,7 @@ makeSummaryTable <- function(cohortData, byCols) {
 #'   All calculations on simulated data are done per year, scenario and replicate.
 #'
 #' @export
-ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, ...) {
+ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, speciesLevel = TRUE, ...) {
   ## subset obsData
   setnames(obsData, "Cover.dendro", "vegTypeCN", skip_absent = TRUE)
   allCols <- c("Reconstructed.age", "Stand.age.3", "ageAtMinDBH", "speciesCode", "vegTypeCN", "firePresAbs")
@@ -176,7 +177,7 @@ summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels
   plotOut <- ggplot(data = data,
                     aes(x = !!sym(x), y = !!sym(y), colour = !!sym(colour))) +
     stat_summary(fun.data = fun.data, position = position_dodge(width = 0.8),
-                 size = 1) +
+                 linewidth = 1) +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = x.text.angle) +
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
@@ -234,11 +235,11 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
 
   if (!is.null(xlabels)) {
     plotOut <- plotOut +
-    if (is(simData[[x]], "numeric")) {
-      scale_x_manual(labels = xlabels)
-    } else {
-      scale_x_discrete(labels = xlabels)
-    }
+      if (is(simData[[x]], "numeric")) {
+        scale_x_manual(labels = xlabels)
+      } else {
+        scale_x_discrete(labels = xlabels)
+      }
   }
 
   plotOut <- plotOut +
@@ -263,15 +264,15 @@ DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
 
     if (is.null(xorder)) {
-      plotOut <- plotOut + scale_x_discrete(labels = xlabels)
+      scale_x_discrete(labels = xlabels)
     } else {
-      plotOut <- plotOut + scale_x_discrete(labels = xlabels, limits = xorder)
+      scale_x_discrete(labels = xlabels, limits = xorder)
     }
 
   plotOut <- plotOut +
     scale_fill_manual(values = fillValues, labels = fillLabels) +
     labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
-    facet_grid(~ !!sym(xFacet), labeller = labllr)
+    facet_grid(rows = xFacet, labeller = labllr)
 
   plotOut
 }
@@ -281,7 +282,7 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
                     labllr, xlabels, xorder, xFacet = NULL, x.text.angle = 0,
                     titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
   plotOut <- ggplot(data, aes(x = !!sym(x), y = !!sym(y), colour = !!sym(colour), shape = !!sym(colour))) +
-    stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.5)) +
+    stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 0.5)) +
     scale_y_continuous(limits = c(0, max(data[[y]]))) +
     scale_colour_manual(values = colValues, labels = colLabels, name = "") +
     scale_shape_discrete(labels = colLabels, name = "") +
@@ -294,7 +295,7 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
     coord_flip()
   if (!is.null(xFacet)) {
     plotOut <- plotOut +
-      facet_grid(~ !!sym(xFacet), labeller = labllr)
+      facet_grid(rows = xFacet, labeller = labllr)
   }
   plotOut
 }
@@ -357,7 +358,7 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
     facet_grid(~ xFacet,
                labeller = labllr)
 }
