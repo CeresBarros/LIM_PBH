@@ -379,8 +379,8 @@ cacheExtra <- colSums(allPixelCDMntEnd[, ..cols])
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` in a pixel, across species) 
-## or observed basal area weighted (`avgAgeStandObs`).
+## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
+## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
 ## At the species-level, it calculates simulated and observed median raw ages 
 ## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
 
@@ -484,8 +484,8 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` in a pixel, across species) 
-## or observed basal area weighted (`avgAgeStandObs`).
+## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
+## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
 ## At the species-level, it calculates simulated and observed median raw ages 
 ## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
 
@@ -575,15 +575,13 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
 
-HERE!!!
-
 ```{r simVsObsAgesDif, cache = FALSE}
 ## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` in a pixel, across species) 
-## or observed basal area weighted (`avgAgeStandObs`).
+## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
+## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
 ## At the species-level, it calculates simulated and observed median raw ages 
 ## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
 
