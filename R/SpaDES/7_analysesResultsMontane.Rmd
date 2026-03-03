@@ -493,7 +493,7 @@ plotData <- Cache(
  .cacheExtra = cacheExtra)
 options(opts)
 
-plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]
+plotData2 <- ageDataCN[, .(vegTypeCN, Stand.age.3, firePresAbs)]
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
 plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "standAgeSim",
@@ -624,15 +624,14 @@ plotData2 <- rbind(
   ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
                    quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
                    quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE)), 
-            by = .(Cover.dendro, firePresAbs)],
+            by = .(vegTypeCN, firePresAbs)],
   ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
                    quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
                    quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE),
-                   Cover.dendro = "landscape"), 
+                   vegTypeCN = "landscape"), 
             by = .(firePresAbs)])
 
-plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
-setnames(plotData, "Cover.dendro", "vegTypeCN")
+plotData <- plotData2[plotData, on = c("vegTypeCN", "firePresAbs")]
 plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50StandAgeObs)]
 if (any(is.na(plotData))) stop()
