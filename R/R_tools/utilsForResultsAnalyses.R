@@ -271,8 +271,11 @@ DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
 
   plotOut <- plotOut +
     scale_fill_manual(values = fillValues, labels = fillLabels) +
-    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
-    facet_grid(rows = xFacet, labeller = labllr)
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
+  if (!missing(xFacet)) {
+    plotOut <- plotOut +
+      facet_grid(rows = xFacet, labeller = labllr)
+  }
 
   plotOut
 }
