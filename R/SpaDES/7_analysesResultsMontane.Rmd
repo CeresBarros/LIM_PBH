@@ -597,16 +597,15 @@ plotData <- Cache(
 options(opts)
 
 plotData[, speciesCode := NULL]
-## HERE!!
-plotData <- plotData[!is.na(avgAgeBySppObs)]
+plotData <- plotData[!is.na(avgAgeStandObs)]
 plotData <- unique(plotData)
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeBySppObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeStandObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
 ## differences
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
-plot32 <- DevPlot(plotData, x = "vegTypeCN", y = avgAgeBySppSim - avgAgeBySppObs,
+plot32 <- DevPlot(plotData, x = "vegTypeCN", y = standAgeSim - avgAgeStandObs,
                   xlabels = vegTypeCNLabels, xorder = x_order,
                   fillLabels = scenLabels, fillValues = scenColours,
                   xFacet = "firePresAbs", 
@@ -639,35 +638,35 @@ plotData <- Cache(
 options(opts)
 
 plotData[, speciesCode := NULL]
-plotData <- plotData[!is.na(avgAgeBySppObs)]
+plotData <- plotData[!is.na(avgAgeStandObs)]
 plotData <- unique(plotData)
 
-plotData <- plotData[, `:=`(quant50AgeBySpp = quantile(avgAgeBySppSim, probs = 0.5, na.rm = TRUE),
-                            quant75AgeBySpp = quantile(avgAgeBySppSim, probs = 0.75, na.rm = TRUE),
-                            quant95AgeBySpp = quantile(avgAgeBySppSim, probs = 0.95, na.rm = TRUE)),
+plotData <- plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
+                            quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
+                            quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
 plotData2 <- rbind(
-  ageDataCN[, list(quant50AgeBySppObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
-                   quant75AgeBySppObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
-                   quant95AgeBySppObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE)), 
+  ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
+                   quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
+                   quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE)), 
             by = .(Cover.dendro, firePresAbs)],
-  ageDataCN[, list(quant50AgeBySppObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
-                   quant75AgeBySppObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
-                   quant95AgeBySppObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE),
+  ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
+                   quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
+                   quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE),
                    Cover.dendro = "landscape"), 
             by = .(firePresAbs)])
 
 plotData <- plotData2[plotData, on = c("Cover.dendro==vegTypeCN", "firePresAbs")]
 setnames(plotData, "Cover.dendro", "vegTypeCN")
 plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData <- plotData[!is.na(quant50AgeBySppObs)]
+plotData <- plotData[!is.na(quant50StandAgeObs)]
 if (any(is.na(plotData))) stop()
 
 ## this mean makes no sense. there should be only one value this is simply a deviation.
-plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
-                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
-                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50StandAge - quant50StandAgeObs)),
+                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75StandAge - quant75StandAgeObs)),
+                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95StandAge - quant95StandAgeObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
 
