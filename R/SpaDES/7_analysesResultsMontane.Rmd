@@ -576,6 +576,7 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
 ##-- we've decided to weight at the stand level but not at the species level
 opts <- options(reproducible.cachePath = simPaths$cachePath)
+cacheExtra <- c(digest::digest(allPixelCDMntEnd), digest::digest(ageDataCN))
 plotData <- Cache(
   ageComp_data,
   simData = allPixelCDMntEnd,
@@ -583,7 +584,8 @@ plotData <- Cache(
   speciesTraits = speciesTraits,
   addLandscape = TRUE,
   speciesLevel = FALSE,
-  omitArgs = c("simData", "obsData", "userTags"))
+  omitArgs = c("simData", "obsData", "userTags"),
+  .cacheExtra = cacheExtra)
 options(opts)
 
 plotData[, speciesCode := NULL]
