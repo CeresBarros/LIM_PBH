@@ -593,6 +593,8 @@ plotData <- Cache(
   simData = allPixelCDMntEnd,
   obsData = ageDataCN,
   speciesTraits = speciesTraits,
+  addLandscape = TRUE,
+  speciesLevel = FALSE,
   omitArgs = c("simData", "obsData", "userTags"))
 options(opts)
 
