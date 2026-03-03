@@ -602,16 +602,17 @@ plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeStandObs)]
 plotData <- unique(plotData)
 
+plotData[, rawAbsDevSimObs := standAgeSim - avgAgeStandObs,
+         by = .(scenario, rep, vegTypeCN, firePresAbs)]
+
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeStandObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
 ## differences
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
-plot32 <- DevPlot(plotData, x = "vegTypeCN", y = standAgeSim - avgAgeStandObs,
-                  xlabels = vegTypeCNLabels, xorder = x_order,
+plot32 <- DevPlot(plotData, x = "vegTypeCN", y = "rawAbsDevSimObs",
+                  fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillLabels = scenLabels, fillValues = scenColours,
-                  xFacet = "firePresAbs", 
-                  labllr = labeller(firePresAbs = fireLabels),
                   titleLab = "Avg. differences from observed ages",
                   yLab = expression("sim." - bar("obs.")))
 
