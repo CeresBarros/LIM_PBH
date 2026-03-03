@@ -27,11 +27,11 @@ makeSummaryTable <- function(cohortData, byCols) {
 #'   With columns `c("scenario", "rep", "pixelIndex", "year", "firePresAbs", "vegTypeCN", "speciesCode", "B" and "age")`
 #' @param obsData `data.table`. All observed tree and stand age data. With columns
 #'   `c("ageAtMinDBH", "Reconstructed.age", "Stand.age.3", "speciesCode", "Cover.dendro", "firePresAbs")`
-#' @param addLandscape `logical`. If `TRUE`, biomass/basal-area weighted median ages
-#'   will be calculated across the whole landscape (i.e. of forest types).
+#' @param addLandscape `logical`. If `TRUE`, median ages will be calculated across
+#'   the whole landscape.
 #' @param speciesLevel `logical`. When `addLandscape == TRUE`, if `speciesLevel`
-#'   is `TRUE` a new "landscape" species is added to `speciesCode`, otherwise a "landscape"
-#'   forest type is added to `vegTypeCN`.
+#'   is `TRUE` a new "landscape" species is added to `speciesCode`, with averages calculated across all species;
+#'   otherwise a "landscape" forest type is added to `vegTypeCN` (with averages across forest types).
 #' @param ... passed to `reproducible::Cache`
 #'
 #' @return a `data.table` with columns:
