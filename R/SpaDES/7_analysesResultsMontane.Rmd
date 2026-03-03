@@ -207,7 +207,7 @@ source("R/R_tools/plotLabels&Cols.R")
 
 ## remove large objs rasters to save memory
 rm(list = c(grep("Stk", ls(), value = TRUE)))
-amc::.gc(reset = TRUE)
+for (i in 1:3) gc(reset = TRUE)
 ```
 
 ## BIOMASS, MORTALITY, AVG. AGE AND NO COHORTS BY SPECIES
@@ -1556,5 +1556,4 @@ ggsave(plot = plot8, filename = file.path(figOutputPath, "results_pixelAge_vegTy
        width = 14, height = 7)
 
 ```
-
 
