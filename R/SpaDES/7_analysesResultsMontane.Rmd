@@ -299,7 +299,9 @@ At the end of the simulation (or averaged across sampled years), by species
 ## ages compared at the species-level, rather than veg type given that some veg types in the sims don't exist
 ## in the obs data and this would lead to data loss
 ## simulated ages below the minimum DBH age (and old cohorts with low B) are excluded from comparisons.
-## note that HERE species-level comparisons do not use average species ages, so the differences are calculated between simulated cohort age and the observed median species age
+## note that HERE species-level comparisons do not use average species ages, so the differences 
+## are calculated between simulated cohort age and the observed median species age
+
 cacheExtra <- c(digest::digest(allPixelCDMntEnd), digest::digest(ageDataCN))
 opts <- options(reproducible.cachePath = simPaths$cachePath)
 plotData <- Cache(
@@ -370,10 +372,12 @@ gc(reset = TRUE)
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
-## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
+## - equivalent to what was previously `median(avgAgeBySppSim)`) across species in a pixel and
+## median observed basal area weighted (`avgAgeStandObs` - equivalent to what was 
+## previously `median(avgAgeBySppObs)`) across species in a plot.
 ## At the species-level, it calculates simulated and observed median raw ages 
-## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
+## for each species (`sppAgeSim` and `avgAgeSppObs`, respectively - equivalent
+## to what was previously `avgAgeBySppSim` and `avgAgeBySppObs).
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
 ##-- we've decided to weight at the stand level but not at the species level
@@ -473,10 +477,12 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
-## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
+## - equivalent to what was previously `median(avgAgeBySppSim)`) across species in a pixel and
+## median observed basal area weighted (`avgAgeStandObs` - equivalent to what was 
+## previously `median(avgAgeBySppObs)`) across species in a plot.
 ## At the species-level, it calculates simulated and observed median raw ages 
-## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
+## for each species (`sppAgeSim` and `avgAgeSppObs`, respectively - equivalent
+## to what was previously `avgAgeBySppSim` and `avgAgeBySppObs).
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
 ##-- we've decided to weight at the stand level but not at the species level
@@ -556,8 +562,8 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 ```
 
-### Median absolute deviations and quantile deviations of simulated ages by stand type
-(quantile deviations - 50, 75, 95%)
+### Median (absolute) deviations and quantile deviations of simulated ages by stand type
+(deviations from median, MedianAD, & quantile deviations - 50, 75, 95%)
 
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
@@ -567,10 +573,12 @@ Non-forest forest type removed -- not present in observed data, so could impact 
 ## there were some old cohorts with virtually no biomass
 
 ## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
-## - equivalent to what was previously `median(avgAgeBySppSim)` - in a pixel, across species
-## or observed basal area weighted (`avgAgeStandObs`) in a plot, across species.
+## - equivalent to what was previously `median(avgAgeBySppSim)`) across species in a pixel and
+## median observed basal area weighted (`avgAgeStandObs` - equivalent to what was 
+## previously `median(avgAgeBySppObs)`) across species in a plot.
 ## At the species-level, it calculates simulated and observed median raw ages 
-## for species-level averages (`sppAgeSim` and `avgAgeSppObs`, respectively).
+## for each species (`sppAgeSim` and `avgAgeSppObs`, respectively - equivalent
+## to what was previously `avgAgeBySppSim` and `avgAgeBySppObs).
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
 ##-- we've decided to weight at the stand level but not at the species level
@@ -597,7 +605,7 @@ plotData[, rawAbsDevSimObs := standAgeSim - avgAgeStandObs,
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeStandObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
-## differences
+## differences from the observed median
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
 plot32 <- DevPlot(plotData, x = "vegTypeCN", y = "rawAbsDevSimObs",
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
@@ -616,11 +624,14 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
 
 ## QUANTILE DEVIATIONS
 ## forest-type-level differences between simulated and observed upper quantiles
+
+## we can use sppAgeSim, because it's at pixel-level.
 plotData <- plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
                             quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
                             quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
                      by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
+## we need to use ageDataCN, to get the patch-level ages.
 plotData2 <- rbind(
   ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
                    quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
@@ -759,8 +770,9 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 gc(reset = TRUE)
 ```
 
-### Mean absolute deviations and quantile deviations of simulated ages by species
-(typical MAD, and quantile deviations - 50, 75, 95%)
+### Median (absolute) deviations and quantile deviations of simulated ages by species
+(deviations from median, MedianAD, & quantile deviations - 50, 75, 95%)
+
 ```{r simVsObsAgesDif2, cache = FALSE}
 ## mean age differences
 ## calculate avg weighted ages across observed stands first
@@ -810,6 +822,7 @@ plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs",
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
 
 
+## QUANTILE DEVIATIONS
 ## species-level differences between simulated and observed upper quantiles
 plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
                              list(avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /

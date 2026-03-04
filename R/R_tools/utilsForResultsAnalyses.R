@@ -52,15 +52,16 @@ makeSummaryTable <- function(cohortData, byCols) {
 #'   (`vegTypeCN %in% unique(obsData$Cover.dendro)`) were excluded.
 #'   Records in the observed data that correspond to species absent from the simulations
 #'   are also excluded.
+#'
 #'   Species-level median ages (`"sppAgeSim"` and `"avgAgeSppObs"`) are
-#'   calculated on raw simulated (`"age"`) and observed (`"Reconstructed.age"`)
+#'   calculated on raw simulated (`"age"`) and observed (`"Reconstructed.age"` in `obsData`)
 #'   ages by species within each simulated pixel or across observed patches, respectively.
+#'
 #'   Stand-level median ages (`"standAgeSim"` and `"avgAgeStandObs"`) are calculated as
-#'   by pixel (`"standAgeSim"`), and across patches
-#'   of a given forest type (`"vegTypeCN"`). Simulated stand ages are
-#'   calculated as biomass-weighted median ages in a pixel (with cohort biomass/100 as
-#'   weights, `"standAgeSim"`) and observed weighted stand ages are weighted by basal-area
-#'   median ages in a patch (`"standAgeObs"`).
+#'   by pixel (`"standAgeSim"`), and across patches (patch.ID) per forest type (`"vegTypeCN"`).
+#'   Simulated stand ages (`"standAgeSim"`) are the median biomass-weighted cohort ages in a pixel (with cohort biomass/100 as
+#'   weights); median observed stand ages (`"avgAgeStandObs"`) are baed on basal-area-weighted ages in a patch (`"Stand.age.3"` in `obsData`).
+#'
 #'   All calculations on simulated data are done per year, scenario and replicate.
 #'
 #' @export
