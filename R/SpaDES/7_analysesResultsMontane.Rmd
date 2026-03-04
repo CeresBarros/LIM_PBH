@@ -652,12 +652,13 @@ plotData2 <- rbind(
   ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
                    quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
                    quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE)), 
-            by = .(vegTypeCN, firePresAbs)],
+            by = .(Cover.dendro, firePresAbs)],
   ageDataCN[, list(quant50StandAgeObs = quantile(Stand.age.3, probs = 0.5, na.rm = TRUE),
                    quant75StandAgeObs = quantile(Stand.age.3, probs = 0.75, na.rm = TRUE),
                    quant95StandAgeObs = quantile(Stand.age.3, probs = 0.95, na.rm = TRUE),
-                   vegTypeCN = "landscape"), 
+                   Cover.dendro = "landscape"), 
             by = .(firePresAbs)])
+setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
 plotData <- plotData2[plotData, on = c("vegTypeCN", "firePresAbs")]
 plotData[, firePresAbs := as.factor(firePresAbs)]
