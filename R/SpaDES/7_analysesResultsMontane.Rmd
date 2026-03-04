@@ -365,6 +365,11 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 rm(plotTest1)  ## plotTest1.2 is used again later
 gc(reset = TRUE)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 ### Age violins - by species
@@ -465,6 +470,11 @@ plotSave <- plot_grid(plot_grid(plot29.1 +
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs2.tiff"),
        width = 14, height = 7)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 ### Age violins - by forest type
@@ -561,6 +571,11 @@ plotSave <- plot_grid(plot_grid(plot29.3 + theme(legend.position = "none"),
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN2.tiff"),
        width = 14, height = 7)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 ### Median (absolute) deviations and quantile deviations of simulated ages by stand type
@@ -768,6 +783,9 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
        width = 10, height = 10)
 
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
@@ -1128,6 +1146,10 @@ ggsave(plot = plotSave,
        filename = file.path(figOutputPath, "results_fireAttrLandscape.tiff"),
        width = 16, height = 12)
 
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 #### boxplots of  no. fires, fire frequency, fire size and fire severity
@@ -1164,6 +1186,10 @@ ggsave(plot = plotSave,
        filename = file.path(figOutputPath, "results_fireAttrLandscape_boxplots.tiff"),
        width = 10, height = 12, dpi = 300)
 
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 
@@ -1209,6 +1235,11 @@ plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevB_median, colour 
 ```{r plot&savePlots16, echo = FALSE}
 ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_crossPlot.tiff"),
        width = 8, height = 6)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 
@@ -1252,6 +1283,10 @@ plot39 <- plot39 +
 ```{r plot&savePlots16, echo = FALSE}
 ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
        width = 10, height = 8)
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 
@@ -1337,6 +1372,11 @@ plotSave <- plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle
 
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN.tiff"),
        width = 8, height = 8)
+gc(reset = TRUE)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
@@ -1444,6 +1484,11 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff
 plot47
 ggsave(plot = plot47, filename = file.path(figOutputPath, "results_fireAttrLandscapePyrodiversity.tiff"),
        width = 14, height = 8)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 ```
 
 ## SPECIES COMPOSITION BY VEGETATION TYPE
@@ -1541,6 +1586,11 @@ ggsave(plot = plot7.4, filename = file.path(figOutputPath, "results_pixelB_vegTy
 plot8
 ggsave(plot = plot8, filename = file.path(figOutputPath, "results_pixelAge_vegTypeCN_wSD.tiff"),
        width = 14, height = 7)
+
+plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
 
 ```
 
