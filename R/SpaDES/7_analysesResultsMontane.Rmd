@@ -323,12 +323,11 @@ cacheExtra2 <- plotData[sample(1:nrow(plotData), 100),]
 assign(".Random.seed", savedSeed, envir = .GlobalEnv)
 
 ## Dec 3: to repeat
-                    model = as.formula(quote(abs(ageDiffSimObs) ~ scenario * speciesCode)),
-                    weights = nlme::varIdent(form = ~1|speciesCode),
-                    data = plotData,
-                    omitArgs = "data",
-                    .cacheExtra = cacheExtra2,
-                    cacheRepo = simPaths$cachePath) ## better AIC and residuals
+ageDiffgls <- nlme::gls(abs(ageDiffSimObs) ~ scenario * speciesCode, 
+                        weights = nlme::varIdent(form = ~1|speciesCode), data = plotData) |> 
+  Cache(omitArgs = "data",
+        .cacheExtra = cacheExtra2,
+        cacheRepo = simPaths$cachePath) ## better AIC and residuals
 
 AICcmodavg::AICc(ageDifflm)
 AICcmodavg::AICc(ageDiffgls)  ## better
