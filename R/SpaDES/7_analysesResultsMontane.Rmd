@@ -312,7 +312,7 @@ plotData <- Cache(
   speciesTraits = speciesTraits,
   omitArgs = c("simData", "obsData", "userTags"),
   .cacheExtra = cacheExtra
-  )
+)
 options(opts)
 plotData[, ageDiffSimObs := age - avgAgeSppObs]   ## use median species ages based on raw cohort ages at the species-level
 plotData <- plotData[!is.na(ageDiffSimObs)]
