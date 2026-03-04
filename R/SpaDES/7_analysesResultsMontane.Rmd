@@ -107,7 +107,7 @@ if (mergePSME) {
 dir.create(figOutputPath, recursive = TRUE)
 ```
 
-### DATA LOADING AND PROCESSING NOTES
+## DATA LOADING AND PROCESSING NOTES
 Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
 
 ```{r dataPrep, cache=FALSE, include=FALSE}
@@ -289,7 +289,8 @@ gc(reset = TRUE)
 ```
 
 ## COMPARING SIMULATED AND OBSERVED DATA
-### TESTING DIFFERENCES BETWEEN OBSERVED AND SIMULATED DATA
+
+### Testing differences between observed and simulated data
 AGES
 At the end of the simulation (or averaged across sampled years), by species
 ```{r testAges}
@@ -495,7 +496,7 @@ plotData <- Cache(
   obsData = ageDataCN,
   speciesTraits = speciesTraits,
   omitArgs = c("simData", "obsData", "userTags"),
- .cacheExtra = cacheExtra)
+  .cacheExtra = cacheExtra)
 options(opts)
 
 plotData2 <- ageDataCN[, .(vegTypeCN, Stand.age.3, firePresAbs)]
@@ -646,7 +647,7 @@ plotData2 <- rbind(
 plotData <- plotData2[plotData, on = c("vegTypeCN", "firePresAbs")]
 plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50StandAgeObs)]
-if (any(is.na(plotData))) stop()
+if (any(is.na(plotData))) stop("Something is wrong.")
 
 ## this mean makes no sense. there should be only one value this is simply a deviation.
 plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50StandAge - quant50StandAgeObs)),
@@ -1164,7 +1165,6 @@ ggsave(plot = plotSave,
        width = 10, height = 12, dpi = 300)
 
 ```
-
 
 
 ### "Fire regime" plots
