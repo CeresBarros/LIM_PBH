@@ -794,37 +794,44 @@ gc(reset = TRUE)
 (deviations from median, MedianAD, & quantile deviations - 50, 75, 95%)
 
 ```{r simVsObsAgesDif2, cache = FALSE}
-## mean age differences
-## calculate avg weighted ages across observed stands first
-## then the absolute difference of each stand to the observed average (per veg type) across reps
-## don't average across years/pixels -- leave all replicates.
-plotData <- allPixelCDMntEnd[B > 0,
-                             list(avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                sum((B/100), na.rm = TRUE))),
-                             by = .(scenario, rep, year, pixelIndex, firePresAbs, speciesCode)]
-plotData$age <- NULL
+## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
+## there were some old cohorts with virtually no biomass
+
+## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
+## - equivalent to what was previously `median(avgAgeBySppSim)`) across species in a pixel and
+## median observed basal area weighted (`avgAgeStandObs` - equivalent to what was 
+## previously `median(avgAgeBySppObs)`) across species in a plot.
+## At the species-level, it calculates simulated and observed median raw ages 
+## for each species (`sppAgeSim` and `avgAgeSppObs`, respectively - equivalent
+## to what was previously `avgAgeBySppSim` and `avgAgeBySppObs).
+
+## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
+##-- we've decided to weight at the stand level but not at the species level
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+cacheExtra <- c(digest::digest(allPixelCDMntEnd), digest::digest(ageDataCN))
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = speciesTraits,
+  addLandscape = TRUE,
+  speciesLevel = TRUE,
+  omitArgs = c("simData", "obsData", "userTags"),
+  .cacheExtra = cacheExtra)
+options(opts)
+
+plotData[, speciesCode := NULL]
+plotData <- plotData[!is.na(avgAgeSppObs)]
 plotData <- unique(plotData)
-plotData2 <- copy(plotData)
-plotData2[ , speciesCode := "landscape"]
-plotData <- rbind(plotData, plotData2)
 
-plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
-plotData2 <- plotData2[!is.na(speciesCode)]
+plotData[, rawDevsSimObs := sppAgeSim - avgAgeSppObs,
+         by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
-plotData3 <- copy(plotData2)
-plotData3[, speciesCode := "landscape"]
-plotData2 <- rbind(plotData2, plotData3)
-
-plotData2 <- plotData2[, list(avgAgeBySppObs = median(Reconstructed.age, na.rm = TRUE)),
-                       by = .(speciesCode, firePresAbs)]
-
-plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
-plotData <- plotData[!is.na(avgAgeBySppObs) & !is.na(avgAgeBySppSim)]
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(avgAgeBySppSim - median(avgAgeBySppObs)))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(sppAgeSim - avgAgeSppObs))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
 
-## differences
-plot43 <- DevPlot(plotData, x = "speciesCode", y = avgAgeBySppSim - avgAgeBySppObs,
+## differences from the observed median
+plot43 <- DevPlot(plotData, x = "speciesCode", y = "rawDevsSimObs",
                   xlabels = speciesLabels, fillValues = scenColours,
                   fillLabels = scenLabels, xFacet = "firePresAbs", 
                   labllr = labeller(firePresAbs = fireLabels),
@@ -838,47 +845,39 @@ plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs",
                     xlabels = c(speciesLabels, landscape = "landscape"),
                     xorder = c("landscape", names(speciesLabels)), xFacet = "firePresAbs", 
                     labllr = labeller(firePresAbs = fireLabels),
-                    titleLab = "Mean abs. deviation from observed ages",
+                    titleLab = "Median abs. deviations from observed ages",
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
 
 
 ## QUANTILE DEVIATIONS
 ## species-level differences between simulated and observed upper quantiles
-plotData <- allPixelCDMntEnd[B > 0,  ## absences can't lower the average ages
-                             list(avgAgeBySppSim = as.numeric(sum(age * (B/100), na.rm = TRUE) /
-                                                                sum((B/100), na.rm = TRUE))),
-                             by = .(scenario, rep, pixelIndex, firePresAbs, speciesCode)]
-plotData$age <- NULL
-plotData <- unique(plotData)
-plotData2 <- copy(plotData)
-plotData2[ , speciesCode := "landscape"]
-plotData <- rbind(plotData, plotData2)
 
-plotData <- plotData[, list(quant50AgeBySpp = quantile(avgAgeBySppSim, probs = 0.5, na.rm = TRUE),
-                            quant75AgeBySpp = quantile(avgAgeBySppSim, probs = 0.75, na.rm = TRUE),
-                            quant95AgeBySpp = quantile(avgAgeBySppSim, probs = 0.95, na.rm = TRUE)),
-                     by = .(scenario, rep, firePresAbs, speciesCode)]
+## we can use sppAgeSim, because it's at pixel-level.
+plotData <- plotData[, `:=`(quant50SppAge = quantile(sppAgeSim, probs = 0.5, na.rm = TRUE),
+                            quant75SppAge = quantile(sppAgeSim, probs = 0.75, na.rm = TRUE),
+                            quant95SppAge = quantile(sppAgeSim, probs = 0.95, na.rm = TRUE)),
+                     by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
-plotData2 <- copy(ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)])
-plotData2 <- plotData2[!is.na(speciesCode)]
+## we need to use ageDataCN, to get the patch-level ages.
+plotData2 <- rbind(
+  ageDataCN[, list(quant50SppAgeObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                   quant75SppAgeObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                   quant95SppAgeObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
+            by = .(speciesCode, firePresAbs)],
+  ageDataCN[, list(quant50SppAgeObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
+                   quant75SppAgeObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
+                   quant95SppAgeObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE),
+                   speciesCode = "landscape"), 
+            by = .(speciesCode)])
 
-plotData3 <- copy(plotData2)
-plotData3[, speciesCode := "landscape"]
-plotData2 <- rbind(plotData2, plotData3)
-
-plotData2 <- plotData2[, list(quant50AgeBySppObs = quantile(Reconstructed.age, probs = 0.5, na.rm = TRUE),
-                              quant75AgeBySppObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
-                              quant95AgeBySppObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE)), 
-                       by = .(speciesCode, firePresAbs)]
-
-plotData <- plotData2[plotData, on = .(speciesCode, firePresAbs)]
+plotData <- plotData2[plotData, on = c("speciesCode", "firePresAbs")]
 plotData[, firePresAbs := as.factor(firePresAbs)]
-plotData <- plotData[!is.na(quant50AgeBySppObs)]
-if (any(is.na(plotData))) stop()
+plotData <- plotData[!is.na(quant50SppAgeObs)]
+if (any(is.na(plotData))) stop("Something is wrong.")
 
-plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50AgeBySpp - quant50AgeBySppObs)),
-                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75AgeBySpp - quant75AgeBySppObs)),
-                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95AgeBySpp - quant95AgeBySppObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50SppAge - quant50SppAgeObs)),
+                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75SppAge - quant75SppAgeObs)),
+                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95SppAge - quant95SppAgeObs))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
 
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
