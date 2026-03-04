@@ -398,7 +398,7 @@ plotData <- Cache(
   omitArgs = c("simData", "obsData", "userTags"),
   .cacheExtra = cacheExtra)
 options(opts)
-plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]
+plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]  ## need to get patch-level species ages
 plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
 
 plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeSim",
@@ -509,7 +509,7 @@ plotData <- Cache(
   .cacheExtra = cacheExtra)
 options(opts)
 
-plotData2 <- ageDataCN[, .(vegTypeCN, Stand.age.3, firePresAbs)]
+plotData2 <- ageDataCN[, .(vegTypeCN, Stand.age.3, firePresAbs)]   ## need to get the patch-level Stand.ages 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
 plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "standAgeSim",
