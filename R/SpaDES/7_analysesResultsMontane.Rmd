@@ -626,7 +626,7 @@ x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
 plot32 <- DevPlot(plotData, x = "vegTypeCN", y = "rawDevsSimObs",
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillLabels = scenLabels, fillValues = scenColours,
-                  titleLab = "Avg. differences from observed ages",
+                  titleLab = "Differences from median observed ages",
                   yLab = expression("sim." - bar("obs.")))
 
 
@@ -635,7 +635,7 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     colour = "scenario", colValues = scenColours, 
                     colLabels = scenLabels, xlabels = vegTypeCNLabels,
                     xorder = x_order, 
-                    titleLab = "Mean abs. deviation from observed ages",
+                    titleLab = "Median abs. deviations from observed ages",
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
 
 ## QUANTILE DEVIATIONS
@@ -827,7 +827,7 @@ plot43 <- DevPlot(plotData, x = "speciesCode", y = avgAgeBySppSim - avgAgeBySppO
                   xlabels = speciesLabels, fillValues = scenColours,
                   fillLabels = scenLabels, xFacet = "firePresAbs", 
                   labllr = labeller(firePresAbs = fireLabels),
-                  titleLab = "Avg. differences from observed ages",
+                  titleLab = "Differences from median observed ages",
                   yLab = expression("sim." - bar("obs.")))
 
 
