@@ -367,7 +367,7 @@ rm(plotTest1)  ## plotTest1.2 is used again later
 gc(reset = TRUE)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -472,7 +472,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -573,7 +573,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 14, height = 7)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -785,7 +785,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
        width = 10, height = 10)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1147,7 +1147,7 @@ ggsave(plot = plotSave,
        width = 16, height = 12)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1187,7 +1187,7 @@ ggsave(plot = plotSave,
        width = 10, height = 12, dpi = 300)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1237,7 +1237,7 @@ ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_cr
        width = 8, height = 6)
 
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1284,7 +1284,7 @@ plot39 <- plot39 +
 ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
        width = 10, height = 8)
 plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep(""plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
