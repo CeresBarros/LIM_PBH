@@ -1271,7 +1271,7 @@ pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 ## median fire interval per forest type - to compare with camerons fire intervals.
 plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
 plotData <- plotData[vegTypeCN %in% ageDataCN$Cover.dendro, 
-                     .(scenario, rep, pixelIndex, meanFreq, vegTypeCN)] 
+                     .(scenario, rep, pixelIndex, medianFreq, vegTypeCN)] 
 plotData2 <- copy(plotData)
 plotData2[, vegTypeCN := "landscape"]
 plotData <- rbind(plotData, plotData2)
@@ -1283,7 +1283,7 @@ plotData2 <- rbind(plotData2, plotData3)
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
-plot39 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "meanFreq_median", 
+plot39 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "medianFreq", 
                           colSim = "scenario",
                           obsData = copy(plotData2), yObs = "median.FI", xlabels = vegTypeCNLabels,
                           colValues = scenColours, colLabels = scenLabels, x.text.angle = 45,
