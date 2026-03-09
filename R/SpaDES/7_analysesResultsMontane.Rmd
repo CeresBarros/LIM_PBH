@@ -1065,8 +1065,8 @@ plot36 <- ggplot(copy(plotData)) +
   labs(y = "no. fires", x = "")
 
 ## only simulated fire intervals
-plot39.3 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
-                        x = meanFreq + 1, fill = "scenario", alpha = "scenario",
+plot39.3 <- densityPlot(copy(plotData), 
+                        x = "meanFreq1", fill = "scenario", alpha = "scenario",
                         fillValues = scenColours, fillLabels = scenLabels, 
                         alphaValues = c("PM" = 0.6, "noPM" = 1),
                         titleLab = "Fire interval distribution",
@@ -1076,8 +1076,8 @@ plot39.4 <- plot39.3 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## distribution of fire severity per stand across landscape
-plot40 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
-                      x = meanSevB + 1, fill = "scenario", alpha = "scenario",
+plot40 <- densityPlot(copy(plotData), 
+                      x = "meanSevB1", fill = "scenario", alpha = "scenario",
                       fillValues = scenColours, fillLabels = scenLabels, 
                       alphaValues = c("PM" = 0.6, "noPM" = 1),
                       titleLab = "Fire severity distribution",
@@ -1093,8 +1093,9 @@ plot41 <- plot40 +
 plotData <- unique(allPixelCohortDataMnt[vegTypeCN != "No veg.", .(scenario, rep, year, pixelIndex, vegTypeCN)])
 plotData <- summaryFireAttributes[vegTypeCN != "No veg.",
                                   .(scenario, rep, pixelIndex, meanSevB)][plotData, on = .(scenario, rep, pixelIndex)]
-plot42 <- densityPlot(plotData, 
-                      x = log(meanSevB + 1), fill = "scenario", alpha = "scenario",
+plotData[, meanSevB1 := meanSevB]
+plot42 <- densityPlot(copy(plotData), 
+                      x = "meanSevB1", fill = "scenario", alpha = "scenario",
                       fillValues = scenColours, fillLabels = scenLabels, 
                       alphaValues = c("PM" = 0.6, "noPM" = 1),
                       titleLab = "Fire severity distribution",
@@ -1157,23 +1158,27 @@ rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
-#### boxplots of  no. fires, fire frequency, fire size and fire severity
+#### Boxplots of  no. fires, fire frequency, fire size and fire severity
 Non-forest forest types and pixels w/o included since these plots are showing data used for PBRs
 ```{r fireAttr_boxplots, cache = FALSE}
 x_order <- names(vegTypeCNLabels)
 ## fire size
-plot45 <- boxPlot(data, x = "vegTypeCN", y = meanPatchS + 1, 
+plotData <- copy(summaryFireAttributes)
+plotData[, `:=`(meanPatchS1 = meanPatchS + 1,
+                meanFreq1 = meanFreq + 1,
+                meanSevB1 = meanSevB + 1)]
+plot45 <- boxPlot(plotData, x = "vegTypeCN", y = "meanPatchS1", 
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean patch size (no. pixels)")
 
-plot46 <- boxPlot(summaryFireAttributes, x = "vegTypeCN", y = meanFreq + 1, 
+plot46 <- boxPlot(plotData, x = "vegTypeCN", y = "meanFreq1", 
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean fire interval (years)")
 
 ## fire severity
-plot47 <- boxPlot(summaryFireAttributes, x = "vegTypeCN", y = meanSevB + 1, 
+plot47 <- boxPlot(plotData, x = "vegTypeCN", y = "meanSevB1", 
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean fire severity\n(biomass lost, ton/ha)")
