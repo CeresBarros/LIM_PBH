@@ -826,12 +826,11 @@ plotData <- Cache(
   .cacheExtra = cacheExtra)
 options(opts)
 
-plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeSppObs)]
 plotData <- unique(plotData)
 
 plotData[, rawDevsSimObs := sppAgeSim - avgAgeSppObs,
-         by = .(scenario, rep, vegTypeCN, firePresAbs)]
+         by = .(scenario, rep, speciesCode, firePresAbs)]
 
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(sppAgeSim - avgAgeSppObs))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
@@ -862,7 +861,7 @@ plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs",
 plotData <- plotData[, `:=`(quant50SppAge = quantile(sppAgeSim, probs = 0.5, na.rm = TRUE),
                             quant75SppAge = quantile(sppAgeSim, probs = 0.75, na.rm = TRUE),
                             quant95SppAge = quantile(sppAgeSim, probs = 0.95, na.rm = TRUE)),
-                     by = .(scenario, rep, firePresAbs, vegTypeCN)]
+                     by = .(scenario, rep, firePresAbs, speciesCode)]
 
 ## we need to use ageDataCN, to get the patch-level ages.
 plotData2 <- rbind(
@@ -874,7 +873,7 @@ plotData2 <- rbind(
                    quant75SppAgeObs = quantile(Reconstructed.age, probs = 0.75, na.rm = TRUE),
                    quant95SppAgeObs = quantile(Reconstructed.age, probs = 0.95, na.rm = TRUE),
                    speciesCode = "landscape"), 
-            by = .(speciesCode)])
+            by = .(firePresAbs)])
 
 plotData2[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData2[plotData, on = c("speciesCode", "firePresAbs")]
