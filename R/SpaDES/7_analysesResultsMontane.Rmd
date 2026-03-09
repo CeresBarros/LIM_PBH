@@ -1264,7 +1264,6 @@ Non-forest forest type removed, only pixel/plots with fire evidence
 Note that `summaryFireAttributes`  has pixels with fire and without fires. So pixels without fires need to be removed
 Also, in the observed data mean/median fire intervals were not calculated for plots that had one fire event only. So pixels with a single fire event are also removed
 ```{r simVsObsFires, cache = FALSE}
-## TODO: use median FI everywhere. obs median already changed
 ## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 
@@ -1309,6 +1308,8 @@ gc(reset = TRUE)
 ### Mean absolute deviation simulated fire intervals with respect to observed fire intervals for a given stand type
 Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
 Note that `summaryFireAttributes`  has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
+
+HERE!!!
 ```{r simVsObsFires2, cache = FALSE}
 ## TODO: compare medians, not mean frequencies (obs median already changed)
 
