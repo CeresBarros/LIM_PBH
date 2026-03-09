@@ -228,7 +228,7 @@ plot1 <- plot1 +
   facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed,
                                                          firePresAbs = fireLabels))
 
-plot2 <- summaryPlot(data = plotData, x = "noFires", y = "logBiomassBySpecies", 
+plot2 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "noFires", y = "logBiomassBySpecies", 
                      colour = "speciesCode", colValues = speciesColours, 
                      colLabels = speciesLabels, titleLab = "Total landscape biomass",
                      subtitleLab = "by species", yLab = "log-biomass (ton/ha)", xLab = "No. fires")
@@ -238,7 +238,7 @@ plot2 <- plot2 +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = labeller(scenario = label_parsed))
 
-plot5 <- summaryPlot(data = plotData, x = "speciesCode", y = "avgAgeBySppSim", 
+plot5 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "speciesCode", y = "avgAgeBySppSim", 
                      colour = "speciesCode", xlabels = speciesLabels, colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Species age", 
                      yLab = "Median biomass-weighted age",
@@ -250,7 +250,7 @@ plot5 <- plot5 +
   facet_grid(scenario ~ firePresAbs, labeller = labeller(scenario = label_parsed,
                                                          firePresAbs = fireLabels))
 
-plot6 <- summaryPlot(data = plotData, x = "noFires", y = "avgAgeBySppSim", 
+plot6 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "noFires", y = "avgAgeBySppSim", 
                      colour = "speciesCode", colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Species age", 
                      yLab = "Median biomass-weighted age", xLab = "No. fires") +
