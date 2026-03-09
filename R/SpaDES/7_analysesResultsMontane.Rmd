@@ -837,12 +837,11 @@ plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(sppAgeSim - avgAg
 
 ## differences from the observed median
 plot43 <- DevPlot(plotData, x = "speciesCode", y = "rawDevsSimObs",
-                  xlabels = speciesLabels, fillValues = scenColours,
+                  fill = "scenario", xlabels = speciesLabels, fillValues = scenColours,
                   fillLabels = scenLabels, xFacet = "firePresAbs", 
                   labllr = labeller(firePresAbs = fireLabels),
                   titleLab = "Differences from median observed ages",
                   yLab = expression("sim." - bar("obs.")))
-
 
 ## mean absolute differences
 plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs", 
