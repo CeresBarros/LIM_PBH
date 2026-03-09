@@ -1231,10 +1231,11 @@ plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevB_median, colour 
                     ymax = meanFreq_median + meanFreq_sd),
                 alpha = 0.5, 
                 position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
-  geom_errorbarh(aes(xmin = meanSevB_median - meanSevB_sd, 
-                     xmax = meanSevB_median + meanSevB_sd),
+  geom_errorbar(aes(xmin = meanSevB_median - meanSevB_sd, 
+                    xmax = meanSevB_median + meanSevB_sd),
                  alpha = 0.5, 
-                 position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
+                 position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd),
+                orientation = "y") +
   scale_colour_manual(labels = vegTypeCNLabels[names(vegTypeCNLabels) %in% plotData$vegTypeCN],
                       values = vegTypeCNColours[names(vegTypeCNLabels) %in% plotData$vegTypeCN]) +
   theme_pubr(base_size = 14, legend = "bottom") +
