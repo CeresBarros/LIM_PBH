@@ -435,11 +435,12 @@ plot29.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
                             titleLab = "Species age", yLab = "years") 
 plot29.1 <- plot29.1 + theme(axis.title.x = element_blank())
 
-plotData2[, scenario := "observed"]
+plotData3 <- copy(plotData2)
+plotData3[, scenario := "observed"]
 plot30.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
                             x = "scenario", ySim = "sppAgeSim",
                             colSim = "scenario", 
-                            obsData = plotData2[firePresAbs == 1], yObs = "Reconstructed.age", 
+                            obsData = plotData3[firePresAbs == 1], yObs = "Reconstructed.age", 
                             xlabels = scenLabels, 
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -542,10 +543,11 @@ plot29.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
                             colLabels = scenLabels, 
                             titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
 
-plotData2[, scenario := "observed"]
+plotData3 <- copy(plotData2)
+plotData3[, scenario := "observed"]
 plot30.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
                             x = "scenario", ySim = "standAgeSim",
-                            obsData = plotData2[firePresAbs == 1], yObs = "Stand.age.3",
+                            obsData = plotData3[firePresAbs == 1], yObs = "Stand.age.3",
                             colSim = "scenario",
                             xlabels = scenLabels, showMeans = FALSE,
                             colValues = scenColours, 
