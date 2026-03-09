@@ -1268,7 +1268,7 @@ Also, in the observed data mean/median fire intervals were not calculated for pl
 ## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 
-## mean fire interval per forest type - to compare with camerons fire intervals.
+## median fire interval per forest type - to compare with camerons fire intervals.
 plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
 plotData <- plotData[vegTypeCN %in% ageDataCN$Cover.dendro, 
                      .(scenario, rep, pixelIndex, meanFreq, vegTypeCN)] 
@@ -1288,7 +1288,7 @@ plot39 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "mea
                           obsData = copy(plotData2), yObs = "median.FI", xlabels = vegTypeCNLabels,
                           colValues = scenColours, colLabels = scenLabels, x.text.angle = 45,
                           showMeans = FALSE,
-                          titleLab = "Mean fire interval", subtitleLab = "by forest type",
+                          titleLab = "Median fire interval", subtitleLab = "by forest type",
                           yLab = "Fire interval")
 plot39 <- plot39 + 
   geom_point(data = copy(plotData2[vegTypeCN %in% c("broadleaf", "PIEN")]),   ## these only have one point

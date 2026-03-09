@@ -7,7 +7,11 @@ summaryFireAttributes <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$
 summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
                                                       meanSev = mean(severity),
                                                       meanSevB = mean(severityB),
-                                                      meanPatchS = mean(patchSizeLogHa)),
+                                                      meanPatchS = mean(patchSizeLogHa),
+                                                      medianFreq = unique(fireFreq),   ## note that fireFreq is already an average of median fire intervals
+                                                      medianSev = median(severity),
+                                                      medianSevB = median(severityB),
+                                                      medianPatchS = median(patchSizeLogHa)),
                                                by = .(scenario, rep, pixelIndex)]
 
 ## add vegType per pixel at the end of the simulation
