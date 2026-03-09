@@ -67,6 +67,7 @@ makeSummaryTable <- function(cohortData, byCols) {
 #' @export
 ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, speciesLevel = TRUE, ...) {
   ## subset obsData
+  obsData <- copy(obsData)
   setnames(obsData, "Cover.dendro", "vegTypeCN", skip_absent = TRUE)
   allCols <- c("Reconstructed.age", "Stand.age.3", "ageAtMinDBH", "speciesCode", "vegTypeCN", "firePresAbs")
   obsData <- obsData[, ..allCols]
