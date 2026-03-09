@@ -512,7 +512,7 @@ plotData <- Cache(
   .cacheExtra = cacheExtra)
 options(opts)
 
-plotData2 <- ageDataCN[, .(vegTypeCN, Stand.age.3, firePresAbs)]   ## need to get the patch-level Stand.ages 
+plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]   ## need to get the patch-level Stand.ages 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
 plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "standAgeSim",
