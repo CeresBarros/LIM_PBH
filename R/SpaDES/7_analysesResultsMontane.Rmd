@@ -254,7 +254,7 @@ plot6 <- summaryPlot(data = summaryBurnCohortDataSpp, x = "noFires", y = "avgAge
                      colour = "speciesCode", colValues = speciesColours,
                      colLabels = speciesLabels, titleLab = "Species age", 
                      yLab = "Median biomass-weighted age", xLab = "No. fires") +
-  stat_summary(fun = "mean", geom = "line", size = 1) +
+  stat_summary(fun = "mean", geom = "line", linewidth = 1) +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = label_parsed)
 
