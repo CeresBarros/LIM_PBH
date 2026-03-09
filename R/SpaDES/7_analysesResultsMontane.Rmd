@@ -666,8 +666,8 @@ plotData2 <- rbind(
             by = .(firePresAbs)])
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
+plotData2[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData2[plotData, on = c("vegTypeCN", "firePresAbs")]
-plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50StandAgeObs)]
 if (any(is.na(plotData))) stop("Something is wrong.")
 
@@ -876,9 +876,10 @@ plotData2 <- rbind(
                    speciesCode = "landscape"), 
             by = .(speciesCode)])
 
+plotData2[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData2[plotData, on = c("speciesCode", "firePresAbs")]
-plotData[, firePresAbs := as.factor(firePresAbs)]
 plotData <- plotData[!is.na(quant50SppAgeObs)]
+
 if (any(is.na(plotData))) stop("Something is wrong.")
 
 plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50SppAge - quant50SppAgeObs)),
