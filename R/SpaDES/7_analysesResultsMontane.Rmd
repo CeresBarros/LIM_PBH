@@ -403,8 +403,9 @@ options(opts)
 plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]  ## need to get patch-level species ages
 plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
 
-plot29 <- simObsDistsPlot(simData = plotData, x = "speciesCode", ySim = "sppAgeSim",
-                          colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
+## this plot is used later, so the data.table must be a copy
+plot29 <- simObsDistsPlot(simData = copy(plotData), x = "speciesCode", ySim = "sppAgeSim",
+                          colSim = "scenario", obsData = copy(plotData2), yObs = "Reconstructed.age", 
                           xlabels = speciesLabels, x.text.angle = 45,
                           colValues = scenColours, 
                           colLabels = scenLabels, 
@@ -414,8 +415,9 @@ plot29 <- plot29 +
   facet_grid(~ firePresAbs,
              labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
 
-plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "sppAgeSim",
-                          colSim = "scenario", obsData = plotData2, yObs = "Reconstructed.age", 
+## this plot is used later, so the data.table must be a copy
+plot30 <- simObsDistsPlot(simData = copy(plotData), x = "firePresAbs", ySim = "sppAgeSim",
+                          colSim = "scenario", obsData = copy(plotData2), yObs = "Reconstructed.age", 
                           xlabels = fireLabels, 
                           colValues = scenColours, 
                           colLabels = scenLabels, 
@@ -424,10 +426,10 @@ plot30 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "sppAgeS
 plot30 <- plot30 + theme(axis.title.x = element_blank())
 
 ## only fire pixels, no means/whiskers
-plot29.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+plot29.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
                             x = "speciesCode", ySim = "sppAgeSim",
                             colSim = "scenario", 
-                            obsData = plotData2[firePresAbs == 1], yObs = "Reconstructed.age", 
+                            obsData = copy(plotData2[firePresAbs == 1]), yObs = "Reconstructed.age", 
                             xlabels = speciesLabels, x.text.angle = 45,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -437,10 +439,10 @@ plot29.1 <- plot29.1 + theme(axis.title.x = element_blank())
 
 plotData3 <- copy(plotData2)
 plotData3[, scenario := "observed"]
-plot30.1 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+plot30.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
                             x = "scenario", ySim = "sppAgeSim",
                             colSim = "scenario", 
-                            obsData = plotData3[firePresAbs == 1], yObs = "Reconstructed.age", 
+                            obsData = copy(plotData3[firePresAbs == 1]), yObs = "Reconstructed.age", 
                             xlabels = scenLabels, 
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -515,8 +517,8 @@ options(opts)
 plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]   ## need to get the patch-level Stand.ages 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
-plot29.2 <- simObsDistsPlot(simData = plotData, x = "vegTypeCN", ySim = "standAgeSim",
-                            colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
+plot29.2 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "standAgeSim",
+                            colSim = "scenario", obsData = copy(plotData2), yObs = "Stand.age.3", 
                             xlabels = vegTypeCNLabels, x.text.angle = 45,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -525,8 +527,8 @@ plot29.2 <- plot29.2 +
   facet_grid( ~ firePresAbs,
               labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
 
-plot30.2 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "standAgeSim",
-                            colSim = "scenario", obsData = plotData2, yObs = "Stand.age.3", 
+plot30.2 <- simObsDistsPlot(simData = copy(plotData), x = "firePresAbs", ySim = "standAgeSim",
+                            colSim = "scenario", obsData = copy(plotData2), yObs = "Stand.age.3", 
                             xlabels = fireLabels,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -534,9 +536,9 @@ plot30.2 <- simObsDistsPlot(simData = plotData, x = "firePresAbs", ySim = "stand
 
 
 ## only fire pixels, no means
-plot29.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1], 
+plot29.3 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
                             x = "vegTypeCN", ySim = "standAgeSim",
-                            obsData = plotData2[firePresAbs == 1], yObs = "Stand.age.3",
+                            obsData = copy(plotData2[firePresAbs == 1]), yObs = "Stand.age.3",
                             colSim = "scenario", x.text.angle = 45,
                             xlabels = vegTypeCNLabels, showMeans = FALSE,
                             colValues = scenColours, 
@@ -545,9 +547,9 @@ plot29.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
 
 plotData3 <- copy(plotData2)
 plotData3[, scenario := "observed"]
-plot30.3 <- simObsDistsPlot(simData = plotData[firePresAbs == 1],
+plot30.3 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]),
                             x = "scenario", ySim = "standAgeSim",
-                            obsData = plotData3[firePresAbs == 1], yObs = "Stand.age.3",
+                            obsData = copy(plotData3[firePresAbs == 1]), yObs = "Stand.age.3",
                             colSim = "scenario",
                             xlabels = scenLabels, showMeans = FALSE,
                             colValues = scenColours, 
