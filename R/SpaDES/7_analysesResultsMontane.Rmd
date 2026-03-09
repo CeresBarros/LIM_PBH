@@ -1017,17 +1017,6 @@ gc(reset = TRUE)
 
 ### No. fires, fire frequency, fire size and fire severity
 ```{r simVsObsFires, cache = FALSE}
-## fire size distribution
-plot37 <- densityPlot(summaryFireAttributes[vegTypeCN != "No veg."], 
-                      x = meanPatchS + 1, fill = "scenario", alpha = "scenario",
-                      fillValues = scenColours, fillLabels = scenLabels, 
-                      alphaValues = c("PM" = 0.6, "noPM" = 1),
-                      titleLab = "Fire patch size distribution",
-                      xLab = "Mean patch size (no. pixels)")
-
-plot37.2 <- plot37.2 +
-  facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
-
 ## average no. of pixels with certain fire frequency
 plotData <- allPixelCohortDataMnt[, list(noPixels = length(unique(pixelIndex))),
                                   by = .(scenario, rep, year, noFires)]
@@ -1063,6 +1052,22 @@ plot36 <- ggplot(copy(plotData)) +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
   labs(y = "no. fires", x = "")
+
+
+## fire size distribution
+plotData <- summaryFireAttributes[vegTypeCN != "No veg."]
+plotData[, `:=`(meanPatchS1 := meanPatchS + 1,
+                meanFreq1 = meanFreq + 1,
+                meanSevB1 := meanSevB + 1)]
+plot37 <- densityPlot(copy(plotData), 
+                      x = "meanPatchS1", fill = "scenario", alpha = "scenario",
+                      fillValues = scenColours, fillLabels = scenLabels, 
+                      alphaValues = c("PM" = 0.6, "noPM" = 1),
+                      titleLab = "Fire patch size distribution",
+                      xLab = "Mean patch size (no. pixels)")
+
+plot37.2 <- plot37 +
+  facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## only simulated fire intervals
 plot39.3 <- densityPlot(copy(plotData), 
