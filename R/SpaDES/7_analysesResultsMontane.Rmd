@@ -326,11 +326,13 @@ cacheExtra2 <- plotData[sample(1:nrow(plotData), 100),]
 assign(".Random.seed", savedSeed, envir = .GlobalEnv)
 
 ## Dec 3: to repeat
-ageDiffgls <- nlme::gls(abs(ageDiffSimObs) ~ scenario * speciesCode, 
-                        weights = nlme::varIdent(form = ~1|speciesCode), data = plotData) |> 
-  Cache(omitArgs = "data",
-        .cacheExtra = cacheExtra2,
-        cacheRepo = simPaths$cachePath) ## better AIC and residuals
+ageDiffgls <- Cache(nlme::gls,
+                    model = abs(ageDiffSimObs) ~ scenario * speciesCode, 
+                    weights = nlme::varIdent(form = ~1|speciesCode), 
+                    data = plotData,
+                    omitArgs = "data",
+                    .cacheExtra = cacheExtra2,
+                    cacheRepo = simPaths$cachePath) ## better AIC and residuals
 
 AICcmodavg::AICc(ageDifflm)
 AICcmodavg::AICc(ageDiffgls)  ## better
@@ -366,8 +368,8 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs
 rm(plotTest1)  ## plotTest1.2 is used again later
 gc(reset = TRUE)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -471,8 +473,8 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs2.tiff"),
        width = 14, height = 7)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -572,8 +574,8 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN2.tiff"),
        width = 14, height = 7)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -784,8 +786,8 @@ plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
        width = 10, height = 10)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1146,8 +1148,8 @@ ggsave(plot = plotSave,
        filename = file.path(figOutputPath, "results_fireAttrLandscape.tiff"),
        width = 16, height = 12)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1186,8 +1188,8 @@ ggsave(plot = plotSave,
        filename = file.path(figOutputPath, "results_fireAttrLandscape_boxplots.tiff"),
        width = 10, height = 12, dpi = 300)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1236,8 +1238,8 @@ plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevB_median, colour 
 ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_crossPlot.tiff"),
        width = 8, height = 6)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1283,8 +1285,8 @@ plot39 <- plot39 +
 ```{r plot&savePlots16, echo = FALSE}
 ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
        width = 10, height = 8)
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1374,8 +1376,8 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVs
        width = 8, height = 8)
 gc(reset = TRUE)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1485,8 +1487,8 @@ plot47
 ggsave(plot = plot47, filename = file.path(figOutputPath, "results_fireAttrLandscapePyrodiversity.tiff"),
        width = 14, height = 8)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1587,8 +1589,8 @@ plot8
 ggsave(plot = plot8, filename = file.path(figOutputPath, "results_pixelAge_vegTypeCN_wSD.tiff"),
        width = 14, height = 7)
 
-plotsRm <- grep("plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE) |>
-  grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", .,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+ plotsRm <- grep("plot29$value = TRUE)|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 
