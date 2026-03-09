@@ -185,7 +185,7 @@ summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels
     scale_colour_manual(values = colValues)
   if (!is.null(xlabels)) {
     plotOut <- plotOut +
-      if (is(simData[[x]], "numeric")) {
+      if (is(data[[x]], "numeric")) {
         scale_x_manual(labels = xlabels)
       } else {
         scale_x_discrete(labels = xlabels)
