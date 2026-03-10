@@ -368,3 +368,84 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
                labeller = labllr)
 }
 
+#' Summarise fire regime attributes per pixel
+#'
+#' As in Steel et al 2021, fire properties are summarized across time, but by pixel
+#' (and by scenario/rep) as pixel-level averages.
+#'
+#' Only pixels with vegetation dynamics are considered so that we can compare with biodiv. HVs
+#'
+#' @param allPixelBurnData `data.table` with all year and pixel-level fire regime attributes:
+#'    -  `fireFreq` (fire frequency) -- already temporally integrated so the "summary" is the
+#'       unique value per pixel.
+#'    -  `severity` (fire severity in category)
+#'    -  `severityB` (fire severity as B lost)
+#'    -  `patchSizeLogHa` (severity patch size in log-Ha units)
+#' @param allPixelCohortDataMnt `data.table` with all year and pixel-level cohort B and age.
+#'    Only used to filter `allPixelBurnData`
+#' @param addMedian logical. Should medians be computed?
+#'    -  `meanFreq` / `medianFreq` (the unique value of `fireFreq`)
+#'       unique value per pixel.
+#'    -  `meanSev` / `medianSev` (mean/median `severity`)
+#'    -  `meanSevB` / `medianSevB` (mean/median `severityB`)
+#'    -  `meanPatchS` / `medianPatchS` (mean/median `patchSizeLogHa`)
+#' @returns a table with the four fire regime properties averaged across time and by pixel:
+#'
+#' @import data.table
+summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, addMedian = FALSE) {
+
+  summaryFireAttributes <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$pixelIndex]
+
+  if (addMedian) {
+    summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
+                                                          meanSev = mean(severity),
+                                                          meanSevB = mean(severityB),
+                                                          meanPatchS = mean(patchSizeLogHa),
+                                                          medianFreq = unique(fireFreq),   ## note that fireFreq is already an average of median fire intervals
+                                                          medianSev = median(severity),
+                                                          medianSevB = median(severityB),
+                                                          medianPatchS = median(patchSizeLogHa)),
+                                                   by = .(scenario, rep, pixelIndex)]
+  } else {
+    summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
+                                                          meanSev = mean(severity),
+                                                          meanSevB = mean(severityB),
+                                                          meanPatchS = mean(patchSizeLogHa)),
+                                                   by = .(scenario, rep, pixelIndex)]
+  }
+
+
+  ## add vegType per pixel at the end of the simulation
+  ## and add pixels that had no fires
+  cols <- c("pixelIndex", "vegTypeCN", "scenario", "rep")
+  summaryFireAttributes <- summaryFireAttributes[unique(allPixelCohortDataMnt[year == max(yearSubset), ..cols]),
+                                                 on = c("scenario", "rep", "pixelIndex")]
+  ## checks
+  if (getOption("LandR.assertions", TRUE)) {
+    test1 <- any(is.na(summaryFireAttributes$vegTypeCN))
+    if (test1) {
+      stop("NA vegTypeCNs where pixelGroup - i.e. vegetation - exists")
+    }
+
+    test2 <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$pixelIndex][summaryFireAttributes[is.na(meanFreq), .(scenario, rep, pixelIndex)],
+                                                                                on = .(scenario, rep, pixelIndex), nomatch = 0]
+    if (nrow(test2)) {
+      stop("pixels that had fire and veg data in allPixelBurnData were ",
+           "accidentally dropped when adding vegTypeCN")
+    }
+
+    test3 <- any(is.na(summaryFireAttributes$meanFreq))
+    test4 <- any(is.na(summaryFireAttributes$meanSev))
+    test5 <- any(is.na(summaryFireAttributes$meanSevB))
+    test6 <- any(is.na(summaryFireAttributes$meanPatchS))
+
+    if (any(test3, test4, test5, test6)) {
+      stop("Found NAs in fire properties")
+    }
+
+    rm(test1, test2, test3, test4, test5, test6)
+  }
+  gc(reset = TRUE)
+
+  return(summaryFireAttributes)
+}

@@ -26,6 +26,7 @@ Require::Require(c("data.table",
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
+source("R/R_tools/utilsForResultsAnalyses.R")
 options("reproducible.useNewDigestAlgorithm" = 2)
 options("reproducible.useCache" = TRUE)
 options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))

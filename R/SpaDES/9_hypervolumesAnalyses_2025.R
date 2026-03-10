@@ -43,6 +43,7 @@ Require(c("SpaDES",
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")
 source("R/R_tools/glhtMethods.R")
+source("R/R_tools/utilsForResultsAnalyses.R")
 options("reproducible.useNewDigestAlgorithm" = 2
         , "spades.moduleCodeChecks" = FALSE
         , "reproducible.useCache" = TRUE
