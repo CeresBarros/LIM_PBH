@@ -13,7 +13,6 @@ if (!exists("runPrepResultsModule")) {
 preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
 
 speciesTraits <- preSimList$species
-endYear <- end(preSimList)
 
 ## LOAD DATA (RESULTS)  -------------------
 ## Given the size of the data put together in a pixel-based format, results were sampled every 10 years (instead of the 5-year interval used for saving),
