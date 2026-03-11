@@ -1307,21 +1307,18 @@ gc(reset = TRUE)
 
 ### Mean absolute deviation simulated fire intervals with respect to observed fire intervals for a given stand type
 Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
-Note that `summaryFireAttributes`  has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
+Note that `summaryFireAttributes` has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
 
-HERE!!!
 ```{r simVsObsFires2, cache = FALSE}
-## TODO: compare medians, not mean frequencies (obs median already changed)
-
-## mean age differences
-## calculate avg weighted ages across observed stands first
-## then the absolute difference of each stand to the observed average (per veg type) across reps
+## average fire interval differences
+## calculate the average observed median fire interval first
+## then the absolute difference of each pixel's simulated median fire interval to the observed average (per veg type)
+## and average across pixels and repliates
 ## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 ## mean fire interval per forest type - to compare with camerons fire intervals.
 plotData <- summaryFireAttributes[vegTypeCN != "No veg."][pixWFires, 
                                                           on = .(scenario, rep, pixelIndex), nomatch = 0]
-
 plotData2 <- copy(plotData)
 plotData2[, vegTypeCN := "landscape"]
 plotData <- rbind(plotData, plotData2)
@@ -1337,11 +1334,11 @@ plotData2 <- plotData2[, list(avgMedian.FIObs = mean(median.FI, na.rm = TRUE)),
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 plotData <- plotData2[plotData, on = "vegTypeCN"]
 
-if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(meanFreq)])) {
+if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(medianFreq)])) {
   stop("NAs detected")
 }
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(meanFreq - avgMedian.FIObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(medianFreq - avgMedian.FIObs))),
                       by = .(scenario, rep, vegTypeCN)]
 
 ## boxplot differences
@@ -1353,7 +1350,8 @@ plot44 <- ggplot(plotData,
   geom_boxplot() +
   scale_fill_discrete(labels = scenLabels) +
   theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
+  theme(legend.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
   scale_x_discrete(labels = vegTypeCNLabels) +
   labs(title = "Avg. differences from observed fire intervals",
        y = expression("sim." - bar("obs.")), x = "")
@@ -1400,7 +1398,7 @@ gc(reset = TRUE)
 
 ## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
 ```{r fireAttriPyro, echo = FALSE}
-## TODO: change to medians.
+endYear <- max(yearSubset)
 tempData <- allHVData[year == endYear,
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
 tempData <- melt.data.table(tempData, measure.vars = c("HV_noPM", "HV_PM"),
@@ -1411,24 +1409,29 @@ tempData <- tempData[HVtype == "fireHV", list(Volume = mean(Volume, na.rm = TRUE
 setnames(tempData, "vegType", "vegTypeCN")
 
 ## add only landscape level HV sizes 
-plotData <- tempData[vegTypeCN == "landscape", .(scenario, rep, Volume)][summaryFireAttributes, on = .(scenario, rep)]
+cols <- grep("median", names(summaryFireAttributes), value = TRUE)
+cols <- c(cols, "scenario", "rep", "pixelIndex", "vegTypeCN")
+plotData <- tempData[vegTypeCN == "landscape", .(scenario, rep, Volume)][summaryFireAttributes[, ..cols], on = .(scenario, rep)]
 plotData <- melt(plotData, id.vars = c("scenario", "rep", "Volume", "pixelIndex", "vegTypeCN"))
-plotData[variable %in% c("meanPatchS", "meanSevB"), value := log(value + 0.1)]
+# plotData[variable %in% c("medianPatchS", "medianSevB"), value := log(value + 0.1)]
 
-plot47 <- ggplot(plotData[variable != "meanSev"], aes(x = as.factor(round(log(Volume), 3)), 
-                                                      y = value, 
-                                                      fill = as.factor(round(log(Volume), 3)))) +
-  geom_violin() + 
+plot47 <- ggplot(plotData[variable != "medianSev"], 
+                 aes(x = as.factor(round(log(Volume), 3)), 
+                     y = value, 
+                     fill = as.factor(round(log(Volume), 3)))) +
+  geom_violin() +
   theme_pubr(base_size = 16, legend = "bottom") +
-  theme(legend.title = element_blank(), panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
+  theme(legend.title = element_blank(), 
+        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted"),
         strip.placement = "outside", strip.background = element_blank(), strip.text = element_text(size = 16)) +
   labs(y = "", x = "pyrodiversity") +
   facet_grid(variable ~ scenario, scales = "free", switch = "y",
              labeller = labeller(scenario = scenLabels,
-                                 variable = c(meanFreq = "Mean fire interval",
-                                              meanSevB = "Mean severity",
-                                              meanPatchS = "Mean patch size")))
+                                 variable = c(medianFreq = "Median fire interval",
+                                              medianSevB = "Median severity",
+                                              medianPatchS = "Median patch size")))
 
+## HERE!!!!
 ## relationship  between pyrodiversity and fire attributes -----------------
 ## join HV sizes with fire attributes
 plotData <- allHVData[HVtype == "fireHV",
