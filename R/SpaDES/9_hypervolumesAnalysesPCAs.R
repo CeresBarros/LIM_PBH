@@ -240,7 +240,7 @@ pixelIndexDT <- unique(pixelIndexDT)
 
 if (useFirstLastYear) {
   startYear <- min(yearSubset)
-  endYear <- min(yearSubset)
+  endYear <- max(yearSubset)
   cols <- c("black", "black", scales::hue_pal()(2)[1], scales::hue_pal()(2)[2])
   centroid.cols <- c("grey", "grey", "red", "blue")
 } else {
