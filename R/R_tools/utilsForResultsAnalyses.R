@@ -344,13 +344,12 @@ boxPlot <- function(data, x, y, fill, xlabels, xorder, fillValues, fillLabels,
 sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
                                 xFacet, xlabels, labllr, errorBar = FALSE,
                                 titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
-  plotOut <- ggplot(data, aes(x = x, y = y, fill = fill))
+  plotOut <- ggplot(data, aes(x = !!sym(x), y = !!sym(y), fill = !!sym(fill)))
 
   if (errorBar) {
     plotOut <- plotOut +
       stat_summary(fun = "mean", geom = "bar", position = position_dodge(width = 0.9)) +
       stat_summary(fun.data = "mean_sd", geom = "linerange", position = position_dodge(width = 0.9))
-
   } else {
     plotOut <- plotOut +
       stat_summary(fun = "mean", geom = "bar", position = "fill")
@@ -364,7 +363,7 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
     labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
-    facet_grid(~ xFacet,
+    facet_grid(rows = xFacet,
                labeller = labllr)
 }
 
