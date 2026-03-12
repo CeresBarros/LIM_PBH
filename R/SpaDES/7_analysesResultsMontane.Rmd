@@ -1427,11 +1427,10 @@ plot47 <- ggplot(plotData[variable != "medianSev"],
   labs(y = "", x = "pyrodiversity") +
   facet_grid(variable ~ scenario, scales = "free", switch = "y",
              labeller = labeller(scenario = scenLabels,
-                                 variable = c(medianFreq = "Median fire interval",
-                                              medianSevB = "Median severity",
-                                              medianPatchS = "Median patch size")))
+                                 variable = c("medianPatchS" = "Median patch size\n(no. pixels)",
+                                              "medianFreq" = "Median fire interval",
+                                              "medianSevB" = "Median fire severity\n(biomass lost, ton/ha)")))
 
-## HERE!!!!
 ## relationship  between pyrodiversity and fire attributes -----------------
 ## join HV sizes with fire attributes
 plotData <- allHVData[HVtype == "fireHV",
@@ -1445,17 +1444,19 @@ plotData[, Volume := log(Volume),
          by = .(scenario, vegType)]
 
 plotData2 <- plotData[vegType == "landscape"]
-plotData2 <- summaryFireAttributes[plotData2, on = c("scenario", "rep"),
-                                   allow.cartesian = TRUE]
-plotData2[,vegTypeCN := NULL]
-
+cols <- grep("median", names(summaryFireAttributes), value = TRUE)
+cols <- c(cols, "scenario", "rep", "pixelIndex", "vegTypeCN")
+plotData2 <- summaryFireAttributes[, ..cols][plotData2, on = c("scenario", "rep"),
+                                             allow.cartesian = TRUE]
+plotData2[, vegTypeCN := NULL]
 plotData <- plotData[vegType != "landscape"]
-plotData <- summaryFireAttributes[plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
-                                  allow.cartesian = TRUE]
+
+plotData <- summaryFireAttributes[, ..cols][plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
+                                            allow.cartesian = TRUE]
 setnames(plotData, "vegTypeCN", "vegType")
 plotData <- rbind(plotData, plotData2)
 
-plotData <- melt.data.table(plotData, measure.vars = c("meanFreq", "meanSevB", "meanPatchS"),
+plotData <- melt.data.table(plotData, measure.vars = c("medianFreq", "medianSevB", "medianPatchS"),
                             variable.name = "fireAttr", value.name = "value")
 ## calculate summary stats
 plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Volume, vegType, fireAttr)]
@@ -1484,9 +1485,9 @@ fireAttrPyroPlotFun <- function(plotData) {
     facet_grid(fireAttr ~ vegType,
                scales = "free", switch = "y",
                labeller = labeller(vegType = vegTypeCNLabels,
-                                   fireAttr = c("meanPatchS" = "Mean patch size\n(no. pixels)",
-                                                "meanFreq" = "Mean fire interval",
-                                                "meanSevB" = "Mean fire severity\n(biomass lost, ton/ha)")))
+                                   fireAttr = c("medianPatchS" = "Median patch size\n(no. pixels)",
+                                                "medianFreq" = "Median fire interval",
+                                                "medianSevB" = "Median fire severity\n(biomass lost, ton/ha)")))
 }
 
 fireAttrPyroLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"])
