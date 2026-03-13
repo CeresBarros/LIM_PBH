@@ -336,10 +336,10 @@ ageDiffgls <- Cache(nlme::gls,
 
 AICcmodavg::AICc(ageDifflm)
 AICcmodavg::AICc(ageDiffgls)  ## better
-opts <- par(mfrow = c(2,2))
-plot(ageDifflm)  ## ew
-par(opts)
-plot(ageDiffgls)   ## a bit better?
+# opts <- par(mfrow = c(2,2))
+# plot(ageDifflm)  ## ew
+# par(opts)
+# plot(ageDiffgls)   ## a bit better?
 
 plotData[, pred := predict(ageDiffgls, type = "response")]
 
