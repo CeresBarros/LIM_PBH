@@ -1056,9 +1056,9 @@ plot36 <- ggplot(copy(plotData)) +
 
 ## fire size distribution
 plotData <- summaryFireAttributes[vegTypeCN != "No veg."]
-plotData[, `:=`(meanPatchS1 := meanPatchS + 1,
+plotData[, `:=`(meanPatchS1 = meanPatchS + 1,
                 meanFreq1 = meanFreq + 1,
-                meanSevB1 := meanSevB + 1)]
+                meanSevB1 = meanSevB + 1)]
 plot37 <- densityPlot(copy(plotData), 
                       x = "meanPatchS1", fill = "scenario", alpha = "scenario",
                       fillValues = scenColours, fillLabels = scenLabels, 
