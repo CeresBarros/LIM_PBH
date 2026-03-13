@@ -356,15 +356,23 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
   }
   plotOut <- plotOut +
     scale_fill_manual(values = fillValues, labels = fillLabels) +
-    scale_x_discrete(labels = xlabels) +
-    scale_y_continuous(breaks = c(seq(0, 1, 0.25)),
-                       labels = c(as.character(seq(0, 1, 0.25)))) +
+    scale_x_discrete(labels = xlabels)
+
+  if (!errorBar) {
+    plotOut <- plotOut +
+      scale_y_continuous(breaks = c(seq(0, 1, 0.25)),
+                         labels = c(as.character(seq(0, 1, 0.25))))
+  }
+
+  plotOut <- plotOut +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
     labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
     facet_grid(rows = xFacet,
                labeller = labllr)
+
+  plotOut
 }
 
 #' Summarise fire regime attributes per pixel

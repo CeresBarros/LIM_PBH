@@ -1543,10 +1543,10 @@ plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
                              xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                             titleLab = "Species biomass", yLab = "Proportion of biomass")
+                             titleLab = "Species relative biomass", yLab = "Relative biomass")
 plot7 <- plot7 + 
-  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
-            aes(x = vegTypeCN, y = 1.05, label = noPixels))
+  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, speciesCode, noPixels)]),
+            aes(x = vegTypeCN, y = 1.10, label = noPixels))
 
 ## with mean and SD
 plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
@@ -1591,23 +1591,23 @@ plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
 ```{r plot&savePlots4, echo = FALSE}
 plot7
 ggsave(plot = plot7, filename = file.path(figOutputPath, "results_landscapeB_vegTypeCN.tiff"),
-       width = 14, height = 7)
+       width = 14, height = 10)
 
 plot7.2
 ggsave(plot = plot7.2, filename = file.path(figOutputPath, "results_landscapeB_vegTypeCN_wSD.tiff"),
-       width = 14, height = 7)
+       width = 14, height = 10)
 
 plot7.3
 ggsave(plot = plot7.3, filename = file.path(figOutputPath, "results_pixelB_vegTypeCN.tiff"),
-       width = 14, height = 7)
+       width = 14, height = 10)
 
 plot7.4
 ggsave(plot = plot7.4, filename = file.path(figOutputPath, "results_pixelB_vegTypeCN_wSD.tiff"),
-       width = 14, height = 7)
+       width = 14, height = 10)
 
 plot8
 ggsave(plot = plot8, filename = file.path(figOutputPath, "results_pixelAge_vegTypeCN_wSD.tiff"),
-       width = 14, height = 7)
+       width = 14, height = 10)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
 plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
