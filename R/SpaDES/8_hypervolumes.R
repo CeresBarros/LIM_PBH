@@ -105,7 +105,7 @@ source("R/R_tools/prepFireData4HVs.R")
 
 summaryFireAttributes[, dummyHVid := paste(scenario, rep, vegTypeCN, sep = "_")]
 
-cols <- c("meanFreq", "meanSevB", "meanPatchS", "dummyHVid")
+cols <- c("meanFreq", "meanSevPropB", "meanPatchS", "dummyHVid")
 firePCA <- summaryFireAttributes[, ..cols] %>%
   ToolsCB:::.scaleVars(., init.vars = c(1:3)) %>%
   Cache(HVordination,
@@ -134,7 +134,7 @@ if (mergePSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "PSME"]
 }
 
-doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
+doAll <- TRUE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
@@ -177,7 +177,7 @@ lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
 
 ### Hypervolumes across the landscape ----------------
 ## only montane belt
-doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
+doAll <- TRUE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)

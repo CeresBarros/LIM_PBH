@@ -407,16 +407,19 @@ summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, addMe
     summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
                                                           meanSev = mean(severity),
                                                           meanSevB = mean(severityB),
+                                                          meanSevPropB = mean(severityPropB),
                                                           meanPatchS = mean(patchSizeLogHa),
                                                           medianFreq = unique(fireFreq),   ## note that fireFreq is already an average of median fire intervals
                                                           medianSev = median(severity),
                                                           medianSevB = median(severityB),
+                                                          medianSevPropB = median(severityPropB),
                                                           medianPatchS = median(patchSizeLogHa)),
                                                    by = .(scenario, rep, pixelIndex)]
   } else {
     summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
                                                           meanSev = mean(severity),
                                                           meanSevB = mean(severityB),
+                                                          meanSevPropB = mean(severityPropB),
                                                           meanPatchS = mean(patchSizeLogHa)),
                                                    by = .(scenario, rep, pixelIndex)]
   }

@@ -1081,6 +1081,7 @@ plot39.4 <- plot39.3 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
 ## distribution of fire severity per stand across landscape
+## TODO: change to sevPropB
 plot40 <- densityPlot(copy(plotData), 
                       x = "meanSevB1", fill = "scenario", alpha = "scenario",
                       fillValues = scenColours, fillLabels = scenLabels, 
@@ -1089,6 +1090,7 @@ plot40 <- densityPlot(copy(plotData),
                       xLab = "Mean fire severity\n(biomass lost, ton/ha)")
 
 ## distribution of fire severity per stand by veg types defined for a sample of years across the quasi equilibrium period.
+## TODO: change to sevPropB
 ## as used for HVs
 plot41 <- plot40 +
   facet_wrap(~ vegTypeCN, ncol = 4, labeller = labeller(vegTypeCN = vegTypeCNLabels))
@@ -1398,6 +1400,8 @@ gc(reset = TRUE)
 
 ## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
 ```{r fireAttriPyro, echo = FALSE}
+
+## TODO: use sevPropB
 endYear <- max(yearSubset)
 tempData <- allHVData[year == endYear,
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
