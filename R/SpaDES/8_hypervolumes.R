@@ -96,8 +96,9 @@ dir.create(HVoutputPath, recursive = TRUE)
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 ### FIRE DATA SUMMARY FOR HVs -----------------------
 # opts <- options(LandR.assertions = FALSE)
+opts <- options(reproducible.cachePath = simPaths$cachePath)
 source("R/R_tools/prepFireData4HVs.R")
-# options(opts)
+options(opts)
 
 ### Global pyrodiversity PCA ----------
 ## a large PCA on the pooled dataset is needed to ensure that
