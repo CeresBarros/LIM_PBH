@@ -226,7 +226,9 @@ lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
 yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
 
 useFirstLastYear <- FALSE ## use only first/last year of yearSubset, or all years?
+opts <- options(reproducible.cachePath = simPaths$cachePath)
 source("R/R_tools/prepVegData4HVs.R")
+options(opts)
 
 rm(allPixelBurnData, allPixelCohortDataMnt)
 gc(reset = TRUE)

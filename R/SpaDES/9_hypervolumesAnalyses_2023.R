@@ -94,11 +94,14 @@ dir.create(statsOutputPath, recursive = TRUE)
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
+
+opts <- options(reproducible.cachePath = simPaths$cachePath)
 source("R/R_tools/prepFireData4HVs.R")
 
 yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
 useFirstLastYear <- FALSE
 source("R/R_tools/prepVegData4HVs.R")
+options(opts)
 
 ## don't need these
 rm(allPixelBurnData, allPixelCohortData, allPixelCohortDataMnt)

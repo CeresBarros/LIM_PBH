@@ -78,11 +78,13 @@ gc(reset = TRUE)
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)
 opts <- options("LandR.assertions" = FALSE)
 
+opts <- options(reproducible.cachePath = simPaths$cachePath)
 source("R/R_tools/prepFireData4HVs.R")
 
 yearSamples <- sample5SimYears(allPixelCohortDataMnt[, .(year, rep)])   ## seed ensures same years are drawn
 useFirstLastYear <- FALSE
 source("R/R_tools/prepVegData4HVs.R")
+options(opts)
 
 ## don't need these
 rm(allPixelBurnData, allPixelCohortData)
