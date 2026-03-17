@@ -6,5 +6,6 @@ cacheExtra <- c(digest::digest(allPixelBurnData), digest::digest(allPixelCohortD
 summaryFireAttributes <- Cache(summariseFireRegAttrs,
                                allPixelBurnData = allPixelBurnData,
                                allPixelCohortDataMnt = allPixelCohortDataMnt,
+                               yearSubset = yearSubset,
                                omitArgs = c("allPixelBurnData", "allPixelCohortDataMnt"),
                                .cacheExtra = cacheExtra)

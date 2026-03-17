@@ -149,7 +149,8 @@ gc(reset = TRUE)
 ## with it's veg types -- this seems wrong or hard to compare but it will do for now.
 
 ## summarise fire data
-summaryFireAttributes <- summariseFireRegAttrs(allPixelBurnData, allPixelCohortDataMnt, addMedian = TRUE)
+summaryFireAttributes <- summariseFireRegAttrs(allPixelBurnData, allPixelCohortDataMnt,
+                                               yearSubset = yearSubset, addMedian = TRUE)
 
 ## drop unused levels
 allPixelCohortDataMnt$vegTypeCN <- droplevels(allPixelCohortDataMnt$vegTypeCN)

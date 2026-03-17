@@ -399,7 +399,7 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
 #' @returns a table with the four fire regime properties averaged across time and by pixel:
 #'
 #' @import data.table
-summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, addMedian = FALSE) {
+summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, yearSubset, addMedian = FALSE) {
 
   summaryFireAttributes <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$pixelIndex]
 
