@@ -459,3 +459,126 @@ summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, addMe
 
   return(summaryFireAttributes)
 }
+
+
+#' VEGETATION DATA FOR HVs
+#'
+#' Prepares vegetation data (relative tree species biomass, stand biomass,
+#' mean and SD of stand age) for hypervolume calculations.
+#'
+#' @param allPixelCohortDataMnt
+#' @param summaryFireAttributes
+#' @param useFirstLastYear logical. Should only the first and last
+#'   years of the simulation be used?
+#' @param yearSubset Numeric vector. If `useFirstLastYear == TRUE`, this is the
+#'   a vector of simulation years used to run analyses, from which the minimum (first) and
+#'   maximum (last) years will be subset to prepare the vegetation data.
+#' @param yearSamples Optional. Numeric vector. If `useFirstLastYear == FALSE` and
+#'   Sample of simulation years to be used to prepare the vegetation data. If not
+#'   If not provided, all years from `yearSubset` will be used.
+#'
+#' @details Mean and SD of stand age (mean/sdStandAge) are the mean and SD of biomass-weighted
+#'   cohort ages in a pixel (calculated across species). NA values are converted to
+#'   0s, as they indicate lack of forest cover.
+#'   NaN relative biomasses (relB) are converted to 0, as they indicate lack of forest cover in
+#'   the pixel.
+#'   All output vegetation attributes (relative species biomass,mean/SD of stand age)
+#'   are calculated per pixel, year, repetition and scenario
+#'
+#' @returns a `data.table` with columns:
+#'   * scenario, rep, year, pixelIndex, speciesCode, vegTypeCN -- identifiers
+#'   * meanStandAge, sdStandAge, relB
+#' @export
+#' @import data.table
+prepVegDataHVs <- function(allPixelCohortDataMnt, summaryFireAttributes,
+                           useFirstLastYear, yearSubset, yearSamples) {
+
+  if (useFirstLastYear) {
+    vegDataForHVs <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
+  } else {
+    if (exists("yearSamples")) {
+      vegDataForHVs <- allPixelCohortDataMnt[yearSamples, on = .(year, rep)]
+    } else {
+      vegDataForHVs <- allPixelCohortDataMnt[year %in% yearSubset]
+    }
+  }
+
+  if (getOption("LandR.assertions", TRUE)) {
+    pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
+    temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
+    setkey(temp, scenario, rep, pixelIndex)
+    setkey(vegDataForHVs, scenario, rep, pixelIndex)
+
+    if (isFALSE(identical(temp, vegDataForHVs))) {
+      stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
+           "Combinations as allPixelCohortDataMnt")
+    }
+
+    temp <- vegDataForHVs[, length(unique(pixelIndex)), by = .(scenario, rep, year)]
+    if (length(unique(temp$V1)) > 1) {
+      stop("There should be the same number of pixels every year.")
+    }
+
+    temp <- split(vegDataForHVs[, .(pixelIndex, scenario, rep, year)],
+                  by = c("scenario", "rep", "year"), keep.by = FALSE)
+    temp <- lapply(temp, FUN = function(x) unique(x[["pixelIndex"]]))
+    test <- lapply(1:length(temp), function(n) setdiff(temp[[n]], unlist(temp[-n])))
+
+    test <- sapply(test, length)
+    if (any(test))
+      stop("Different pixelIndex between scenario/rep/year combinations")
+
+    if (min(vegDataForHVs$year) == 2011) {
+      temp <- split(vegDataForHVs[year == min(yearSubset), .(vegTypeCN, pixelIndex, scenario, rep)],
+                    by = c("scenario", "rep"), keep.by = FALSE)
+      temp <- lapply(temp, FUN = function(x) setkey(x, vegTypeCN, pixelIndex))
+      temppix <- lapply(temp, FUN = function(x) x[["pixelIndex"]])
+      tempveg <- lapply(temp, FUN = function(x) x[["vegTypeCN"]])
+
+      test <- lapply(1:length(temppix), function(n) setdiff(temppix[[n]], unlist(temppix[-n])))
+      test2 <- lapply(1:length(tempveg), function(n) setdiff(tempveg[[n]], unlist(tempveg[-n])))
+      test <- sapply(test, length)
+      test2 <- sapply(test2, length)
+
+      if (any(test) | any(test2))
+        stop("Difference pixelIndex/vegTypeCN combinations between scenario/reps in the first year")
+    }
+
+    ## checks at landscape scale:
+    pixelIndices <- unique(summaryFireAttributes[,.(scenario, rep, pixelIndex)])
+    temp <- vegDataForHVs[pixelIndices, on = .(scenario, rep, pixelIndex), nomatch = 0]
+    setkey(temp, scenario, rep, pixelIndex)
+    setkey(vegDataForHVs, scenario, rep, pixelIndex)
+
+    if (isTRUE(any(temp != vegDataForHVs))) {
+      stop("Something is wrong. summaryFireAttributes should have the same pixelIndex/scenario/rep\n",
+           "Combinations as allPixelCohortDataMnt")
+    }
+
+    rm(temp, test, test2)
+    for(i in 1:3) gc(reset = TRUE)
+  }
+
+  ## prep data for hypervolumes
+  ## calculate stand-age as the mean biomass-weighted age
+  vegDataForHVs[, `:=`(meanStandAge = mean(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                        sum((B/100), na.rm = TRUE))),
+                       sdStandAge = sd(as.numeric(sum(age * (B/100), na.rm = TRUE) /
+                                                    sum((B/100), na.rm = TRUE)))),
+                by = .(scenario, rep, year, pixelIndex, vegTypeCN)]
+  vegDataForHVs[is.na(meanStandAge), meanStandAge := 0]  ## NAs come from stands with 0 B and 0 age
+  vegDataForHVs[is.na(sdStandAge), sdStandAge := 0]  ## NAs come from stands with 0 B and 0 age or just one value of standAge
+
+  ## calculate relative species B (across speciesCohorts)
+  vegDataForHVs[, standB := sum(B, na.rm = TRUE), by =  c("scenario", "rep", "year", "pixelIndex", "vegTypeCN")]
+  vegDataForHVs[, relB := sum(B) / standB, by = c("scenario", "rep", "year", "pixelIndex", "vegTypeCN", "speciesCode")]
+  vegDataForHVs[relB == "NaN", relB := 0]
+
+  ## expand data
+  cols <- c("meanStandAge", "sdStandAge", "relB", "speciesCode", "scenario", "rep", "year", "pixelIndex", "vegTypeCN")   ## keep rep for wrapper.
+  vegDataForHVs <- unique(vegDataForHVs[, ..cols])
+  vegDataForHVs <- dcast.data.table(vegDataForHVs, as.formula("... ~ speciesCode"),
+                                    value.var = "relB")
+
+  return(vegDataForHVs)
+}
