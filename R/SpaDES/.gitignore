@@ -1,12 +1,14 @@
 # Ignore
 cache
+cache.zip
+inputs/*
+inputs.zip
 outputs/*
 .httr-oath
 m/*/data
 m/*/cache
 m/*/*.zip
 m/old
-inputs/*
 7_analysesResults*cache/
 7_analysesResults*files/
 
