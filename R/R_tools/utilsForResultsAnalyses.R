@@ -423,10 +423,11 @@ HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenari
 
   plotOut
 }
+
 #' Biodiversity ~ Pyrodiversity relationships plots
 #' I.e. veg HV size ~ fire HV size
-#' ... is passed to stat_smooth
-plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
+#' ... is passed to stat_smooth (example ...: method = "lm", formula = quote(y ~ poly(x, 2)),)
+plotBioPyroFun <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
                                  linetype = "scenario", colour = "vegType",
                                  yPred = "pred", ymin, ymax,
                                  #shape = "scenario"
@@ -452,15 +453,22 @@ plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV"
   }
 
   plotOut <- ggplot(plotData,
-         aes(x = !!sym(x), linetype = !!sym(linetype), colour = !!sym(colour)
-           #, shape = !!sym(shape)
+         aes(x = !!sym(x), colour = !!sym(colour)
+           #, shape = !!sym(shape), linetype = !!sym(linetype),
          )) +
     geom_point(aes(y = !!sym(yPoints)))
 
   xLimits <- range(plotData[[x]])
 
   plotOut <- plotOut +
-    stat_smooth(aes(y = !!sym(yPred)), ...)
+    # stat_smooth(aes(y = !!sym(yPred), fill = !!sym(colour)), ...)  +
+    geom_line(aes(y = !!sym(yPred), colour = !!sym(colour)))  ## if providing predictions over expanded X
+
+  if (!missing(colourLabels)) {
+    plotOut <- plotOut +
+      scale_colour_manual(labels = colourLabels, values = colourVals,
+                          breaks = names(colourLabels))
+  }
 
   if (!missing(ymin)) {
     plotOut <- plotOut +
@@ -470,9 +478,8 @@ plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV"
       plotOut <- plotOut +
         scale_fill_manual(labels = colourLabels, values = colourVals, guide = "none")
     }
-    plotOut <- plotOut +
-      scale_colour_manual(labels = colourLabels, values = colourVals)
   }
+
 
   plotOut <- plotOut +
     # scale_linetype_manual(labels = scenLabels,
@@ -483,12 +490,13 @@ plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV"
     theme(legend.box = "vertical",
           strip.background = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-    labs(x = xLab, y = yLab, title = titleLab, colour = colourLab
+    labs(x = xLab, y = yLab, title = titleLab, colour = colourLab, fill = "",
          #linetype = linetypeLab, shape = shapeLab
     ) +
     # facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
     #             scales = "free") +
-    guides(linetype = guide_legend(override.aes = list(colour = "black")))
+    guides(linetype = guide_legend(override.aes = list(colour = "black")),
+           colour = guide_legend(override.aes = list(fill = colourVals[names(colourLabels)])))
 
   plotOut
 }
