@@ -27,6 +27,7 @@ Require::Require("rvlenth/emmeans (>= 1.8.6)")
 library(cowplot)
 library(ToolsCB)
 library(performance)
+# "LandR (==1.0.7.9026)", ## needed but don't load -- here for install.
 
 source("R/R_tools/Useful_functions.R")
 source("R/R_tools/hypervolumesHelpers.R")

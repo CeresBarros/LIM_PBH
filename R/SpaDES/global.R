@@ -12,7 +12,7 @@ Require(c("raster",
           "data.table",
           "ToolsCB",
           "SpaDES.experiment",
-          "LandR",
+          "LandR (==1.0.7.9026)",
           "reproducible",
           "future"
 ), upgrade = FALSE, install = FALSE)

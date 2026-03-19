@@ -44,7 +44,7 @@ Require(
     "qs",
     "purrr",
     "magick",
-    "LandR",
+    "LandR (==1.0.7.9026)",
     "future",
     "future.apply",
     "lme4",

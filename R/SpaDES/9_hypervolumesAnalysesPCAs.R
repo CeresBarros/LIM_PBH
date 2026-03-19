@@ -12,6 +12,7 @@ library(ggpubr)
 library(FD)
 library(vegan)
 library(ggvegan)
+# "LandR (==1.0.7.9026)", ## needed but don't load -- here for install.
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
