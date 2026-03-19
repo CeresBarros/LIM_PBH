@@ -71,6 +71,7 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE ## saves some time after it's done a first time
 source("R/SpaDES/simResultsDataPrep.R")
+rm(preSimList)  ## not needed anymore
 
 rm(allPixelCohortData)
 gc(reset = TRUE)  ## about 50Gb used at this point

@@ -200,7 +200,7 @@ gc(reset = TRUE)
 
 ```{r plotLabels, include = FALSE}
 source("R/R_tools/plotLabels&Cols.R")
-
+rm(preSimList)  ## not needed anymore
 ## remove large objs rasters to save memory
 rm(list = c(grep("Stk", ls(), value = TRUE)))
 amc::.gc()

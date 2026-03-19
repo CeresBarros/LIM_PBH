@@ -113,7 +113,7 @@ source("R/R_tools/prepHVData.R")
 
 ## LABELS AND COLOURS FOR PLOTTING ----------------
 source("R/R_tools/plotLabels&Cols.R")
-
+rm(preSimList)  ## not needed anymore
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------
 ## make separate datatable for stats so that we can change contrasts

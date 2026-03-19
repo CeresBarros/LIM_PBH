@@ -80,6 +80,5 @@ if (!"vegType" %in% colnames(allPixelCohortDataMnt)) {
   allPixelCohortDataMnt <- unique(allPixelCohortData[, .(scenario, rep, year, pixelIndex, vegType)])[allPixelCohortDataMnt, on = .(scenario, rep, year, pixelIndex)]
 }
 
-rm(preSimList)  ## not needed anymore
 for (i in 1:3) gc(reset = TRUE)
 

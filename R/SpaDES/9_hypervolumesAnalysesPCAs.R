@@ -94,7 +94,7 @@ gc(reset = TRUE)
 options(opts)
 ## get labels and colours
 source("R/R_tools/plotLabels&Cols.R")
-
+rm(preSimList)  ## not needed anymore
 ## don't need these
 rm(allPixelBurnData, allPixelCohortData)
 gc(reset = TRUE)
