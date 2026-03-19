@@ -379,6 +379,11 @@ HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenari
                        yLab = y, xLab = x, fillLab = fill,
                        alphaLab, titleLab = "",
                        vegType, HVtype, logVolume, scenario, xLabels, fillLabels, fillVals) {
+  ## checks
+  if (missing(fillLabels)  != missing(fillVals)) {
+    stop("fillLabels and fillVals must be both provided, or both not provided.")
+  }
+
   plotOut <- ggplot(plotData,
                     aes(x = !!sym(x), y = !!sym(y)
                         # , alpha = scenario
@@ -389,12 +394,6 @@ HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenari
     plotOut <- plotOut +
       scale_x_discrete(labels = xLabels)
   }
-
-  if ((!missing(fillLabels) & missing(fillVals)) |
-      missing(fillLabels) &!missing(fillVals)) {
-    stop("fillLabels and fillVals must be both provided, or both not provided.")
-  }
-
   if (!missing(fillLabels) & !missing(fillVals)) {
     plotOut <- plotOut +
       scale_fill_manual(labels = fillLabels, values = fillVals)
@@ -442,6 +441,16 @@ plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV"
   # form <- quote(y ~ poly(x, 2))
   # }
 
+
+  ## checks
+  if (missing(colourLabels) != missing(colourVals)) {
+    stop("Provide both colourLabels and colourVals")
+  }
+
+  if (missing(ymin) != missing(ymax)) {
+    stop("Provide both ymin and ymax")
+  }
+
   plotOut <- ggplot(plotData,
          aes(x = !!sym(x), linetype = !!sym(linetype), colour = !!sym(colour)
            #, shape = !!sym(shape)
@@ -454,17 +463,12 @@ plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV"
     stat_smooth(aes(y = !!sym(yPred)), ...)
 
   if (!missing(ymin)) {
-    if (missing(ymax)) {
-      stop("Provide both ymin and ymax")
-    }
     plotOut <- plotOut +
       geom_ribbon(aes(ymin = !!sym(ymin), ymax = !!sym(ymax), fill = !!sym(colour)),
                   alpha = 0.5)
-  }
-
-  if (!missing(colourLabels)) {
-    if (missing(colourVals)) {
-      stop("Provide both colourLabels and colourVals")
+    if (!missing(colourLabels)) {
+      plotOut <- plotOut +
+        scale_fill_manual(labels = colourLabels, values = colourVals, guide = "none")
     }
     plotOut <- plotOut +
       scale_colour_manual(labels = colourLabels, values = colourVals)
