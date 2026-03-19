@@ -25,19 +25,22 @@ if (!exists("pkgDir")) {
 
 library(Require)
 
-Require(c("SpaDES",
-          "reproducible",
+Require(c("cowplot (>= 1.2.0)",
           "data.table",
+          "dplyr",
           "ggplot2 (>= 4.0.1.9000)",
           "ggpubr",
-          "nlme",
+          # "LandR (==1.0.7.9026)", ## needed but don't load -- here for install.
+          "marginaleffects",
           "mgcv",
           "multcomp",
-          "rvlenth/emmeans (>= 2.0.0)",
-          "cowplot (>= 1.2.0)",
-          "ToolsCB",
+          "nlme",
           "performance",
-          "dplyr"), install = FALSE)
+          "rvlenth/emmeans (>= 2.0.0)",
+          "reproducible",
+          "SpaDES",
+          "ToolsCB"
+          ), install = FALSE)
 
 
 source("R/R_tools/Useful_functions.R")
@@ -262,8 +265,13 @@ if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(uni
   stop("Missing replicates")
 }
 
-## model landscape separately
+## Landscape level ------
 modelData2 <- modelData[vegType == "landscape"]
+## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
+## when trying to get prediction intervals
+cols <- names(modelData2)
+modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
+
 vegHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData2)
 vegHVVolumeLandscape.lm2 <- lm(logVolume ~ scenario, modelData2)
 
@@ -306,8 +314,13 @@ cat("\n*********************\n")
 emmeans(vegHVVolumeLandscape.gls2, specs = "scenario", data = modelData2)
 sink()
 
-## model vegTypes
+## vegType level --------
 modelData2 <- modelData[vegType != "landscape"]
+## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
+## when trying to get prediction intervals
+cols <- names(modelData2)
+modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
+
 vegHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData2)
 vegHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData2)
 
@@ -433,6 +446,10 @@ modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
 modelData[, `:=`(logFireHV = log(fireHV),
                  logVegHV = log(vegHV))]
 modelData2 <- modelData[vegType == "landscape"]
+## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
+## when trying to get prediction intervals
+cols <- names(modelData2)
+modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
 
 ## model landscape separately
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData2)
@@ -573,6 +590,11 @@ sink()
 
 ## by vegType
 modelData2 <- modelData[vegType != "landscape"]
+## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
+## when trying to get prediction intervals
+cols <- names(modelData2)
+modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
+
 pyroVSbiodiversityVegTypes.lm <- lm(vegHV ~ fireHV*scenario*vegType, data = modelData2)
 pyroVSbiodiversityVegTypes.lm2 <- lm(logVegHV ~ logFireHV*scenario*vegType,
                                      data = modelData2)
@@ -764,47 +786,91 @@ plotData[, `:=`(logFireHV = log(fireHV),
 plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
          by = .(scenario, vegType)]
 
-plotData[vegType == "landscape", pred := predict(pyroVSbiodiversityLandscape.gls5, type = "response")]   ## just to compare with smoother
-plotData[vegType != "landscape", pred := predict(pyroVSbiodiversityVegTypes.gls2, type = "response")]   ## just to compare with smoother
+
+## get predicted values and prediction intervals (CIs on predictions)
+## predict for many more X values to smooth out intervals, and add the original values
+## to facilitate plotting
+## THIS DIDN'T WORK!!! Predictions came out flat.
+
+# plotData2 <- plotData[, list(minLFH = min(logFireHV), maxLFH = max(logFireHV)),
+#                       by = .(rep, scenario, vegType)]
+#
+# plotData2 <- plotData2[, list(logFireHV = seq(minLFH, maxLFH, length.out = 50)),
+#                       by = .(rep, scenario, vegType)]
+# plotData2 <- rbind(plotData2, plotData[, .(rep, scenario, vegType, logFireHV)])
+
+lmPreds <- predict(pyroVSbiodiversityLandscape.lm3,
+                   # newdata = plotData2[vegType == "landscape"],
+                   se.fit = TRUE, interval = "confidence", type = "response")
+
+## HERE: estimate CIs and plot those with smoothed predictions
+if (paste(version$major, version$minor, sep = ".") < "4.4.0") {
+  stop("marginaleffecs::predictions needs R version >= 4.4.0")
+} else {
+  # plotData3 <- plotData2[vegType != "landscape"]
+  # plotData3[, vegType := droplevels(vegType)]
+  glsPreds <- predictions(pyroVSbiodiversityVegTypes.gls2, ## can't access model data, but this is the same
+                          # newdata = plotData3,
+                          vcov = TRUE, by = FALSE, type = "response")
+}
+
+plotData2 <- rbind(
+  cbind(plotData[vegType == "landscape"],
+        lmPreds$fit),
+  cbind(plotData[vegType != "landscape"],
+        data.table(fit = glsPreds$estimate, lwr = glsPreds$conf.low, upr = glsPreds$conf.high))
+)
+
+setnames(plotData2, "fit", "pred")
+
+## this works bcs original predictor values are in plotData2
+# plotData3 <- plotData[plotData2, on = .(rep, scenario, vegType, logFireHV)]
 
 ## see influential replicates -- the same replicate is not influential across all veg types.
-ggplot(plotData, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
+ggplot(plotData3, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
   geom_point() +
   facet_grid(scenario ~ vegType, scales = "free")
 
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
 ## SEs are removed because they are not the same as the gls's
-pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_noPM"],
+pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFun(plotData2[vegType != "landscape" & scenario == "HV_noPM"],
                                                      # yPoints = "pred",  ## only to that preds match the smoother line
-                                                     colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
-                                                     # method = "lm", formula = quote(y ~ poly(x, 2)),
+                                                     ymin = "lwr", ymax = "upr",
+                                                     colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) != "landscape"], ## needed for guides
+                                                     colourVals = vegTypeCNColours[names(vegTypeCNColours) != "landscape"],  ## needed for guides
                                                      titleLab = scenLabels["noPM"])
-pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_noPM"],
+pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_noPM"],
                                                          # yPoints = "pred",  ## only to that preds match the smoother line
-                                                         colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                         ymin = "lwr", ymax = "upr",
+                                                         colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) == "landscape"], ## needed for guides
+                                                         colourVals = vegTypeCNColours[names(vegTypeCNColours) == "landscape"],  ## needed for guides
                                                          titleLab = scenLabels["noPM"])
 
-pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_PM"],
+pyroVSbioDivVegTypesPlotPM <- plotBioPyroFun(plotData2[vegType != "landscape" & scenario == "HV_PM"],
                                                    # yPoints = "pred",  ## only to that preds match the smoother line
-                                                   colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                   ymin = "lwr", ymax = "upr",
+                                                   colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) != "landscape"], ## needed for guides
+                                                   colourVals = vegTypeCNColours[names(vegTypeCNColours) != "landscape"],  ## needed for guides
                                                    titleLab = scenLabels["PM"])
 
-pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_PM"],
+pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_PM"],
                                                        # yPoints = "pred",  ## only to that preds match the smoother line
-                                                       colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                       ymin = "lwr", ymax = "upr",
+                                                       colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) == "landscape"], ## needed for guides
+                                                       colourVals = vegTypeCNColours[names(vegTypeCNColours) == "landscape"],  ## needed for guides
                                                        titleLab = scenLabels["PM"])
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothnoPM.png"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitynoPM.png"),
        width = 14, height = 7, bg = "white")
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitySmoothPM.png"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPM.png"),
        width = 14, height = 7, bg = "white")
 
 
