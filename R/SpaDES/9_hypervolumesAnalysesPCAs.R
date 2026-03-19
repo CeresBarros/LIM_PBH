@@ -113,14 +113,10 @@ useFirstLastYear <- FALSE
 source("R/R_tools/prepVegData4HVs.R")
 options(opts)
 
-## don't need these
-rm(allPixelBurnData, allPixelCohortData)
-gc(reset = TRUE)
-
 options(opts)
 ## get labels and colours
 source("R/R_tools/plotLabels&Cols.R")
-rm(preSimList)  ## not needed anymore
+
 ## don't need these
 rm(allPixelBurnData, allPixelCohortData)
 gc(reset = TRUE)
@@ -132,6 +128,7 @@ traitsTable <- preSimList$species
 traitsTable[, firetolerance := as.ordered(firetolerance)]
 traitsTable <- data.frame(traitsTable[, .(longevity, shadetolerance, firetolerance, postfireregen)],
                           row.names = traitsTable$speciesCode)
+rm(preSimList)  ## not needed anymore
 
 if (useFirstLastYear) {
   vegData <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
