@@ -113,7 +113,6 @@ useFirstLastYear <- FALSE
 source("R/R_tools/prepVegData4HVs.R")
 options(opts)
 
-options(opts)
 ## get labels and colours
 source("R/R_tools/plotLabels&Cols.R")
 
