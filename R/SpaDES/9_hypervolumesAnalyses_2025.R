@@ -634,79 +634,28 @@ plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
 plotData[, logVolume := log(Volume)]
 
+plotData[, scenario := sub("HV_", "", scenario)]
 
-pyroHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "fireHV"],
-                                   aes(x = vegType, y = logVolume
-                                       , alpha = scenario
-                                       , fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-  labs(x = "", fill = "", y = "log-hypervolume size", alpha = "", title = "Pyrodiversity") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
-# facet_wrap(~ vegType == "landscape", nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
-#                                           "fireHV" = "Pyrodiversity")))
+pyroHVvolumeVegTypesPlot <- HVBoxplots(plotData = plotData[vegType != "landscape" & HVtype == "fireHV"],
+                                       yLab = "log-hypervolume size", xLab = "", fillLab = "", titleLab = "Pyrodiversity",
+                                       xLabels = vegTypeCNLabels, fillLabels = scenLabels, fillVals = scenColours)
 
-bioHVvolumeVegTypesPlot <- ggplot(plotData[vegType != "landscape" & HVtype == "vegHV"],
-                                  aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(legend.box = "vertical",
-        strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", alpha = "", title = "Forest diversity") +
-  guides(alpha = guide_legend(override.aes = list(fill = "grey50")))
-# facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
-#                                           "fireHV" = "Pyrodiversity")))
+bioHVvolumeVegTypesPlot <- HVBoxplots(plotData = plotData[vegType != "landscape" & HVtype == "vegHV"],
+                                      yLab = "log-hypervolume size", xLab = "", fillLab = "", titleLab = "Forest diversity",
+                                      xLabels = vegTypeCNLabels, fillLabels = scenLabels, fillVals = scenColours)
 
 
-pyroHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "fireHV"],
-                                    aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", title = "Pyrodiversity") +
-  guides(alpha = "none", fill = "none")
-# facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
-#                                           "fireHV" = "Pyrodiversity")))
+pyroHVvolumeLandscapePlot <- HVBoxplots(plotData[vegType == "landscape" & HVtype == "fireHV"],
+                                        yLab = "log-hypervolume size", xLab = "", titleLab = "Pyrodiversity",
+                                        xLabels = vegTypeCNLabels, fillLabels = scenLabels, fillVals = scenColours) +
+  guides(fill = "none")
 
-bioHVvolumeLandscapePlot <- ggplot(plotData[vegType == "landscape" & HVtype == "vegHV"],
-                                   aes(x = vegType, y = logVolume, alpha = scenario, fill = vegType)) +
-  geom_boxplot() +
-  scale_x_discrete(labels = vegTypeCNLabels) +
-  scale_fill_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-  scale_alpha_manual(values = c("HV_noPM" = 0.4, "HV_PM" = 1.0),
-                     labels = scenLabels) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  theme_pubr(base_size = 12, margin = FALSE) +
-  theme(strip.background = element_blank(),
-        panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-  labs(x = "", y = "log-hypervolume size", fill = "", title = "Forest diversity") +
-  guides(alpha = "none", fill = "none")
-# facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
-#            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
-#                                           "fireHV" = "Pyrodiversity")))
+
+bioHVvolumeLandscapePlot <- HVBoxplots(plotData[vegType == "landscape" & HVtype == "vegHV"],
+                                       yLab = "log-hypervolume size", xLab = "", titleLab = "Forest diversity",
+                                       xLabels = vegTypeCNLabels, fillLabels = scenLabels, fillVals = scenColours) +
+  guides(fill = "none")
+
 
 alignedVegPlots <- align_plots(pyroHVvolumeVegTypesPlot + theme(plot.margin = margin(0,0,0,0), legend.position = "none", axis.text.x = element_blank()),
                                bioHVvolumeVegTypesPlot + theme(plot.margin = margin(0,0,0,0), legend.position = "none"),
@@ -821,52 +770,25 @@ ggplot(plotData, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
 ## SEs are removed because they are not the same as the gls's
-plotBioPyroFunSmooth <- function(plotData, title = "") {
-  # if (all(plotData$vegType == "landscape")) {
-  #   form <- quote(y ~ x)
-  # } else {
-  # form <- quote(y ~ x + I(x^2))   ## needs logFireHVcenter below
-  form <- quote(y ~ poly(x, 2))
-  # }
-
-  ggplot(plotData,
-         aes(
-           # x = logFireHVcenter
-           x = logFireHV
-           , y = logVegHV
-           # linetype = scenario,
-           # shape = scenario,
-           , colour = vegType
-         )) +
-    geom_point() +
-    # geom_line(aes(y = pred)) +  ## just to check if it matches smoother
-    stat_smooth(method = "lm", formula = form, se = FALSE) +
-    scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours) +
-    # scale_linetype_manual(labels = scenLabels,
-    #                       values = scenLinetype) +
-    # scale_shape_discrete(labels = scenLabels) +
-    # scale_x_continuous(limits = range(plotData[, logFireHVcenter])) +
-    scale_x_continuous(limits = range(plotData[, logFireHV])) +
-    theme_pubr(base_size = 12, margin = TRUE) +
-    theme(legend.box = "vertical",
-          strip.background = element_blank(),
-          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-    labs(x = "Pyrodiversity", y = "Forest diversity", title = title, colour = ""
-         # , linetype = "", shape = ""
-    ) +
-    # facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
-    #             scales = "free") +
-    guides(linetype = guide_legend(override.aes = list(colour = "black")))
-}
-
 pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_noPM"],
-                                                     title = scenLabels["noPM"])
+                                                     # yPoints = "pred",  ## only to that preds match the smoother line
+                                                     colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                     # method = "lm", formula = quote(y ~ poly(x, 2)),
+                                                     titleLab = scenLabels["noPM"])
 pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_noPM"],
-                                                         title = scenLabels["noPM"])
+                                                         # yPoints = "pred",  ## only to that preds match the smoother line
+                                                         colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                         titleLab = scenLabels["noPM"])
+
 pyroVSbioDivVegTypesPlotPM <- plotBioPyroFunSmooth(plotData[vegType != "landscape" & scenario == "HV_PM"],
-                                                   title = scenLabels["PM"])
+                                                   # yPoints = "pred",  ## only to that preds match the smoother line
+                                                   colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                   titleLab = scenLabels["PM"])
+
 pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFunSmooth(plotData[vegType == "landscape" & scenario == "HV_PM"],
-                                                       title = scenLabels["PM"])
+                                                       # yPoints = "pred",  ## only to that preds match the smoother line
+                                                       colourLabels = vegTypeCNLabels, colourVals = vegTypeCNColours,
+                                                       titleLab = scenLabels["PM"])
 
 plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
                       ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,

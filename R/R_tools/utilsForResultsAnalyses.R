@@ -374,6 +374,120 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
 
   plotOut
 }
+#' Hypervolume size boxplots
+HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenario", alpha,
+                       yLab = y, xLab = x, fillLab = fill,
+                       alphaLab, titleLab = "",
+                       vegType, HVtype, logVolume, scenario, xLabels, fillLabels, fillVals) {
+  plotOut <- ggplot(plotData,
+                    aes(x = !!sym(x), y = !!sym(y)
+                        # , alpha = scenario
+                        , fill = !!sym(fill))) +
+    geom_boxplot()
+
+  if (!missing(xLabels)) {
+    plotOut <- plotOut +
+      scale_x_discrete(labels = xLabels)
+  }
+
+  if ((!missing(fillLabels) & missing(fillVals)) |
+      missing(fillLabels) &!missing(fillVals)) {
+    stop("fillLabels and fillVals must be both provided, or both not provided.")
+  }
+
+  if (!missing(fillLabels) & !missing(fillVals)) {
+    plotOut <- plotOut +
+      scale_fill_manual(labels = fillLabels, values = fillVals)
+  }
+
+  if (!missing(alpha)) {
+    plotOut <- plotOut +
+      scale_alpha_manual(values = c("noPM" = 0.4, "PM" = 1.0), labels = scenLabels)
+    if (missing(alphaLab))
+      alphaLab <- alpha
+  }
+
+  if (missing(alphaLab))
+    alphaLab <- "alpha"
+
+  plotOut <- plotOut +
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+    theme_pubr(base_size = 12, margin = FALSE) +
+    theme(legend.box = "vertical",
+          strip.background = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(x = xLab, y = yLab, fill = fillLab, alpha = alphaLab, title = titleLab)
+  # guides(alpha = guide_legend(override.aes = list(fill = "grey50"))) +
+  # facet_wrap(~ HVtype, nrow = 2, scales = "free_y",
+  #            labeller = labeller(HVtype = c("vegHV" = "Forest diversity",
+  #                                           "fireHV" = "Pyrodiversity")))
+
+  plotOut
+}
+#' Biodiversity ~ Pyrodiversity relationships plots
+#' I.e. veg HV size ~ fire HV size
+#' ... is passed to stat_smooth
+plotBioPyroFunSmooth <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
+                                 linetype = "scenario", colour = "vegType",
+                                 yPred = "pred", ymin, ymax,
+                                 #shape = "scenario"
+                                 colourLabels, colourVals,
+                                 titleLab = "", xLab = "Pyrodiversity", yLab = "Forest diversity",
+                                 colourLab = "", ...) {
+  # old code, but here to remind of different formulae
+  # if (all(plotData$vegType == "landscape")) {
+  #   form <- quote(y ~ x)
+  # } else {
+  # form <- quote(y ~ x + I(x^2))   ## needs x = logFireHVcenter below
+  # form <- quote(y ~ poly(x, 2))
+  # }
+
+  plotOut <- ggplot(plotData,
+         aes(x = !!sym(x), linetype = !!sym(linetype), colour = !!sym(colour)
+           #, shape = !!sym(shape)
+         )) +
+    geom_point(aes(y = !!sym(yPoints)))
+
+  xLimits <- range(plotData[[x]])
+
+  plotOut <- plotOut +
+    stat_smooth(aes(y = !!sym(yPred)), ...)
+
+  if (!missing(ymin)) {
+    if (missing(ymax)) {
+      stop("Provide both ymin and ymax")
+    }
+    plotOut <- plotOut +
+      geom_ribbon(aes(ymin = !!sym(ymin), ymax = !!sym(ymax), fill = !!sym(colour)),
+                  alpha = 0.5)
+  }
+
+  if (!missing(colourLabels)) {
+    if (missing(colourVals)) {
+      stop("Provide both colourLabels and colourVals")
+    }
+    plotOut <- plotOut +
+      scale_colour_manual(labels = colourLabels, values = colourVals)
+  }
+
+  plotOut <- plotOut +
+    # scale_linetype_manual(labels = scenLabels,
+    #                       values = scenLinetype) +
+    # scale_shape_discrete(labels = scenLabels) +
+    scale_x_continuous(limits = xLimits) +
+    theme_pubr(base_size = 12, margin = TRUE) +
+    theme(legend.box = "vertical",
+          strip.background = element_blank(),
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
+    labs(x = xLab, y = yLab, title = titleLab, colour = colourLab
+         #linetype = linetypeLab, shape = shapeLab
+    ) +
+    # facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
+    #             scales = "free") +
+    guides(linetype = guide_legend(override.aes = list(colour = "black")))
+
+  plotOut
+}
 
 #' Summarise fire regime attributes per pixel
 #'
