@@ -3,16 +3,41 @@
 ##  ANALYSING PCAs
 ## --------------------------------------------------
 
-library(SpaDES)
-library(ToolsCB)
-library(data.table)
-library(ggfortify)
-library(ggplot2)
-library(ggpubr)
-library(FD)
-library(vegan)
-library(ggvegan)
-# "LandR (==1.0.7.9026)", ## needed but don't load -- here for install.
+if (paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1]) != "4.1") {
+  stop("Please install and run R v4.1")
+}
+
+if (Sys.which("make") == "") {
+  stop("Please install and setup RTools 4.0")
+}
+
+if (!exists("pkgDir")) {
+  pkgDir <- file.path(
+    if (Sys.info()[["user"]] == "rstudio") "packages_docker" else "packages",
+    version$platform,
+    paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1])
+  )
+
+  if (!dir.exists(pkgDir)) {
+    dir.create(pkgDir, recursive = TRUE)
+  }
+  .libPaths(pkgDir)
+}
+
+library(Require)
+
+Require(c("data.table",
+          "FD",
+          "ggfortify",
+          "ggplot2",
+          "ggpubr",
+          "ggvegan",
+          # "LandR (==1.0.7.9026)", ## needed but don't load -- here for install.
+          "reproducible",
+          "SpaDES",
+          "ToolsCB",
+          "vegan"
+), install = FALSE)
 
 source("R/R_tools/convertToCNVegType.R")
 source("R/R_tools/Useful_functions.R")
@@ -28,7 +53,8 @@ options("reproducible.useGDAL" = FALSE)
 ## general paths
 # simDirName <- "jun2021Runs"
 simDirName <- "mar2022Runs"
-if (Sys.info()["nodename"] == "W-VIC-A127584") {
+if (Sys.info()["nodename"] == "W-VIC-A127584" |
+    Sys.info()["nodename"] == "L-VIC-A155348") {
   simPaths <- list(cachePath = file.path("F:", basename(getwd()), "R/SpaDES/cache", simDirName, "postSimAnalyses")
                    , modulePath = file.path("R/SpaDES/m")
                    , inputPath = file.path("F:", basename(getwd()), "R/SpaDES/inputs", simDirName)
@@ -47,11 +73,12 @@ if (Sys.info()["nodename"] == "W-VIC-A127584") {
                    , outputPath = file.path("R/SpaDES/outputs", simDirName))
 }
 
-if (grepl("for-cast", Sys.info()["nodename"]) ||
-    grepl("45eafed436c8", Sys.info()["nodename"])) {
-  data.table::setDTthreads(25)
+if (grepl("for-cast|dc709f2508f1|45eafed436c8",
+           Sys.info()["nodename"])) {
+  data.table::setDTthreads(5)
   options(bitmapType="cairo")
 }
+
 
 ## path to figure folder and cache folder
 figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis", "Montane")
