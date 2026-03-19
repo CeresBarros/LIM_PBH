@@ -73,7 +73,6 @@ dir.create(figOutputPath, recursive = TRUE)
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
 source("R/SpaDES/simResultsDataPrep.R")
-gc(reset = TRUE)
 
 ## PREP FIRE AND VEG DATA -------------------
 ## Fire properties (fire patch size in pixels, fire frequency, fire severity as biomass loss)

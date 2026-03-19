@@ -149,7 +149,7 @@ if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(uni
   stop("Missing replicates")
 }
 
-## model landscape separately
+## Landscape level ------
 fireHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData[vegType == "landscape"])
 ## the data seems very dispersed - some reps are extreme outliers - logging helps -- Jul 14 2022 this is no longer true with 4000 years
 hist(modelData[vegType == "landscape", Volume], breaks = 1000)
@@ -195,7 +195,7 @@ cat("\n*********************\n")
 emmeans(fireHVVolumeLandscape.lm, specs = "scenario")
 sink()
 
-## model vegTypes
+## vegType level --------
 fireHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != "landscape"])
 ## same issue as before
 fireHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData[vegType != "landscape"])
@@ -452,7 +452,7 @@ modelData2 <- modelData[vegType == "landscape"]
 cols <- names(modelData2)
 modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
 
-## model landscape separately
+## Landscape level ------
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData2)
 ## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps -- no longer tru Nov 2025
 hist(modelData[vegType == "landscape", fireHV], breaks = 1000)
@@ -589,7 +589,7 @@ emtrends(pyroVSbiodiversityLandscape.lm3, specs = c("scenario"),
          var = "logFireHV", data = modelData2)
 sink()
 
-## by vegType
+## vegType level --------
 modelData2 <- modelData[vegType != "landscape"]
 ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
 ## when trying to get prediction intervals
@@ -774,7 +774,7 @@ if (useFirstLastYear) {
          width = 8, height = 6, bg = "white")
 }
 
-## PLOTS: relationship between pyrodiversity and biodiversity ----------------------
+## PLOTS: BIODIVERSITY-PYRODIVERSITY RELATIONSHIP ----------------------
 ## melt volume data and dcast by volume type to relate the two
 plotData <- allHVData[year == max(yearSubset),
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
