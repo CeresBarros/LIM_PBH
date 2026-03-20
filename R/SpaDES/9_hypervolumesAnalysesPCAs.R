@@ -266,12 +266,24 @@ if (useFirstLastYear) {
 }
 
 rep2Plot <- unique(pixelIndexDT$rep)[1]
+vegHVPCAscores2 <- copy(vegHVPCAscores)
+pixelIndexDT2 <- copy(pixelIndexDT)
+
+## plot all reps by assigning the same rep to all
+plotAllreps <- FALSE
+if (plotAllreps) {
+  vegHVPCAscores2[, rep := rep2Plot]
+  pixelIndexDT2[, rep := rep2Plot]
+  figOutputPath2 <- file.path(figOutputPath, "HVplotsAllreps")
+} else {
+  figOutputPath2 <- file.path(figOutputPath, paste0("HVplot_rep", rep2Plot))
+}
 
 lapply(vegTypes, FUN = plotHVs3DWrapper,
-       vegHVPCAscores = vegHVPCAscores[rep == rep2Plot],
-       pixelIndexDT = pixelIndexDT[rep == rep2Plot],
+       vegHVPCAscores = vegHVPCAscores2[rep == rep2Plot],
+       pixelIndexDT = pixelIndexDT2[rep == rep2Plot],
        vegTypeCNLabels = vegTypeCNLabels,
-       figOutputPath = figOutputPath,
+       figOutputPath = figOutputPath2,
        cacheRepo = simPaths$cachePath,
        mergeVegType = "mergePSME",
        startYear = startYear,
@@ -295,8 +307,8 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
        grid = FALSE,
        box = TRUE,
        names = c("PC1\n", "PC2\n", "\nPC3"),
-       # limits = c(round(min(vegHVPCAscoresAllRepEqual[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1,
-       #            round(max(vegHVPCAscoresAllRepEqual[, c("PC1", "PC2", "PC3", "PC4")]), 2) + 0.1),
+       # limits = c(round(min(vegHVPCAscores2[, c("PC1", "PC2", "PC3", "PC4")]), 2) - 0.1,
+       #            round(max(vegHVPCAscores2[, c("PC1", "PC2", "PC3", "PC4")]), 2) + 0.1),
        # limits = c(-6, 6),
        y.margin.add = 0.6,
        angle = 50,
