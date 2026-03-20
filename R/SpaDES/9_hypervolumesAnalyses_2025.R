@@ -804,7 +804,6 @@ lmPreds <- predict(pyroVSbiodiversityLandscape.lm3,
                    # newdata = plotData2[vegType == "landscape"],
                    se.fit = TRUE, interval = "confidence", type = "response")
 
-## HERE: estimate CIs and plot those with smoothed predictions
 if (paste(version$major, version$minor, sep = ".") < "4.4.0") {
   stop("marginaleffecs::predictions needs R version >= 4.4.0")
 } else {
