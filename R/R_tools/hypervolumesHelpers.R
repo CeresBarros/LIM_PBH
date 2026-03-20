@@ -254,7 +254,24 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   return(HV)
 }
 
+#' COMMUNITY WEIGHTED MEAN TRAITS -----------------------------------
+#' @importFrom FD functcomp
+calcTraitCWMs <- function(scen, rep, yr, vegData, traitsTable, spp) {
+  vegData2 <- vegData[rowSums(vegData[, ..spp]) != 0,]
+  vegData2 <- vegData2[scenario == scen & year == yr & rep == rep]
+  vegData2 <- vegData2[, lapply(.SD, mean), .SDcols = spp,
+                       by = .(pixelIndex)]
 
+  traitCWMs <- functcomp(traitsTable,
+                         as.matrix(data.frame(vegData2[, ..spp])),
+                         CWM.type = "dom")
+  traitCWMs$scenario <- scen
+  traitCWMs$rep <- rep
+  traitCWMs$year <- yr
+  traitCWMs$pixelIndex <- vegData2$pixelIndex
+
+  return(as.data.table(traitCWMs))
+}
 
 ## HYPERVOLUMES BY VEGETATION TYPE -----------------------------------
 ## BANDWITH ESTIMATES ----

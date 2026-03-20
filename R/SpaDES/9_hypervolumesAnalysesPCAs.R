@@ -128,6 +128,7 @@ traitsTable[, firetolerance := as.ordered(firetolerance)]
 traitsTable <- data.frame(traitsTable[, .(longevity, shadetolerance, firetolerance, postfireregen)],
                           row.names = traitsTable$speciesCode)
 rm(preSimList)  ## not needed anymore
+gc(reset = TRUE)
 
 if (useFirstLastYear) {
   vegData <- allPixelCohortDataMnt[year %in% c(min(yearSubset), max(yearSubset))]
@@ -153,24 +154,12 @@ if (!useFirstLastYear) {
 spp <- rownames(traitsTable)
 combos <- unique(vegData[, .(scenario, rep, year)])
 
+cacheExtra <- CacheDigest(list(vegData = vegData,
+                               traitsTable = traitsTable,
+                               spp = spp))
 ## faster to do it in chunks
 traitCWMs <- Cache(Map,
-                   f = function(scen, rep, yr, vegData, traitsTable, spp) {
-                     vegData2 <- vegData[rowSums(vegData[, ..spp]) != 0,]
-                     vegData2 <- vegData2[scenario == scen & year == yr & rep == rep]
-                     vegData2 <- vegData2[, lapply(.SD, mean), .SDcols = spp,
-                                        by = .(pixelIndex)]
-
-                     traitCWMs <- functcomp(traitsTable,
-                                            as.matrix(data.frame(vegData2[, ..spp])),
-                                            CWM.type = "dom")
-                     traitCWMs$scenario <- scen
-                     traitCWMs$rep <- rep
-                     traitCWMs$year <- yr
-                     traitCWMs$pixelIndex <- vegData2$pixelIndex
-
-                     return(as.data.table(traitCWMs))
-                   },
+                   f = calcTraitCWMs,
                    scen = combos$scenario,
                    rep = combos$rep,
                    yr = combos$year,
@@ -179,7 +168,8 @@ traitCWMs <- Cache(Map,
                                    spp = spp),
                    cacheRepo = simPaths$cachePath,
                    userTags = c("traitCWMs"),
-                   omitArgs = c("userTags"))
+                   omitArgs = c("userTags", "MoreArgs"),
+                   .cacheExtra = cacheExtra)
 
 traitCWMs <- rbindlist(traitCWMs)
 
