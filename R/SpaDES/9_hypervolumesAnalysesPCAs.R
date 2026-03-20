@@ -260,7 +260,7 @@ if (mergePSME) {
 
 vegTypes <- vegTypes[vegTypes != "No veg."]
 
-pixelIndexDT <- vegHVPCAscores[year == max(yearSubset), .(rep, vegTypeCN, pixelIndex)]
+pixelIndexDT <- vegHVPCAscores[year == max(yearSubset), .(rep, scenario, vegTypeCN, pixelIndex)]
 pixelIndexDT <- unique(pixelIndexDT)
 
 if (useFirstLastYear) {

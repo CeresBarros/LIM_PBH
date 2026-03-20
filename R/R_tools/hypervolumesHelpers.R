@@ -155,7 +155,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                              mergeVegType = NULL, startYear, endYear, colsHV, cacheRepo, figOutputPath,
                              ...) {
   if (is(vegType, "factor")) {
-    vegType <- as.character(VegTY)
+    vegType <- as.character(vegType)
   }
   grepStr <- vegType
 
@@ -213,9 +213,9 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
 
 .HVforPlots <- function(pixelIndexDT, vegHVPCAscores, scen, colsHV,
                         grepStrVegType, yearToMatch, userTags, cacheRepo) {
-
   ## subset tables to correct year, veg type and scenario
   tempPixID <- pixelIndexDT[grepl(grepStrVegType, vegTypeCN)]
+  tempPixID <- tempPixID[scenario == scen]
   if (is.na(yearToMatch)) {
     tempData <- vegHVPCAscores[scenario == scen,]
     yearToMatch <- NULL
@@ -224,7 +224,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
     tempData <- vegHVPCAscores[year %in% as.character(yearToMatch) & scenario == scen,]
   }
   ## subset pixels
-  tempData <- tempData[tempPixID[, .(rep, pixelIndex)], on = .(rep, pixelIndex)]
+  tempData <- tempData[tempPixID, on = .(rep, vegTypeCN, pixelIndex)]
 
   if (!is.null(userTags)) {
     userTags <- c(userTags, "hypervolume", yearToMatch, scen)
