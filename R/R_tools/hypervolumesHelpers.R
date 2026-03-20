@@ -169,8 +169,6 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
     }
   }
 
-
-
   HVcombos <- if (is.null(startYear) & is.null(endYear)) {
     expand.grid(c("noPM", "PM"), c(NA))
   } else {
@@ -188,20 +186,30 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
                                 userTags = vegType,
                                 cacheRepo = cacheRepo))
 
-  HVls <- hypervolume::hypervolume_join(allHVs)
+  ## rename using scenario only, for plotting
+  allHVs <- lapply(allHVs, function(HV) {
+    HV@Name <- sub("_", "", sub(vegType, "", HV@Name))
+    HV
+    })
 
+  HVls <- hypervolume::hypervolume_join(allHVs)
   args <- c(HVlist = HVls, list(...))
   args$main <- vegTypeCNLabels[vegType]
+  names(args$colors) <- sapply(allHVs, function(HV) {HV@Name})
+  names(args$centroid.cols) <- names(args$colors)
 
   if (is.null(args$limits)) {
     HVpoints <- rbindlist(lapply(allHVs, function(HV) as.data.table(HV@RandomPoints)))
+    HVpoints <- HVpoints[, 1:3] ## only three first axes are plotted
+    allPoints <- rbind(HVpoints,
+                      args$loadings_coords[, names(HVpoints)],
+                      args$PHvect_coords[, names(HVpoints)])
+    limits <- cbind(as.matrix(apply(allPoints, 2, min)),
+                    as.matrix(apply(allPoints, 2, max)))
+    colnames(limits) <- c("min", "max")
 
-    args$limits <- c(round(min(HVpoints), 2),
-                     round(max(HVpoints), 2))
-    padding <- round(args$limits, -1)
-    padding[padding == 0] <- 1L
-    padding[1] <- ifelse(padding[1] == 1, -1L, padding[1])
-    args$limits <- args$limits + padding
+    ## convert to list of two element vectors and round
+    args$limits <- apply(limits, 1, function(X) X, simplify = "list")
   }
 
   png(file.path(figOutputPath, paste0("HV3DplotWvectors_", vegType, ".png")), width = 7, heigh = 7,
@@ -236,6 +244,7 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
 
   HV <- Cache(hypervolume::hypervolume,
               data = tempData[, ..colsHV],
+              name = paste(scen, unique(as.character(tempData$vegTypeCN)), sep = "_"),
               method = "svm",
               svm.gamma = 0.01,
               .cacheExtra = cacheObj,
