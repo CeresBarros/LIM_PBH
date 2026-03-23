@@ -231,8 +231,9 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
     yearToMatch <- ifelse(is.character(vegHVPCAscores$year), as.character(yearToMatch), as.integer(yearToMatch))
     tempData <- vegHVPCAscores[year %in% as.character(yearToMatch) & scenario == scen,]
   }
-  ## subset pixels
-  tempData <- tempData[tempPixID, on = .(rep, vegTypeCN, pixelIndex)]
+  ## subset pixels -- don't subset by vegType, as vegTypes change through time
+  ## tempPixID defines the pixels of each vegType at the last year.
+  tempData <- tempData[tempPixID, on = .(rep, pixelIndex)]
 
   if (!is.null(userTags)) {
     userTags <- c(userTags, "hypervolume", yearToMatch, scen)
