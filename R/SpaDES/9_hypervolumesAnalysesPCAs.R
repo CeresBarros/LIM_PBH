@@ -275,8 +275,10 @@ if (plotAllreps) {
   vegHVPCAscores2[, rep := rep2Plot]
   pixelIndexDT2[, rep := rep2Plot]
   figOutputPath2 <- file.path(figOutputPath, "HVplotsAllreps")
+  dir.create(figOutputPath2, showWarnings = FALSE)
 } else {
-  figOutputPath2 <- file.path(figOutputPath, paste0("HVplot_rep", rep2Plot))
+  figOutputPath2 <- file.path(figOutputPath, paste0("HVplots_rep", rep2Plot))
+  dir.create(figOutputPath2, showWarnings = FALSE)
 }
 
 lapply(vegTypes, FUN = plotHVs3DWrapper,
