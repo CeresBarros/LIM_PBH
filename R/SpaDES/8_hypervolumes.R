@@ -136,7 +136,7 @@ if (mergePSME & doMergedOnly) {
   fireHVdata <- fireHVdata[vegTypeCN == "PSME"]
 }
 
-doAll <- TRUE ## if doAll == FALSE, only missing HV intersection pairs will be computed
+doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
@@ -179,7 +179,7 @@ lapply(split(fireHVdata, by = c("rep", "vegTypeCN"), drop = TRUE),
 
 ### Hypervolumes across the landscape ----------------
 ## only montane belt
-doAll <- TRUE ## if doAll == FALSE, only missing HV intersection pairs will be computed
+doAll <- FALSE ## if doAll == FALSE, only missing HV intersection pairs will be computed
 lapply(split(fireHVdata, by = c("rep"), drop = TRUE),
        FUN = function(allData, HVoutputPath, doAll) {
          r <- unique(allData$rep)
@@ -251,7 +251,7 @@ vegPCA <- vegDataForHVs[, ..cols] %>%
         datatable = .,
         HVidvar = 9,
         noAxes = 4,
-        plotOrdi = FALSE,
+        plotOrdi = TRUE,
         saveOrdiSumm = TRUE,
         saveOrdi = TRUE,   ## save actual PCA
         file.suffix = "vegHVs_FULLPCA",

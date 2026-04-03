@@ -267,12 +267,12 @@ if (useFirstLastYear) {
   centroid.cols <- c("red", "blue")
 }
 
+
+## plot all reps by assigning the same rep to all?
+plotAllreps <- FALSE
 rep2Plot <- unique(pixelIndexDT$rep)[1]
 vegHVPCAscores2 <- copy(vegHVPCAscores)
 pixelIndexDT2 <- copy(pixelIndexDT)
-
-## plot all reps by assigning the same rep to all
-plotAllreps <- TRUE
 if (plotAllreps) {
   vegHVPCAscores2[, rep := rep2Plot]
   pixelIndexDT2[, rep := rep2Plot]
