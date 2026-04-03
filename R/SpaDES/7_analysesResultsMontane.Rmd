@@ -1042,21 +1042,28 @@ Non-forest forest types and pixels w/o included since these plots are showing da
 x_order <- names(vegTypeCNLabels)
 ## fire size
 plotData <- copy(summaryFireAttributes)
-plotData[, `:=`(meanPatchS1 = meanPatchS + 1,
-                meanFreq1 = meanFreq + 1,
-                meanSevB1 = meanSevB + 1)]
-plot45 <- boxPlot(plotData, x = "vegTypeCN", y = "meanPatchS1", 
+
+factorLevs <- c(
+  as.character(sort(setdiff(unique(plotData$vegTypeCN), c("landscape", "No veg.")))),
+  "No veg.", "landscape")
+plotData[, vegTypeCN := factor(vegTypeCN, levels = factorLevs)]
+
+## add 1 for log scale
+# plotData[, `:=`(meanPatchS1 = meanPatchS + 1,
+#                 meanFreq1 = meanFreq + 1,
+#                 meanSevB1 = meanSevB + 1)]
+plot45 <- boxPlot(plotData, x = "vegTypeCN", y = "meanPatchS", logY = FALSE,
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean patch size (no. pixels)")
 
-plot46 <- boxPlot(plotData, x = "vegTypeCN", y = "meanFreq1", 
+plot46 <- boxPlot(plotData, x = "vegTypeCN", y = "meanFreq", logY = FALSE,
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean fire interval (years)")
 
 ## fire severity
-plot47 <- boxPlot(plotData, x = "vegTypeCN", y = "meanSevB1", 
+plot47 <- boxPlot(plotData, x = "vegTypeCN", y = "meanSevPropB", logY = FALSE, 
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
                   titleLab = NULL, yLab = "Mean fire severity\n(biomass lost, ton/ha)")
