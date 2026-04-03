@@ -327,7 +327,20 @@ lapply(vegTypes, FUN = plotHVs3DWrapper,
 ## However, if we analyse this across years, it seems that DMCPSME may have shifted less than the other two.
 ## If we were to group all three the between-year shift would be overall smaller (and overlap larger),
 ## because both the start and end HVs would be larger to start with
-## based on these I think we can merge the pure PSME stands and leave the dry mixed conifer/PSME separate
+## based on these I think we can merge the pure PSME stands (dryPSME and PSME) and leave the dry mixed conifer/PSME separate
+
+## March 2026: the PCA on non-merged vegTypes now shows that thee 3 PSME vegTypes are distinct.
+## dryPSME overlaps DMCPSME, on one end of the DMCPSME "spectrum" of variation that is closer to PSME
+## There are far fewer drPSME points.
+
+## I think we need to keep them all separate.
+
+## NOTE THESE DIAGNOSTIC PLOTS ARE ONLY VALID WHEN THE PCA IS NOT COMPUTED WITH MERGED
+## VEGETATION TYPES!!!
+HVoutputPath2 <- file.path(simPaths$outputPath, "hypervolumes")  ## go out of merge* folder.
+vegHVPCA <- grep("vegHVs", list.files(HVoutputPath2, "OrdinationObj", full.names = TRUE), value = TRUE)
+vegHVPCA <- readRDS(vegHVPCA)
+vegHVPCAscores <- cbind(as.data.table(vegHVPCA$x), vegDataForHVs)
 
 ## average scores across reps
 cols <- grep("^PC", names(vegHVPCAscores), value = TRUE)
@@ -336,9 +349,9 @@ colsBy <- c("scenario", "rep", "pixelIndex", "vegTypeCN")
 if (useFirstLastYear) {
   colsBy <- c(colsBy, "year")
 }
-plotData <- vegHVPCAscores[, lapply(.SD, mean), .SDcols = cols,
+plotData <- vegHVPCAscores[year == max(year), lapply(.SD, mean), .SDcols = cols,
                            by = colsBy]
-ggplot(plotData[grepl("PSME", vegTypeCN)], aes(PC1, PC2, colour = vegTypeCN, shape = scenario)) +
+ggplot(plotData[grepl("PSME", vegTypeCN)], aes(log(PC1), PC2, colour = vegTypeCN, shape = as.factor(year))) +
   geom_point(alpha = 0.5) +
   if (useFirstLastYear) {
     facet_wrap(scenario ~ year)
