@@ -370,7 +370,7 @@ rm(plotTest1)  ## plotTest1.2 is used again later
 gc(reset = TRUE)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -400,34 +400,35 @@ plotData <- Cache(
   omitArgs = c("simData", "obsData", "userTags"),
   .cacheExtra = cacheExtra)
 options(opts)
-plotData2 <- ageDataCN[, .(speciesCode, Reconstructed.age, firePresAbs)]  ## need to get patch-level species ages
+
+## make a "landscape" species
+plotData2 <- copy(plotData)
+plotData2[, speciesCode := "landscape"]
+plotData <- rbind(plotData, plotData2)
+plotData[firePresAbs == 1]
+
+## now get patch-level species ages, and make a landscape equivalent for it too
+plotData2 <- ageDataCN[firePresAbs == 1, .(speciesCode, Reconstructed.age, firePresAbs)]  
 plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
 
+plotData3 <- copy(plotData2)
+plotData3[, speciesCode := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+
 ## this plot is used later, so the data.table must be a copy
+plotData$speciesCode <- factor(plotData$speciesCode, levels = names(speciesLabels), ordered = TRUE)
+plotData2$speciesCode <- factor(plotData2$speciesCode, levels = names(speciesLabels), ordered = TRUE)
 plot29 <- simObsDistsPlot(simData = copy(plotData), x = "speciesCode", ySim = "sppAgeSim",
                           colSim = "scenario", 
                           obsData = copy(plotData2), yObs = "Reconstructed.age", 
                           xlabels = speciesLabels, x.text.angle = 45,
                           colValues = scenColours, 
                           colLabels = scenLabels, 
-                          titleLab = "Species age", yLab = "years") 
-plot29 <- plot29 +
-  theme(axis.title.x = element_blank()) +
-  facet_grid(~ firePresAbs,
-             labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
-
-## this plot is used later, so the data.table must be a copy
-plot30 <- simObsDistsPlot(simData = copy(plotData), x = "firePresAbs", ySim = "sppAgeSim",
-                          colSim = "scenario", obsData = copy(plotData2), yObs = "Reconstructed.age", 
-                          xlabels = fireLabels, 
-                          colValues = scenColours, 
-                          colLabels = scenLabels, 
-                          titleLab = "Landscape-wide age", yLab = "years") 
-
-plot30 <- plot30 + theme(axis.title.x = element_blank())
+                          titleLab = "Species age", yLab = "years") +
+  theme(axis.title.x = element_blank())
 
 ## only fire pixels, no means/whiskers
-plot29.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
+plot29.1 <- simObsDistsPlot(simData = copy(plotData), 
                             x = "speciesCode", ySim = "sppAgeSim",
                             colSim = "scenario", 
                             obsData = copy(plotData2), yObs = "Reconstructed.age", 
@@ -435,50 +436,19 @@ plot29.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]),
                             colValues = scenColours, 
                             colLabels = scenLabels, 
                             showMeans = FALSE,
-                            titleLab = "Species age", yLab = "years") 
-plot29.1 <- plot29.1 + theme(axis.title.x = element_blank())
-
-plotData3 <- copy(plotData2)
-plotData3[, scenario := "observed"]
-plot30.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
-                            x = "scenario", ySim = "sppAgeSim",
-                            colSim = "scenario", 
-                            obsData = copy(plotData3[firePresAbs == 1]), yObs = "Reconstructed.age", 
-                            xlabels = scenLabels, 
-                            colValues = scenColours, 
-                            colLabels = scenLabels, 
-                            showMeans = FALSE,
-                            titleLab = "Landscape-wide age", yLab = "years") 
-plot30.1 <- plot30.1 + theme(axis.title.x = element_blank())
+                            titleLab = "Species age", yLab = "years") + 
+  theme(axis.title.x = element_blank())
 ```
 
 ```{r plot&savePlots7, echo = FALSE}
-plotSave <- plot_grid(plot_grid(plot29 + 
-                                  theme(legend.position = "none", axis.title.x = element_blank()),
-                                plot30 + 
-                                  theme(legend.position = "none", axis.title.x = element_blank()),
-                                nrow = 1, rel_widths = c(1, 0.7),
-                                labels = "auto", label_size = 20, axis = "b", align = "h"),
-                      get_legend(plot29 + theme(legend.direction = "vertical")), 
-                      rel_widths = c(1, 0.15))
-plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
+ggsave(plot = plot29, filename = file.path(figOutputPath, "results_ageSimVsObs.tiff"),
        width = 14, height = 7)
 
-plotSave <- plot_grid(plot_grid(plot29.1 + 
-                                  theme(legend.position = "none", axis.title.x = element_blank()),
-                                plot30.1 + 
-                                  theme(legend.position = "none", axis.title.x = element_blank()),
-                                nrow = 1, rel_widths = c(1, 0.7),
-                                labels = "auto", label_size = 20, axis = "b", align = "h"),
-                      get_legend(plot29.1 + theme(legend.direction = "vertical")), 
-                      rel_widths = c(1, 0.15))
-plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObs2.tiff"),
+ggsave(plot = plot29.1, filename = file.path(figOutputPath, "results_ageSimVsObs2.tiff"),
        width = 14, height = 7)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -515,72 +485,50 @@ plotData <- Cache(
   .cacheExtra = cacheExtra)
 options(opts)
 
-plotData2 <- ageDataCN[, .(Cover.dendro, Stand.age.3, firePresAbs)]   ## need to get the patch-level Stand.ages 
+## make a "landscape" species
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
+plotData[firePresAbs == 1]
+
+## now get patch-level stand ages, and make a landscape equivalent for it too
+plotData2 <- ageDataCN[firePresAbs == 1, .(Cover.dendro, Stand.age.3, firePresAbs)]  
+plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
+
+plotData3 <- copy(plotData2)
+plotData3[, Cover.dendro := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
+plotData$vegTypeCN <- factor(plotData$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
+plotData2$vegTypeCN <- factor(plotData2$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
 plot29.2 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "standAgeSim",
                             colSim = "scenario", obsData = copy(plotData2), yObs = "Stand.age.3", 
                             xlabels = vegTypeCNLabels, x.text.angle = 45,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
-                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
-plot29.2 <- plot29.2 +
-  facet_grid( ~ firePresAbs,
-              labeller = labeller(scenario = scenLabels, firePresAbs = fireLabels)) 
-
-plot30.2 <- simObsDistsPlot(simData = copy(plotData), x = "firePresAbs", ySim = "standAgeSim",
-                            colSim = "scenario", obsData = copy(plotData2), yObs = "Stand.age.3", 
-                            xlabels = fireLabels,
-                            colValues = scenColours, 
-                            colLabels = scenLabels, 
-                            titleLab = "Landscape-level stand age", yLab = "years") 
-
+                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years")
 
 ## only fire pixels, no means
-plot29.3 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
+plot29.3 <- simObsDistsPlot(simData = copy(plotData), 
                             x = "vegTypeCN", ySim = "standAgeSim",
-                            obsData = copy(plotData2[firePresAbs == 1]), yObs = "Stand.age.3",
+                            obsData = copy(plotData2), yObs = "Stand.age.3",
                             colSim = "scenario", x.text.angle = 45,
                             xlabels = vegTypeCNLabels, showMeans = FALSE,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
                             titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
-
-plotData3 <- copy(plotData2)
-plotData3[, scenario := "observed"]
-plot30.3 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]),
-                            x = "scenario", ySim = "standAgeSim",
-                            obsData = copy(plotData3[firePresAbs == 1]), yObs = "Stand.age.3",
-                            colSim = "scenario",
-                            xlabels = scenLabels, showMeans = FALSE,
-                            colValues = scenColours, 
-                            colLabels = scenLabels, 
-                            titleLab = "Landscape-level stand age", yLab = "years") 
 ```
 
 ```{r plot&savePlots8, echo = FALSE}
-plotSave <- plot_grid(plot_grid(plot29.2 + theme(legend.position = "none"),
-                                plot30.2 + theme(legend.position = "none"),
-                                nrow = 1, rel_widths = c(1, 0.6),
-                                labels = "auto", label_size = 20, axis = "b", align = "h"),
-                      get_legend(plot29.2 + theme(legend.direction = "vertical")), 
-                      rel_widths = c(1, 0.15))
-plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN.tiff"),
+ggsave(plot = plot29.2, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN.tiff"),
        width = 14, height = 7)
-
-plotSave <- plot_grid(plot_grid(plot29.3 + theme(legend.position = "none"),
-                                plot30.3 + theme(legend.position = "none"),
-                                nrow = 1, rel_widths = c(1, 0.7),
-                                labels = "auto", label_size = 20, axis = "b", align = "h"),
-                      get_legend(plot29.3 + theme(legend.direction = "vertical")), 
-                      rel_widths = c(1, 0.15))
-plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN2.tiff"),
+ggsave(plot = plot29.3, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN2.tiff"),
        width = 14, height = 7)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -679,36 +627,14 @@ plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50Sta
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
 
-plot32.3 <- ggplot(plotData2, 
-                   aes(x = vegTypeCN, y = value, colour = variable, 
-                       shape = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
-               alpha = 0.7, fill = "white") +
-  scale_color_viridis_d(option = "viridis", begin = 0.3, end = 0.8, 
-                        labels = c("meanAbsDevSimObsQuant50" = "50%", 
-                                   "meanAbsDevSimObsQuant75" = "75%", 
-                                   "meanAbsDevSimObsQuant95" = "95%"),
-                        name = "Quantile: ") +
-  scale_x_discrete(labels = vegTypeCNLabels, 
-                   limits = unique(c("landscape", sort(unique(plotData2$vegTypeCN)))),
-                   expand = c(-0.2, 1.1)) +
-  scale_shape_manual(labels = scenLabels, values = c("PM" = 24, "noPM" = 19)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Quantile absolute deviation", shape = "",
-       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
-  coord_flip() +
-  facet_wrap(~ firePresAbs, scales = "free_x", 
-             labeller = labeller(firePresAbs = fireLabels))
+plotData2 <- plotData2[firePresAbs == "1"]
 
 ## only pixels with fire
 ## order veg types, with landscape at the end
 factorLevs <- c(as.character(sort(setdiff(unique(plotData2$vegTypeCN), "landscape"))), "landscape")
 plotData2[, vegTypeCN := factor(vegTypeCN, levels = factorLevs)]
 
-plot32.4 <- ggplot(plotData2[firePresAbs == "1"], 
+plot32.3 <- ggplot(plotData2[firePresAbs == "1"], 
                    aes(x = variable, y = value, colour = scenario, 
                        shape = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
@@ -744,55 +670,33 @@ ggsave(plot = plot32.3 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_MADquantVegTypeCNs.tiff"),
        width = 10, height = 6)
 
-plotSave <- plot_grid(
-  plot_grid(plot29.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30.2 + theme(legend.position = "none", plot.title = element_blank()),
-            nrow = 1, rel_widths = c(1, 0.7), axis = "b", align = "h",
-            labels = "auto", label_size = 20),
-  plot_grid(plot32.2 + theme(legend.position = "none", plot.title = element_blank()),
-            get_legend(plot29.2 + theme(legend.direction = "vertical")),
-            nrow = 1, rel_widths = c(1, 0.7), axis = "t", align = "v",
-            labels = c("c", ""), label_size = 20),
-  nrow = 2, rel_heights = c(1, 0.7), axis = "l", align = "h")
+
+plotSave <- plot_grid(plot29.2 + theme(legend.position = "right", plot.title = element_blank()),
+                      plot32.2 + theme(legend.position = "right", plot.title = element_blank()),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, axis = "l", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MAD_VegTypeCN.tiff"),
        width = 12, height = 10)
 
-plotSave <- plot_grid(
-  plot_grid(plot29.2 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30.2 + theme(legend.position = "bottom", plot.title = element_blank()),
-            nrow = 1, 
-            rel_widths = c(1, 0.7),
-            axis = "b", align = "h",
-            labels = c("a", "b", ""), label_size = 20),
-  plot_grid(plot32.3 + theme(legend.position = "right",
-                             plot.title = element_blank(),
-                             legend.direction = "vertical",
-                             legend.box = "vertical"),
-            labels = c("c"), label_size = 20),
-  nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
+plotSave <- plot_grid(plot29.2 + theme(legend.position = "right", plot.title = element_blank(), plot.subtitle = element_blank()),
+                      plot32.3 + theme(legend.position = "right", plot.title = element_blank()),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN.tiff"),
        width = 10, height = 10)
 
-plotSave <- plot_grid(
-  plot_grid(plot29.3 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30.3 + theme(legend.position = "right", plot.title = element_blank(), plot.subtitle = element_blank()),
-            nrow = 1, 
-            axis = "b", align = "h",
-            labels = c("a", "b", ""), label_size = 20),
-  plot_grid(plot32.4 + theme(legend.position = "right",
-                             plot.title = element_blank(),
-                             legend.direction = "vertical",
-                             legend.box = "vertical"),
-            labels = c("c"), label_size = 20),
-  nrow = 2, rel_heights = c(0.8, 1), axis = "lr", align = "v")
+plotSave <- plot_grid(plot29.3 + theme(legend.position = "right", plot.title = element_blank(), plot.subtitle = element_blank()),
+                      plot32.3 + theme(legend.position = "right", plot.title = element_blank()),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, axis = "lr", align = "v")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
        width = 10, height = 10)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -888,36 +792,12 @@ plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50Spp
 
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
 
-plot43.3 <- ggplot(plotData2, 
-                   aes(x = speciesCode, y = value, colour = variable, 
-                       shape = scenario)) +
-  geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
-  stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
-               alpha = 0.7, fill = "white") +
-  scale_color_viridis_d(option = "viridis", begin = 0.3, end = 0.8, 
-                        labels = c("meanAbsDevSimObsQuant50" = "50%", 
-                                   "meanAbsDevSimObsQuant75" = "75%", 
-                                   "meanAbsDevSimObsQuant95" = "95%"),
-                        name = "Quantile: ") +
-  scale_x_discrete(labels = speciesLabels,
-                   limits = unique(c("landscape", sort(plotData2$speciesCode))),
-                   expand = c(-0.2, 1.1)) +
-  scale_shape_manual(labels = scenLabels, values = c("PM" = 24, "noPM" = 19)) +
-  theme_pubr(base_size = 16, legend = "bottom") +
-  theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-        panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted")) +
-  labs(title = "Quantile absolute deviation", shape = "",
-       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|")), x = "") +
-  coord_flip() +
-  facet_wrap(~ firePresAbs, scales = "free_x", 
-             labeller = labeller(firePresAbs = fireLabels))
-
 ## only pixels with fire
 ## order veg types, with landscape at the end
 factorLevs <- c(as.character(sort(setdiff(unique(plotData2$speciesCode), "landscape"))), "landscape")
 plotData2[, speciesCode := factor(speciesCode, levels = factorLevs)]
 
-plot43.4 <- ggplot(plotData2[firePresAbs == "1"], 
+plot43.3 <- ggplot(plotData2[firePresAbs == "1"], 
                    aes(x = variable, y = value, colour = scenario, 
                        shape = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
@@ -953,61 +833,50 @@ ggsave(plot = plot43.3 + theme(legend.position = "right"),
        filename = file.path(figOutputPath, "results_MADquantSpecies.tiff"),
        width = 10, height = 5)
 
-plotSave <- plot_grid(plot_grid(plot43 + theme(legend.position = "none"),
-                                plotTest1.2 + theme(legend.position = "none"),
+plotSave <- plot_grid(plot_grid(plot43 + theme(plot.title = element_blank(), legend.position = "none"),
+                                plotTest1.2 + theme(plot.title = element_blank(), legend.position = "none"),
                                 ncol = 2, nrow = 1, align = "h", axis = "b",
-                                labels = "auto", font.label = list(size = 20),
+                                labels = "auto", label_size = 20,
                                 rel_widths = c(1, 0.7)), 
-                      get_legend(plot43 + theme(legend.direction = "vertical")),
+                      get_legend(plot43 + theme(plot.title = element_blank(), legend.direction = "vertical")),
                       ncol = 2, nrow = 1, rel_widths = c(1, 0.15))
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanAbsAgeDev_ageSimVsObsTestSpecies.tiff"),
        width = 15, height = 7)
 
-plotSave <- plot_grid(
-  plot_grid(plot29 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30 + theme(legend.position = "none", plot.title = element_blank()),
-            nrow = 1, rel_widths = c(1, 0.7), axis = "b", align = "h",
-            labels = "auto", label_size = 20),
-  plot_grid(plot43.2 + theme(legend.position = "none", plot.title = element_blank()),
-            get_legend(plot29 + theme(legend.direction = "vertical")),
-            nrow = 1, rel_widths = c(1, 0.7), axis = "t", align = "v",
-            labels = c("c", ""), label_size = 20),
-  nrow = 2, rel_heights = c(1, 0.7), axis = "l", align = "h")
+plotSave <- plot_grid(plot29 + theme(legend.position = "right", plot.title = element_blank()),
+                      plot43.2 + theme(legend.position = "right", plot.title = element_blank()),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, rel_heights = c(1, 0.7), axis = "l", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MAD_Species.tiff"),
        width = 10, height = 10)
 
-plotSave <- plot_grid(
-  plot_grid(plot29 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30 + theme(legend.position = "bottom", plot.title = element_blank()),
-            nrow = 1, 
-            rel_widths = c(1, 0.7),
-            axis = "b", align = "h",
-            labels = c("a", "b", ""), label_size = 20),
-  plot_grid(plot43.3 + theme(legend.position = "right",
-                             plot.title = element_blank(),
-                             legend.direction = "vertical",
-                             legend.box = "vertical"),
-            labels = c("c"), label_size = 20),
-  nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
+plotSave <- plot_grid(plot29 + theme(legend.position = "right",
+                                     plot.title = element_blank(),
+                                     legend.direction = "vertical",
+                                     legend.box = "vertical"),
+                      plot43.3 + theme(legend.position = "right",
+                                       plot.title = element_blank(),
+                                       legend.direction = "vertical",
+                                       legend.box = "vertical"),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species.tiff"),
        width = 10, height = 10)
 
 
-plotSave <- plot_grid(
-  plot_grid(plot29.1 + theme(legend.position = "none", plot.title = element_blank(), plot.subtitle = element_blank()),
-            plot30.1 + theme(legend.position = "bottom", plot.title = element_blank(), plot.subtitle = element_blank()),
-            nrow = 1, 
-            axis = "b", align = "h",
-            labels = c("a", "b", ""), label_size = 20),
-  plot_grid(plot43.4 + theme(legend.position = "right",
-                             plot.title = element_blank(),
-                             legend.direction = "vertical",
-                             legend.box = "vertical"),
-            labels = c("c"), label_size = 20),
-  nrow = 2, rel_heights = c(0.8, 1), axis = "lr", align = "h")
+plotSave <- plot_grid(plot29.1 + theme(legend.position = "right",
+                                       plot.title = element_blank(),
+                                       legend.direction = "vertical",
+                                       legend.box = "vertical"),
+                      plot43.3 + theme(legend.position = "right",
+                                       plot.title = element_blank(),
+                                       legend.direction = "vertical",
+                                       legend.box = "vertical"),
+                      labels = c("a", "b"), label_size = 20,
+                      nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species2.tiff"),
        width = 10, height = 10)
@@ -1162,7 +1031,7 @@ ggsave(plot = plotSave,
        width = 16, height = 12)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1206,7 +1075,7 @@ ggsave(plot = plotSave,
        width = 10, height = 12, dpi = 300)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1257,7 +1126,7 @@ ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_cr
        width = 8, height = 6)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1303,7 +1172,7 @@ plot39 <- plot39 +
 ggsave(plot = plot39, filename = file.path(figOutputPath, "results_meanFireIntSimVsObs.tiff"),
        width = 10, height = 8)
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1513,7 +1382,7 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff
        width = 20, height = 7)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$|fireAttr.*Plot", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
@@ -1615,7 +1484,7 @@ ggsave(plot = plot8, filename = file.path(figOutputPath, "results_pixelAge_vegTy
        width = 14, height = 10)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 
