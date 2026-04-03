@@ -390,7 +390,6 @@ gc(reset = TRUE)
 
 ## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
 ##-- we've decided to weight at the stand level but not at the species level
-
 cacheExtra <- c(digest::digest(allPixelCDMntEnd), digest::digest(ageDataCN))
 opts <- options(reproducible.cachePath = simPaths$cachePath)
 plotData <- Cache(
@@ -406,7 +405,8 @@ plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that 
 
 ## this plot is used later, so the data.table must be a copy
 plot29 <- simObsDistsPlot(simData = copy(plotData), x = "speciesCode", ySim = "sppAgeSim",
-                          colSim = "scenario", obsData = copy(plotData2), yObs = "Reconstructed.age", 
+                          colSim = "scenario", 
+                          obsData = copy(plotData2), yObs = "Reconstructed.age", 
                           xlabels = speciesLabels, x.text.angle = 45,
                           colValues = scenColours, 
                           colLabels = scenLabels, 
@@ -430,7 +430,7 @@ plot30 <- plot30 + theme(axis.title.x = element_blank())
 plot29.1 <- simObsDistsPlot(simData = copy(plotData[firePresAbs == 1]), 
                             x = "speciesCode", ySim = "sppAgeSim",
                             colSim = "scenario", 
-                            obsData = copy(plotData2[firePresAbs == 1]), yObs = "Reconstructed.age", 
+                            obsData = copy(plotData2), yObs = "Reconstructed.age", 
                             xlabels = speciesLabels, x.text.angle = 45,
                             colValues = scenColours, 
                             colLabels = scenLabels, 
@@ -1056,6 +1056,7 @@ plot36 <- ggplot(copy(plotData)) +
 
 
 ## fire size distribution
+## add + 1 because densityPlot uses a log scale
 plotData <- summaryFireAttributes[vegTypeCN != "No veg."]
 plotData[, `:=`(meanPatchS1 = meanPatchS + 1,
                 meanFreq1 = meanFreq + 1,
@@ -1166,7 +1167,7 @@ rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
-#### Boxplots of  no. fires, fire frequency, fire size and fire severity
+#### Boxplots of  no. fires, fire frequency, fire size and fire severity (means as in HVs)
 Non-forest forest types and pixels w/o included since these plots are showing data used for PBRs
 ```{r fireAttr_boxplots, cache = FALSE}
 x_order <- names(vegTypeCNLabels)
@@ -1393,16 +1394,15 @@ ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVs
 gc(reset = TRUE)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
-plotsRm <- grep("plot29$|plot30$|plot29.1$|plot30.1$|plot29.2$|plot30.2$|plot29.3$|plot30.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
 
 ## FIRE ATTRIBUTES BY PYRODIVERSITY LEVEL
+Means as in HVs
 ```{r fireAttriPyro, echo = FALSE}
-
-## TODO: use sevPropB
 endYear <- max(yearSubset)
 tempData <- allHVData[year == endYear,
                       .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
@@ -1436,7 +1436,7 @@ plot47 <- ggplot(plotData[variable != "medianSev"],
                                               "medianFreq" = "Median fire interval",
                                               "medianSevB" = "Median fire severity\n(biomass lost, ton/ha)")))
 
-## relationship  between pyrodiversity and fire attributes -----------------
+## relationship between pyrodiversity and average fire attributes -----------------
 ## join HV sizes with fire attributes
 plotData <- allHVData[HVtype == "fireHV",
                       .(HV_noPM, HV_PM, rep, repHV, vegType)]
@@ -1528,7 +1528,7 @@ plotData <- allPixelCDMntEnd[, list(vegTypeCN = vegTypeCN,
                                                                   sum((B/100), na.rm = TRUE))),
                              by = .(scenario, rep, year, pixelIndex, speciesCode)]
 plotData[is.nan(avgAgeBySppSim), avgAgeBySppSim := 0]
-## sum B per spp
+## sum B per spp, per stand
 plotData[, B := sum(B), by = .(scenario, rep, year, pixelIndex, speciesCode)]
 plotData <- unique(plotData)
 ## sum across pixels per vegType

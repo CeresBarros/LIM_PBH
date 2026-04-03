@@ -222,17 +222,19 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
 .HVforPlots <- function(pixelIndexDT, vegHVPCAscores, scen, colsHV,
                         grepStrVegType, yearToMatch, userTags, cacheRepo) {
   ## subset tables to correct year, veg type and scenario
+  ## pixelIndexDT is already filtered for the years of interest (in terms of vegType classification).
+  ## So we need to get the pixID (of those years) that were classified into the vegType of interest
   tempPixID <- pixelIndexDT[grepl(grepStrVegType, vegTypeCN)]
   tempPixID <- tempPixID[scenario == scen]
   if (is.na(yearToMatch)) {
-    tempData <- vegHVPCAscores[scenario == scen,]
+    tempData <- vegHVPCAscores[scenario == scen,]  ## vegHVPCAscores has all years here
     yearToMatch <- NULL
   } else {
     yearToMatch <- ifelse(is.character(vegHVPCAscores$year), as.character(yearToMatch), as.integer(yearToMatch))
     tempData <- vegHVPCAscores[year %in% as.character(yearToMatch) & scenario == scen,]
   }
   ## subset pixels -- don't subset by vegType, as vegTypes change through time
-  ## tempPixID defines the pixels of each vegType at the last year.
+  ## tempPixID defines the pixels that were classified as vegType at the year of interest.
   tempData <- tempData[tempPixID, on = .(rep, pixelIndex)]
 
   if (!is.null(userTags)) {
