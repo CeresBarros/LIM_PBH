@@ -159,6 +159,11 @@ check_model(fireHVVolumeLandscape.lm2)
 caret::RMSE(fitted(fireHVVolumeLandscape.lm), modelData$Volume)
 caret::RMSE(exp(fitted(fireHVVolumeLandscape.lm2)), exp(modelData$logVolume)) ## only marginally better, slightly worse resids
 
+
+check_normality(fireHVVolumeLandscape.lm)  ## it's ok
+check_heteroscedasticity(fireHVVolumeLandscape.lm) ## it's ok
+
+## March 2026: no indication that the model's below are necessary
 fireHVVolumeLandscape.gls <- gls(Volume ~ scenario, weights = varIdent(form = ~ 1 | scenario),
                                  modelData[vegType == "landscape"])
 fireHVVolumeLandscape.gls2 <- gls(logVolume ~ scenario, weights = varIdent(form = ~ 1 | scenario),
@@ -196,8 +201,14 @@ fireHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != 
 ## same issue as before
 fireHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData[vegType != "landscape"])
 
-check_model(fireHVVolumeVegTypes.lm) ## better (Nov 2025)
+check_model(fireHVVolumeVegTypes.lm) ## (maybe?) better on homo. variance (Nov 2025)
 check_model(fireHVVolumeVegTypes.lm2)
+
+check_normality(fireHVVolumeVegTypes.lm)  ## not ok
+check_heteroscedasticity(fireHVVolumeVegTypes.lm) ## ok
+
+check_normality(fireHVVolumeVegTypes.lm2)  ## not ok
+check_heteroscedasticity(fireHVVolumeVegTypes.lm2) ## not ok
 
 caret::RMSE(fitted(fireHVVolumeVegTypes.lm), modelData[vegType != "landscape", Volume])  ## marginally better
 caret::RMSE(exp(fitted(fireHVVolumeVegTypes.lm2)), exp(modelData[vegType != "landscape", logVolume]))
@@ -213,21 +224,22 @@ fireHVVolumeVegTypes.gls <- gls(Volume ~ scenario * vegType,
                                 weights = varIdent(form = ~ 1 | scenario * vegType),
                                 modelData2)
 check_model(fireHVVolumeVegTypes.gls)  ## looks better
-anova(fireHVVolumeVegTypes.gls)        ## March 2026: scen not significant
+anova(fireHVVolumeVegTypes.gls)        ## March 2026: scen not significant; after not merging PSME+dryPSME all effects significant
 summary(fireHVVolumeVegTypes.gls)
 
-fireHVVolumeVegTypes.gls2 <- gls(Volume ~ scenario + vegType,
-                                 weights = varIdent(form = ~ 1 | scenario * vegType),
-                                 data = modelData2)
-anova(fireHVVolumeVegTypes.gls, fireHVVolumeVegTypes.gls2)   ## interaction model is much better.
+## no longer relevant if not merging PSME+dryPSME
+# fireHVVolumeVegTypes.gls2 <- gls(Volume ~ scenario + vegType,
+#                                  weights = varIdent(form = ~ 1 | scenario * vegType),
+#                                  data = modelData2)
+# anova(fireHVVolumeVegTypes.gls, fireHVVolumeVegTypes.gls2)   ## interaction model is much better.
 
 AICcmodavg::AICc(fireHVVolumeVegTypes.lm)
 AICcmodavg::AICc(fireHVVolumeVegTypes.gls)  ## best
-AICcmodavg::AICc(fireHVVolumeVegTypes.gls2)
+# AICcmodavg::AICc(fireHVVolumeVegTypes.gls2)
 
 caret::RMSE(fitted(fireHVVolumeVegTypes.lm), modelData[vegType != "landscape", Volume])
 caret::RMSE(fitted(fireHVVolumeVegTypes.gls), modelData2$Volume)    ## same as above
-caret::RMSE(fitted(fireHVVolumeVegTypes.gls2), modelData2$Volume)   ## worse
+# caret::RMSE(fitted(fireHVVolumeVegTypes.gls2), modelData2$Volume)   ## worse
 
 png(file.path(figOutputPath, "fireHVVolumeVegTypesglsRESIDUALS.png"))
 check_model(fireHVVolumeVegTypes.gls)
@@ -278,6 +290,12 @@ caret::RMSE(exp(fitted(vegHVVolumeLandscape.lm2)), exp(modelData2$logVolume)) ##
 check_model(vegHVVolumeLandscape.lm)
 check_model(vegHVVolumeLandscape.lm2) ## better
 
+check_normality(vegHVVolumeLandscape.lm) ##  not ok
+check_heteroscedasticity(vegHVVolumeLandscape.lm) ##  not ok
+check_normality(vegHVVolumeLandscape.lm2) ##  not ok
+check_heteroscedasticity(vegHVVolumeLandscape.lm2) ## ok
+
+
 vegHVVolumeLandscape.gls <- gls(Volume ~ scenario,
                                 weights = varIdent(form = ~ 1 | scenario),
                                 data = modelData2)
@@ -300,15 +318,15 @@ caret::RMSE(exp(fitted(vegHVVolumeLandscape.gls2)), modelData2$Volume)  ## sligh
 
 
 png(file.path(figOutputPath, "vegHVVolumeLandscapelmRESIDUALS.png"))
-check_model(vegHVVolumeLandscape.lm)
+check_model(vegHVVolumeLandscape.lm2)
 dev.off()
 
 sink(file.path(statsOutputPath, "vegHVVolumeLandscapelmSUMMARY.txt"))
-anova(vegHVVolumeLandscape.gls2)
+anova(vegHVVolumeLandscape.lm2)
 cat("\n*********************\n")
-summary(vegHVVolumeLandscape.gls2)
+summary(vegHVVolumeLandscape.lm2)
 cat("\n*********************\n")
-emmeans(vegHVVolumeLandscape.gls2, specs = "scenario", data = modelData2)
+emmeans(vegHVVolumeLandscape.lm2, specs = "scenario", data = modelData2)
 sink()
 
 ## vegType level --------
@@ -321,8 +339,16 @@ modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) 
 vegHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData2)
 vegHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData2)
 
+anova(vegHVVolumeVegTypes.lm)  ## interaction not sign.
+anova(vegHVVolumeVegTypes.lm2) ## all sign.
+
+check_normality(vegHVVolumeVegTypes.lm)  ## not ok
+check_heteroscedasticity(vegHVVolumeVegTypes.lm)  ## not ok
+check_normality(vegHVVolumeVegTypes.lm2)  ## not ok
+check_heteroscedasticity(vegHVVolumeVegTypes.lm2)  ## ok
+
 ## some heteroscedasticity
-check_model(vegHVVolumeVegTypes.lm)
+check_model(vegHVVolumeVegTypes.lm)  ## terrible
 check_model(vegHVVolumeVegTypes.lm2) ## better
 caret::RMSE(fitted(vegHVVolumeVegTypes.lm), modelData2$Volume)
 caret::RMSE(exp(fitted(vegHVVolumeVegTypes.lm2)), modelData2$Volume)  ## worse
@@ -342,6 +368,8 @@ vegHVVolumeVegTypes.gls2 <- gls(logVolume ~ scenario * vegType,
 
 check_model(vegHVVolumeVegTypes.gls)
 check_model(vegHVVolumeVegTypes.gls2)   ## better than lm2
+
+anova(vegHVVolumeVegTypes.gls2)  ## all sign.
 
 png(file.path(figOutputPath, "vegHVVolumeVegTypesglsRESIDUALS.png"))
 check_model(vegHVVolumeVegTypes.gls2) ## better
@@ -450,7 +478,7 @@ modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) 
 
 ## Landscape level ------
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData2)
-## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps -- no longer tru Nov 2025
+## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps -- no longer true Nov 2025
 hist(modelData[vegType == "landscape", fireHV], breaks = 1000)
 # hist(modelData[vegType == "landscape" & fireHV > 500, fireHV], breaks = 1000)   # no longer exists in 4000 years sims
 
@@ -458,15 +486,25 @@ pyroVSbiodiversityLandscape.lm2 <- lm(logVegHV ~ logFireHV*scenario, data = mode
 check_model(pyroVSbiodiversityLandscape.lm)
 check_model(pyroVSbiodiversityLandscape.lm2)  ## a bit better
 
-anova(pyroVSbiodiversityLandscape.lm2) ## interaction not significant
+## no strong support for log
+check_normality(pyroVSbiodiversityLandscape.lm) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityLandscape.lm) ## ok
+check_normality(pyroVSbiodiversityLandscape.lm2) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityLandscape.lm2) ## ok
 
-pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ logFireHV + scenario, data = modelData2)
-anova(pyroVSbiodiversityLandscape.lm3)   ## scenario still significant
-check_model(pyroVSbiodiversityLandscape.lm3)  ## probably as bad.
-anova(pyroVSbiodiversityLandscape.lm2, pyroVSbiodiversityLandscape.lm3) ## not sign. different (AIC is marginally better, see below)
 
-## March 2026: scenario effect is significant (using sevPropB as HV component now), so the model below
-## no longer makes sence
+## in both: scenario main effect not significant, but interaction is (but close)
+anova(pyroVSbiodiversityLandscape.lm)
+anova(pyroVSbiodiversityLandscape.lm2)
+
+## if not merging dryPSME + PSME, the following makes no sense bc interaction is signficant.
+# pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ logFireHV + scenario, data = modelData2)
+# anova(pyroVSbiodiversityLandscape.lm3)   ## scenario still not significant
+# check_model(pyroVSbiodiversityLandscape.lm3)  ## probably as bad.
+# anova(pyroVSbiodiversityLandscape.lm2, pyroVSbiodiversityLandscape.lm3) ##  sign., lm3 probably worse.
+
+## March 2026: scenario effect/interaction is significant (using sevPropB as HV component now), so the model below
+## no longer makes sense
 # pyroVSbiodiversityLandscape.lm4 <- lm(logVegHV ~ logFireHV, data = modelData2)
 # anova(pyroVSbiodiversityLandscape.lm4) ## scenarion effect not significant
 # check_model(pyroVSbiodiversityLandscape.lm4)  ## probably as bad.
@@ -485,33 +523,59 @@ anova(pyroVSbiodiversityLandscape.lm2, pyroVSbiodiversityLandscape.lm3) ## not s
 #           by = .(scenario, vegType)]
 # pyroVSbiodiversityLandscape.lm3 <- lm(logVegHV ~ (logFireHVcenter + I(logFireHVcenter^2))*scenario,
 #                                       data = modelData2)
-pyroVSbiodiversityLandscape.lm5 <- lm(logVegHV ~ poly(logFireHV, 2), data = modelData2)
-check_model(pyroVSbiodiversityLandscape.lm5)  ## as bad as previous
-anova(pyroVSbiodiversityLandscape.lm3, pyroVSbiodiversityLandscape.lm5)  ## not sign. different, AIC slightly worse
-pyroVSbiodiversityLandscape.lm6 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
-                                      data = modelData2)
+# pyroVSbiodiversityLandscape.lm5 <- lm(logVegHV ~ poly(logFireHV, 2), data = modelData2)
+# check_model(pyroVSbiodiversityLandscape.lm5)  ## as bad as previous
+# anova(pyroVSbiodiversityLandscape.lm3, pyroVSbiodiversityLandscape.lm5)  ## not sign. different, AIC slightly worse
 
-## nov 2025, no support for the following models
-pyroVSbiodiversityLandscape.lm7 <- lm(logVegHV ~ poly(logFireHV, 2)+scenario,
+pyroVSbiodiversityLandscape.lm6 <- lm(vegHV ~ poly(fireHV, 2)*scenario,
                                       data = modelData2)
+anova(pyroVSbiodiversityLandscape.lm6)
+anova(pyroVSbiodiversityLandscape.lm, pyroVSbiodiversityLandscape.lm6)   # all significant
 
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm)
+pyroVSbiodiversityLandscape.lm7 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario,
+                                      data = modelData2)
+anova(pyroVSbiodiversityLandscape.lm7)   # only logFireHV is significant
+
+check_model(pyroVSbiodiversityLandscape.lm6) ## better than lm, looks a bit better than lm7.
+check_model(pyroVSbiodiversityLandscape.lm7) ## better than lm2
+
+check_normality(pyroVSbiodiversityLandscape.lm6)  ## not ok
+check_heteroscedasticity(pyroVSbiodiversityLandscape.lm6)  ## ok
+check_normality(pyroVSbiodiversityLandscape.lm7)  ## ok
+check_heteroscedasticity(pyroVSbiodiversityLandscape.lm7)  ## ok
+
+
+
+## nov 2025, no support for the following model
+# pyroVSbiodiversityLandscape.lm8 <- lm(logVegHV ~ poly(logFireHV, 2)+scenario,
+#                                       data = modelData2)
+# anova(pyroVSbiodiversityLandscape.lm8)  # only logFireHV is significant
+
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm)  ## can't compare to log models
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6) ## better than lm
 AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm2)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3)   ## second best
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm5)   ## best, but very marginally
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm7)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm7)  ## worse than lm2
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3)   ## second best
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm4)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm5)   ## best, but very marginally
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm8)
 
 ## and if we allow the variance to change?
-pyroVSbiodiversityLandscape.gls <- nlme::gls(logVegHV ~ logFireHV * scenario,
+pyroVSbiodiversityLandscape.gls <- nlme::gls(vegHV ~ fireHV * scenario,
                                              weights = nlme::varIdent(form = ~ 1 | scenario),
                                              data = modelData2)
-anova(pyroVSbiodiversityLandscape.gls)  ## interaction not significant
-pyroVSbiodiversityLandscape.gls2 <- nlme::gls(logVegHV ~ logFireHV + scenario,
-                                              weights = nlme::varIdent(form = ~ 1 | scenario),
-                                              data = modelData2)
-anova(pyroVSbiodiversityLandscape.gls2)
+anova(pyroVSbiodiversityLandscape.gls)  ## scenario main effect not significant
+
+pyroVSbiodiversityLandscape.gls2 <- nlme::gls(logVegHV ~ logFireHV * scenario,
+                                             weights = nlme::varIdent(form = ~ 1 | scenario),
+                                             data = modelData2)
+anova(pyroVSbiodiversityLandscape.gls2)  ## scenario main effect not significant
+
+## if not merging dryPSME + PSME, the following makes no sense bc interaction is significant.
+# pyroVSbiodiversityLandscape.gls3 <- nlme::gls(logVegHV ~ logFireHV + scenario,
+#                                               weights = nlme::varIdent(form = ~ 1 | scenario),
+#                                               data = modelData2)
+# anova(pyroVSbiodiversityLandscape.gls3)
 ## March 2026: no support for following model
 # pyroVSbiodiversityLandscape.gls3 <- nlme::gls(logVegHV ~ logFireHV,
 #                                               weights = nlme::varIdent(form = ~ 1 | scenario),
@@ -531,57 +595,76 @@ pyroVSbiodiversityLandscape.gls5 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scen
 pyroVSbiodiversityLandscape.gls6 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)+scenario,
                                               weights = nlme::varIdent(form = ~ 1 | scenario),
                                               data = modelData2)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3)   ## third best
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls)   ## second best, but marginally and residuals are worse
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls2)
-# AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls3)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls4)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls5)  ## best
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls6)
-AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6)
 
-anova(pyroVSbiodiversityLandscape.gls2, pyroVSbiodiversityLandscape.lm3)  ## sign different
-anova(pyroVSbiodiversityLandscape.gls, pyroVSbiodiversityLandscape.gls5)  ## sign different
-anova(pyroVSbiodiversityLandscape.gls)  ## interaction and scenarion no longer significant
+## non log options
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm6)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls)   ## best
+
+## log options
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm2)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm7)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls2)
+AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls5)  ## best, and better residuals than non-log
+
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.lm3)   ## third best
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls3)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls4)
+# AICcmodavg::AICc(pyroVSbiodiversityLandscape.gls6)
+
+
+anova(pyroVSbiodiversityLandscape.gls2, pyroVSbiodiversityLandscape.lm2)  ## sign different, gls marginally worse
+anova(pyroVSbiodiversityLandscape.gls2, pyroVSbiodiversityLandscape.gls5)  ## sign different
+anova(pyroVSbiodiversityLandscape.gls)
+anova(pyroVSbiodiversityLandscape.gls5)  ## interaction and scenario no longer significant
 
 check_model(pyroVSbiodiversityLandscape.gls5) ## looks worse than gls2
 
 ## Nov 2025: in PM, replicate 4 seems to be an outlier, without it the relationship would be flatter
 ## also, scenario does seem to have an impact on mean volumes and the slopes.
 ## I think the GLS may be more appropriate given the outlier rep.
+## I also don't see a strong support for polynomial relationships, especially removing the rep outlier in PM
+## I think LM2/GLS2 are good options; gls2 didn't things improve much
+
 plotData <- modelData2
-# plotData[, pred := predict(pyroVSbiodiversityLandscape.gls5)]
-plotData[, pred := predict(pyroVSbiodiversityLandscape.lm3)]
+plotData[, predLM2 := predict(pyroVSbiodiversityLandscape.lm2)]
+plotData[, predLM7 := predict(pyroVSbiodiversityLandscape.lm7)]
+plotData[, predGLS2 := predict(pyroVSbiodiversityLandscape.gls2)]
+plotData[, predGLS5 := predict(pyroVSbiodiversityLandscape.gls5)]
 ggplot(
   # plotData[scenario != "HV_noPM" & rep != 4]
   # plotData[scenario == "HV_noPM"]
   plotData
-  , aes(x = logFireHV, y = logVegHV)) +
-  geom_smooth(aes(linetype = scenario), formula = y ~ poly(x, 2),
-              colour = "red",
-              method = "lm", se = FALSE) +
-  geom_smooth(aes(linetype = scenario), formula = y ~ x,
-              colour = "blue",
-              method = "lm", se = FALSE) +
-  # geom_smooth(formula = y ~ poly(x, 2),
+  , aes(x = logFireHV)) +
+  geom_line(aes(y = predLM2, linetype = scenario), col = "red") +
+  geom_line(aes(y = predLM7, linetype = scenario), col = "green") +
+  # geom_line(aes(y = predGLS2, linetype = scenario), col = "orange") + ## overlaps predLM2 completely.
+  # geom_line(aes(y = predGLS5, linetype = scenario), col = "blue") +   ## overlaps predLM7 completely.
+  # geom_smooth(aes(y = logVegHV, linetype = scenario), formula = y ~ poly(x, 2),
   #             colour = "red",
   #             method = "lm", se = FALSE) +
-  # geom_smooth(formula = y ~ x,
+  # geom_smooth(aes(y = logVegHV, linetype = scenario), formula = y ~ x,
   #             colour = "blue",
   #             method = "lm", se = FALSE) +
-  geom_point(aes(colour = as.factor(rep), shape = scenario))
+  # geom_smooth(aes(y = logVegHV), formula = y ~ poly(x, 2),
+  #             colour = "red",
+  #             method = "lm", se = FALSE) +
+  # geom_smooth(aes(y = logVegHV), formula = y ~ x,
+  #             colour = "blue",
+  #             method = "lm", se = FALSE) +
+  geom_point(aes(y = logVegHV, colour = as.factor(rep), shape = scenario))
 
 
 png(file.path(figOutputPath, "pyroVSbiodiversityLandscapelmRESIDUALS.png"))
-plot(pyroVSbiodiversityLandscape.lm3)
+plot(pyroVSbiodiversityLandscape.lm2)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityLandscapelmSUMMARY.txt"))
-anova(pyroVSbiodiversityLandscape.lm3)
+anova(pyroVSbiodiversityLandscape.lm2)
 cat("\n*********************\n")
-summary(pyroVSbiodiversityLandscape.lm3)
+summary(pyroVSbiodiversityLandscape.lm2)
 cat("\n*********************\n")
-emtrends(pyroVSbiodiversityLandscape.lm3, specs = c("scenario"),
+emtrends(pyroVSbiodiversityLandscape.lm2, specs = c("scenario"),
          var = "logFireHV", data = modelData2)
 sink()
 
@@ -598,11 +681,30 @@ pyroVSbiodiversityVegTypes.lm2 <- lm(logVegHV ~ logFireHV*scenario*vegType,
 check_model(pyroVSbiodiversityVegTypes.lm)
 check_model(pyroVSbiodiversityVegTypes.lm2)  ## much better
 
-pyroVSbiodiversityVegTypes.lm3 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
+check_normality(pyroVSbiodiversityVegTypes.lm) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityVegTypes.lm) ## not ok
+check_normality(pyroVSbiodiversityVegTypes.lm2) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityVegTypes.lm2) ## not ok
+
+pyroVSbiodiversityVegTypes.lm3 <- lm(vegHV ~ poly(fireHV, 2)*scenario*vegType,
                                      data = modelData2)
 check_model(pyroVSbiodiversityVegTypes.lm3)  ## slightly better
-anova(pyroVSbiodiversityVegTypes.lm2, pyroVSbiodiversityVegTypes.lm3) # sign. different
-anova(pyroVSbiodiversityVegTypes.lm3)   ## interactions are significant
+anova(pyroVSbiodiversityVegTypes.lm, pyroVSbiodiversityVegTypes.lm3) # sign. different
+anova(pyroVSbiodiversityVegTypes.lm3)   ## interactions are significant, but not all
+
+check_normality(pyroVSbiodiversityVegTypes.lm3) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityVegTypes.lm3) ## not ok
+
+pyroVSbiodiversityVegTypes.lm4 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario*vegType,
+                                     data = modelData2)
+check_model(pyroVSbiodiversityVegTypes.lm4)  ## slightly better
+anova(pyroVSbiodiversityVegTypes.lm2, pyroVSbiodiversityVegTypes.lm4) # sign. different
+anova(pyroVSbiodiversityVegTypes.lm4)   ## all interactions are significant
+
+check_normality(pyroVSbiodiversityVegTypes.lm4) ## not ok
+check_heteroscedasticity(pyroVSbiodiversityVegTypes.lm4) ## not ok
+
+## logging is best
 
 ## interactions are significant. no point in removing them.
 # pyroVSbiodiversityVegTypes.lm4 <- lm(logVegHV ~ logFireHV*scenario + logFireHV*vegType + scenario*vegType,
@@ -610,10 +712,13 @@ anova(pyroVSbiodiversityVegTypes.lm3)   ## interactions are significant
 # pyroVSbiodiversityVegTypes.lm5 <- lm(logVegHV ~ poly(logFireHV, 2)*scenario + poly(logFireHV, 2)*vegType + scenario*vegType,
 #                                      data = modelData2)
 
-# AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm)  ## don't compare non-logged
+## mnot logged
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm)  ##
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3) ## worse
+
+## logged
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm2)
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3) ## best
-# AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4)
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4) ## best but not by that much
 # AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm5)
 
 pyroVSbiodiversityVegTypes.gls <- nlme::gls(logVegHV ~ logFireHV*scenario*vegType,
@@ -625,21 +730,58 @@ pyroVSbiodiversityVegTypes.gls2 <- nlme::gls(logVegHV ~ poly(logFireHV, 2)*scena
 pyroVSbiodiversityVegTypes.gam <- mgcv::gam(logVegHV ~ s(logFireHV, k = 3, by = scenario) + s(logFireHV, k = 3, by = vegType),
                                             data =  modelData2)
 
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm3)
-AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gls)
+check_model(pyroVSbiodiversityVegTypes.gls) ## pretty much the same as the LM equivalent
+
+## not poly
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm2)
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gls)  ## better
+## poly
+AICcmodavg::AICc(pyroVSbiodiversityVegTypes.lm4)
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gls2)  ## best
 AICcmodavg::AICc(pyroVSbiodiversityVegTypes.gam)
 
+
+## again, I don't see huge support for polynomial shapes in many cases. so option for linear effects
+plotData <- modelData2
+plotData[, predLM2 := predict(pyroVSbiodiversityVegTypes.lm2)]
+plotData[, predLM4 := predict(pyroVSbiodiversityVegTypes.lm4)]
+plotData[, predGLS := predict(pyroVSbiodiversityVegTypes.gls)]
+plotData[, predGLS2 := predict(pyroVSbiodiversityVegTypes.gls2)]
+ggplot(
+  # plotData[scenario != "HV_noPM" & rep != 4]
+  # plotData[scenario == "HV_noPM"]
+  plotData
+  , aes(x = logFireHV)) +
+  # geom_line(aes(y = predLM2, linetype = scenario), col = "red") +
+  # geom_line(aes(y = predLM4, linetype = scenario), col = "green") +
+  geom_line(aes(y = predGLS, linetype = scenario), col = "orange") + ## overlaps predLM2 completely.
+  # geom_line(aes(y = predGLS2, linetype = scenario), col = "blue") +   ## overlaps predLM4 completely.
+  # geom_smooth(aes(y = logVegHV, linetype = scenario), formula = y ~ poly(x, 2),
+  #             colour = "red",
+  #             method = "lm", se = FALSE) +
+  # geom_smooth(aes(y = logVegHV, linetype = scenario), formula = y ~ x,
+  #             colour = "blue",
+  #             method = "lm", se = FALSE) +
+  # geom_smooth(aes(y = logVegHV), formula = y ~ poly(x, 2),
+  #             colour = "red",
+  #             method = "lm", se = FALSE) +
+  # geom_smooth(aes(y = logVegHV), formula = y ~ x,
+  #             colour = "blue",
+  #             method = "lm", se = FALSE) +
+  geom_point(aes(y = logVegHV, colour = as.factor(rep), shape = scenario)) +
+  facet_wrap(~ vegType, scales = 'free')
+
+
 png(file.path(figOutputPath, "pyroVSbiodiversityVegTypesglsRESIDUALS.png"))
-check_model(pyroVSbiodiversityVegTypes.gls2)
+check_model(pyroVSbiodiversityVegTypes.gls)
 dev.off()
 
 sink(file.path(statsOutputPath, "pyroVSbiodiversityVegTypesglsSUMMARY.txt"))
-anova(pyroVSbiodiversityVegTypes.gls2)
+anova(pyroVSbiodiversityVegTypes.gls)
 cat("\n*********************\n")
-summary(pyroVSbiodiversityVegTypes.gls2)
+summary(pyroVSbiodiversityVegTypes.gls)
 cat("\n*********************\n")
-emtrends(pyroVSbiodiversityVegTypes.gls2, pairwise ~ scenario | vegType,
+emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ scenario | vegType,
          var = "logFireHV", max.degree = 2, mode = "df.error")
 sink()
 
@@ -796,16 +938,16 @@ plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
 #                       by = .(rep, scenario, vegType)]
 # plotData2 <- rbind(plotData2, plotData[, .(rep, scenario, vegType, logFireHV)])
 
-lmPreds <- predict(pyroVSbiodiversityLandscape.lm3,
+lmPreds <- predict(pyroVSbiodiversityLandscape.lm2,
                    # newdata = plotData2[vegType == "landscape"],
                    se.fit = TRUE, interval = "confidence", type = "response")
-
+## here
 if (paste(version$major, version$minor, sep = ".") < "4.4.0") {
   stop("marginaleffecs::predictions needs R version >= 4.4.0")
 } else {
   # plotData3 <- plotData2[vegType != "landscape"]
   # plotData3[, vegType := droplevels(vegType)]
-  glsPreds <- predictions(pyroVSbiodiversityVegTypes.gls2, ## can't access model data, but this is the same
+  glsPreds <- predictions(pyroVSbiodiversityVegTypes.gls, ## can't access model data, but this is the same
                           # newdata = plotData3,
                           vcov = TRUE, by = FALSE, type = "response")
 }
