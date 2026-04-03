@@ -1291,16 +1291,16 @@ tempData <- tempData[HVtype == "fireHV", list(Volume = mean(Volume, na.rm = TRUE
 setnames(tempData, "vegType", "vegTypeCN")
 
 ## add only landscape level HV sizes 
-cols <- grep("median", names(summaryFireAttributes), value = TRUE)
+cols <- grep("mean", names(summaryFireAttributes), value = TRUE)
 cols <- c(cols, "scenario", "rep", "pixelIndex", "vegTypeCN")
 plotData <- tempData[vegTypeCN == "landscape", .(scenario, rep, Volume)][summaryFireAttributes[, ..cols], on = .(scenario, rep)]
 plotData <- melt(plotData, id.vars = c("scenario", "rep", "Volume", "pixelIndex", "vegTypeCN"))
-# plotData[variable %in% c("medianPatchS", "medianSevB"), value := log(value + 0.1)]
+# plotData[variable %in% c("meanPatchS", "meanSevB"), value := log(value + 0.1)]
 
-plot47 <- ggplot(plotData[variable != "medianSev"], 
-                 aes(x = as.factor(round(log(Volume), 3)), 
+plot47 <- ggplot(plotData[!variable %in% c("meanSevB", "meanSev")], 
+                 aes(x = cut(Volume, breaks = 200, include.lowest = TRUE), 
                      y = value, 
-                     fill = as.factor(round(log(Volume), 3)))) +
+                     fill = scenario)) +
   geom_violin() +
   theme_pubr(base_size = 16, legend = "bottom") +
   theme(legend.title = element_blank(), 
@@ -1309,9 +1309,9 @@ plot47 <- ggplot(plotData[variable != "medianSev"],
   labs(y = "", x = "pyrodiversity") +
   facet_grid(variable ~ scenario, scales = "free", switch = "y",
              labeller = labeller(scenario = scenLabels,
-                                 variable = c("medianPatchS" = "Median patch size\n(no. pixels)",
-                                              "medianFreq" = "Median fire interval",
-                                              "medianSevB" = "Median fire severity\n(biomass lost, ton/ha)")))
+                                 variable = c("meanPatchS" = "Mean patch size\n(no. pixels)",
+                                              "meanFreq" = "Mean fire interval\n",
+                                              "meanSevPropB" = "Mean fire severity\n(% biomass lost)")))
 
 ## relationship between pyrodiversity and average fire attributes -----------------
 ## join HV sizes with fire attributes
@@ -1321,28 +1321,32 @@ plotData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
 plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
                             variable.name = "scenario", value.name = "Volume")
 plotData[, scenario := sub("HV_", "", scenario)]
-## center and scale volume as in model
-plotData[, Volume := log(Volume),
-         by = .(scenario, vegType)]
 
+## landscape only -- note that summaryFireAttributes doesn't have a "landscape" vegType
 plotData2 <- plotData[vegType == "landscape"]
-cols <- grep("median", names(summaryFireAttributes), value = TRUE)
+cols <- grep("mean", names(summaryFireAttributes), value = TRUE)
 cols <- c(cols, "scenario", "rep", "pixelIndex", "vegTypeCN")
 plotData2 <- summaryFireAttributes[, ..cols][plotData2, on = c("scenario", "rep"),
-                                             allow.cartesian = TRUE]
+                                             allow.cartesian = TRUE]  
 plotData2[, vegTypeCN := NULL]
-plotData <- plotData[vegType != "landscape"]
 
+## all but landscape
+plotData <- plotData[vegType != "landscape"]
 plotData <- summaryFireAttributes[, ..cols][plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
                                             allow.cartesian = TRUE]
 setnames(plotData, "vegTypeCN", "vegType")
 plotData <- rbind(plotData, plotData2)
 
-plotData <- melt.data.table(plotData, measure.vars = c("medianFreq", "medianSevB", "medianPatchS"),
+cols <- grep("mean", names(plotData), value = TRUE)
+plotData <- melt.data.table(plotData, measure.vars = cols,
                             variable.name = "fireAttr", value.name = "value")
-## calculate summary stats
+## calculate summary stats on fire attributes
 plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Volume, vegType, fireAttr)]
+plotData <- plotData[fireAttr %in% c("meanFreq", "meanSevPropB", "meanPatchS")]
 
+## log for better visuals
+plotData[, logVolume := log(Volume)]
+plotData[, logMean := log(Mean)]
 
 fireAttrPyroPlotFun <- function(plotData) {
   ggplot(plotData,
