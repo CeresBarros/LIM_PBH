@@ -87,12 +87,14 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 
 ## merge Douglas-fir/dry-conifer stands?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
-mergePSME <- TRUE ## merge PSME dryPSME
+mergePSME <- FALSE ## merge PSME dryPSME
 if (mergeDMCPSME) {
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
+  HVoutputPath <- file.path(HVoutputPath, "mergeDMCPSME")
 }
 if (mergePSME) {
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergePSME")
+  HVoutputPath <- file.path(HVoutputPath, "mergePSME")
 }
 dir.create(figOutputPath, recursive = TRUE)
 

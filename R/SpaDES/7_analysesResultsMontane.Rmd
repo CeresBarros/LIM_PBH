@@ -95,7 +95,7 @@ figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane")
 ## merge Douglas-fir/dry-conifer stands?
 ## no need with last year classif
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
-mergePSME <- TRUE ## merge PSME dryPSME
+mergePSME <- FALSE ## merge PSME dryPSME :: March 2026, decided not to merge
 if (mergeDMCPSME) {
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
   HVoutputPathMergedVegType <- file.path(simPaths$outputPath, "hypervolumes", "mergeDMCPSME")

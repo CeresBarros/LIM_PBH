@@ -78,7 +78,7 @@ gc(reset = TRUE)  ## about 50Gb used at this point
 
 ## MERGE MIXED CONIFER AND DOUGLAS-FIR/DRY-CONIFER STANDS? OR JUST DOUGLAS-FIR/DRY-CONIFER STANDS?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
-mergePSME <- TRUE ## merge PSME dryPSME
+mergePSME <- FALSE ## merge PSME dryPSME
 doMergedOnly <- FALSE ## should HVs only be calculated for the merged veg types?
 options("LandR.assertions" = TRUE)
 if (mergeDMCPSME) {

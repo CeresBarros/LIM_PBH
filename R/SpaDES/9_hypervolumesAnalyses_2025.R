@@ -91,7 +91,7 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 
 ## are we using the merged douglas-fir/dry-conifer stands?
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
-mergePSME <- TRUE ## merge PSME dryPSME
+mergePSME <- FALSE ## merge PSME dryPSME  -- 2026 not merging anymore
 if (mergeDMCPSME) {
   HVoutputPathMergedVegType <- file.path(simPaths$outputPath, "hypervolumes", "mergeDMCPSME")
   figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
