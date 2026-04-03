@@ -1055,18 +1055,18 @@ plotData[, vegTypeCN := factor(vegTypeCN, levels = factorLevs)]
 plot45 <- boxPlot(plotData, x = "vegTypeCN", y = "meanPatchS", logY = FALSE,
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
-                  titleLab = NULL, yLab = "Mean patch size (no. pixels)")
+                  titleLab = NULL, yLab = "Mean patch size")
 
 plot46 <- boxPlot(plotData, x = "vegTypeCN", y = "meanFreq", logY = FALSE,
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
-                  titleLab = NULL, yLab = "Mean fire interval (years)")
+                  titleLab = NULL, yLab = "Mean fire interval")
 
 ## fire severity
 plot47 <- boxPlot(plotData, x = "vegTypeCN", y = "meanSevPropB", logY = FALSE, 
                   fill = "scenario", xlabels = vegTypeCNLabels, xorder = x_order,
                   fillValues = scenColours, fillLabels = scenLabels,
-                  titleLab = NULL, yLab = "Mean fire severity\n(biomass lost, ton/ha)")
+                  titleLab = NULL, yLab = "Mean fire severity")
 ```
 
 ```{r plot&savePlots17, echo = FALSE}
@@ -1079,7 +1079,7 @@ plotSave <- ggarrange(plot45,
                       labels = "auto")
 ggsave(plot = plotSave,
        filename = file.path(figOutputPath, "results_fireAttrLandscape_boxplots.tiff"),
-       width = 10, height = 12, dpi = 300)
+       width = 13, height = 12, dpi = 300)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
 plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
