@@ -1212,7 +1212,7 @@ plotData2 <- plotData2[, list(avgMedian.FIObs = mean(median.FI, na.rm = TRUE)),
                        by = .(Cover.dendro)]
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
-plotData <- plotData2[plotData, on = "vegTypeCN"]
+plotData <- plotData2[plotData, on = "vegTypeCN", nomatch = NULL]
 
 if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(medianFreq)])) {
   stop("NAs detected")
