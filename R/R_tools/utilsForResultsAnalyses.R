@@ -176,6 +176,10 @@ ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, 
 summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels,
                         titleLab = "", subtitleLab = NULL, xLab = "", yLab = "",
                         fun.data = "mean_sd", x.text.angle = 0) {
+  colValues <- colValues[unique(data[[colour]])]
+  colLabels <- colLabels[unique(data[[colour]])]
+  xlabels <- xlabels[unique(data[[x]])]
+
   plotOut <- ggplot(data = data,
                     aes(x = !!sym(x), y = !!sym(y), colour = !!sym(colour))) +
     stat_summary(fun.data = fun.data, position = position_dodge(width = 0.8),
@@ -202,6 +206,10 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
                             obsData = NULL, yObs = NULL, xlabels,
                             colValues, colLabels, x.text.angle = 0, showMeans = TRUE,
                             titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
+  colValues <- colValues[unique(simData[[colSim]])]
+  colLabels <- colLabels[unique(simData[[colSim]])]
+  xlabels <- xlabels[unique(simData[[x]])]
+
   plotOut <- ggplot() +
     geom_violin(data = simData,
                 mapping = aes(x = !!sym(x), y = !!sym(ySim),
@@ -216,7 +224,7 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
   }
 
   if (!is.null(obsData)) {
-    if (class(simData[[x]]) != class(obsData[[x]])) {
+    if (any(class(simData[[x]]) != class(obsData[[x]]))) {
       message("class(simData[[x]]) != class(obsData[[x]]), will try to coherce the later")
       coherceFun <- paste0("as.", class(simData[[x]]), "(obsData[[x]])")
       obsData[[x]] <- eval(parse(text = coherceFun))
@@ -238,7 +246,7 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
   if (!is.null(xlabels)) {
     plotOut <- plotOut +
       if (is(simData[[x]], "numeric")) {
-        scale_x_manual(labels = xlabels)
+        scale_x_continuous(labels = xlabels)
       } else {
         scale_x_discrete(labels = xlabels)
       }
@@ -258,6 +266,10 @@ simObsDistsPlot <- function(simData, x, ySim, colSim,
 DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
                     fillValues, fillLabels, xFacet, labllr,
                     titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
+  fillValues <- fillValues[unique(data[[fill]])]
+  fillLabels <- fillLabels[unique(data[[fill]])]
+  xlabels <- xlabels[unique(data[[x]])]
+
   plotOut <- ggplot(data, aes(x = !!sym(x), y = !!sym(y), fill = !!sym(fill))) +
     geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
     geom_boxplot() +
@@ -285,7 +297,12 @@ DevPlot <- function(data, x, y, fill, xlabels, xorder = NULL,
 #' MAD plots of focal variables
 MADPlot <- function(data, x, y, colour, colValues, colLabels,
                     labllr, xlabels, xorder, xFacet = NULL, x.text.angle = 0,
-                    titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
+                    titleLab = "", subtitleLab = NULL, xLab = "", yLab = "", flipCoord = TRUE) {
+  colValues <- colValues[unique(data[[colour]])]
+  colLabels <- colLabels[unique(data[[colour]])]
+  xlabels <- xlabels[unique(data[[x]])]
+  xorder <- xorder[xorder %in% unique(data[[x]])] ## to avoid messing up the order
+
   plotOut <- ggplot(data, aes(x = !!sym(x), y = !!sym(y), colour = !!sym(colour), shape = !!sym(colour))) +
     stat_summary(fun.data = "mean_cl_boot", position = position_dodge(width = 0.5)) +
     scale_y_continuous(limits = c(0, max(data[[y]]))) +
@@ -296,8 +313,12 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted"),
           panel.grid.major.x = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
+
+  if (flipCoord) {
+    plotOut <- plotOut +
     coord_flip()
+    }
   if (!is.null(xFacet)) {
     plotOut <- plotOut +
       facet_grid(rows = xFacet, labeller = labllr)
@@ -309,6 +330,9 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
 #' Density plots of focal variables
 densityPlot <- function(data, x, fill, alpha, fillValues, fillLabels, alphaValues,
                         titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
+  fillValues <- fillValues[unique(data[[fill]])]
+  fillLabels <- fillLabels[unique(data[[fill]])]
+
   ggplot(data,
          aes(x = !!sym(x), fill = !!sym(fill), alpha = !!sym(alpha))) +
     geom_density(adjust = 1.5) +
@@ -324,13 +348,21 @@ densityPlot <- function(data, x, fill, alpha, fillValues, fillLabels, alphaValue
 
 #' Boxplots of focal variables
 boxPlot <- function(data, x, y, fill, xlabels, xorder, fillValues, fillLabels,
-                    titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
-  ggplot(data) +
+                    titleLab = "", logY = TRUE, subtitleLab = NULL, xLab = "", yLab = "") {
+
+  fillValues <- fillValues[unique(data[[fill]])]
+  fillLabels <- fillLabels[unique(data[[fill]])]
+  xlabels <- xlabels[unique(data[[x]])]
+
+  plotOut <- ggplot(data) +
     geom_boxplot(aes(x = "landscape", y = !!sym(y), fill = !!sym(fill)),
                  outlier.size = 0.5) +
     geom_boxplot(aes(x = !!sym(x), y = !!sym(y), fill = !!sym(fill)),
-                 outlier.size = 0.5) +
-    scale_y_log10() +
+                 outlier.size = 0.5)
+  if (logY) {
+    plotOut <- plotOut + scale_y_log10()
+  }
+  plotOut <- plotOut +
     scale_x_discrete(labels = xlabels, limits = xorder) +
     scale_fill_manual(values = fillValues, labels = fillLabels) +
     theme_pubr(base_size = 14, legend = "bottom") +
@@ -344,6 +376,10 @@ boxPlot <- function(data, x, y, fill, xlabels, xorder, fillValues, fillLabels,
 sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
                                 xFacet, xlabels, labllr, errorBar = FALSE,
                                 titleLab = "", subtitleLab = NULL, xLab = "", yLab = "") {
+  fillValues <- fillValues[unique(data[[fill]])]
+  fillLabels <- fillLabels[unique(data[[fill]])]
+  xlabels <- xlabels[unique(data[[x]])]
+
   plotOut <- ggplot(data, aes(x = !!sym(x), y = !!sym(y), fill = !!sym(fill)))
 
   if (errorBar) {
@@ -368,10 +404,12 @@ sppCompositionPlots <- function(data, x, y, fill, fillValues, fillLabels,
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = 45) +
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
-    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab) +
-    facet_grid(rows = xFacet,
-               labeller = labllr)
-
+    labs(title = titleLab, y = yLab, subtitle = subtitleLab, x = xLab)
+  if (!missing(xFacet)) {
+    plotOut <- plotOut +
+      facet_grid(rows = xFacet,
+                 labeller = labllr)
+  }
   plotOut
 }
 #' Hypervolume size boxplots
@@ -424,16 +462,99 @@ HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenari
   plotOut
 }
 
+#' Fire attributes ~ fire HV size scatterplots
+fireAttrPyroPlotFun <- function(data, x = "Volume", y = "Mean",
+                                colour = NULL, linetype = NULL,
+                                shape = NULL,
+                                xLab = "", yLab = "", titleLab = "",
+                                xFacet = NULL, yFacet = NULL, shapeLabels, linetypeValues,
+                                linetypeLabels, colValues, colLabels, labllr) {
+  ## checks
+  if (missing(colValues) != missing(colLabels)) {
+    stop("colValues and colLabels must both be provided, or none")
+  }
+  if (missing(linetypeValues) != missing(linetypeLabels)) {
+    stop("linetypeValues and linetypeLabels must both be provided, or none")
+  }
+  if (is.null(xFacet) != is.null(yFacet)) {
+    stop("xFacet and yFacet must both be NULL or not NULL")
+  }
+
+  aes_args <- list(
+    x = sym(x),
+    y = sym(y)
+  )
+
+  if (!is.null(colour)) {
+    aes_args$colour <- sym(colour)
+  }
+  if (!is.null(linetype)) {
+    aes_args$linetype <- sym(linetype)
+  }
+
+  if (!is.null(shape)) {
+    aes_args$shape <- sym(shape)
+  }
+
+  ggplot(data) +
+    geom_point(aes(!!!aes_args))
+
+  plotOut <- ggplot(data, aes(!!!aes_args)) +
+    geom_point(size = 2) +
+    stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE) +
+    geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
+    geom_vline(aes(xintercept = -Inf)) +
+    coord_cartesian(clip = "off") +
+    scale_x_continuous(label = scales::label_number(accuracy = 0.01)) +
+    theme_pubr(base_size = 14, margin = TRUE) +
+    theme(legend.box = "horizontal", strip.text.y = element_text(size = 12),
+          strip.background = element_blank(), strip.placement = "outside",
+          panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted"),
+          panel.spacing.x = unit(1.5, "line")) +
+    labs(x = xLab, y = yLab, title = titleLab)
+
+  if (!missing(shapeLabels)) {
+    plotOut <- plotOut +
+      scale_shape_discrete(labels = shapeLabels, name = "")
+  }
+
+  if (!missing(linetypeValues)) {
+    plotOut <- plotOut +
+      scale_linetype_manual(values = linetypeValues, labels = linetypeLabels)
+  }
+
+  if (!missing(colLabels)) {
+    plotOut <- plotOut +
+      scale_colour_manual(labels = colLabels, values = colValues, name = "")
+  }
+
+  if (!is.null(xFacet)) {
+    if (missing(labllr)) {
+      plotOut <- plotOut +
+        facet_grid(cols = vars(!!sym(xFacet)),
+                   rows = vars(!!sym(yFacet)),
+                   scales = "free", switch = "y")
+    } else {
+      plotOut <- plotOut +
+        facet_grid(cols = vars(!!sym(xFacet)),
+                   rows = vars(!!sym(yFacet)),
+                   scales = "free", switch = "y",
+                   labeller = labllr)
+    }
+  }
+  plotOut
+}
+
 #' Biodiversity ~ Pyrodiversity relationships plots
 #' I.e. veg HV size ~ fire HV size
 #' ... is passed to stat_smooth (example ...: method = "lm", formula = quote(y ~ poly(x, 2)),)
 plotBioPyroFun <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
-                                 linetype = "scenario", colour = "vegType",
-                                 yPred = "pred", ymin, ymax,
-                                 #shape = "scenario"
-                                 colourLabels, colourVals,
-                                 titleLab = "", xLab = "Pyrodiversity", yLab = "Forest diversity",
-                                 colourLab = "", ...) {
+                           linetype = "scenario", colour = "vegType",
+                           yPred = "pred", ymin, ymax,
+                           #shape = "scenario"
+                           colourLabels, colourVals,
+                           titleLab = "", xLab = "Pyrodiversity", yLab = "Forest diversity",
+                           colourLab = "", ...) {
   # old code, but here to remind of different formulae
   # if (all(plotData$vegType == "landscape")) {
   #   form <- quote(y ~ x)
@@ -453,9 +574,9 @@ plotBioPyroFun <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
   }
 
   plotOut <- ggplot(plotData,
-         aes(x = !!sym(x), colour = !!sym(colour)
-           #, shape = !!sym(shape), linetype = !!sym(linetype),
-         )) +
+                    aes(x = !!sym(x), colour = !!sym(colour)
+                        #, shape = !!sym(shape), linetype = !!sym(linetype),
+                    )) +
     geom_point(aes(y = !!sym(yPoints)))
 
   xLimits <- range(plotData[[x]])
