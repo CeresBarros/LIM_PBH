@@ -2,10 +2,6 @@
 ##  HYPERVOLUMES OF PYRODIVERSITY AND BIODIVERSITY
 ##  Analyses of results
 ## --------------------------------------------------
-if (paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1]) != "4.1") {
-  stop("Please install and run R v4.1")
-}
-
 if (Sys.which("make") == "") {
   stop("Please install and setup RTools 4.0")
 }

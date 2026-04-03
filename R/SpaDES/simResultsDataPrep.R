@@ -10,6 +10,10 @@ if (!exists("runPrepResultsModule")) {
 }
 
 ## load one of the preSim lists to get maps, species traits and end(sim)
+if (paste0(version$major, ".", strsplit(version$minor, "[.]")[[1]][1]) != "4.1") {
+  warning("Simulations were run and saved with R v4.1 -- attempting to load simList with qread")
+  preSimList <- qs::qread(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+} else
 preSimList <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
 
 speciesTraits <- preSimList$species
