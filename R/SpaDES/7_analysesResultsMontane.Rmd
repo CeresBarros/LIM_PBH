@@ -1240,8 +1240,9 @@ plot44 <- ggplot(plotData,
 x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
 plot44.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     colour = "scenario", colValues = scenColours, colLabels = scenLabels,
-                    labllr, xlabels = vegTypeCNLabels, xorder = x_order,
-                    x.text.angle = 45, titleLab = "Mean abs. deviation from observed median fire intervals", 
+                    labllr, xlabels = vegTypeCNLabels, xorder = rev(x_order),
+                    x.text.angle = 45, flipCoord = FALSE,
+                    titleLab = "Mean abs. deviation from observed median fire intervals", 
                     yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
 
 ```
@@ -1383,10 +1384,10 @@ ggsave(plot = plot47, filename = file.path(figOutputPath, "results_fireAttrLands
 
 plotSave <- ggarrange(fireAttrPyroVegTypesPlot,
                       fireAttrPyroLandscapePlot + labs(y = "", title = "") + theme(strip.text.y = element_blank()),
-                      ncol = 2, nrow = 1, widths = c(1, 0.2), labels = "auto", label.y = 0.95,
+                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsPyro.tiff"),
-       width = 20, height = 7)
+       width = 16, height = 10)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$|fireAttr.*Plot", ls(), value = TRUE)
 plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
@@ -1410,7 +1411,7 @@ plotData <- unique(plotData)
 ## sum across pixels per vegType
 plotData[, BiomassBySpecies := sum(B), 
          by = .(scenario, rep, year, vegTypeCN, speciesCode)]
-plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
+# plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
 ## no. pixels with a veg type, per scenario/rep/year, then average for plot
 plotData[noFires > 0, noPixels := length(pixelIndex), by = .(scenario, rep, year, vegTypeCN)]
@@ -1419,24 +1420,29 @@ plotData[noFires > 0, noPixels := round(mean(noPixels)), by = .(scenario, vegTyp
 ## SPECIES BIOMASS
 ## cross pixel sums
 ## just mean across reps and scaled from 0-1
+scenLabels2 <- as.character(scenLabels)
+names(scenLabels2) <- names(scenLabels)
 plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
                              x = "vegTypeCN", y = "BiomassBySpecies",
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
-                             xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                             titleLab = "Species relative biomass", yLab = "Relative biomass")
+                             xlabels = vegTypeCNLabels,
+                             labllr = as_labeller(scenLabels2, label_parsed),
+                             titleLab = "Species biomass -- landscape level", yLab = "Relative biomass")
 plot7 <- plot7 + 
-  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, speciesCode, noPixels)]),
-            aes(x = vegTypeCN, y = 1.10, label = noPixels))
+  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
+            aes(x = vegTypeCN, y = 1.10, label = noPixels, fill = vegTypeCN))  ## fill is here to avoid an error
 
 ## with mean and SD
 plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
                                x = "vegTypeCN", y = "BiomassBySpecies",
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
+                               xlabels = vegTypeCNLabels, 
+                               labllr = as_labeller(scenLabels2, label_parsed),
                                errorBar = TRUE,
-                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                               titleLab = "Species biomass", yLab = "Total biomass")
+                               titleLab = "Species biomass -- landscape level", 
+                               yLab = "Biomass (ton/ha)")
 
 ## pixel averages
 ## just mean across reps and scaled from 0-1
@@ -1444,18 +1450,20 @@ plot7.3 <- sppCompositionPlots(data = plotData[noFires > 0],
                                x = "vegTypeCN", y = "B",
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
-                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                               titleLab = "Species biomass", yLab = "Relative biomass",
-                               subtitleLab = "by species, within pixels")
+                               xlabels = vegTypeCNLabels, 
+                               labllr = as_labeller(scenLabels2, label_parsed),
+                               titleLab = "Species biomass -- pixel level", yLab = "Relative biomass",
+                               subtitleLab = "")
 
 ## with mean and SD
 plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
                                x = "vegTypeCN", y = "B", errorBar = TRUE,
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
-                               xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                               titleLab = "Species biomass", yLab = "Total biomass",
-                               subtitleLab = "by species, within pixels")
+                               xlabels = vegTypeCNLabels, 
+                               labllr = as_labeller(scenLabels2, label_parsed),
+                               titleLab = "Species biomass -- pixel level", yLab = "Biomass (ton/ha)",
+                               subtitleLab = "")
 
 ## SPECIES BIOMASS-WEIGHTED AGE
 ## with mean and SD
@@ -1463,9 +1471,10 @@ plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
                              x = "vegTypeCN", y = "avgAgeBySppSim", errorBar = TRUE,
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
-                             xlabels = vegTypeCNLabels, labllr = labeller(scenario = label_parsed),
-                             titleLab = "Mean weighted age", yLab = "Biomass-weighted age",
-                             subtitleLab = "by species, within pixels")
+                             xlabels = vegTypeCNLabels, labllr = as_labeller(scenLabels2, label_parsed),
+                             titleLab = "Species age -- pixel level", 
+                             yLab = "Biomass-weighted age",
+                             subtitleLab = "")
 
 ```
 
