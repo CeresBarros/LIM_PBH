@@ -22,9 +22,13 @@ if (exists("allSpeciesCodes")) {
   speciesLabels[names(speciesLabels) == "Popu_sp"] <- "Populus/Betula spp"
   speciesLabels[names(speciesLabels) == "Pinu_sp"] <- "Pinus spp"
   speciesLabels[names(speciesLabels) == "Abie_sp"] <- "Abies spp"
+  speciesLabels <- sort(speciesLabels)
+  speciesLabels["landscape"] <- "landscape"
+
 
   speciesColours <- levels(preSimList$vegTypeMap)[[1]]$colors
   names(speciesColours) <- levels(preSimList$vegTypeMap)[[1]]$VALUE
+  speciesColours["landscape"] <- "#006400"
 }
 
 ## make vegType labels/colours

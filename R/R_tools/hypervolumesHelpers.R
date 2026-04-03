@@ -238,16 +238,16 @@ plotHVs3DWrapper <- function(vegType, vegHVPCAscores, pixelIndexDT, vegTypeCNLab
   tempData <- tempData[tempPixID, on = .(rep, pixelIndex)]
 
   if (!is.null(userTags)) {
-    userTags <- c(userTags, "hypervolume", yearToMatch, scen)
+    userTags <- unique(c(userTags, "hypervolume", grepStrVegType, yearToMatch, scen))
   } else {
-    userTags <- c("hypervolume", paste(unique(tempData$vegTypeCN), collapse = "_"), yearToMatch, scen)
+    userTags <- unique(c("hypervolume", grepStrVegType, yearToMatch, scen))
   }
 
   cacheObj <- digest::digest(tempData, algo = "xxhash64")
 
   HV <- Cache(hypervolume::hypervolume,
               data = tempData[, ..colsHV],
-              name = paste(scen, unique(as.character(tempData$vegTypeCN)), sep = "_"),
+              name = paste(scen, grepStrVegType, sep = "_"),
               method = "svm",
               svm.gamma = 0.01,
               .cacheExtra = cacheObj,
