@@ -1348,36 +1348,36 @@ plotData <- plotData[fireAttr %in% c("meanFreq", "meanSevPropB", "meanPatchS")]
 plotData[, logVolume := log(Volume)]
 plotData[, logMean := log(Mean)]
 
-fireAttrPyroPlotFun <- function(plotData) {
-  ggplot(plotData,
-         aes(x = log(Volume+1), y = log(Mean + 1),
-             colour = vegType, linetype = scenario,
-             shape = scenario)) +
-    geom_point(size = 2) +
-    stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE) +
-    geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
-    geom_vline(aes(xintercept = -Inf)) +
-    coord_cartesian(clip = "off") +
-    scale_x_continuous(label = scales::label_number(accuracy = 0.01)) +
-    scale_shape_discrete(labels = scenLabels, name = "") +
-    scale_linetype_manual(values = scenLinetype, labels = scenLabels) +
-    scale_colour_manual(labels = vegTypeCNLabels, values = vegTypeCNColours, name = "") +
-    theme_pubr(base_size = 12, margin = TRUE) +
-    theme(legend.box = "horizontal", strip.text.y = element_text(size = 12),
-          strip.background = element_blank(), strip.placement = "outside",
-          panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
-          panel.spacing.x = unit(1.5, "line")) +
-    labs(x = "Pyrodiversity\n(log-hypervolume size)", y = "", title = "") +
-    facet_grid(fireAttr ~ vegType,
-               scales = "free", switch = "y",
-               labeller = labeller(vegType = vegTypeCNLabels,
-                                   fireAttr = c("medianPatchS" = "Median patch size\n(no. pixels)",
-                                                "medianFreq" = "Median fire interval",
-                                                "medianSevB" = "Median fire severity\n(biomass lost, ton/ha)")))
-}
+scenLabels2 <- as.character(scenLabels)
+names(scenLabels2) <- names(scenLabels)
 
-fireAttrPyroLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"])
-fireAttrPyroVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"])
+facetLabllr <- labeller(scenario =  as_labeller(scenLabels2, label_parsed),
+                        fireAttr = c("meanPatchS" = "Mean patch size\n",
+                                     "meanFreq" = "Mean fire interval",
+                                     "meanSevPropB" = "Mean fire severity\n"))
+
+fireAttrPyroLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"],  
+                                                 x = "Volume", y = "logMean",
+                                                 colour = "vegType",
+                                                 xFacet = "scenario", yFacet = "fireAttr",
+                                                 # shapeLabels = scenLabels, 
+                                                 # linetypeValues = scenLinetype,
+                                                 # linetypeLabels = scenLabels, 
+                                                 colValues = vegTypeCNColours, 
+                                                 colLabels = vegTypeCNLabels,
+                                                 xLab = "Pyrodiversity",
+                                                 labllr = facetLabllr)
+fireAttrPyroVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"],
+                                                x = "Volume", y = "logMean",
+                                                colour = "vegType",
+                                                xFacet = "scenario", yFacet = "fireAttr",
+                                                # shapeLabels = scenLabels, 
+                                                # linetypeValues = scenLinetype,
+                                                # linetypeLabels = scenLabels, 
+                                                colValues = vegTypeCNColours, 
+                                                colLabels = vegTypeCNLabels, 
+                                                xLab = "Pyrodiversity",
+                                                labllr = facetLabllr)
 
 ```
 
