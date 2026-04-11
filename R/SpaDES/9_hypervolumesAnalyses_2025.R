@@ -2,6 +2,7 @@
 ##  HYPERVOLUMES OF PYRODIVERSITY AND BIODIVERSITY
 ##  Analyses of results
 ## --------------------------------------------------
+
 if (Sys.which("make") == "") {
   stop("Please install and setup RTools 4.0")
 }
@@ -127,7 +128,7 @@ source("R/R_tools/prepHVData.R")
 source("R/R_tools/plotLabels&Cols.R")
 rm(preSimList)  ## not needed anymore
 
-## ------------------------------------------------------------------------
+
 ## STATISTICS: EFFECT OF SCENARIO ON PYRODIVERSITY  -----------------------
 ## make separate datatable for stats so that we can change contrasts
 modelData <- allHVData[year == max(yearSubset) & HVtype == "fireHV",
@@ -145,7 +146,7 @@ if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(uni
   stop("Missing replicates")
 }
 
-## Landscape level ------
+### Landscape level ------
 fireHVVolumeLandscape.lm <- lm(Volume ~ scenario, modelData[vegType == "landscape"])
 ## the data seems very dispersed - some reps are extreme outliers - logging helps -- Jul 14 2022 this is no longer true with 4000 years
 hist(modelData[vegType == "landscape", Volume], breaks = 1000)
@@ -196,7 +197,7 @@ cat("\n*********************\n")
 emmeans(fireHVVolumeLandscape.lm, specs = "scenario")
 sink()
 
-## vegType level --------
+### vegType level --------
 fireHVVolumeVegTypes.lm <- lm(Volume ~ scenario * vegType, modelData[vegType != "landscape"])
 ## same issue as before
 fireHVVolumeVegTypes.lm2 <- lm(logVolume ~ scenario * vegType, modelData[vegType != "landscape"])
@@ -258,7 +259,8 @@ sink()
 
 ## ------------------------------------------------------------------------
 ## STATISTICS: EFFECT OF SCENARIO ON BIODIVERSITY  ------------------------
-## how did scenario affect overall diversity at the end of simulation? ----
+
+### how did scenario affect overall diversity at the end of simulation? ----
 ## (i.e. HV size)
 modelData <- allHVData[year == max(yearSubset) & HVtype == "vegHV",
                        .(HVtype, HV_noPM, HV_PM, Intersection, MinDist, CentroidDist,
@@ -274,7 +276,7 @@ if (isFALSE(nrow(modelData[, unique(repHV), by = .(vegType, rep)]) == length(uni
   stop("Missing replicates")
 }
 
-## Landscape level ------
+### Landscape level ------
 modelData2 <- modelData[vegType == "landscape"]
 ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
 ## when trying to get prediction intervals
@@ -329,7 +331,7 @@ cat("\n*********************\n")
 emmeans(vegHVVolumeLandscape.lm2, specs = "scenario", data = modelData2)
 sink()
 
-## vegType level --------
+### vegType level --------
 modelData2 <- modelData[vegType != "landscape"]
 ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
 ## when trying to get prediction intervals
@@ -385,9 +387,9 @@ emmeans(vegHVVolumeVegTypes.gls2, pairwise ~ scenario | vegType, adjust = "tukey
 cat("\n*********************\n")
 sink()
 
-## ------------------------------------------------------------------------
-## How much did communities change in time? ---------------------------------------
-## as in Barros et al 2016, calculate the prop overlap
+### ------------------------------------------------------------------------
+### How much did communities change in time? ---------------------------------------
+### as in Barros et al 2016, calculate the prop overlap
 if (useFirstLastYear) {
   modelData <- allHVData[HVtype == "vegHV" & compare == paste(min(yearSubset), max(yearSubset), sep = "_"),
                          .(overlap, MinDist, CentroidDist,
@@ -476,7 +478,7 @@ modelData2 <- modelData[vegType == "landscape"]
 cols <- names(modelData2)
 modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
 
-## Landscape level ------
+### Landscape level ------
 pyroVSbiodiversityLandscape.lm <- lm(vegHV ~ fireHV*scenario, data = modelData2)
 ## the data seems very dispersed for fire HVs - some reps are extreme outliers - logging helps -- no longer true Nov 2025
 hist(modelData[vegType == "landscape", fireHV], breaks = 1000)
@@ -668,7 +670,7 @@ emtrends(pyroVSbiodiversityLandscape.lm2, specs = c("scenario"),
          var = "logFireHV", data = modelData2)
 sink()
 
-## vegType level --------
+### vegType level --------
 modelData2 <- modelData[vegType != "landscape"]
 ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
 ## when trying to get prediction intervals
@@ -786,8 +788,9 @@ emtrends(pyroVSbiodiversityVegTypes.gls, pairwise ~ scenario | vegType,
 sink()
 
 ## PLOTS: EFFECT OF SCENARIO ON PYRODIVERSITY AND BIODIVERSITY ----------------------
-## how does scenario affect hypervolume sizes at the end of the simulation?
-## general plot
+
+### how does scenario affect hypervolume sizes at the end of the simulation?
+### general plot
 
 ## reorder vegType for plotting
 allHVData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
@@ -872,7 +875,7 @@ if (useFirstLastYear) {
   ggsave(plot = HVvolumeVegTypesStartPlot, filename = file.path(figOutputPath, "HVVolumesVegStart.png"),
          width = 7, height = 5, bg = "white")
 
-  ## How much did communities change in time? ---------------------------------------
+  ### How much did communities change in time? ---------------------------------------
   plotData <- allHVData[HVtype == "vegHV" & compare == paste(min(yearSubset), max(yearSubset), sep = "_"),
                         .(overlap, MinDist, CentroidDist, rep, repHV, vegType, scenario)]
 

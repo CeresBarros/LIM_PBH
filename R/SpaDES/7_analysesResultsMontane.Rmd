@@ -533,8 +533,8 @@ rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
-### Median (absolute) deviations and quantile deviations of simulated ages by stand type
-(deviations from median, MedianAD, & quantile deviations - 50, 75, 95%)
+### Mean (absolute) deviations and quantile deviations of simulated ages by stand type
+(deviations from observed median & quantile - 50, 75, 95%)
 
 Forest types are defined for a sample of years across the quasi equilibrium period.
 Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
@@ -701,8 +701,8 @@ rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
-### Median (absolute) deviations and quantile deviations of simulated ages by species
-(deviations from median, MedianAD, & quantile deviations - 50, 75, 95%)
+### Mean (absolute) deviations and quantile deviations of simulated ages by species
+(deviations from observed median & quantile - 50, 75, 95%)
 
 ```{r simVsObsAgesDif2, cache = FALSE}
 ## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
