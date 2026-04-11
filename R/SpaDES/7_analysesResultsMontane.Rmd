@@ -621,9 +621,9 @@ plotData <- plotData[!is.na(quant50StandAgeObs)]
 if (any(is.na(plotData))) stop("Something is wrong.")
 
 ## this mean makes no sense. there should be only one value this is simply a deviation.
-plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50StandAge - quant50StandAgeObs)),
-                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75StandAge - quant75StandAgeObs)),
-                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95StandAge - quant95StandAgeObs))),
+plotData2 <- plotData[, list(devSimObsQuant50 = quant50StandAge - quant50StandAgeObs,
+                             devSimObsQuant75 = quant75StandAge - quant75StandAgeObs,
+                             devSimObsQuant95 = quant95StandAge - quant95StandAgeObs),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
 
@@ -640,9 +640,9 @@ plot32.3 <- ggplot(plotData2[firePresAbs == "1"],
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
                size = 0.7) +
-  scale_x_discrete(labels = c("meanAbsDevSimObsQuant50" = "50%", 
-                              "meanAbsDevSimObsQuant75" = "75%", 
-                              "meanAbsDevSimObsQuant95" = "95%")) +
+  scale_x_discrete(labels = c("devSimObsQuant50" = "50%", 
+                              "devSimObsQuant75" = "75%", 
+                              "devSimObsQuant95" = "95%")) +
   scale_shape_discrete(labels = scenLabels, name = "") +
   scale_color_discrete(labels = scenLabels, name = "") +
   theme_pubr(base_size = 16, legend = "bottom") +
@@ -667,9 +667,8 @@ ggsave(plot = plot32.2 + theme(legend.position = "right"),
        width = 10, height = 5)
 plot32.3
 ggsave(plot = plot32.3 + theme(legend.position = "right"),
-       filename = file.path(figOutputPath, "results_MADquantVegTypeCNs.tiff"),
+       filename = file.path(figOutputPath, "results_DIFquantVegTypeCNs.tiff"),
        width = 10, height = 6)
-
 
 plotSave <- plot_grid(plot29.2 + theme(legend.position = "right", plot.title = element_blank()),
                       plot32.2 + theme(legend.position = "right", plot.title = element_blank()),
@@ -684,7 +683,7 @@ plotSave <- plot_grid(plot29.2 + theme(legend.position = "right", plot.title = e
                       labels = c("a", "b"), label_size = 20,
                       nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_DIFquant_VegTypeCN.tiff"),
        width = 10, height = 10)
 
 plotSave <- plot_grid(plot29.3 + theme(legend.position = "right", plot.title = element_blank(), plot.subtitle = element_blank()),
@@ -692,7 +691,7 @@ plotSave <- plot_grid(plot29.3 + theme(legend.position = "right", plot.title = e
                       labels = c("a", "b"), label_size = 20,
                       nrow = 2, axis = "lr", align = "v")
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_VegTypeCN2.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_DIFquant_VegTypeCN2.tiff"),
        width = 10, height = 10)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
@@ -787,9 +786,9 @@ plotData <- plotData[!is.na(quant50SppAgeObs)]
 
 if (any(is.na(plotData))) stop("Something is wrong.")
 
-plotData2 <- plotData[, list(meanAbsDevSimObsQuant50 = 1/.N * sum(abs(quant50SppAge - quant50SppAgeObs)),
-                             meanAbsDevSimObsQuant75 = 1/.N * sum(abs(quant75SppAge - quant75SppAgeObs)),
-                             meanAbsDevSimObsQuant95 = 1/.N * sum(abs(quant95SppAge - quant95SppAgeObs))),
+plotData2 <- plotData[, list(devSimObsQuant50 = quant50SppAge - quant50SppAgeObs,
+                             devSimObsQuant75 = quant75SppAge - quant75SppAgeObs,
+                             devSimObsQuant95 = quant95SppAge - quant95SppAgeObs),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
 
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
@@ -805,9 +804,9 @@ plot43.3 <- ggplot(plotData2[firePresAbs == "1"],
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   stat_summary(fun.data = "mean_ci", position = position_dodge(width = 0.8),
                size = 1) +
-  scale_x_discrete(labels = c("meanAbsDevSimObsQuant50" = "50%", 
-                              "meanAbsDevSimObsQuant75" = "75%", 
-                              "meanAbsDevSimObsQuant95" = "95%")) +
+  scale_x_discrete(labels = c("devSimObsQuant50" = "50%", 
+                              "devSimObsQuant75" = "75%", 
+                              "devSimObsQuant95" = "95%")) +
   scale_shape_discrete(labels = scenLabels, name = "") +
   scale_color_discrete(labels = scenLabels, name = "") +
   theme_pubr(base_size = 16, legend = "bottom") +
@@ -832,7 +831,7 @@ ggsave(plot = plot43.2 + theme(legend.position = "right"),
 
 plot43.3
 ggsave(plot = plot43.3 + theme(legend.position = "right"),
-       filename = file.path(figOutputPath, "results_MADquantSpecies.tiff"),
+       filename = file.path(figOutputPath, "results_DIFquantSpecies.tiff"),
        width = 10, height = 5)
 
 plotSave <- plot_grid(plot_grid(plot43 + theme(plot.title = element_blank(), legend.position = "none"),
@@ -865,9 +864,8 @@ plotSave <- plot_grid(plot29 + theme(legend.position = "right",
                       labels = c("a", "b"), label_size = 20,
                       nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_DIFquant_Species.tiff"),
        width = 10, height = 10)
-
 
 plotSave <- plot_grid(plot29.1 + theme(legend.position = "right",
                                        plot.title = element_blank(),
@@ -880,7 +878,7 @@ plotSave <- plot_grid(plot29.1 + theme(legend.position = "right",
                       labels = c("a", "b"), label_size = 20,
                       nrow = 2, rel_heights = c(0.8, 1), axis = "l", align = "h")
 plotSave
-ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_MADquant_Species2.tiff"),
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_ageSimVsObsTest_DIFquant_Species2.tiff"),
        width = 10, height = 10)
 
 # rm(plot43, plot43.2, plotTest1.2)
