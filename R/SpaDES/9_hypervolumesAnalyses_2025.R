@@ -1030,3 +1030,50 @@ plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivLandscapePlotPM + 
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPM.png"),
        width = 14, height = 7, bg = "white")
 
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM +
+                        facet_wrap(~ vegType, scales = "free", labeller = as_labeller(vegTypeCNLabels)) +
+                        scale_x_continuous(),  ## free the scale,
+                      pyroVSbioDivLandscapePlotnoPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.4), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitynoPM2.png"),
+       width = 14, height = 7, bg = "white")
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM +
+                        facet_wrap(~ vegType, scales = "free", labeller = as_labeller(vegTypeCNLabels)) +
+                        scale_x_continuous(),  ## free the scale,
+                      pyroVSbioDivLandscapePlotPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.4), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPM2.png"),
+       width = 14, height = 7, bg = "white")
+
+
+
+### scenarios as colours; vegTypes in facets
+scenColours2 <- scenColours
+names(scenColours2) <- paste0("HV_", names(scenColours2))
+pyroVSbioDivVegTypesPlot <- plotBioPyroFun(plotData2[vegType != "landscape"],
+                                               # yPoints = "pred",  ## only to that preds match the smoother line
+                                               ymin = "lwr", ymax = "upr", colour = "scenario",
+                                               colourLabels = scenLabels, ## needed for guides
+                                               colourVals = scenColours2,  ## needed for guides
+                                               titleLab = "") +
+  facet_wrap(~ vegType, scales = "free", labeller = as_labeller(vegTypeCNLabels)) +
+  scale_x_continuous()  ## free the scale
+
+pyroVSbioDivLandscapePlot <- plotBioPyroFun(plotData2[vegType == "landscape"],
+                                           # yPoints = "pred",  ## only to that preds match the smoother line
+                                           ymin = "lwr", ymax = "upr", colour = "scenario",
+                                           colourLabels = scenLabels, ## needed for guides
+                                           colourVals = scenColours2,  ## needed for guides
+                                           titleLab = "")
+
+
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlot,
+                      pyroVSbioDivLandscapePlot + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.4), labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityAll.png"),
+       width = 14, height = 7, bg = "white")
