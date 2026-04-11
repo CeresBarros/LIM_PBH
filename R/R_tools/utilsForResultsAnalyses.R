@@ -569,6 +569,11 @@ plotBioPyroFun <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
     stop("Provide both colourLabels and colourVals")
   }
 
+  if (!missing(colourLabels)) {
+    colourLabels <- colourLabels[names(colourLabels) %in% plotData[[colour]]]
+    colourVals <- colourVals[names(colourVals) %in% plotData[[colour]]]
+  }
+
   if (missing(ymin) != missing(ymax)) {
     stop("Provide both ymin and ymax")
   }
@@ -614,8 +619,6 @@ plotBioPyroFun <- function(plotData, x = "logFireHV", yPoints = "logVegHV",
     labs(x = xLab, y = yLab, title = titleLab, colour = colourLab, fill = "",
          #linetype = linetypeLab, shape = shapeLab
     ) +
-    # facet_wrap( ~ vegType, labeller = labeller(vegType = vegTypeCNLabels),
-    #             scales = "free") +
     guides(linetype = guide_legend(override.aes = list(colour = "black")),
            colour = guide_legend(override.aes = list(fill = colourVals[names(colourLabels)])))
 
