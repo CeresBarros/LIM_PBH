@@ -94,7 +94,7 @@ newData[, ageAtMinDBH := round(exp(predict(modAgeDBH3, newdata = newData)), 0)]
 newData <- newData[complete.cases(newData)]
 
 ## check -- are predictions larger than the ages of the smallest trees? no, but only IF 0,0 data is added and log-log model is used
-ageDataCN[, Reconstructed.age[which(DBH.cm == min(DBH.cm, na.rm = TRUE))], by = speciesCode]
+# ageDataCN[, Reconstructed.age[which(DBH.cm == min(DBH.cm, na.rm = TRUE))], by = speciesCode]
 
 ageDataCN <- newData[, .(speciesCode, ageAtMinDBH)][ageDataCN, on = .(speciesCode)]
 
