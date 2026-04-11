@@ -981,9 +981,12 @@ setnames(plotData2, "fit", "pred")
 # plotData3 <- plotData[plotData2, on = .(rep, scenario, vegType, logFireHV)]
 
 ## see influential replicates -- the same replicate is not influential across all veg types.
-ggplot(plotData3, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
-  geom_point() +
-  facet_grid(scenario ~ vegType, scales = "free")
+# ggplot(plotData3, aes(x = logFireHV, y = logVegHV, colour = as.factor(rep))) +
+  # geom_point() +
+  # facet_grid(scenario ~ vegType, scales = "free")
+
+
+### VegTypes as colours; scenarios in separate plots
 
 ## the actual model is a gls, but because stat_smooth fits a separate model for each level,
 ## this is okay for visualisation.
@@ -994,7 +997,7 @@ pyroVSbioDivVegTypesPlotnoPM <- plotBioPyroFun(plotData2[vegType != "landscape" 
                                                      colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) != "landscape"], ## needed for guides
                                                      colourVals = vegTypeCNColours[names(vegTypeCNColours) != "landscape"],  ## needed for guides
                                                      titleLab = scenLabels["noPM"])
-pyroVSbioDivVegLandscapePlotnoPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_noPM"],
+pyroVSbioDivLandscapePlotnoPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_noPM"],
                                                          # yPoints = "pred",  ## only to that preds match the smoother line
                                                          ymin = "lwr", ymax = "upr",
                                                          colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) == "landscape"], ## needed for guides
@@ -1008,21 +1011,21 @@ pyroVSbioDivVegTypesPlotPM <- plotBioPyroFun(plotData2[vegType != "landscape" & 
                                                    colourVals = vegTypeCNColours[names(vegTypeCNColours) != "landscape"],  ## needed for guides
                                                    titleLab = scenLabels["PM"])
 
-pyroVSbioDivVegLandscapePlotPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_PM"],
+pyroVSbioDivLandscapePlotPM <- plotBioPyroFun(plotData2[vegType == "landscape" & scenario == "HV_PM"],
                                                        # yPoints = "pred",  ## only to that preds match the smoother line
                                                        ymin = "lwr", ymax = "upr",
                                                        colourLabels = vegTypeCNLabels[names(vegTypeCNLabels) == "landscape"], ## needed for guides
                                                        colourVals = vegTypeCNColours[names(vegTypeCNColours) == "landscape"],  ## needed for guides
                                                        titleLab = scenLabels["PM"])
 
-plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivVegLandscapePlotnoPM + labs(y = "", title = ""),
-                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotnoPM, pyroVSbioDivLandscapePlotnoPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.4), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversitynoPM.png"),
        width = 14, height = 7, bg = "white")
 
-plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivVegLandscapePlotPM + labs(y = "", title = ""),
-                      ncol = 2, nrow = 1, widths = c(1, 0.6), labels = "auto", label.y = 0.95,
+plotSave <- ggarrange(pyroVSbioDivVegTypesPlotPM, pyroVSbioDivLandscapePlotPM + labs(y = "", title = ""),
+                      ncol = 2, nrow = 1, widths = c(1, 0.4), labels = "auto", label.y = 0.95,
                       common.legend = TRUE, legend = "bottom")
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "pyroVsbiodiversityPM.png"),
        width = 14, height = 7, bg = "white")
