@@ -81,7 +81,7 @@ if (grepl("for-cast|dc709f2508f1|45eafed436c8",
 
 
 ## path to figure folder and cache folder
-figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis", "Montane")
+figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis")
 HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 # bw.outputPath <- file.path(HVoutputPath, "bwTest")
 
@@ -89,11 +89,11 @@ HVoutputPath <- file.path(simPaths$outputPath, "hypervolumes")
 mergeDMCPSME <- FALSE  ## merge DMCPSME PSME dryPSME
 mergePSME <- FALSE ## merge PSME dryPSME
 if (mergeDMCPSME) {
-  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergeDMCPSME")
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/mergeDMCPSME")
   HVoutputPath <- file.path(HVoutputPath, "mergeDMCPSME")
 }
 if (mergePSME) {
-  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/Montane/mergePSME")
+  figOutputPath <- file.path(simPaths$outputPath, "figuresAnalysis/mergePSME")
   HVoutputPath <- file.path(HVoutputPath, "mergePSME")
 }
 dir.create(figOutputPath, recursive = TRUE)
