@@ -944,7 +944,7 @@ plotData[, logFireHVcenter := scale(logFireHV, center = TRUE, scale = FALSE),
 lmPreds <- predict(pyroVSbiodiversityLandscape.lm2,
                    # newdata = plotData2[vegType == "landscape"],
                    se.fit = TRUE, interval = "confidence", type = "response")
-## here
+
 if (paste(version$major, version$minor, sep = ".") < "4.4.0") {
   stop("marginaleffecs::predictions needs R version >= 4.4.0")
 } else {
