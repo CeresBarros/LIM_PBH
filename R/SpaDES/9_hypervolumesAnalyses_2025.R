@@ -948,11 +948,24 @@ lmPreds <- predict(pyroVSbiodiversityLandscape.lm2,
 if (paste(version$major, version$minor, sep = ".") < "4.4.0") {
   stop("marginaleffecs::predictions needs R version >= 4.4.0")
 } else {
-  # plotData3 <- plotData2[vegType != "landscape"]
-  # plotData3[, vegType := droplevels(vegType)]
-  glsPreds <- predictions(pyroVSbiodiversityVegTypes.gls, ## can't access model data, but this is the same
+  ## make sure modelData is the same -- recommended in ?predictions
+  modelData <- allHVData[year == max(yearSubset),
+                         .(HVtype, HV_noPM, HV_PM, rep, repHV, vegType)]
+  modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
+                               variable.name = "scenario", value.name = "Volume")
+
+  modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
+  modelData[, `:=`(logFireHV = log(fireHV),
+                   logVegHV = log(vegHV))]
+  modelData2 <- modelData[vegType != "landscape"]
+  ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
+  ## when trying to get prediction intervals
+  cols <- names(modelData2)
+  modelData2[, (cols) := lapply(.SD, function(x) {if (is.factor(x)) droplevels(x) else x})]
+
+  glsPreds <- predictions(pyroVSbiodiversityVegTypes.gls,
                           # newdata = plotData3,
-                          vcov = TRUE, by = FALSE, type = "response")
+                          vcov = TRUE, by = FALSE, type = "lp")
 }
 
 plotData2 <- rbind(
