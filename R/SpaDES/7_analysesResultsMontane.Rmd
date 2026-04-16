@@ -415,6 +415,13 @@ plotData3 <- copy(plotData2)
 plotData3[, speciesCode := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
 
+## we need to subset the data to unique values of the following columns
+## since keeping raw cohort ages will create duplicate median species cohort ages.
+cols <- c("scenario", "rep", "year", "speciesCode", "firePresAbs", "pixelIndex", "sppAgeSim", "Reconstructed.age")
+plotData2 <- unique(plotData[, ..cols])
+
+plotData[, rawDevsSimObs := standAgeSim - avgAgeStandObs]
+
 ## this plot is used later, so the data.table must be a copy
 plotData$speciesCode <- factor(plotData$speciesCode, levels = names(speciesLabels), ordered = TRUE)
 plotData2$speciesCode <- factor(plotData2$speciesCode, levels = names(speciesLabels), ordered = TRUE)
@@ -501,6 +508,11 @@ plotData2 <- rbind(plotData2, plotData3)
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
+## we need to subset the data to unique values of the following columns
+## since keeping raw cohort ages will create duplicate median species cohort ages.
+cols <- c("scenario", "rep", "year", "vegTypeCN", "firePresAbs", "pixelIndex", "standAgeSim", "Stand.age.3")
+plotData <- unique(plotData[, ..cols])
+
 plotData$vegTypeCN <- factor(plotData$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
 plotData2$vegTypeCN <- factor(plotData2$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
 plot29.2 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "standAgeSim",
@@ -568,11 +580,15 @@ options(opts)
 
 plotData[, speciesCode := NULL]
 plotData <- plotData[!is.na(avgAgeStandObs)]
-plotData <- unique(plotData)
 
-plotData[, rawDevsSimObs := standAgeSim - avgAgeStandObs,
-         by = .(scenario, rep, vegTypeCN, firePresAbs)]
+## we need to subset the data to unique values of the following columns
+## since keeping raw cohort ages will create duplicate median species cohort ages.
+cols <- c("scenario", "rep", "year", "vegTypeCN", "firePresAbs", "pixelIndex", "standAgeSim", "avgAgeStandObs")
+plotData <- unique(plotData[, ..cols])
 
+plotData[, rawDevsSimObs := standAgeSim - avgAgeStandObs]
+
+## MADs for age are no longer analysed -- note that here 'years' are dealtin the same way as pixels
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeStandObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
@@ -597,10 +613,10 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
 ## forest-type-level differences between simulated and observed upper quantiles
 
 ## we can use sppAgeSim, because it's at pixel-level.
-plotData <- plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
-                            quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
-                            quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
-                     by = .(scenario, rep, firePresAbs, vegTypeCN)]
+plotData <- unique(plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
+                                   quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
+                                   quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
+                            by = .(scenario, rep, firePresAbs, vegTypeCN)])
 
 ## we need to use ageDataCN, to get the patch-level ages.
 plotData2 <- rbind(
@@ -620,11 +636,10 @@ plotData <- plotData2[plotData, on = c("vegTypeCN", "firePresAbs")]
 plotData <- plotData[!is.na(quant50StandAgeObs)]
 if (any(is.na(plotData))) stop("Something is wrong.")
 
-## this mean makes no sense. there should be only one value this is simply a deviation.
-plotData2 <- plotData[, list(devSimObsQuant50 = quant50StandAge - quant50StandAgeObs,
-                             devSimObsQuant75 = quant75StandAge - quant75StandAgeObs,
-                             devSimObsQuant95 = quant95StandAge - quant95StandAgeObs),
-                      by = .(scenario, rep, vegTypeCN, firePresAbs)]
+plotData2 <- unique(plotData[, list(devSimObsQuant50 = quant50StandAge - quant50StandAgeObs,
+                                    devSimObsQuant75 = quant75StandAge - quant75StandAgeObs,
+                                    devSimObsQuant95 = quant95StandAge - quant95StandAgeObs),
+                             by = .(scenario, rep, vegTypeCN, firePresAbs)])
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "vegTypeCN", "firePresAbs"))
 
 plotData2 <- plotData2[firePresAbs == "1"]
@@ -731,12 +746,16 @@ plotData <- Cache(
 options(opts)
 
 plotData <- plotData[!is.na(avgAgeSppObs)]
-plotData <- unique(plotData)
 
-plotData[, rawDevsSimObs := sppAgeSim - avgAgeSppObs,
-         by = .(scenario, rep, speciesCode, firePresAbs)]
+## we need to subset the data to unique values of the following columns
+## since keeping raw cohort ages will create duplicate median species cohort ages.
+cols <- c("scenario", "rep", "year", "speciesCode", "firePresAbs", "pixelIndex", "sppAgeSim", "avgAgeSppObs")
+plotData <- unique(plotData[, ..cols])
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(sppAgeSim - avgAgeSppObs))),
+plotData[, rawDevsSimObs := sppAgeSim - avgAgeSppObs]
+
+## MADs for age are no longer analysed -- note that here 'years' are dealt in the same way as pixels
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(rawDevsSimObs))),
                       by = .(scenario, rep, speciesCode, firePresAbs)]
 
 ## differences from the observed median
@@ -786,10 +805,10 @@ plotData <- plotData[!is.na(quant50SppAgeObs)]
 
 if (any(is.na(plotData))) stop("Something is wrong.")
 
-plotData2 <- plotData[, list(devSimObsQuant50 = quant50SppAge - quant50SppAgeObs,
-                             devSimObsQuant75 = quant75SppAge - quant75SppAgeObs,
-                             devSimObsQuant95 = quant95SppAge - quant95SppAgeObs),
-                      by = .(scenario, rep, speciesCode, firePresAbs)]
+plotData2 <- unique(plotData[, list(devSimObsQuant50 = quant50SppAge - quant50SppAgeObs,
+                                    devSimObsQuant75 = quant75SppAge - quant75SppAgeObs,
+                                    devSimObsQuant95 = quant95SppAge - quant95SppAgeObs),
+                             by = .(scenario, rep, speciesCode, firePresAbs)])
 
 plotData2 <- melt(plotData2, id.vars = c("scenario", "rep", "speciesCode", "firePresAbs"))
 
