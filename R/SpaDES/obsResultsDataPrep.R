@@ -41,17 +41,18 @@ ageDataCN[, firePresAbs := 1]
 
 ## calculate age at minimum DBH (4cm) -- used to filter simulated data
 
-modelData <- rbind(ageDataCN[, .(speciesCode, DBH.cm, Reconstructed.age)],
-                   expand.grid(Reconstructed.age = 1,
-                               DBH.cm = 1,
-                               speciesCode = na.omit(unique(ageDataCN$speciesCode))))   ## force the intercept at 0 by adding 0 data
+modelData <- #rbind(
+  ageDataCN[, .(speciesCode, DBH.cm, Reconstructed.age)]#,
+                   # expand.grid(Reconstructed.age = 1,
+                               # DBH.cm = 1,
+                               # speciesCode = na.omit(unique(ageDataCN$speciesCode))))   ## force the intercept at 0 by adding 0 data
 modAgeDBH <- lm(Reconstructed.age ~ DBH.cm*speciesCode,
                 data = modelData) ## na's are remnants
 
-modAgeDBH2 <- lm(log(Reconstructed.age) ~ DBH.cm*speciesCode,
+modAgeDBH2 <- lm(Reconstructed.age ~ -1 + log(DBH.cm):speciesCode,
                  data = modelData) ## na's are remnants
 
-modAgeDBH3 <- lm(log(Reconstructed.age) ~ log(DBH.cm)*speciesCode,
+modAgeDBH3 <- lm(log(Reconstructed.age) ~ -1 + log(DBH.cm):speciesCode,
                  data = modelData) ## na's are remnants
 
 if (FALSE) {
@@ -66,22 +67,23 @@ if (FALSE) {
 
   plotData <- na.omit(ageDataCN[, .(speciesCode, DBH.cm, Reconstructed.age)])
   plotData <- rbind(plotData, expand.grid(Reconstructed.age = NA,
-                                          DBH.cm = c(1, 4),
+                                          DBH.cm = c(0.1, 4),
                                           speciesCode = unique(plotData$speciesCode)))
   plotData[, `:=`(pred = predict(modAgeDBH, plotData),
-                  predLog = predict(modAgeDBH2, plotData),
-                  predLogLog = predict(modAgeDBH3, plotData))]
+                  predLogrtm = predict(modAgeDBH2, plotData),
+                  predLog = predict(modAgeDBH3, plotData))]
   ggplot(plotData,
-         aes(x = DBH.cm, y = Reconstructed.age)) +
-    geom_point(alpha = 0.5) +
-    geom_point(data = data.table(DBH.cm = 0, Reconstructed.age = 0),
-               colour = "grey") +
-    # stat_smooth(method = "lm", colour = "blue") +
+         aes(x = DBH.cm)) +
+    geom_point(aes(y = Reconstructed.age), alpha = 0.5) +
     # geom_line(aes(y = pred), col = "red") +
     # geom_line(aes(y = exp(predLog)), col = "green") +
-    geom_line(aes(y = exp(predLogLog)), col = "blue") +
+    geom_point(aes(y = predLogrtm), data = plotData[DBH.cm == 4],
+               colour = "cadetblue") +
+    geom_line(aes(y = predLogrtm), col = "blue") +
     theme_pubr() +
-    facet_wrap(~ speciesCode) +
+    facet_wrap(~ speciesCode, labeller = as_labeller(speciesLabels)) +
+    xlim(0, NA) +
+    ylim(0, NA) +
     labs(x = "DBH (cm)", y = "Reconstructed age")
   ggsave(file.path(figOutputPath, "ageMinDBHmodel.png"), width = 10, height = 7, dpi = 300)
 
@@ -90,7 +92,7 @@ if (FALSE) {
 
 ## predict age at minimum DBH (4 cm)
 newData <- data.table(DBH.cm = 4, speciesCode = unique(ageDataCN[!is.na(speciesCode)]$speciesCode))
-newData[, ageAtMinDBH := round(exp(predict(modAgeDBH3, newdata = newData)), 0)]
+newData[, ageAtMinDBH := round(predict(modAgeDBH2, newdata = newData), 0)]
 newData <- newData[complete.cases(newData)]
 
 ## check -- are predictions larger than the ages of the smallest trees? no, but only IF 0,0 data is added and log-log model is used
