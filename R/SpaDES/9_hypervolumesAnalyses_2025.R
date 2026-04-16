@@ -472,6 +472,8 @@ modelData <- melt.data.table(modelData, measure.vars = c("HV_noPM", "HV_PM"),
 modelData <- dcast.data.table(modelData, ... ~ HVtype, value.var = "Volume")
 modelData[, `:=`(logFireHV = log(fireHV),
                  logVegHV = log(vegHV))]
+modelData[, scenario := relevel(scenario, "HV_noPM")]
+modelData[, vegType := relevel(vegType, "No veg.")]
 modelData2 <- modelData[vegType == "landscape"]
 ## need to fit the model after dropping unused levels, otherwise `marginaleffects::predictions` will error
 ## when trying to get prediction intervals
