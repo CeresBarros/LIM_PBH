@@ -613,10 +613,10 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
 ## forest-type-level differences between simulated and observed upper quantiles
 
 ## we can use sppAgeSim, because it's at pixel-level.
-plotData <- unique(plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
-                                   quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
-                                   quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
-                            by = .(scenario, rep, firePresAbs, vegTypeCN)])
+plotData <- plotData[, `:=`(quant50StandAge = quantile(standAgeSim, probs = 0.5, na.rm = TRUE),
+                            quant75StandAge = quantile(standAgeSim, probs = 0.75, na.rm = TRUE),
+                            quant95StandAge = quantile(standAgeSim, probs = 0.95, na.rm = TRUE)),
+                     by = .(scenario, rep, firePresAbs, vegTypeCN)]
 
 ## we need to use ageDataCN, to get the patch-level ages.
 plotData2 <- rbind(
