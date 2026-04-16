@@ -17,7 +17,7 @@ plotFunction <- function(ras, studyArea, palette = "Greys", limits = NULL) {
     limits <- range(getValues(ras), na.rm = TRUE)
 
   ggplot() +
-    layer_spatial(ras, aes(fill = stat(band1))) +
+    layer_spatial(ras, aes(fill = after_stat(band1))) +
     layer_spatial(data = studyArea, fill = "transparent", colour = "black") +
     annotation_north_arrow(style = north_arrow_minimal,
                            height = unit(1, "cm"), width = unit(1, "cm"),
