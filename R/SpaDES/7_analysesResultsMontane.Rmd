@@ -417,10 +417,8 @@ plotData2 <- rbind(plotData2, plotData3)
 
 ## we need to subset the data to unique values of the following columns
 ## since keeping raw cohort ages will create duplicate median species cohort ages.
-cols <- c("scenario", "rep", "year", "speciesCode", "firePresAbs", "pixelIndex", "sppAgeSim", "Reconstructed.age")
-plotData2 <- unique(plotData[, ..cols])
-
-plotData[, rawDevsSimObs := standAgeSim - avgAgeStandObs]
+cols <- c("scenario", "rep", "year", "speciesCode", "firePresAbs", "pixelIndex", "sppAgeSim")
+plotData <- unique(plotData[, ..cols])
 
 ## this plot is used later, so the data.table must be a copy
 plotData$speciesCode <- factor(plotData$speciesCode, levels = names(speciesLabels), ordered = TRUE)
@@ -510,7 +508,7 @@ setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
 ## we need to subset the data to unique values of the following columns
 ## since keeping raw cohort ages will create duplicate median species cohort ages.
-cols <- c("scenario", "rep", "year", "vegTypeCN", "firePresAbs", "pixelIndex", "standAgeSim", "Stand.age.3")
+cols <- c("scenario", "rep", "year", "vegTypeCN", "firePresAbs", "pixelIndex", "standAgeSim")
 plotData <- unique(plotData[, ..cols])
 
 plotData$vegTypeCN <- factor(plotData$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
