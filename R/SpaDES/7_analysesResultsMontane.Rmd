@@ -1459,6 +1459,16 @@ plotData <- unique(plotData)
 ## sum across pixels per vegType
 plotData[, BiomassBySpecies := sum(B), 
          by = .(scenario, rep, year, vegTypeCN, speciesCode)]
+
+## add landscape-wide sums
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData2[, BiomassBySpecies := sum(B), 
+          by = .(scenario, rep, year, speciesCode)]
+
+plotData <- rbind(plotData, plotData2)
+rm(plotData2); gc(reset = TRUE)
+
 # plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
 ## no. pixels with a veg type, per scenario/rep/year, then average for plot
