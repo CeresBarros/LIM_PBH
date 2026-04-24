@@ -1486,7 +1486,7 @@ plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
                              fillLabels = speciesLabels, xFacet = "scenario", 
                              xlabels = vegTypeCNLabels,
                              labllr = as_labeller(scenLabels2, label_parsed),
-                             titleLab = "Species biomass -- landscape level", yLab = "Relative biomass")
+                             titleLab = "", yLab = "Relative biomass")
 plot7 <- plot7 + 
   geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
             aes(x = vegTypeCN, y = 1.10, label = noPixels, fill = vegTypeCN))  ## fill is here to avoid an error
@@ -1499,7 +1499,7 @@ plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
                                xlabels = vegTypeCNLabels, 
                                labllr = as_labeller(scenLabels2, label_parsed),
                                errorBar = TRUE,
-                               titleLab = "Species biomass -- landscape level", 
+                               titleLab = "", 
                                yLab = "Biomass (ton/ha)")
 
 ## pixel averages
@@ -1510,7 +1510,7 @@ plot7.3 <- sppCompositionPlots(data = plotData[noFires > 0],
                                fillLabels = speciesLabels, xFacet = "scenario", 
                                xlabels = vegTypeCNLabels, 
                                labllr = as_labeller(scenLabels2, label_parsed),
-                               titleLab = "Species biomass -- pixel level", yLab = "Relative biomass",
+                               titleLab = "Pixel level averages", yLab = "Relative biomass",
                                subtitleLab = "")
 
 ## with mean and SD
@@ -1520,7 +1520,7 @@ plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
                                fillLabels = speciesLabels, xFacet = "scenario", 
                                xlabels = vegTypeCNLabels, 
                                labllr = as_labeller(scenLabels2, label_parsed),
-                               titleLab = "Species biomass -- pixel level", yLab = "Biomass (ton/ha)",
+                               titleLab = "Pixel level averages", yLab = "Biomass (ton/ha)",
                                subtitleLab = "")
 
 ## SPECIES BIOMASS-WEIGHTED AGE
@@ -1530,7 +1530,7 @@ plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
                              xlabels = vegTypeCNLabels, labllr = as_labeller(scenLabels2, label_parsed),
-                             titleLab = "Species age -- pixel level", 
+                             titleLab = "Pixel level averages", 
                              yLab = "Biomass-weighted age",
                              subtitleLab = "")
 
