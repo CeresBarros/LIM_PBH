@@ -1469,18 +1469,23 @@ plotData2[, BiomassBySpecies := sum(B),
 plotData <- rbind(plotData, plotData2)
 rm(plotData2); gc(reset = TRUE)
 
+## subset to burnt piels
+plotData <- plotData[noFires > 0]
+
 # plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
-## no. pixels with a veg type, per scenario/rep/year, then average for plot
-plotData[noFires > 0, noPixels := length(pixelIndex), by = .(scenario, rep, year, vegTypeCN)]
-plotData[noFires > 0, noPixels := round(mean(noPixels)), by = .(scenario, vegTypeCN)]
+## (relative) no. pixels with a veg type, per scenario/rep/year, then average for plot
+plotData[, noPixels := length(unique(pixelIndex)), by = .(scenario, rep, year, vegTypeCN)]
+plotData[, totalPixels := length(unique(pixelIndex)), by = .(scenario, rep, year)]
+plotData[, relNoPixels := noPixels/totalPixels]
+plotData[, relNoPixels := round(mean(relNoPixels), 4), by = .(scenario, vegTypeCN)]
 
 ## SPECIES BIOMASS
 ## cross pixel sums
 ## just mean across reps and scaled from 0-1
 scenLabels2 <- as.character(scenLabels)
 names(scenLabels2) <- names(scenLabels)
-plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
+plot7 <- sppCompositionPlots(data = plotData,
                              x = "vegTypeCN", y = "BiomassBySpecies",
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
@@ -1488,11 +1493,11 @@ plot7 <- sppCompositionPlots(data = plotData[noFires > 0],
                              labllr = as_labeller(scenLabels2, label_parsed),
                              titleLab = "", yLab = "Relative biomass")
 plot7 <- plot7 + 
-  geom_text(data = unique(plotData[noFires > 0, .(scenario, vegTypeCN, noPixels)]),
-            aes(x = vegTypeCN, y = 1.10, label = noPixels, fill = vegTypeCN))  ## fill is here to avoid an error
+  geom_text(data = unique(plotData[, .(scenario, vegTypeCN, relNoPixels)]),
+            aes(x = vegTypeCN, y = 1.10, label = relNoPixels, fill = vegTypeCN))  ## fill is here to avoid an error
 
 ## with mean and SD
-plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
+plot7.2 <- sppCompositionPlots(data = plotData,
                                x = "vegTypeCN", y = "BiomassBySpecies",
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
@@ -1504,7 +1509,7 @@ plot7.2 <- sppCompositionPlots(data = plotData[noFires > 0],
 
 ## pixel averages
 ## just mean across reps and scaled from 0-1
-plot7.3 <- sppCompositionPlots(data = plotData[noFires > 0],
+plot7.3 <- sppCompositionPlots(data = plotData,
                                x = "vegTypeCN", y = "B",
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
@@ -1514,7 +1519,7 @@ plot7.3 <- sppCompositionPlots(data = plotData[noFires > 0],
                                subtitleLab = "")
 
 ## with mean and SD
-plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
+plot7.4 <- sppCompositionPlots(data = plotData,
                                x = "vegTypeCN", y = "B", errorBar = TRUE,
                                fill = "speciesCode", fillValues = speciesColours, 
                                fillLabels = speciesLabels, xFacet = "scenario", 
@@ -1525,7 +1530,7 @@ plot7.4 <- sppCompositionPlots(data = plotData[noFires > 0],
 
 ## SPECIES BIOMASS-WEIGHTED AGE
 ## with mean and SD
-plot8 <- sppCompositionPlots(data = plotData[noFires > 0],
+plot8 <- sppCompositionPlots(data = plotData,
                              x = "vegTypeCN", y = "avgAgeBySppSim", errorBar = TRUE,
                              fill = "speciesCode", fillValues = speciesColours, 
                              fillLabels = speciesLabels, xFacet = "scenario", 
