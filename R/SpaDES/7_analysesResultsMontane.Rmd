@@ -1238,9 +1238,9 @@ if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(medianFreq)])) {
   stop("NAs detected")
 }
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(medianFreq - avgMedian.FIObs))),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(medianFreq - avgMedian.FIObs)),
+                             meanDevSimObs = 1/.N * sum(medianFreq - avgMedian.FIObs)),
                       by = .(scenario, rep, vegTypeCN)]
-
 ## boxplot differences
 plot44 <- ggplot(plotData,
                  aes(x = vegTypeCN,
@@ -1263,7 +1263,19 @@ plot44.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     labllr, xlabels = vegTypeCNLabels, xorder = rev(x_order),
                     x.text.angle = 45, flipCoord = FALSE,
                     titleLab = "Mean abs. deviation from observed median fire intervals", 
-                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
+                    # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
+                    yLab = "Mean abs. deviation")
+
+
+## mean raw differences
+x_order <- names(vegTypeCNLabels[vegTypeCNLabels != "No forest"])
+plot44.3 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanDevSimObs",
+                    colour = "scenario", colValues = scenColours, colLabels = scenLabels,
+                    labllr, xlabels = vegTypeCNLabels, xorder = rev(x_order),
+                    x.text.angle = 45, flipCoord = FALSE,
+                    titleLab = "Mean (raw) deviation from observed median fire intervals", 
+                    # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
+                    yLab = "Mean raw deviation")
 
 ```
 
@@ -1289,6 +1301,18 @@ plotSave <- plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle
 ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MAD_VegTypeCN.tiff"),
        width = 8, height = 8)
 gc(reset = TRUE)
+
+plotSave <- plot_grid(plot39 + theme(plot.title = element_blank(), plot.subtitle = element_blank(), 
+                                     axis.title.x = element_blank(), legend.position = "right"),
+                      plot44.3 + theme(legend.position = "right",
+                                       plot.title = element_blank(),
+                                       legend.direction = "vertical",
+                                       legend.box = "vertical"),
+                      ncol = 1, labels = "auto", label_size = 20, align = "v", axis = "b")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "results_meanFISimVsObsTest_MRD_VegTypeCN.tiff"),
+       width = 8, height = 8)
+gc(reset = TRUE)
+
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
 plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
