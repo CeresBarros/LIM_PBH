@@ -423,7 +423,8 @@ plotData <- unique(plotData[, ..cols])
 ## this plot is used later, so the data.table must be a copy
 plotData$speciesCode <- factor(plotData$speciesCode, levels = names(speciesLabels), ordered = TRUE)
 plotData2$speciesCode <- factor(plotData2$speciesCode, levels = names(speciesLabels), ordered = TRUE)
-plot29 <- simObsDistsPlot(simData = copy(plotData), x = "speciesCode", ySim = "sppAgeSim",
+plot29 <- simObsDistsPlot(simData = copy(plotData), 
+                          x = "speciesCode", ySim = "sppAgeSim",
                           colSim = "scenario", 
                           obsData = copy(plotData2), yObs = "Reconstructed.age", 
                           xlabels = speciesLabels, x.text.angle = 45,
@@ -432,7 +433,7 @@ plot29 <- simObsDistsPlot(simData = copy(plotData), x = "speciesCode", ySim = "s
                           titleLab = "Species age", yLab = "years") +
   theme(axis.title.x = element_blank())
 
-## only fire pixels, no means/whiskers
+## no means/whiskers
 plot29.1 <- simObsDistsPlot(simData = copy(plotData), 
                             x = "speciesCode", ySim = "sppAgeSim",
                             colSim = "scenario", 
@@ -520,7 +521,7 @@ plot29.2 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "s
                             colLabels = scenLabels, 
                             titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years")
 
-## only fire pixels, no means
+## no means
 plot29.3 <- simObsDistsPlot(simData = copy(plotData), 
                             x = "vegTypeCN", ySim = "standAgeSim",
                             obsData = copy(plotData2), yObs = "Stand.age.3",
@@ -586,7 +587,7 @@ plotData <- unique(plotData[, ..cols])
 
 plotData[, rawDevsSimObs := standAgeSim - avgAgeStandObs]
 
-## MADs for age are no longer analysed -- note that here 'years' are dealtin the same way as pixels
+## MADs for age are no longer analysed -- note that here 'years' are dealt in the same way as pixels
 plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(standAgeSim - avgAgeStandObs))),
                       by = .(scenario, rep, vegTypeCN, firePresAbs)]
 
@@ -1202,7 +1203,7 @@ gc(reset = TRUE)
 ```
 
 
-### Mean absolute deviation simulated fire intervals with respect to observed fire intervals for a given stand type
+### Mean absolute deviation and mean raw deviations of simulated fire intervals with respect to observed fire intervals for a given stand type
 Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
 Note that `summaryFireAttributes` has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
 
