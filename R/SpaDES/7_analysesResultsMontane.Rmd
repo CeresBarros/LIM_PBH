@@ -606,7 +606,8 @@ plot32.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     colLabels = scenLabels, xlabels = vegTypeCNLabels,
                     xorder = rev(x_order), flipCoord = FALSE,  
                     titleLab = "Mean abs. deviations from observed ages",
-                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
+                    # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
+                    yLab = "Mean abs. deviation")
 
 ## QUANTILE DEVIATIONS
 ## forest-type-level differences between simulated and observed upper quantiles
@@ -663,8 +664,8 @@ plot32.3 <- ggplot(plotData2[firePresAbs == "1"],
   theme(panel.grid.major.x = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         strip.background = element_blank()) +
-  labs(title = "Quantile absolute deviation", x = "", 
-       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|"))) +
+  labs(title = "Quantile deviation", x = "", 
+       y = expression("quantAge"["sim."] - "quantAge"["obs."])) +
   facet_wrap(~ vegTypeCN, scales = "free_x", ncol = 4,
              labeller = labeller(vegTypeCN = vegTypeCNLabels))
 
@@ -774,7 +775,8 @@ plot43.2 <- MADPlot(plotData2, x = "speciesCode", y = "meanAbsDevSimObs",
                     # xFacet = "firePresAbs", 
                     labllr = labeller(firePresAbs = fireLabels),
                     titleLab = "Mean abs. deviations from observed ages",
-                    yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
+                    # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|")))) 
+                    yLab = "Mean abs. deviation")
 
 
 ## QUANTILE DEVIATIONS
@@ -832,7 +834,7 @@ plot43.3 <- ggplot(plotData2[firePresAbs == "1"],
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         strip.background = element_blank()) +
   labs(title = "Quantile absolute deviation", x = "", 
-       y = expression(bgroup("|", "quant."["sim."] - "quant."["obs."], "|"))) +
+       y = expression("quantAge"["sim."] - "quantAge"["obs."])) +
   facet_wrap(~ speciesCode, scales = "free_x", ncol = 3,
              labeller = labeller(speciesCode = c(speciesLabels, landscape = "landscape")))
 ```
