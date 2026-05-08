@@ -1160,48 +1160,55 @@ gc(reset = TRUE)
 
 
 ### "Fire regime" plots
-As in Cameron & Daniels 2020 (Fig. 9b,c): median and  SD of fire interval~severity, per forest type
+As in Cameron & Daniels 2020 (Fig. 9b,c): median and  SD of median fire interval ~ median cumulative severity, per forest type. 
+Note that median cumulative severity is the slope of a density decay curve (density of surviving species decays as we go back in time through fire events). Shallower slops indicate lower average severity, steeper slopes indicae highe average severity (Naficy & Daniels 2020, p. 17).
+
+I chose to take the mean Sev Prob B to approximate this measure.
+
+The plot still shows medians and SDs as in Fig. 9 (Naficy & Daniels 2020) 
 
 ```{r fireAttr_boxplots, cache = FALSE}
-plotData <- summaryFireAttributes[vegTypeCN != "No veg.", 
-                                  list(meanFreq_median = median(meanFreq),
-                                       meanFreq_sd = sd(meanFreq),
-                                       meanSevB_median = median(meanSevB),
-                                       meanSevB_sd = sd(meanSevB)),
+## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
+pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
+
+## median fire interval per forest type - to compare with camerons fire intervals.
+plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
+
+plotData <- plotData[vegTypeCN != "No veg.", 
+                                  list(medianFreq_median = median(medianFreq),
+                                       medianFreq_sd = sd(meanFreq),
+                                       meanSevPropB_median = median(meanSevPropB),
+                                       meanSevPropB_sd = sd(meanSevPropB)),
                                   by = .(scenario, vegTypeCN)]
 
 plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scenLabels))])
 
-jitter_wd <- 100
-jitter_hg <- 5
-jitter_sd <- 456
-plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevB_median, colour = vegTypeCN)) +
-  geom_point(size = 2, alpha = 0.5, 
-             position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
-  geom_errorbar(aes(ymin = meanFreq_median - meanFreq_sd, 
-                    ymax = meanFreq_median + meanFreq_sd),
-                alpha = 0.5, 
-                position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd)) +
-  geom_errorbar(aes(xmin = meanSevB_median - meanSevB_sd, 
-                    xmax = meanSevB_median + meanSevB_sd),
-                alpha = 0.5, 
-                position = position_jitter(width = jitter_wd, height = jitter_hg, seed = jitter_sd),
-                orientation = "y") +
+plotData$scenario <- factor(plotData$scenario, levels = unique(plotData$scenario)) |>
+  relevel(ref = "M[SR]")
+
+plot48 <- ggplot(plotData, aes(y = medianFreq_median, x = meanSevPropB_median, colour = vegTypeCN)) +
+  geom_point(size = 3, alpha = 0.5) +
+  geom_errorbar(aes(ymin = medianFreq_median - medianFreq_sd, 
+                    ymax = medianFreq_median + medianFreq_sd),
+                alpha = 0.5, linewidth = 1) +
+  geom_errorbar(aes(xmin = meanSevPropB_median - meanSevPropB_sd, 
+                    xmax = meanSevPropB_median + meanSevPropB_sd),
+                alpha = 0.5, linewidth = 1, orientation = "y") +
   scale_colour_manual(labels = vegTypeCNLabels[names(vegTypeCNLabels) %in% plotData$vegTypeCN],
                       values = vegTypeCNColours[names(vegTypeCNLabels) %in% plotData$vegTypeCN]) +
-  theme_pubr(base_size = 14, legend = "bottom") +
+  theme_pubr(base_size = 14, legend = "right") +
   theme(legend.title = element_blank(), 
         panel.grid.major.y = element_line(colour = "grey", size = 11/22, linetype = "dotted"),
         strip.background = element_blank()) +
-  labs(x = "Mean fire severity\n(biomass lost, ton/ha)",
-       y = "Mean fire interval (years)") +
-  facet_wrap(~ scenario, labeller = label_parsed)
+  labs(x = "Mean fire severity\n(% biomass lost)",
+       y = "Median fire interval (years)") +
+  facet_wrap(~ scenario, ncol = 1, labeller = label_parsed)
 
 ```
 
 ```{r plot&savePlots16, echo = FALSE}
 ggsave(plot = plot48, filename = file.path(figOutputPath, "results_fireRegime_crossPlot.tiff"),
-       width = 8, height = 6)
+       width = 7, height = 8)
 
 plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
 plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
