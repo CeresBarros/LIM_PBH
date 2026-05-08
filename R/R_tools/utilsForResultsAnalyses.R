@@ -191,7 +191,8 @@ summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels
 
   if (logX) {
     plotOut <- plotOut +
-      coord_transform(x = "log10")
+      scale_x_continuous(breaks = unique(round(c(0, 10, data[[x]]), -1))) +
+      coord_transform(x = "log10", xlim = range(data[[x]]))
   }
 
   if (!is.null(xlabels)) {
