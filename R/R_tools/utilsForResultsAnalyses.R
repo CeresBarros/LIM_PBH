@@ -175,19 +175,25 @@ ageComp_data <- function(simData, obsData, speciesTraits, addLandscape = FALSE, 
 #' Summary of vegetation dynamics - plots
 summaryPlot <- function(data, x, y, colour, xlabels = NULL, colValues, colLabels,
                         titleLab = "", subtitleLab = NULL, xLab = "", yLab = "",
-                        fun.data = "mean_sd", x.text.angle = 0) {
+                        fun.data = "mean_sd", logX = FALSE, x.text.angle = 0) {
   colValues <- colValues[unique(data[[colour]])]
   colLabels <- colLabels[unique(data[[colour]])]
   xlabels <- xlabels[unique(data[[x]])]
 
   plotOut <- ggplot(data = data,
                     aes(x = !!sym(x), y = !!sym(y), colour = !!sym(colour))) +
-    stat_summary(fun.data = fun.data, position = position_dodge(width = 0.8),
+    stat_summary(fun.data = fun.data,
                  linewidth = 1) +
     theme_pubr(base_size = 16, legend = "bottom", x.text.angle = x.text.angle) +
     theme(legend.title = element_blank(),
           panel.grid.major.y = element_line(colour = "grey", linewidth = 11/22, linetype = "dotted")) +
     scale_colour_manual(values = colValues)
+
+  if (logX) {
+    plotOut <- plotOut +
+      coord_transform(x = "log10")
+  }
+
   if (!is.null(xlabels)) {
     plotOut <- plotOut +
       if (is(data[[x]], "numeric")) {
