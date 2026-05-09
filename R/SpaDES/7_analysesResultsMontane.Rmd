@@ -257,7 +257,7 @@ plot2.2 <- summaryPlot(data = summaryBurnCohortDataSpp[year %in% yearSubset],
                        fun.data = "mean_sd",
                        colour = "speciesCode", colValues = speciesColours, 
                        colLabels = speciesLabels, titleLab = "Total landscape biomass",
-                       subtitleLab = "by species", yLab = "Log-biomass (ton/ha)", xLab = "Median fire interval") +
+                       subtitleLab = "by species", yLab = "Log-biomass (ton/ha)", xLab = "Mean fire interval") +
   stat_summary(fun = "mean", geom = "line", linewidth = 1) +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = labeller(scenario = label_parsed))
@@ -293,7 +293,7 @@ plot6.2 <- summaryPlot(data = summaryBurnCohortDataSpp[year %in% yearSubset],
                        fun.data = "mean_sd",
                        colour = "speciesCode", colValues = speciesColours,
                        colLabels = speciesLabels, titleLab = "Species age", 
-                       yLab = "Median biomass-weighted age", xLab = "Median fire interval") +
+                       yLab = "Biomass-weighted age", xLab = "Mean fire interval") +
   stat_summary(fun = "mean", geom = "line", linewidth = 1) +
   guides(colour = guide_legend(override.aes = list(size = 1.5))) +
   facet_grid(scenario ~ ., labeller = label_parsed)
@@ -607,6 +607,105 @@ plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", pl
 rm(list = plotsRm)
 gc(reset = TRUE)
 ```
+
+### Age violins 2 - by forest type, filtered by observed fire interval ranges
+Forest types are defined for a sample of years across the quasi equilibrium period.
+Non-forest forest type removed -- not present in observed data, so could impact "landscape" comparisons
+
+```{r simVsObsAges_vegType, cache = FALSE}
+## age distribution at "end" of simulation vs cameron's
+
+## ageComp_data removes cohorts with age > ageAtMinDBH with Biomass < 10 
+## there were some old cohorts with virtually no biomass
+
+## At the stand-level, `ageComp_data` calculates simulated median biomass-weighted (`standAgeSim` 
+## - equivalent to what was previously `median(avgAgeBySppSim)`) across species in a pixel and
+## median observed basal area weighted (`avgAgeStandObs` - equivalent to what was 
+## previously `median(avgAgeBySppObs)`) across species in a plot.
+## At the species-level, it calculates simulated and observed median raw ages 
+## for each species (`sppAgeSim` and `avgAgeSppObs`, respectively - equivalent
+## to what was previously `avgAgeBySppSim` and `avgAgeBySppObs).
+
+## note that `standAgeSim` is biomass-weighted and `sppAgeSim` isn't 
+##-- we've decided to weight at the stand level but not at the species level
+
+cacheExtra <- c(digest::digest(allPixelCDMntEnd), digest::digest(ageDataCN))
+opts <- options(reproducible.cachePath = simPaths$cachePath)
+plotData <- Cache(
+  ageComp_data,
+  simData = allPixelCDMntEnd,
+  obsData = ageDataCN,
+  speciesTraits = speciesTraits,
+  omitArgs = c("simData", "obsData", "userTags"),
+  .cacheExtra = cacheExtra)
+options(opts)
+
+## make a "landscape" species
+plotData2 <- copy(plotData)
+plotData2[, vegTypeCN := "landscape"]
+plotData <- rbind(plotData, plotData2)
+plotData[firePresAbs == 1]
+
+## now get patch-level stand ages, and make a landscape equivalent for it too
+plotData2 <- ageDataCN[firePresAbs == 1, .(Cover.dendro, Stand.age.3, firePresAbs)]  
+plotData2 <- plotData2[complete.cases(plotData2)]  ## there are NA species that have ages speciesCode
+
+plotData3 <- copy(plotData2)
+plotData3[, Cover.dendro := "landscape"]
+plotData2 <- rbind(plotData2, plotData3)
+
+setnames(plotData2, "Cover.dendro", "vegTypeCN")
+
+## we need to subset the data to unique values of the following columns
+## since keeping raw cohort ages will create duplicate median species cohort ages.
+cols <- c("scenario", "rep", "year", "vegTypeCN", "firePresAbs", "pixelIndex", "standAgeSim")
+plotData <- unique(plotData[, ..cols])
+
+## add simulated mean fire intervals
+plotData <- plotData[unique(summaryFireAttributes[, .(scenario, rep, pixelIndex, meanFreq)]), 
+                     on = .(scenario, rep, pixelIndex), nomatch = NULL]
+## filter by observed fire interval range
+obsFIRange <- ageDataCN[, list(minFI = min(mean.FI, na.rm = TRUE),
+                               maxFI = max(mean.FI, na.rm = TRUE)), by = Cover.dendro]
+obsFIRange <- rbind(obsFIRange, data.table(minFI = min(ageDataCN$mean.FI, na.rm = TRUE),
+                                           maxFI = max(ageDataCN$mean.FI, na.rm = TRUE),
+                                           Cover.dendro = "landscape"))
+setnames(obsFIRange, "Cover.dendro", "vegTypeCN")
+plotData <- plotData[obsFIRange, on = "vegTypeCN"]
+plotData <- plotData[meanFreq <= maxFI & meanFreq >= minFI,]
+
+plotData$vegTypeCN <- factor(plotData$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
+plotData2$vegTypeCN <- factor(plotData2$vegTypeCN, levels = names(vegTypeCNLabels), ordered = TRUE)
+plot29.4 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "standAgeSim",
+                            colSim = "scenario", obsData = copy(plotData2), yObs = "Stand.age.3", 
+                            xlabels = vegTypeCNLabels, x.text.angle = 45,
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years")
+
+## no means
+plot29.5 <- simObsDistsPlot(simData = copy(plotData), 
+                            x = "vegTypeCN", ySim = "standAgeSim",
+                            obsData = copy(plotData2), yObs = "Stand.age.3",
+                            colSim = "scenario", x.text.angle = 45,
+                            xlabels = vegTypeCNLabels, showMeans = FALSE,
+                            colValues = scenColours, 
+                            colLabels = scenLabels, 
+                            titleLab = "Stand age", subtitleLab = "by forest type", yLab = "years") 
+```
+
+```{r plot&savePlots8, echo = FALSE}
+ggsave(plot = plot29.4, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN_obsFIfilter.tiff"),
+       width = 14, height = 7)
+ggsave(plot = plot29.5, filename = file.path(figOutputPath, "results_ageSimVsObsVegTypeCN2_obsFIfilter.tiff"),
+       width = 14, height = 7)
+
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$", ls(), value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
+```
+
 
 ### Mean (absolute) deviations and quantile deviations of simulated ages by stand type
 (deviations from observed median & quantile - 50, 75, 95%)
@@ -1173,8 +1272,8 @@ gc(reset = TRUE)
 
 
 ### "Fire regime" plots
-As in Cameron & Daniels 2020 (Fig. 9b,c): median and  SD of median fire interval ~ median cumulative severity, per forest type. 
-Note that median cumulative severity is the slope of a density decay curve (density of surviving species decays as we go back in time through fire events). Shallower slops indicate lower average severity, steeper slopes indicae highe average severity (Naficy & Daniels 2020, p. 17).
+As in Cameron & Daniels 2020 (Fig. 9b,c), but with medians and  SD of mean fire interval ~ median cumulative severity, per forest type. 
+Note that median cumulative severity is the slope of a density decay curve (density of surviving species decays as we go back in time through fire events). Shallower slops indicate lower average severity, steeper slopes indicate higher average severity (Naficy & Daniels 2020, p. 17).
 
 I chose to take the mean Sev Prob B to approximate this measure.
 
@@ -1185,11 +1284,12 @@ The plot still shows medians and SDs as in Fig. 9 (Naficy & Daniels 2020)
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 
 ## median fire interval per forest type - to compare with camerons fire intervals.
+## note that meanFreq per pixel = unique(fireFreq), because fireFreq is a mean.
 plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
 
 plotData <- plotData[vegTypeCN != "No veg.", 
-                     list(medianFreq_median = median(medianFreq),
-                          medianFreq_sd = sd(meanFreq),
+                     list(meanFreq_median = median(meanFreq),
+                          meanFreq_sd = sd(meanFreq),
                           meanSevPropB_median = median(meanSevPropB),
                           meanSevPropB_sd = sd(meanSevPropB)),
                      by = .(scenario, vegTypeCN)]
@@ -1199,10 +1299,10 @@ plotData$scenario <- as.character(scenLabels[match(plotData$scenario, names(scen
 plotData$scenario <- factor(plotData$scenario, levels = unique(plotData$scenario)) |>
   relevel(ref = "M[SR]")
 
-plot48 <- ggplot(plotData, aes(y = medianFreq_median, x = meanSevPropB_median, colour = vegTypeCN)) +
+plot48 <- ggplot(plotData, aes(y = meanFreq_median, x = meanSevPropB_median, colour = vegTypeCN)) +
   geom_point(size = 3, alpha = 0.5) +
-  geom_errorbar(aes(ymin = medianFreq_median - medianFreq_sd, 
-                    ymax = medianFreq_median + medianFreq_sd),
+  geom_errorbar(aes(ymin = meanFreq_median - meanFreq_sd, 
+                    ymax = meanFreq_median + meanFreq_sd),
                 alpha = 0.5, linewidth = 1) +
   geom_errorbar(aes(xmin = meanSevPropB_median - meanSevPropB_sd, 
                     xmax = meanSevPropB_median + meanSevPropB_sd),
@@ -1233,36 +1333,37 @@ gc(reset = TRUE)
 ### Fire interval comparisons  with observed data
 Non-forest forest type removed, only pixel/plots with fire evidence
 Note that `summaryFireAttributes`  has pixels with fire and without fires. So pixels without fires need to be removed
-Also, in the observed data mean/median fire intervals were not calculated for plots that had one fire event only. So pixels with a single fire event are also removed
+Also, in the observed data mean fire intervals were not calculated for plots that had one fire event only. So pixels with a single fire event are also removed
 ```{r simVsObsFires, cache = FALSE}
 ## allPixelBurnData only has burnt pixels, use it to filter summaryFireAttributes
 pixWFires <- unique(allPixelBurnData[noFires > 1, .(scenario, rep, pixelIndex)])
 
-## median fire interval per forest type - to compare with camerons fire intervals.
+## mean fire interval per forest type - to compare with camerons fire intervals.
+## median fire interval is impossible per pixel, because the module calculated the mean as in Steel 2021
 plotData <- summaryFireAttributes[pixWFires, on = .(scenario, rep, pixelIndex), nomatch = 0]
 plotData <- plotData[vegTypeCN %in% ageDataCN$Cover.dendro, 
-                     .(scenario, rep, pixelIndex, medianFreq, vegTypeCN)] 
+                     .(scenario, rep, pixelIndex, meanFreq, vegTypeCN)] 
 plotData2 <- copy(plotData)
 plotData2[, vegTypeCN := "landscape"]
 plotData <- rbind(plotData, plotData2)
 
-plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, median.FI, Patch.ID)])
+plotData2 <- unique(ageDataCN[firePresAbs > 0, .(Cover.dendro, mean.FI, Patch.ID)])
 plotData3 <- copy(plotData2)
 plotData3[, Cover.dendro := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 
-plot39 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "medianFreq", 
+plot39 <- simObsDistsPlot(simData = copy(plotData), x = "vegTypeCN", ySim = "meanFreq", 
                           colSim = "scenario",
-                          obsData = copy(plotData2), yObs = "median.FI", xlabels = vegTypeCNLabels,
+                          obsData = copy(plotData2), yObs = "mean.FI", xlabels = vegTypeCNLabels,
                           colValues = scenColours, colLabels = scenLabels, x.text.angle = 45,
                           showMeans = FALSE,
-                          titleLab = "Median fire interval", subtitleLab = "by forest type",
+                          titleLab = "Fire interval", subtitleLab = "by forest type",
                           yLab = "Fire interval")
 plot39 <- plot39 + 
   geom_point(data = copy(plotData2[vegTypeCN %in% c("broadleaf", "PIEN")]),   ## these only have one point
-             aes(x = vegTypeCN, y = median.FI, colour = "observed"),
+             aes(x = vegTypeCN, y = mean.FI, colour = "observed"),
              position = position_dodge(width = 0.9), show.legend = FALSE) 
 ```
 
@@ -1279,6 +1380,9 @@ gc(reset = TRUE)
 ### Mean absolute deviation and mean raw deviations of simulated fire intervals with respect to observed fire intervals for a given stand type
 Non-forest forest type removed (not present in observed data), only pixel/plots with fire evidence
 Note that `summaryFireAttributes` has pixels with fire evidence -- fire intervals of 0 correspond to pixels that only had one fire in the first year of the analysed period.
+
+Note that we can't calculated medianFreq, because the module calculates mean(fireFreq) as in
+Steel 2021
 
 ```{r simVsObsFires2, cache = FALSE}
 ## average fire interval differences
@@ -1299,23 +1403,23 @@ plotData2 <- ageDataCN[firePresAbs > 0,]
 plotData3 <- copy(plotData2)
 plotData3[, Cover.dendro := "landscape"]
 plotData2 <- rbind(plotData2, plotData3)
-plotData2 <- plotData2[, list(avgMedian.FIObs = mean(median.FI, na.rm = TRUE)),
+plotData2 <- plotData2[, list(avgMean.FIObs = mean(mean.FI, na.rm = TRUE)),
                        by = .(Cover.dendro)]
 
 setnames(plotData2, "Cover.dendro", "vegTypeCN")
 plotData <- plotData2[plotData, on = "vegTypeCN", nomatch = NULL]
 
-if (nrow(plotData[is.na(avgMedian.FIObs) | is.na(medianFreq)])) {
+if (nrow(plotData[is.na(avgMean.FIObs) | is.na(meanFreq)])) {
   stop("NAs detected")
 }
 
-plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(medianFreq - avgMedian.FIObs)),
-                             meanDevSimObs = 1/.N * sum(medianFreq - avgMedian.FIObs)),
+plotData2 <- plotData[, list(meanAbsDevSimObs = 1/.N * sum(abs(medianFreq - avgMean.FIObs)),
+                             meanDevSimObs = 1/.N * sum(meanFreq - avgMean.FIObs)),
                       by = .(scenario, rep, vegTypeCN)]
 ## boxplot differences
 plot44 <- ggplot(plotData,
                  aes(x = vegTypeCN,
-                     y = meanFreq - avgMedian.FIObs,
+                     y = meanFreq - avgMean.FIObs,
                      fill = scenario)) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey") +
   geom_boxplot() +
@@ -1333,7 +1437,7 @@ plot44.2 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanAbsDevSimObs",
                     colour = "scenario", colValues = scenColours, colLabels = scenLabels,
                     labllr, xlabels = vegTypeCNLabels, xorder = rev(x_order),
                     x.text.angle = 45, flipCoord = FALSE,
-                    titleLab = "Mean abs. deviation from observed median fire intervals", 
+                    titleLab = "Mean abs. deviation from observed fire intervals", 
                     # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
                     yLab = "Mean abs. deviation")
 
@@ -1344,7 +1448,7 @@ plot44.3 <- MADPlot(plotData2, x = "vegTypeCN", y = "meanDevSimObs",
                     colour = "scenario", colValues = scenColours, colLabels = scenLabels,
                     labllr, xlabels = vegTypeCNLabels, xorder = rev(x_order),
                     x.text.angle = 45, flipCoord = FALSE,
-                    titleLab = "Mean (raw) deviation from observed median fire intervals", 
+                    titleLab = "Mean (raw) deviation from observed fire intervals", 
                     # yLab = expression(bar(bgroup("|", "sim." - bar("obs."), "|"))))
                     yLab = "Mean raw deviation")
 

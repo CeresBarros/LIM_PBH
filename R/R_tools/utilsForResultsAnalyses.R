@@ -661,12 +661,12 @@ summariseFireRegAttrs <- function(allPixelBurnData, allPixelCohortDataMnt, yearS
   summaryFireAttributes <- allPixelBurnData[pixelIndex %in% allPixelCohortDataMnt$pixelIndex]
 
   if (addMedian) {
-    summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already an average of mean fire intervals
+    summaryFireAttributes <- summaryFireAttributes[, list(meanFreq = unique(fireFreq),   ## note that fireFreq is already mean fire intervals
                                                           meanSev = mean(severity),
                                                           meanSevB = mean(severityB),
                                                           meanSevPropB = mean(severityPropB),
                                                           meanPatchS = mean(patchSizeLogHa),
-                                                          medianFreq = unique(fireFreq),   ## note that fireFreq is already an average of median fire intervals
+                                                          medianFreq = unique(fireFreq),   ## note that fireFreq is already mean fire intervals
                                                           medianSev = median(severity),
                                                           medianSevB = median(severityB),
                                                           medianSevPropB = median(severityPropB),
