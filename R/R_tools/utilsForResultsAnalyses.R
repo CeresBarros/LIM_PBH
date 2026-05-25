@@ -472,7 +472,7 @@ HVBoxplots <- function(plotData, x = "vegType", y = "logVolume", fill = "scenari
 #' Fire attributes ~ fire HV size scatterplots
 fireAttrPyroPlotFun <- function(data, x = "Volume", y = "Mean",
                                 colour = NULL, linetype = NULL,
-                                shape = NULL,
+                                shape = NULL, smoother = "gam",
                                 xLab = "", yLab = "", titleLab = "",
                                 xFacet = NULL, yFacet = NULL, shapeLabels, linetypeValues,
                                 linetypeLabels, colValues, colLabels, labllr) {
@@ -485,6 +485,10 @@ fireAttrPyroPlotFun <- function(data, x = "Volume", y = "Mean",
   }
   if (is.null(xFacet) != is.null(yFacet)) {
     stop("xFacet and yFacet must both be NULL or not NULL")
+  }
+
+  if (!smoother %in% c("gam", "lm") ) {
+    stop("smoother must be one of 'gam' or 'lm'")
   }
 
   aes_args <- list(
@@ -507,9 +511,17 @@ fireAttrPyroPlotFun <- function(data, x = "Volume", y = "Mean",
     geom_point(aes(!!!aes_args))
 
   plotOut <- ggplot(data, aes(!!!aes_args)) +
-    geom_point(size = 2) +
-    stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE) +
-    geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
+    geom_point(size = 2)
+
+  plotOut <- switch(smoother,
+                    "gam" = {
+                      plotOut + stat_smooth(method = "gam", formula = y ~ s(x, k = 3), se = FALSE)
+                    },
+                    "lm" = {
+                      plotOut + stat_smooth(method = "lm", se = FALSE)
+                    })
+
+  plotOut <- plotOut + geom_hline(aes(yintercept = -Inf)) + ## to force axes lines.
     geom_vline(aes(xintercept = -Inf)) +
     coord_cartesian(clip = "off") +
     scale_x_continuous(label = scales::label_number(accuracy = 0.01)) +
