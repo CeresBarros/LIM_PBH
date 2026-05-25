@@ -1618,6 +1618,91 @@ rm(list = plotsRm)
 gc(reset = TRUE)
 ```
 
+## FIRE ATTRIBUTES & BIODIVERSITY
+```{r fireAttriBio, echo = FALSE}
+## relationship between biodiversity and average fire attributes -----------------
+## join HV sizes with fire attributes
+plotData <- allHVData[HVtype == "vegHV",
+                      .(HV_noPM, HV_PM, rep, repHV, vegType)]
+plotData[, vegType := factor(vegType, levels = names(vegTypeCNLabels))]
+plotData <- melt.data.table(plotData, measure.vars = c("HV_noPM", "HV_PM"),
+                            variable.name = "scenario", value.name = "Volume")
+plotData[, scenario := sub("HV_", "", scenario)]
+
+## landscape only -- note that summaryFireAttributes doesn't have a "landscape" vegType
+plotData2 <- plotData[vegType == "landscape"]
+cols <- grep("mean", names(summaryFireAttributes), value = TRUE)
+cols <- c(cols, "scenario", "rep", "pixelIndex", "vegTypeCN")
+plotData2 <- summaryFireAttributes[, ..cols][plotData2, on = c("scenario", "rep"),
+                                             allow.cartesian = TRUE]  
+plotData2[, vegTypeCN := NULL]
+
+## all but landscape
+plotData <- plotData[vegType != "landscape"]
+plotData <- summaryFireAttributes[, ..cols][plotData, on = c("vegTypeCN==vegType", "scenario", "rep"),
+                                            allow.cartesian = TRUE]
+setnames(plotData, "vegTypeCN", "vegType")
+plotData <- rbind(plotData, plotData2)
+
+cols <- grep("mean", names(plotData), value = TRUE)
+plotData <- melt.data.table(plotData, measure.vars = cols,
+                            variable.name = "fireAttr", value.name = "value")
+## calculate summary stats on fire attributes
+plotData <- plotData[, as.list(summary(value)), by = .(scenario, rep, repHV, Volume, vegType, fireAttr)]
+plotData <- plotData[fireAttr %in% c("meanFreq", "meanSevPropB", "meanPatchS")]
+
+## log for better visuals
+plotData[, logVolume := log(Volume)]
+plotData[, logMean := log(Mean)]
+
+scenLabels2 <- as.character(scenLabels)
+names(scenLabels2) <- names(scenLabels)
+
+facetLabllr <- labeller(scenario =  as_labeller(scenLabels2, label_parsed),
+                        fireAttr = c("meanPatchS" = "Mean patch size\n",
+                                     "meanFreq" = "Mean fire interval",
+                                     "meanSevPropB" = "Mean fire severity\n"))
+
+fireAttrBioLandscapePlot <- fireAttrPyroPlotFun(plotData[vegType == "landscape"],  
+                                                 y = "logVolume", x = "logMean",
+                                                 colour = "vegType", smoother = "lm",
+                                                 yFacet = "scenario", xFacet = "fireAttr",
+                                                 # shapeLabels = scenLabels, 
+                                                 # linetypeValues = scenLinetype,
+                                                 # linetypeLabels = scenLabels, 
+                                                 colValues = vegTypeCNColours, 
+                                                 colLabels = vegTypeCNLabels,
+                                                 yLab = "Forest diversity",
+                                                 labllr = facetLabllr)
+fireAttrBioVegTypesPlot <- fireAttrPyroPlotFun(plotData[vegType != "landscape"],
+                                                y = "logVolume", x = "logMean",
+                                                colour = "vegType", smoother = "lm",
+                                                yFacet = "scenario", xFacet = "fireAttr",
+                                                # shapeLabels = scenLabels, 
+                                                # linetypeValues = scenLinetype,
+                                                # linetypeLabels = scenLabels, 
+                                                colValues = vegTypeCNColours, 
+                                                colLabels = vegTypeCNLabels, 
+                                                yLab = "Forest diversity",
+                                                labllr = facetLabllr)
+
+```
+
+```{r plot&savePlots23, echo = FALSE}
+plotSave <- ggarrange(fireAttrBioVegTypesPlot,
+                      fireAttrBioLandscapePlot + labs(x = "", title = ""),
+                      ncol = 1, nrow = 2, labels = "auto", label.y = 0.95,
+                      common.legend = TRUE, legend = "bottom")
+ggsave(plot = plotSave, filename = file.path(figOutputPath, "fireAttrVsBio.tiff"),
+       width = 13, height = 12)
+
+plotsRm <- grep("plotData.*|plot1.*|plot2.*|plot3.*|plot4.*|plot7.*|plot8$|fireAttr.*Plot", ls(), value = TRUE)
+plotsRm <- grep("plot29$|plot29.1$|plot29.2$|plot29.3$|plotTest1.2$|plot39$", plotsRm,  invert = TRUE, value = TRUE)
+rm(list = plotsRm)
+gc(reset = TRUE)
+```
+
+
 ## SPECIES COMPOSITION BY VEGETATION TYPE
 Only on the sampled years; only B and averg. weighted age
 ```{r plotsByVegTypeCN, cache = FALSE}
