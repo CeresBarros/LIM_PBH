@@ -324,8 +324,8 @@ MADPlot <- function(data, x, y, colour, colValues, colLabels,
 
   if (flipCoord) {
     plotOut <- plotOut +
-    coord_flip()
-    }
+      coord_flip()
+  }
   if (!is.null(xFacet)) {
     plotOut <- plotOut +
       facet_grid(rows = xFacet, labeller = labllr)
