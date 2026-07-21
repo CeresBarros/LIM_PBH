@@ -64,8 +64,10 @@ options(repos = c(
 ))
 ```
 
-R version 4.5 is the current development target; the Docker image (see `Docker/`)
-provides a reproducible environment.
+R **4.1.3** is the target R version, pinned by the Docker image (see
+`Docker/lim-cbarros.Dockerfile`). Running against a substantially newer R may
+require rebuilding modules and re-resolving package versions. The Docker image
+provides the reference reproducible environment.
 
 ## Getting started
 
