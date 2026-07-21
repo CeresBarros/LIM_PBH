@@ -1,0 +1,14 @@
+{
+  "permission": {
+    "bash": {
+      "git branch *": "allow",
+      "echo *": "allow",
+      "git status *": "allow",
+      "git remote *": "allow",
+      "git submodule *": "allow"
+    },
+    "edit": {
+      "*.md": "allow"
+    }
+  }
+}
