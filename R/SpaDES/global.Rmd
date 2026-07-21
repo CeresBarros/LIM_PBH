@@ -1,141 +1,216 @@
 ---
-title: "Landscapes In Motion - mixed severity fire landscape model in Alberta Foothills"
-author: "CeresBarros"
-date: "18/12/2020"
+title: "Landscapes In Motion - Barros et al. publication runs."
+author: "Ceres Barros"
+params:
+  orig_date: "Created: Dec. 18,  2020"
+  update_date: !r paste("Last modified on:", format(Sys.time(), '%d %B, %Y'))
 output: html_document
 ---
 
-#### Requirements
-Before proceeding, please make sure you have:
-* at least [R v4.0.3](https://cran.r-project.org/bin/windows/base/) and [Rtools40](https://cran.r-project.org/bin/windows/Rtools/) installed (make sure you follow ALL installation instructions for Rtools).
+```{r setup, include = FALSE}
+knitr::opts_knit$set(root.dir = "~/LandscapesInMotion/")
+knitr::opts_chunk$set(eval = FALSE, echo = TRUE, cache = 2, warning = FALSE)
+```
+
+`r params$orig_date`
+
+`r params$update_date`
+
+## Requirements
+
+Before proceeding, please make sure that:
+
+* You are running [R v4.1.3](https://cran.r-project.org/bin/windows/base/) -- later versions will not work.
+
+* [Rtools40](https://cran.r-project.org/bin/windows/Rtools/) installed (make sure you follow all installation instructions for Rtools).
+
 * the R package `devtools`
 
-```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = "~/GitHub/LandscapesInMotion/")
-knitr::opts_chunk$set(echo = FALSE, cache = 2, warning = FALSE)
+```{r pkgInstall}
+installPkgs <- FALSE
+pkgSnapshotFile <- "R/SpaDES/pkgSnapshot.txt"  ## only used if isTRUE(installPkgs)
 
-devtools::install_github("PredictiveEcology/reproducible@development", dependencies = TRUE)
-devtools::install_github("achubaty/amc@development", dependencies = TRUE)
-devtools::install_github("PredictiveEcology/pemisc@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("PredictiveEcology/map@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("CeresBarros/LandR@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("ianmseddy/LandR.CS", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("PredictiveEcology/quickPlot@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("PredictiveEcology/SpaDES.tools@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("PredictiveEcology/SpaDES.core@development", dependencies = TRUE, upgrade = TRUE)
-devtools::install_github("PredictiveEcology/SpaDES.experiment@development", dependencies = TRUE, upgrade = TRUE)
+## run the following script manually the first time, then you can source()
+source("R/SpaDES/0_packages.R")
 
-library(SpaDES)
-library(SpaDES.experiment)
-library(LandR)
+library(Require)
+Require(c("raster",
+          "SpaDES",
+          "data.table",
+          "ToolsCB",
+          "SpaDES.experiment",
+          "LandR (==1.0.7.9026)",
+          "reproducible",
+          "future"
+), upgrade = FALSE, install = FALSE)
 
-options("reproducible.useNewDigestAlgorithm" = TRUE)
-options("spades.moduleCodeChecks" = FALSE)
-options("reproducible.useCache" = TRUE)
-options("reproducible.inputPaths" = normPath("R/SpaDES/inputs"))  ## store everything in data/ so that there are no duplicated files across modules
-options("reproducible.destinationPath" = normPath("R/SpaDES/inputs"))
-options("reproducible.useGDAL" = FALSE)
-
-source("R/R_tools/Useful_functions.R")
+## to prevent overflow to threads that aren't actually available
+data.table::setDTthreads(threads = 1)
 ```
 
 ## Simulation setup
 Setting up the simulation requires preparing data (e.g. study area, species abundance layers, fire data...) and supplying parameters to the different SpaDES modules used in the simulation. This is done by running a series of Rscripts, which are explained bellow.
 
-### 1. Choose a name for the run, folders and decide the caching mode
-`runName` affects ...?
-`dirName` will be used to store simulation cache and outputs, broken into different subfolders (e.g. `preSim`, `speciesLayers`) for different simulation components.
+### 1. Choose a name for the run, folders, decide the caching mode and set `options()`
 
-```{r simulationSetup1, echo=FALSE, cache=2}
-## Set up simulation name  ---------------------------
-runName <- "test"
+*   `runName` is a vector of simulation names -- there will be two, one with no 
+    partial-mortality after fire("noPM") and another with partial-mortality after fire ("PM")
 
-## paths define simulation paths
-dirName <- "test"
-simPaths <- list(cachePath = file.path("R/SpaDES/cache", dirName)
-                 , modulePath = file.path("R/SpaDES/m")
-                 , inputPath = file.path("R/SpaDES/inputs")
-                 , outputPath = file.path("R/SpaDES/outputs", dirName))
+*   `simDirName` is the name of the subfolder in `cache/` and `outputs/` where
+    subfolders (e.g. `preSim`, `speciesLayers`, `noPM` , `PM`, etc.) will be created to store different 
+    simulation outputs and caches.
+
+```{r simulationSetup1}
+## Set up simulation names  ---------------------------
+runName <- c("noPM", "PM")
 
 eventCaching <- c(".inputObjects", "init")
 useParallel <- FALSE
 
+## define simulation paths
+simDirName <- "mar2022Runs"
+
+simPaths <- list(cachePath = file.path("R/SpaDES/cache", simDirName)
+                 , modulePath = file.path("R/SpaDES/m")
+                 , inputPath = file.path("R/SpaDES/inputs")
+                 , outputPath = file.path("R/SpaDES/outputs", simDirName))
+
+options("reproducible.useNewDigestAlgorithm" = 2,
+        "spades.moduleCodeChecks" = FALSE,
+        "reproducible.useCache" = TRUE,
+        "reproducible.inputPaths" = simPaths$inputPath,
+        "reproducible.destinationPath" = simPaths$inputPath,
+        "reproducible.useGDAL" = FALSE,
+        "reproducible.cacheSaveFormat" = "qs",
+        "reproducible.useMemoise" = TRUE,
+        "mc.cores" = 1,
+        "spades.useRequire" = FALSE,
+        "reproducible.useTerra" = FALSE,
+        "reproducible.rasterRead" = "raster::raster")
+
 ```
 
 ### 2. Prepare simulation inputs
+
+#### 2.1. Study area, species cover layers and fire weather data
+
 These include the study area polygon shapefiles, species data and fire weather data
 Species biomass layers are obtained first and QA "manually". Some species may need to be excluded at this point.
 Cache and output files are save in `dirName/speciesLayers` and `dirName/fireWeather` folders inside the `cache/` and `outputs` folders.
 
-```{r simulationSetup2, echo=FALSE, cache=2}
+```{r simulationSetup2}
 ## Get necessary objects -----------------------
 source("R/SpaDES/1_simObjects.R")
 
 ## Run Biomass_speciesData to get species layers
 source("R/SpaDES/2_speciesLayers.R")
 
-## maybe drop some species - Black spruce, and Ponderosa pine have v. few occurrences
+## drop some species - Black spruce, and Ponderosa pine have v. few occurrences
 plot(simOutSpeciesLayers$speciesLayers)
 keepSpp <- sapply(unstack(simOutSpeciesLayers$speciesLayers), FUN = function(ras) {
-  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(simOutSpeciesLayers$speciesLayers[[2]][]))
-  propPres > 0.05  ## species need to be in at least 5% of the landscaoe
+  propPres <- sum(ras[] > 0, na.rm = TRUE)/sum(!is.na(ras[]))
+  propPres > 0.05  ## species need to be in at least 5% of the landscape
 })
 
 keepSpp <- names(simOutSpeciesLayers$speciesLayers)[keepSpp]
-simOutSpeciesLayers$speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
-sppEquivalencies_CA <- sppEquivalencies_CA[LIM %in% keepSpp]
-sppColorVect <- sppColorVect[keepSpp]
-plot(simOutSpeciesLayers$speciesLayers)
+speciesLayers <- subset(simOutSpeciesLayers$speciesLayers, keepSpp)
+sppEquivalencies_CA <- sppEquivalencies_CA[get(sppEquivCol) %in% keepSpp]
+sppColorVect <- simOutSpeciesLayers$sppColorVect[keepSpp]
+sppNameVector <- intersect(simOutSpeciesLayers$sppNameVector, names(sppColorVect))
+raster::plot(speciesLayers)
 
 ## Prepare fire weather tables --------------------
 source("R/SpaDES/3_fireWeather.R")
 ```
+
+#### 2.2. Run data preparation and calibration modules
 
 After species data and fire weather data are in place, we run all data prep. modules which estimate any necessary parameters and prepare input objects for the actual simulation. This is a pre-simulation run - all cache and output files are saved under `dirName/preSim` inside the `cache/` and `outputs` folders, respectively.
 At this point we need to define a few parameters related to the simulation length, start year and frequency of fire, the forest succession time step and whether mixed stands receive a leading-type classification.
 
 Other module-specific parameters are defined in the `4_preSimulation.R` script and documented in each module's `.Rmd` file and `.R` metadata section.
 
-```{r simulationSetup3, echo=FALSE, cache=2}
+```{r simulationSetup3}
 ## Run more data prep -----------------------------
-# Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
-## to prepare objects for simulation and FireSense ignition/fire frquency fits
+## Biomass_borealDataPrep, LandR_speciesParameters, Biomass_core (just init and year 0) and Biomass_fuelsPFG
+## to prepare objects for simulation and FireSense ignition/fire frequency fits
 ## Define simulation params
-simTimes <- list(start = 2011L, end = 2611L)
-fireInitialTime <- 5L
+simTimes <- list(start = 2011L, end = 4011L)   ## capture several cycles of Doug-fir dynamics
+vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
+## If all are below this, then it is a "mixed" stand
+fireInitialTime <- simTimes$start + 5L
 fireTimestep <- if (sum(grepl("oneFire", runName))) 100000L else 1L
 successionTimestep <- 10L
-vegLeadingProportion <- 0 # indicates what proportion the stand must be in one species group for it to be leading.
-# If all are below this, then it is a "mixed" stand (e.g. 0 will never classify by leading type)
+
 source("R/SpaDES/4_preSimulation.R")
+
+LIM_preSimulation <- loadSimList(file.path(simPaths$outputPath, "LIM_preSimulation.qs"))
+
+## re-initialize simulation modules (overcoming seed problem)
+reproducible::clearCache(file.path(simPaths$cachePath, "noPM"), ask = FALSE)
+reproducible::clearCache(file.path(simPaths$cachePath, "PM"), ask = FALSE)
+source("R/SpaDES/4_preSimulationPART2.R")
+
+
+simListFiles <- list.files(simPaths$outputPath, pattern = "LIM_simInit_", full.names = TRUE, recursive = TRUE)
+simListFiles <- grep("PART2.qs$", simListFiles, value = TRUE)
+names(simListFiles) <- sub(paste0(simPaths$outputPath, "/(.*)/.*"), "\\1", simListFiles)
+LIM_simInitList <- lapply(simListFiles, loadSimList)
+
+## clean unnecessary simLists
+rm(simOutSpeciesLayers, simOutFireWeather);
+gc(reset = TRUE)
+
+LIM_simInitList$noPM$._randomSeed <- NULL
+LIM_simInitList$PM$._randomSeed <- NULL
 ```
 
 ### 3. Setup and run simulation
 Choose whether to activate plotting, setup the simulation with the necessary parameters and objects obtained above and run the simulation.
 Make sure you adapt the script `5_simulationSetup.R` to suit your needs (e.g. module list, objects to save, ...)
 
-```{r simulationSetup3, echo=FALSE, cache=2}
-## if NA nothing will be plotted. Choose 1 for plotting to start at year 1.
-plotInitialTime <- NA
+```{r simulationRuns}
+## using experiment:
+## multicore no longer available from RStudio
+# plan("multicore", workers = 2)   
+plan("sequential")
 
-## Make actuaL simulation module list, parameters objects, objects and outputs according to run
-## name and the parameters above
-source("R/SpaDES/5_simulationSetup.R")
 
-graphics.off()
-simInitOut <- simInitAndSpades(times = simTimes
-                               , params = simParams
-                               , modules = simModulesNoPM
-                               , objects = simObjects
-                               , paths = simPaths
-                               , outputs = outputs
-                               , debug = TRUE
-                               , .plotInitialTime = plotInitialTime
-)
+## PARTIAL MORTALITY RUNS
+clearSimEnv <- TRUE
+simExperimentOut <- experiment2(
+  PM = LIM_simInitList[["PM"]],
+  clearSimEnv = clearSimEnv,
+  replicates = 5,
+  useCache = FALSE,
+  meanStaggerIntervalInSecs = 60)
+future:::ClusterRegistry("stop")
 
-## you may choose to save simulation outputs
-# saveSimList(simOut, file.path(simPaths$outputPath, paste0("simList_", runName, ".qs")))
-# if (!is.na(plotInitialTime))
-#   dev.print(tiff, file.path(simPaths$outputPath, paste0("simPlots_", runName, ".tiff")),
-#             res = 300, units = "in")
+## save simLists object.
+if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
+  for (i in seq_along(simExperimentOut)) {
+    rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
+  }
+}
+qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["PM"]]), paste0("LIM_simLists_PM", ".qs")))
+
+rm(simExperimentOut); gc(reset = TRUE)
+
+
+## NO PARTIAL MORTALITY RUNS
+simExperimentOut <- experiment2(noPM = LIM_simInitList[["noPM"]],
+                                clearSimEnv = clearSimEnv,
+                                replicates = 5,
+                                useCache = FALSE,
+                                meanStaggerIntervalInSecs = 60)
+future:::ClusterRegistry("stop")
+
+## save simLists object.
+if (isFALSE(clearSimEnv)) {  ## we have a caching bug so need to clear the env before saving
+  for (i in seq_along(simExperimentOut)) {
+    rm(list = ls(simExperimentOut[[i]], all.names = TRUE), envir = envir(s))
+  }
+}
+qs::qsave(simExperimentOut, file.path(outputPath(LIM_simInitList[["noPM"]]), paste0("LIM_simLists_noPM", ".qs")))
+
 ```
