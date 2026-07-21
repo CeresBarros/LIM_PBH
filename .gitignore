@@ -3,6 +3,9 @@
 .RData
 .Ruserdata
 .httr-oauth
+.Rprofile
+.Renviron
+.posit/
 
 *.pdf
 *.RData
@@ -17,5 +20,3 @@ GDriveTokens
 
 !packages/pkgSnapshot*.txt
 !packages_docker/pkgSnapshot*.txt
-
-analyses.zip
