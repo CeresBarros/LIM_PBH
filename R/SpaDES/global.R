@@ -3,7 +3,8 @@
 ##
 ## Ceres: Nov 2017, last updated: July 2025
 ## ------------------------------------------------------
-
+installPkgs <- FALSE
+pkgSnapshotFile <- "packages_docker/pkgSnapshot.txt"  ## only used if isTRUE(installPkgs)
 source("R/SpaDES/0_packages.R")
 
 library(Require)

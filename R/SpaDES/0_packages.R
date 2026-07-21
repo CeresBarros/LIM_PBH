@@ -33,19 +33,12 @@ if (!exists("pkgDir")) {
   .libPaths(pkgDir)
 }
 
-## old code
-# if (!require("Require")) {
-#   # remotes::install_github("PredictiveEcology/Require@7eaa3af6443fa9acf8ef461d9a02e544174eda38", upgrade = FALSE)
-# }
-
-if (FALSE) {
+if (installPkgs) {
   ## write file
-  # Require::pkgSnapshot("packages_docker/pkgSnapshot.txt", standAlone = TRUE, exact = TRUE)
-  # Require::pkgSnapshot("packages/pkgSnapshot.txt", standAlone = TRUE, exact = TRUE)
+  # Require::pkgSnapshot(pkgSnapshotFile, standAlone = TRUE, exact = TRUE)
 
   # Much later on a different or same machine
-  # Require::Require(packageVersionFile = "packages_docker/pkgSnapshot.txt", standAlone = TRUE)
-  Require(packageVersionFile = "packages/pkgSnapshot.txt", standAlone = TRUE)
+  Require::Require(packageVersionFile = pkgSnapshotFile, standAlone = TRUE)
 
   ## these versions need to be ensured and if not on the snapshot file
   Install("PredictiveEcology/Require@7eaa3af6443fa9acf8ef461d9a02e544174eda38", dependencies = FALSE)
