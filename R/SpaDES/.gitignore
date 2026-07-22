@@ -11,6 +11,8 @@ m/*/*.zip
 m/old
 7_analysesResults*cache/
 7_analysesResults*files/
+global_cache/
+global_files/
 
 ## don't ignore
 !m/*/data/CHECKSUMS.txt
