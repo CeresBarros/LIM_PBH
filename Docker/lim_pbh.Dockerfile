@@ -3,7 +3,7 @@
 ######################
 ## install git and get files before creating the image
 
-FROM ubuntu:latest AS builder
+FROM ubuntu:24.04 AS builder
 
 ## install git and get git repo with installation scripts
 
@@ -61,7 +61,7 @@ chmod +x rocker-versioned2/scripts/install_quarto.sh
 ######################
 ## Now create image
 
-FROM docker.io/library/ubuntu:latest
+FROM docker.io/library/ubuntu:24.04
 
 ENV R_VERSION="4.1.3"
 ENV R_HOME="/usr/local/lib/R"
