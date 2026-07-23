@@ -55,6 +55,8 @@ Or, if you already cloned without `--recurse-submodules`:
 git submodule update --init --recursive
 ```
 
+These steps will place LIM_PBH in your home directory (i.e. /home/<username/>/LIM_PBH)
+
 ### Run Docker container
 
 Pull Docker image
@@ -63,12 +65,26 @@ Pull Docker image
 docker pull ceresbarros/lim_pbh
 ```
 
-Launch the container by executing the  helper script `Docker/dockerRun_generic.sh`. Make sure your user has execute permission on the file (`chmod 700` line will grant these permissions).
+Open `Docker/dockerRun_generic.sh` and change <username> to your user name and make sure that the local project
+directory is corrected referenced in the `mount` command. Save the file and make sure your user has execute permission on the file (`chmod 700` line will grant these permissions):
 
 ```bash
 chmod 700 Docker/dockerRun_generic.sh
+```
 
+Launch the container by executing the helper script `Docker/dockerRun_generic.sh`. 
+
+```bash
 ./Docker/dockerRun_generic.sh
+```
+
+You will now need to give the `rstudio` user in Docker ownership of it's home directory
+
+```bash
+docker exec -it LIM_PBH-docker /bin/bash   ## enter Docker container in interactive mode as a root user
+chown -R rstudio:rstudio /home/rstudio     ##  change ownership of /home/rstudio
+
+exit
 ```
 
 ### Continue on RStudio Server
