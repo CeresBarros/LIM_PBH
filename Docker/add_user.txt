@@ -1,20 +1,10 @@
 ## To add a new user (including to RStudio Server):
 
 ## enter container
-docker exec -it <containerID> bash
-
-## add users and set password
-useradd <username>
-passwd <username>
-
-## make home dir if not there
-mkdir /home/<username>
+docker exec -it LIM_PBH_docker /bin/bash
 
 ## change ownership of homedir
-chown -R <username>:<username> /home/<username>
-
-## change ownership of scratch
-chown -R <username>:<username> /mnt/scratch/<username>
+chown -R rstudio:rstudio /home/rstudio
 
 ## Changing user/group ID to match a similar external (to Docker) user's 
 ## outside container check the user's/group ID
@@ -22,13 +12,14 @@ id -u <username>
 groups <username>
 
 ## In docker container, re-check user ID and change it to match external user ID 
-usermod -u <new_uid> <username>
+usermod -u <new_uid> rstudio
 
 ## Do the same for group ID -- usualy it is the same as user ID, but check groups first
-groups <username>
-groupmod -g <new_gid> <groupname>
+groups rstudio
+groupmod -g <new_gid> rstudio
 
 ## Change file permission in user's home to match new ID
-chown -R <new_uid>:<new_gid> /home/<username>
+chown -R <new_uid>:<new_gid> /home/rstudio
 
 ## add user to rstudio group to allow log-in
+
