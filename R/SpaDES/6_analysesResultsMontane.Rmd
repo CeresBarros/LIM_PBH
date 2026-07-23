@@ -113,8 +113,8 @@ Given the size of the data put together in a pixel-based format, results were sa
 ```{r dataPrep, cache=FALSE, include=FALSE}
 yearSubset <- unique(as.integer(c(seq(3511, 4011, 5), 4011)))
 runPrepResultsModule <- FALSE
-source("R/SpaDES/simResultsDataPrep.R")
-source("R/SpaDES/obsResultsDataPrep.R")
+source("R/R_tools/simResultsDataPrep.R")
+source("R/R_tools/obsResultsDataPrep.R")
 rm(allPixelCohortData) ## not needed
 gc(reset = TRUE)
 
